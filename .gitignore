@@ -1,1 +1,21 @@
 Overview Ayn.docx 
+STRUCTURE_AND_IMPROVEMENTS.docx
+PROJECT_VISION.docx
+RUN_INSTRUCTIONS.docx
+docker-compose.yml
+
+
+
+
+
+
+
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.test
+.env.production 

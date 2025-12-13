@@ -8,7 +8,7 @@ node_modules/
 
 # Next.js
 /.next/
-/out/
+# /out/  # Commented out to allow deploying to main branch
 next-env.d.ts
 
 # Production

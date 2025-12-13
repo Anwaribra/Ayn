@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "start": "next start",
     "export": "next build",
-    "deploy": "pnpm build:landing && gh-pages -d out"
+    "deploy": "pnpm build:landing && gh-pages -d out",
+    "deploy:main": "bash deploy-to-main.sh",
+    "deploy:root": "bash deploy-to-root.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

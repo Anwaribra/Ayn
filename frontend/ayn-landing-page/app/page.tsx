@@ -475,7 +475,7 @@ function NavLink({ href, children, onClick }: { href: string; children: React.Re
       className="relative text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 py-1 group"
     >
       {children}
-      <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-gradient-to-r from-emerald-400 to-emerald-300 group-hover:w-full transition-all duration-300" />
+      <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-gradient-to-r from-blue-400 to-sky-300 group-hover:w-full transition-all duration-300" />
     </button>
   )
 }
@@ -546,8 +546,8 @@ function LandingNavbar() {
           <NavLink href="#features" onClick={() => scrollToSection("features")}>
             Features
           </NavLink>
-          <NavLink href="#how-it-works" onClick={() => scrollToSection("how-it-works")}>
-            How It Works
+          <NavLink href="#about" onClick={() => scrollToSection("about")}>
+            About
           </NavLink>
         </div>
 

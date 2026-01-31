@@ -23,7 +23,7 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
         <>
           <div
             className={cn(
-              "absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-zinc-400 via-zinc-300 to-zinc-400 rounded-full scale-150",
+              "absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-full scale-150",
               animated && "animate-pulse",
             )}
             style={{ animationDuration: animated ? "3s" : undefined }}
@@ -31,11 +31,11 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
           {animated && (
             <>
               <div
-                className="absolute inset-0 blur-3xl opacity-20 bg-gradient-to-br from-zinc-200 via-zinc-400 to-zinc-300 rounded-full scale-125 animate-pulse"
+                className="absolute inset-0 blur-3xl opacity-30 bg-gradient-to-br from-primary/20 via-primary/40 to-primary/20 rounded-full scale-125 animate-pulse"
                 style={{ animationDuration: "4s", animationDelay: "0.5s" }}
               />
               <div
-                className="absolute inset-0 blur-xl opacity-10 bg-zinc-200 rounded-full scale-100 animate-ping"
+                className="absolute inset-0 blur-xl opacity-20 bg-primary/20 rounded-full scale-100 animate-ping"
                 style={{ animationDuration: "6s" }}
               />
             </>
@@ -44,15 +44,15 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
       )}
       <span
         className={cn(
-          "relative font-arabic font-bold text-white transform -scale-x-100 z-10",
+          "relative flex font-arabic font-bold text-foreground transform -scale-x-100 z-10",
           animated && "animate-float",
           sizeClasses[size],
         )}
         style={{
-          textShadow: "0 0 30px rgba(255, 255, 255, 0.5), 0 0 60px rgba(255, 255, 255, 0.3)",
+          textShadow: "0 0 30px rgba(var(--primary), 0.3), 0 0 60px rgba(var(--primary), 0.2)",
           filter: animated
-            ? "drop-shadow(0 0 20px rgba(255,255,255,0.6))"
-            : "drop-shadow(0 0 15px rgba(255,255,255,0.5))",
+            ? "drop-shadow(0 0 20px rgba(var(--primary),0.4))"
+            : "drop-shadow(0 0 15px rgba(var(--primary),0.3))",
           opacity: 1,
         }}
       >
@@ -61,3 +61,4 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
     </div>
   )
 }
+

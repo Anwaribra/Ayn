@@ -1,5 +1,5 @@
 # Environment variables
-.env
+
 .env.local
 .env.development.local
 .env.test.local
@@ -54,25 +54,7 @@ lerna-debug.log*
 *.cache
 .cache/
 
-# Deployed files (from Next.js out folder)
-__next.*.txt
-_next/
-_not-found/
-404.html
-404/
-index.html
-index.txt
-login/
-signup/
-apple-icon.png
-icon-dark-32x32.png
-icon-light-32x32.png
-icon.svg
-placeholder-logo.png
-placeholder-logo.svg
-placeholder-user.jpg
-placeholder.jpg
-placeholder.svg
-professional-middle-eastern-man-avatar.jpg
-professional-middle-eastern-woman-avatar.jpg
-professional-older-middle-eastern-man-avatar.jpg
+# Unused files repository
+notuse/
+notuse/*
+

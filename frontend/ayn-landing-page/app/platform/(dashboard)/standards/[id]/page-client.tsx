@@ -134,3 +134,12 @@ export function StandardDetailPageClient() {
   )
 }
 
+
+
+
+
+
+
+
+
+

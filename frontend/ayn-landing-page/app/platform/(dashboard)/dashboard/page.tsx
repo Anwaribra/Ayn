@@ -85,20 +85,27 @@ export default function DashboardPage() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-border/80 transition-colors"
+              className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-border/80 hover:shadow-lg transition-all duration-300 group"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <div className={`p-2.5 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-300`}>
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
               </div>
               <div>
                 {isLoading ? (
-                  <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+                  <div className="space-y-2">
+                    <div className="h-8 w-24 bg-muted rounded-lg overflow-hidden relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                    </div>
+                    <div className="h-4 w-16 bg-muted/50 rounded" />
+                  </div>
                 ) : (
-                  <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                  <>
+                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                  </>
                 )}
-                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </div>
             </div>
           ))}
@@ -112,11 +119,27 @@ export default function DashboardPage() {
               {(metrics?.assessmentProgressPercentage ?? 0).toFixed(1)}%
             </span>
           </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-3 bg-muted rounded-full overflow-hidden relative"
+            role="progressbar"
+            aria-valuenow={metrics?.assessmentProgressPercentage ?? 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Assessment completion progress"
+          >
             <div
-              className="h-full bg-gradient-to-r from-zinc-500 to-zinc-300 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-400 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
               style={{ width: `${metrics?.assessmentProgressPercentage ?? 0}%` }}
-            />
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <span>0%</span>
+            <span>25%</span>
+            <span>50%</span>
+            <span>75%</span>
+            <span>100%</span>
           </div>
         </div>
 
@@ -153,9 +176,21 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-          <div className="text-center py-8 text-muted-foreground">
-            <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Your recent activity will appear here</p>
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="relative inline-block mb-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-zinc-500/20 to-transparent rounded-full blur-xl" />
+              <div className="relative p-4 bg-muted/30 rounded-2xl border border-border/50">
+                <ClipboardList className="w-10 h-10 opacity-60" />
+              </div>
+            </div>
+            <p className="text-sm mb-1">No recent activity yet</p>
+            <p className="text-xs text-muted-foreground/70 mb-4">Start an assessment to see your progress here</p>
+            <Link href="/platform/assessments/new">
+              <Button size="sm" variant="outline" className="gap-2">
+                <Plus className="w-4 h-4" />
+                Start Assessment
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

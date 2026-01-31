@@ -131,3 +131,12 @@ export function InstitutionDetailPageClient() {
   )
 }
 
+
+
+
+
+
+
+
+
+

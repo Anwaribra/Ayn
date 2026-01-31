@@ -53,6 +53,20 @@ class ApiClient {
     return response
   }
 
+  async loginWithGoogle(idToken: string) {
+    const response = await this.request<{
+      user: import("./types").User
+      access_token: string
+      token_type: string
+    }>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken }),
+    })
+    localStorage.setItem("access_token", response.access_token)
+    localStorage.setItem("user", JSON.stringify(response.user))
+    return response
+  }
+
   async register(data: {
     name: string
     email: string

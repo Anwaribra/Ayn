@@ -39,6 +39,11 @@ class LoginRequest(BaseModel):
         }
 
 
+class GoogleLoginRequest(BaseModel):
+    """Google ID token login request."""
+    id_token: str = Field(..., description="Google ID token returned from Google Identity Services")
+
+
 # Response Models
 class UserResponse(BaseModel):
     """User information response."""

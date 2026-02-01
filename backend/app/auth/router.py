@@ -5,11 +5,13 @@ from app.core.utils import get_password_hash, verify_password, create_access_tok
 from app.auth.models import (
     RegisterRequest,
     LoginRequest,
+    GoogleLoginRequest,
     AuthResponse,
     UserResponse,
-    LogoutResponse
+    LogoutResponse,
 )
 from app.core.middlewares import get_current_user
+from app.auth.google_utils import verify_google_id_token
 import logging
 
 logger = logging.getLogger(__name__)
@@ -125,6 +127,65 @@ async def login(request: LoginRequest):
     access_token = create_access_token(data={"sub": user.id, "role": user.role})
     
     # Return user info and token
+    return AuthResponse(
+        user=UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            institutionId=user.institutionId,
+            createdAt=user.createdAt
+        ),
+        access_token=access_token
+    )
+
+
+@router.post("/google", response_model=AuthResponse)
+async def login_with_google(request: GoogleLoginRequest):
+    """
+    Login or register a user using a Google ID token.
+
+    - **id_token**: Google ID token obtained from Google Identity Services
+    """
+    db = get_db()
+
+    # Verify Google token and extract user info
+    payload = verify_google_id_token(request.id_token)
+    email = payload.get("email")
+    name = payload.get("name") or email
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account does not have a verified email.",
+        )
+
+    # Find existing user or create a new one
+    user = await db.user.find_unique(where={"email": email})
+
+    if not user:
+        # Create a placeholder password since the field is required in the schema
+        placeholder_password = get_password_hash("google-oauth-user")
+
+        try:
+            user = await db.user.create(
+                data={
+                    "name": name,
+                    "email": email,
+                    "password": placeholder_password,
+                    "role": "TEACHER",  # Default role for Google sign-in users
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error creating Google user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user from Google account.",
+            )
+
+    # Create access token
+    access_token = create_access_token(data={"sub": user.id, "role": user.role})
+
     return AuthResponse(
         user=UserResponse(
             id=user.id,

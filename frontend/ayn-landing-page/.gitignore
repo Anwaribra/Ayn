@@ -78,5 +78,4 @@ logs
 
 # Scripts (optional - remove if you want to keep them)
 *.sh
-!fix-lock.sh
 

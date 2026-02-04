@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ["python3", "nodejs", "git", "gcc", "openssl", "libatomic_ops"]
+nixPkgs = ["python3", "nodejs", "git", "openssl"]
 
 [phases.build]
-cmds = ["pip install -r requirements.txt", "python -m prisma generate"]
+cmds = ["pip install -r requirements.txt", "PRISMA_SKIP_POSTINSTALL_GENERATE=true python -m prisma generate"]
 
 [start]
 cmd = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
+
+[variables]
+PRISMA_CLI_BINARY_TARGETS = "debian-openssl-3.0.x"

@@ -19,14 +19,12 @@ pydantic==2.6.0
 pydantic-settings==2.1.0
 email-validator==2.1.0
 
-# Supabase Storage SDK
-supabase==2.3.0
-# Note: httpx is included as a dependency of supabase (requires <0.25.0)
+# Supabase SDK
+supabase>=2.3.0
 
-# HTTP client dependencies (fix compatibility issues)
-httpx==0.24.1
-httpcore==0.18.0
-h11==0.14.0
+# Network libs (let pip resolve versions to avoid conflicts)
+# httpx
+# httpcore
 
 # Additional utilities
 python-dotenv==1.0.0
@@ -36,3 +34,6 @@ python-dotenv==1.0.0
 google-genai>=0.1.0
 # Option 2: Legacy API (fallback)
 google-generativeai>=0.3.2
+
+# Google OAuth token verification
+google-auth==2.36.0

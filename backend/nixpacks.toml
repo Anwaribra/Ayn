@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python3", "nodejs", "git", "gcc", "openssl", "libatomic", "libgcc"]
+nixPkgs = ["python3", "nodejs", "git", "gcc", "openssl", "libatomic_ops"]
 
 [phases.build]
 cmds = ["pip install -r requirements.txt", "python -m prisma generate"]

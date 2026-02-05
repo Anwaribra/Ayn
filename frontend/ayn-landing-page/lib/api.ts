@@ -77,7 +77,7 @@ class ApiClient {
       user: import("./types").User
       access_token: string
       token_type: string
-    }>("/auth/supabase-sync/", {
+    }>("/auth/supabase-sync", {
       method: "POST",
       body: JSON.stringify({ access_token: supabaseToken }),
     })

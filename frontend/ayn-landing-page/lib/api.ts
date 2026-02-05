@@ -17,12 +17,13 @@ class ApiClient {
     }
 
     if (token) {
-      ;(headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
+      ; (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      mode: "cors",
     })
 
     if (!response.ok) {
@@ -67,6 +68,20 @@ class ApiClient {
     return response
   }
 
+  async syncWithSupabase(supabaseToken: string) {
+    const response = await this.request<{
+      user: import("./types").User
+      access_token: string
+      token_type: string
+    }>("/auth/supabase-sync", {
+      method: "POST",
+      body: JSON.stringify({ access_token: supabaseToken }),
+    })
+    localStorage.setItem("access_token", response.access_token)
+    localStorage.setItem("user", JSON.stringify(response.user))
+    return response
+  }
+
   async register(data: {
     name: string
     email: string
@@ -88,7 +103,7 @@ class ApiClient {
   }
 
   async logout() {
-    await this.request("/auth/logout", { method: "POST" }).catch(() => {})
+    await this.request("/auth/logout", { method: "POST" }).catch(() => { })
     localStorage.removeItem("access_token")
     localStorage.removeItem("user")
   }

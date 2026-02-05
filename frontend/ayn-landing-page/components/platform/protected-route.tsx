@@ -16,15 +16,22 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/platform/login")
-    }
-
-    if (!isLoading && isAuthenticated && allowedRoles && user) {
-      if (!allowedRoles.includes(user.role)) {
-        router.push("/platform/dashboard")
+    // Add small delay to ensure AuthContext has loaded user from localStorage
+    const timer = setTimeout(() => {
+      if (!isLoading && !isAuthenticated) {
+        console.log('[ProtectedRoute] Redirecting to login - no user found')
+        router.push("/platform/login")
       }
-    }
+
+      if (!isLoading && isAuthenticated && allowedRoles && user) {
+        if (!allowedRoles.includes(user.role)) {
+          console.log('[ProtectedRoute] Redirecting to dashboard - insufficient permissions')
+          router.push("/platform/dashboard")
+        }
+      }
+    }, 100) // Small delay to let AuthContext load
+
+    return () => clearTimeout(timer)
   }, [isLoading, isAuthenticated, user, allowedRoles, router])
 
   if (isLoading) {

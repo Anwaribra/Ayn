@@ -46,9 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .catch((error) => {
           console.error('[AuthContext] Token verification failed:', error)
-          localStorage.removeItem("user")
-          localStorage.removeItem("access_token")
-          setUser(null)
+          // Don't auto-logout - keep the user logged in with cached data
+          // localStorage.removeItem("user")
+          // localStorage.removeItem("access_token")
+          // setUser(null)
         })
         .finally(() => setIsLoading(false))
     } else {

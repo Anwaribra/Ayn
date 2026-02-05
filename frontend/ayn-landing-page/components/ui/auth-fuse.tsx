@@ -334,72 +334,39 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    // No longer using Supabase OAuth, so no session check needed
     React.useEffect(() => {
-        const checkSession = async () => {
-            console.log('[Auth] Checking for Supabase session...');
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('[Auth] Auth component mounted');
+    }, []);
 
-            if (sessionError) {
-                console.error('[Auth] Session error:', sessionError);
-                setError(sessionError.message);
-                return;
-            }
-
-            if (session?.access_token) {
-                console.log('[Auth] Supabase session found, syncing with backend...');
-                setIsLoading(true);
-                try {
-                    const response = await api.syncWithSupabase(session.access_token);
-                    console.log('[Auth] Sync successful:', response);
-
-                    // Clear the session from Supabase so it doesn't trigger again
-                    await supabase.auth.signOut();
-                    console.log('[Auth] Supabase session cleared, redirecting to dashboard...');
-
-                    // Use window.location to force page reload and context update
-                    window.location.href = "/platform/dashboard";
-                } catch (err) {
-                    console.error("[Auth] Supabase sync error:", err);
-                    setError(err instanceof Error ? err.message : "Authentication failed");
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                console.log('[Auth] No active Supabase session');
-            }
-        };
-        checkSession();
-    }, [router]);
 
     const handleGoogleSignIn = async () => {
         setError(null);
         setIsLoading(true);
-        console.log('[Auth] Starting Google Sign-In...');
+        console.log('[Auth] Starting Direct Google Sign-In...');
 
         try {
-            const redirectUrl = typeof window !== 'undefined'
-                ? `${window.location.origin}/platform/login`
-                : '';
-            console.log('[Auth] Redirect URL:', redirectUrl);
+            // Load Google Identity Services
+            const { loadGoogleScript, getGoogleIdToken } = await import('@/lib/google-auth');
 
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: redirectUrl,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    }
-                }
-            });
+            console.log('[Auth] Loading Google Identity Services...');
+            await loadGoogleScript();
 
-            if (error) {
-                console.error('[Auth] Google Sign-In error:', error);
-                throw error;
+            console.log('[Auth] Getting Google ID Token...');
+            const idToken = await getGoogleIdToken();
+
+            if (!idToken) {
+                throw new Error('Failed to get Google ID token');
             }
 
-            console.log('[Auth] Google Sign-In initiated successfully:', data);
-            // Redirect happens automatically
+            console.log('[Auth] Got Google ID Token, logging in with backend...');
+
+            // Login with backend using Google ID token
+            const response = await api.loginWithGoogle(idToken);
+            console.log('[Auth] Google login successful:', response.user.email);
+
+            // Redirect to dashboard
+            window.location.href = "/platform/dashboard";
         } catch (err) {
             console.error('[Auth] Google Sign-In failed:', err);
             setError(err instanceof Error ? err.message : "Google sign-in failed");

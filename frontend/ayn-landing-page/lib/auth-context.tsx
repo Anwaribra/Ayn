@@ -26,25 +26,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // Load user synchronously from localStorage first
     const storedUser = localStorage.getItem("user")
     const token = localStorage.getItem("access_token")
 
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser))
-      // Verify token is still valid
+      // Set user immediately to prevent redirect
+      const parsedUser = JSON.parse(storedUser)
+      setUser(parsedUser)
+      console.log('[AuthContext] User loaded from localStorage:', parsedUser.email)
+
+      // Then verify token is still valid in the background
       api
         .getCurrentUser()
         .then((freshUser) => {
           setUser(freshUser)
           localStorage.setItem("user", JSON.stringify(freshUser))
+          console.log('[AuthContext] User verified with backend:', freshUser.email)
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('[AuthContext] Token verification failed:', error)
           localStorage.removeItem("user")
           localStorage.removeItem("access_token")
           setUser(null)
         })
         .finally(() => setIsLoading(false))
     } else {
+      console.log('[AuthContext] No user in localStorage')
       setIsLoading(false)
     }
   }, [])

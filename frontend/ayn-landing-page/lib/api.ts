@@ -20,7 +20,10 @@ class ApiClient {
       ; (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] ${options.method || 'GET'} ${fullUrl}`);
+
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
       mode: "cors",
@@ -73,7 +76,7 @@ class ApiClient {
       user: import("./types").User
       access_token: string
       token_type: string
-    }>("/auth/supabase-sync", {
+    }>("/auth/supabase-sync/", {
       method: "POST",
       body: JSON.stringify({ access_token: supabaseToken }),
     })

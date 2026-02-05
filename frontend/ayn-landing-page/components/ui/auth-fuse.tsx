@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AynLogo } from "@/components/ayn-logo";
 import { getGoogleIdToken } from "@/lib/google-auth";
+import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
 
@@ -333,16 +334,41 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    React.useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+                setIsLoading(true);
+                try {
+                    await api.syncWithSupabase(session.access_token);
+                    // Clear the session from Supabase so it doesn't trigger again
+                    await supabase.auth.signOut();
+                    router.push("/platform/dashboard");
+                } catch (err) {
+                    console.error("Supabase sync error:", err);
+                    setError(err instanceof Error ? err.message : "Authentication failed");
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        checkSession();
+    }, [router]);
+
     const handleGoogleSignIn = async () => {
         setError(null);
         setIsLoading(true);
         try {
-            const idToken = await getGoogleIdToken();
-            await api.loginWithGoogle(idToken);
-            router.push("/platform/dashboard");
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin,
+                }
+            });
+            if (error) throw error;
+            // Redirect happens automatically
         } catch (err) {
             setError(err instanceof Error ? err.message : "Google sign-in failed");
-        } finally {
             setIsLoading(false);
         }
     };

@@ -8,6 +8,7 @@
 .env.development
 .env.test
 .env.production
+client_secret_*.json
 
 # Documentation files
 *.docx

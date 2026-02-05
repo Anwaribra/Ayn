@@ -48,7 +48,7 @@ class Settings(BaseSettings):
         # Split and clean origins
         origins = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
         # Ensure common localhost variants are included
-        defaults = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
+        defaults = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3004", "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:3004"]
         for d in defaults:
             if d not in origins:
                 origins.append(d)

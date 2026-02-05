@@ -72,6 +72,7 @@ class ApiClient {
   }
 
   async syncWithSupabase(supabaseToken: string) {
+    console.log('[API] Syncing with Supabase...');
     const response = await this.request<{
       user: import("./types").User
       access_token: string
@@ -80,8 +81,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ access_token: supabaseToken }),
     })
+    console.log('[API] Supabase sync successful, storing tokens...');
     localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
+    console.log('[API] User logged in:', response.user.email);
     return response
   }
 

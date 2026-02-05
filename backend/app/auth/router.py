@@ -6,12 +6,15 @@ from app.auth.models import (
     RegisterRequest,
     LoginRequest,
     GoogleLoginRequest,
+    SupabaseLoginRequest,
     AuthResponse,
     UserResponse,
     LogoutResponse,
 )
 from app.core.middlewares import get_current_user
 from app.auth.google_utils import verify_google_id_token
+from app.core.config import settings
+from supabase import create_client, Client
 import logging
 
 logger = logging.getLogger(__name__)
@@ -185,6 +188,90 @@ async def login_with_google(request: GoogleLoginRequest):
 
     # Create access token
     access_token = create_access_token(data={"sub": user.id, "role": user.role})
+
+    return AuthResponse(
+        user=UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            institutionId=user.institutionId,
+            createdAt=user.createdAt
+        ),
+        access_token=access_token
+    )
+
+
+@router.post("/supabase-sync", response_model=AuthResponse)
+async def login_with_supabase(request: SupabaseLoginRequest):
+    """
+    Verify a Supabase access token and return a local access token.
+    Used for Google login via Supabase.
+    """
+    logger.info("[Supabase Sync] Starting Supabase token verification...")
+    db = get_db()
+    
+    # Initialize Supabase client
+    try:
+        # Use Service Key for backend verification as it's more reliable
+        key = settings.SUPABASE_SERVICE_KEY or settings.SUPABASE_KEY
+        logger.info(f"[Supabase Sync] Using {'SERVICE_KEY' if settings.SUPABASE_SERVICE_KEY else 'ANON_KEY'}")
+        supabase: Client = create_client(settings.SUPABASE_URL, key)
+        
+        # Verify the token by calling auth.get_user()
+        logger.info("[Supabase Sync] Verifying token with Supabase...")
+        res = supabase.auth.get_user(request.access_token)
+        if not res or not res.user:
+            logger.error("[Supabase Sync] Invalid token - no user returned")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Supabase token"
+            )
+        
+        supabase_user = res.user
+        email = supabase_user.email
+        name = supabase_user.user_metadata.get("full_name") or email
+        logger.info(f"[Supabase Sync] Token verified for user: {email}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Supabase Sync] Verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Failed to verify Supabase token: {str(e)}"
+        )
+
+    # Find existing user or create a new one
+    logger.info(f"[Supabase Sync] Looking for existing user with email: {email}")
+    user = await db.user.find_unique(where={"email": email})
+
+    if not user:
+        logger.info(f"[Supabase Sync] User not found, creating new user...")
+        # Create a placeholder password
+        placeholder_password = get_password_hash("supabase-oauth-user")
+
+        try:
+            user = await db.user.create(
+                data={
+                    "name": name,
+                    "email": email,
+                    "password": placeholder_password,
+                    "role": "TEACHER",  # Default role
+                }
+            )
+            logger.info(f"[Supabase Sync] User created successfully: {user.id}")
+        except Exception as e:
+            logger.error(f"[Supabase Sync] Error creating user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user from Supabase account.",
+            )
+    else:
+        logger.info(f"[Supabase Sync] Existing user found: {user.id}")
+
+    # Create local access token
+    access_token = create_access_token(data={"sub": user.id, "role": user.role})
+    logger.info(f"[Supabase Sync] Access token created for user: {user.id}")
 
     return AuthResponse(
         user=UserResponse(

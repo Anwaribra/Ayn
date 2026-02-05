@@ -44,6 +44,11 @@ class GoogleLoginRequest(BaseModel):
     id_token: str = Field(..., description="Google ID token returned from Google Identity Services")
 
 
+class SupabaseLoginRequest(BaseModel):
+    """Supabase access token login request."""
+    access_token: str = Field(..., description="Supabase access token (JWT)")
+
+
 # Response Models
 class UserResponse(BaseModel):
     """User information response."""

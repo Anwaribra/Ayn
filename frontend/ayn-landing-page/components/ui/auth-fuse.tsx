@@ -336,20 +336,35 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     React.useEffect(() => {
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            console.log('[Auth] Checking for Supabase session...');
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                console.error('[Auth] Session error:', sessionError);
+                setError(sessionError.message);
+                return;
+            }
+
             if (session?.access_token) {
+                console.log('[Auth] Supabase session found, syncing with backend...');
                 setIsLoading(true);
                 try {
-                    await api.syncWithSupabase(session.access_token);
+                    const response = await api.syncWithSupabase(session.access_token);
+                    console.log('[Auth] Sync successful:', response);
+
                     // Clear the session from Supabase so it doesn't trigger again
                     await supabase.auth.signOut();
+                    console.log('[Auth] Supabase session cleared, redirecting to dashboard...');
+
                     router.push("/platform/dashboard");
                 } catch (err) {
-                    console.error("Supabase sync error:", err);
+                    console.error("[Auth] Supabase sync error:", err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
                 } finally {
                     setIsLoading(false);
                 }
+            } else {
+                console.log('[Auth] No active Supabase session');
             }
         };
         checkSession();
@@ -358,16 +373,32 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const handleGoogleSignIn = async () => {
         setError(null);
         setIsLoading(true);
+        console.log('[Auth] Starting Google Sign-In...');
+
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const redirectUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            console.log('[Auth] Redirect URL:', redirectUrl);
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin,
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    }
                 }
             });
-            if (error) throw error;
+
+            if (error) {
+                console.error('[Auth] Google Sign-In error:', error);
+                throw error;
+            }
+
+            console.log('[Auth] Google Sign-In initiated successfully:', data);
             // Redirect happens automatically
         } catch (err) {
+            console.error('[Auth] Google Sign-In failed:', err);
             setError(err instanceof Error ? err.message : "Google sign-in failed");
             setIsLoading(false);
         }

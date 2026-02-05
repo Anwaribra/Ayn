@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Shield, Brain, FileCheck, BarChart3, Zap, Users, ArrowLeft, Sparkles } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Button } from "./button";
-import { Input } from "./input";
-import { Label } from "./label";
-import { AynLogo } from "../ayn-logo";
-import { getGoogleIdToken } from "../../lib/google-auth";
-import { supabase } from "../../lib/supabase";
-import { api } from "../../lib/api";
-import RadialOrbitalTimeline from "./radial-orbital-timeline";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AynLogo } from "@/components/ayn-logo";
+import { getGoogleIdToken } from "@/lib/google-auth";
+import { supabase } from "@/lib/supabase";
+import { api } from "@/lib/api";
+import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
 
 // Password Input with visibility toggle
 export interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {

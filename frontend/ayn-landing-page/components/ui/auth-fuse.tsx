@@ -356,7 +356,8 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     await supabase.auth.signOut();
                     console.log('[Auth] Supabase session cleared, redirecting to dashboard...');
 
-                    router.push("/platform/dashboard");
+                    // Use window.location to force page reload and context update
+                    window.location.href = "/platform/dashboard";
                 } catch (err) {
                     console.error("[Auth] Supabase sync error:", err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
@@ -410,8 +411,14 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setError(null);
         setIsLoading(true);
         try {
-            await api.login(email, password);
-            router.push("/platform/dashboard");
+            // Use AuthContext login to update user state
+            const response = await api.login(email, password);
+            console.log('[Auth] Email login successful:', response.user.email);
+            // Manually update localStorage since we're not using context here
+            localStorage.setItem("access_token", response.access_token);
+            localStorage.setItem("user", JSON.stringify(response.user));
+            // Use window.location to force page reload and context update
+            window.location.href = "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed - Connection Error");
         } finally {
@@ -423,8 +430,14 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setError(null);
         setIsLoading(true);
         try {
-            await api.register({ name, email, password, role: "TEACHER" });
-            router.push("/platform/dashboard");
+            // Use AuthContext register to update user state
+            const response = await api.register({ name, email, password, role: "TEACHER" });
+            console.log('[Auth] Email signup successful:', response.user.email);
+            // Manually update localStorage since we're not using context here
+            localStorage.setItem("access_token", response.access_token);
+            localStorage.setItem("user", JSON.stringify(response.user));
+            // Use window.location to force page reload and context update
+            window.location.href = "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Signup failed - Connection Error");
         } finally {

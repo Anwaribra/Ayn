@@ -376,7 +376,9 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         console.log('[Auth] Starting Google Sign-In...');
 
         try {
-            const redirectUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            const redirectUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}/platform/login`
+                : '';
             console.log('[Auth] Redirect URL:', redirectUrl);
 
             const { data, error } = await supabase.auth.signInWithOAuth({

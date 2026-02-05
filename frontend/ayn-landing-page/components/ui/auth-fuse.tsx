@@ -334,39 +334,63 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    // No longer using Supabase OAuth, so no session check needed
+    // Listen for Supabase auth state changes (handles OAuth redirects)
     React.useEffect(() => {
-        console.log('[Auth] Auth component mounted');
+        let hasProcessed = false; // Prevent multiple syncs
+
+        console.log('[Auth] Setting up auth state listener...');
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[Auth] Auth state changed:', event, session?.user?.email);
+
+            if (event === 'SIGNED_IN' && session?.access_token && !hasProcessed) {
+                hasProcessed = true; // Mark as processed
+                console.log('[Auth] User signed in via OAuth, syncing with backend...');
+                setIsLoading(true);
+                setError(null);
+
+                try {
+                    await api.syncWithSupabase(session.access_token);
+                    console.log('[Auth] Sync successful, clearing Supabase session...');
+                    await supabase.auth.signOut();
+                    console.log('[Auth] Redirecting to dashboard...');
+                    window.location.href = "/platform/dashboard";
+                } catch (err) {
+                    console.error('[Auth] Sync failed:', err);
+                    setError(err instanceof Error ? err.message : "Authentication failed");
+                    setIsLoading(false);
+                    hasProcessed = false; // Allow retry on error
+                }
+            }
+        });
+
+        return () => {
+            console.log('[Auth] Cleaning up auth state listener');
+            subscription.unsubscribe();
+        };
     }, []);
 
 
     const handleGoogleSignIn = async () => {
         setError(null);
         setIsLoading(true);
-        console.log('[Auth] Starting Direct Google Sign-In...');
+        console.log('[Auth] Starting Supabase Google OAuth...');
 
         try {
-            // Load Google Identity Services
-            const { loadGoogleScript, getGoogleIdToken } = await import('@/lib/google-auth');
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/login`,
+                }
+            });
 
-            console.log('[Auth] Loading Google Identity Services...');
-            await loadGoogleScript();
-
-            console.log('[Auth] Getting Google ID Token...');
-            const idToken = await getGoogleIdToken();
-
-            if (!idToken) {
-                throw new Error('Failed to get Google ID token');
+            if (error) {
+                console.error('[Auth] Supabase OAuth error:', error);
+                throw error;
             }
 
-            console.log('[Auth] Got Google ID Token, logging in with backend...');
-
-            // Login with backend using Google ID token
-            const response = await api.loginWithGoogle(idToken);
-            console.log('[Auth] Google login successful:', response.user.email);
-
-            // Redirect to dashboard
-            window.location.href = "/platform/dashboard";
+            console.log('[Auth] Redirecting to Google...');
+            // Supabase will handle the redirect automatically
         } catch (err) {
             console.error('[Auth] Google Sign-In failed:', err);
             setError(err instanceof Error ? err.message : "Google sign-in failed");

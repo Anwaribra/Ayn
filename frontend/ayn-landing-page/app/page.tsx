@@ -29,6 +29,9 @@ import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useTheme } from "@/lib/theme-context"
 import Safari_01 from "@/components/ui/safari-01"
 import { Lock } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { api } from "@/lib/api"
+
 
 // ============================================
 // ANIMATION UTILITIES
@@ -587,6 +590,31 @@ export default function Home() {
 
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
+
+  // Check for Supabase session (OAuth redirect handling)
+  useEffect(() => {
+    const checkSession = async () => {
+      console.log('[Home] Checking for Supabase session...')
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session?.access_token) {
+        console.log('[Home] Found Supabase session, syncing with backend...')
+        try {
+          await api.syncWithSupabase(session.access_token)
+          console.log('[Home] Sync successful, clearing Supabase session...')
+          await supabase.auth.signOut()
+          console.log('[Home] Redirecting to dashboard...')
+          window.location.href = "/platform/dashboard"
+        } catch (err) {
+          console.error('[Home] Sync failed:', err)
+        }
+      } else {
+        console.log('[Home] No Supabase session found')
+      }
+    }
+
+    checkSession()
+  }, [])
 
   const scrollToFeatures = () => {
     document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })

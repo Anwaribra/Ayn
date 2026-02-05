@@ -8,7 +8,7 @@ declare global {
 
 let googleScriptPromise: Promise<void> | null = null
 
-function loadGoogleScript(): Promise<void> {
+export function loadGoogleScript(): Promise<void> {
   if (googleScriptPromise) return googleScriptPromise
 
   googleScriptPromise = new Promise((resolve, reject) => {

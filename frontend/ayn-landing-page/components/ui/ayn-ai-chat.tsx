@@ -11,7 +11,6 @@ import {
   MessageSquare,
   ArrowUpIcon,
   Paperclip,
-  Sparkles,
   CircleUserRound,
   ImageIcon,
   BookOpen,
@@ -130,29 +129,25 @@ export default function AynAIChat() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col min-h-[calc(100vh-12rem)]">
-      {/* Card container: same visual language as Dashboard / Assessments */}
-      <div className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
-        {/* Header: same hierarchy as other platform pages */}
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold text-foreground">
+    <div className="relative w-full min-h-screen flex flex-col bg-background overflow-hidden">
+      {/* Soft blue glow from bottom (Ayn primary blue, same shape as reference) */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-gradient-to-t from-primary/15 via-primary/5 to-transparent"
+        aria-hidden
+      />
+      {/* Centered title when no messages */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center pt-8 pb-[20vh]">
+        <div className="text-center px-4">
+          <h1 className="text-4xl font-semibold text-foreground drop-shadow-sm">
             Horus AI
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Ask about your certificate or documents — type below.
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Build something amazing — just start typing below.
           </p>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[160px] max-h-[45vh]">
-          {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Sparkles className="w-10 h-10 text-muted-foreground/60 mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Ask anything about your uploaded certificate or documents.
-              </p>
-            </div>
-          )}
+        {/* Messages list (scrollable when there are messages) */}
+        <div className="w-full max-w-3xl mx-auto flex-1 overflow-y-auto px-4 mt-6 space-y-4 min-h-0">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -166,7 +161,7 @@ export default function AynAIChat() {
                   "max-w-[85%] rounded-xl px-4 py-3 text-sm",
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 border border-border text-foreground"
+                    : "bg-card/80 border border-border text-foreground backdrop-blur-sm"
                 )}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -175,23 +170,31 @@ export default function AynAIChat() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="rounded-xl px-4 py-3 bg-muted/50 border border-border text-muted-foreground text-sm">
+              <div className="rounded-xl px-4 py-3 bg-card/80 border border-border text-muted-foreground text-sm backdrop-blur-sm">
                 <span className="animate-pulse">Thinking...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
+      </div>
 
-        {/* Input: same style as platform inputs */}
-        <form onSubmit={handleSubmit}>
-          <div className="rounded-xl border border-border bg-background/50">
+      {/* Fixed input section at bottom (same shape as reference) */}
+      <div className="w-full flex flex-col items-center pb-8 pt-4 px-4">
+        <div className="w-full max-w-3xl">
+          <div className="relative rounded-xl border border-border bg-card/80 dark:bg-card/90 backdrop-blur-md shadow-lg">
             <Textarea
               ref={textareaRef}
               value={message}
               onChange={(e) => {
                 setMessage(e.target.value)
                 adjustHeight()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  sendMessage(message)
+                }
               }}
               placeholder="Type your request..."
               className={cn(
@@ -203,7 +206,7 @@ export default function AynAIChat() {
               rows={1}
               disabled={isLoading}
             />
-            <div className="flex items-center justify-between px-3 pb-3">
+            <div className="flex items-center justify-between p-3 border-t border-border/50">
               <Button
                 type="button"
                 variant="ghost"
@@ -214,13 +217,14 @@ export default function AynAIChat() {
                 <Paperclip className="w-4 h-4" />
               </Button>
               <Button
-                type="submit"
+                type="button"
+                onClick={() => sendMessage(message)}
                 disabled={!message.trim() || isLoading}
-                size="sm"
                 className={cn(
+                  "flex items-center gap-1 px-3 py-2 rounded-lg transition-colors",
                   message.trim() && !isLoading
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "opacity-60 cursor-not-allowed"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >
                 <ArrowUpIcon className="w-4 h-4" />
@@ -228,23 +232,22 @@ export default function AynAIChat() {
               </Button>
             </div>
           </div>
-        </form>
 
-        {/* Quick Actions: same as platform buttons */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          {QUICK_ACTIONS.map((action) => (
-            <Button
-              key={action.label}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 rounded-lg border-border bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent text-xs"
-              onClick={() => handleQuickAction(action.prompt)}
-            >
-              <action.icon className="w-3.5 h-3.5 shrink-0" />
-              <span>{action.label}</span>
-            </Button>
-          ))}
+          {/* Quick Actions - same shape as reference (rounded pills) */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+            {QUICK_ACTIONS.map((action) => (
+              <Button
+                key={action.label}
+                type="button"
+                variant="outline"
+                className="flex items-center gap-2 rounded-full border-border bg-card/50 dark:bg-card/80 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-xs backdrop-blur-sm"
+                onClick={() => handleQuickAction(action.prompt)}
+              >
+                <action.icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{action.label}</span>
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

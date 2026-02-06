@@ -25,6 +25,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { useState } from "react"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 const navItems: { href: string; label: string; icon: typeof Sparkles; roles: string[] }[] = [
   { href: "/platform/ai-tools", label: "Horus AI", icon: Sparkles, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
@@ -123,7 +124,11 @@ function PlatformSidebarContent() {
         </nav>
       </div>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-3">
+        <div className="flex items-center gap-2">
+          <ThemeToggle variant="icon" className="shrink-0" />
+          {open && <span className="text-sm text-muted-foreground">Dark / Light</span>}
+        </div>
         {user && open && (
           <div className="mb-3 px-3">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>

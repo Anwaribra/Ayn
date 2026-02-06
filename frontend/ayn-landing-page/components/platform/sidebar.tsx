@@ -28,13 +28,13 @@ import { useState } from "react"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 const navItems: { href: string; label: string; icon: typeof Sparkles; roles: string[] }[] = [
-  { href: "/platform/ai-tools", label: "Horus AI", icon: Sparkles, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: ["ADMIN"] },
-  { href: "/platform/standards", label: "Standards", icon: FileCheck, roles: ["ADMIN"] },
-  { href: "/platform/assessments", label: "Assessments", icon: ClipboardList, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/evidence", label: "Evidence", icon: FileText, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/ai-tools", label: "Horus AI", icon: Sparkles, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: ["ADMIN", "INSTITUTION_ADMIN"] },
+  { href: "/platform/standards", label: "Standards", icon: FileCheck, roles: ["ADMIN", "INSTITUTION_ADMIN"] },
+  { href: "/platform/assessments", label: "Assessments", icon: ClipboardList, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/evidence", label: "Evidence", icon: FileText, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
 ]
 
 const adminItems: { href: string; label: string; icon: typeof Settings; roles: string[] }[] = [

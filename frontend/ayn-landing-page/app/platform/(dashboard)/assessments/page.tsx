@@ -12,6 +12,8 @@ import Link from "next/link"
 import { useState } from "react"
 import type { Assessment, AssessmentStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/platform/status-badge"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AssessmentsPage() {
   const { user } = useAuth()
@@ -19,9 +21,14 @@ export default function AssessmentsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<AssessmentStatus | "ALL">("ALL")
 
+  const searchLower = search.trim().toLowerCase()
   const filteredAssessments = assessments?.filter((assessment: Assessment) => {
     const matchesStatus = statusFilter === "ALL" || assessment.status === statusFilter
-    return matchesStatus
+    const matchesSearch =
+      !searchLower ||
+      assessment.id.toLowerCase().includes(searchLower) ||
+      new Date(assessment.createdAt).toLocaleDateString().toLowerCase().includes(searchLower)
+    return matchesStatus && matchesSearch
   })
 
   const canCreate = user?.role === "ADMIN" || user?.role === "INSTITUTION_ADMIN" || user?.role === "TEACHER"
@@ -77,33 +84,37 @@ export default function AssessmentsPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="h-5 bg-muted rounded w-48" />
-                    <div className="h-4 bg-muted rounded w-32" />
-                  </div>
-                  <div className="h-6 bg-muted rounded w-20" />
+              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
                 </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
             ))}
           </div>
         ) : filteredAssessments?.length === 0 ? (
-          <div className="text-center py-16 bg-card/50 border border-border rounded-xl">
-            <ClipboardList className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No assessments found</h3>
-            <p className="text-muted-foreground mb-4">
-              {statusFilter !== "ALL" ? "Try adjusting your filters" : "Get started by creating your first assessment"}
-            </p>
-            {canCreate && statusFilter === "ALL" && (
-              <Link href="/platform/assessments/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Assessment
-                </Button>
-              </Link>
-            )}
-          </div>
+          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <ClipboardList className="size-6 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No assessments found</EmptyTitle>
+              <EmptyDescription>
+                {statusFilter !== "ALL" ? "Try adjusting your filters" : "Get started by creating your first assessment"}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              {canCreate && statusFilter === "ALL" && (
+                <Link href="/platform/assessments/new">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Assessment
+                  </Button>
+                </Link>
+              )}
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="space-y-4">
             {filteredAssessments?.map((assessment: Assessment) => (

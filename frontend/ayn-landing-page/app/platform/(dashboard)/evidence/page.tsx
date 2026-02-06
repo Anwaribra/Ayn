@@ -8,23 +8,45 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { Evidence } from "@/lib/types"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function EvidencePage() {
   const { data: evidence, isLoading, mutate } = useSWR("evidence", () => api.getEvidence())
   const [search, setSearch] = useState("")
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredEvidence = evidence?.filter((item: Evidence) =>
     item.fileUrl.toLowerCase().includes(search.toLowerCase()),
   )
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this evidence?")) return
+  const handleDeleteClick = (id: string) => setDeleteId(id)
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteId) return
+    setIsDeleting(true)
     try {
-      await api.deleteEvidence(id)
+      await api.deleteEvidence(deleteId)
       mutate()
+      toast.success("Evidence deleted")
+      setDeleteId(null)
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Failed to delete evidence")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -73,29 +95,35 @@ export default function EvidencePage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
-                <div className="h-12 bg-muted rounded w-12 mb-4" />
-                <div className="h-5 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-4 bg-muted rounded w-1/2" />
+              <div key={i} className="bg-card/50 border border-border rounded-xl p-6">
+                <Skeleton className="h-12 w-12 rounded-lg mb-4" />
+                <Skeleton className="h-5 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             ))}
           </div>
         ) : filteredEvidence?.length === 0 ? (
-          <div className="text-center py-16 bg-card/50 border border-border rounded-xl">
-            <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No evidence found</h3>
-            <p className="text-muted-foreground mb-4">
-              {search ? "Try adjusting your search" : "Get started by uploading your first evidence file"}
-            </p>
-            {!search && (
-              <Link href="/platform/evidence/upload">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Upload Evidence
-                </Button>
-              </Link>
-            )}
-          </div>
+          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileText className="size-6 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No evidence found</EmptyTitle>
+              <EmptyDescription>
+                {search ? "Try adjusting your search" : "Get started by uploading your first evidence file"}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              {!search && (
+                <Link href="/platform/evidence/upload">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Upload Evidence
+                  </Button>
+                </Link>
+              )}
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredEvidence?.map((item: Evidence) => (
@@ -133,7 +161,7 @@ export default function EvidencePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => handleDeleteClick(item.id)}
                     className="text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -144,6 +172,30 @@ export default function EvidencePage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete evidence?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The file will be removed from your evidence list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDeleteConfirm()
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

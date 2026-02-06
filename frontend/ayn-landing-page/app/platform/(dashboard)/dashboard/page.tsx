@@ -8,6 +8,7 @@ import useSWR from "swr"
 import { CheckCircle2, FileText, TrendingUp, ClipboardList, ArrowRight, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -184,22 +185,23 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-          <div className="text-center py-12 text-muted-foreground">
-            <div className="relative inline-block mb-4">
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-500/20 to-transparent rounded-full blur-xl" />
-              <div className="relative p-4 bg-muted/30 rounded-2xl border border-border/50">
-                <ClipboardList className="w-10 h-10 opacity-60" />
-              </div>
-            </div>
-            <p className="text-sm mb-1">No recent activity yet</p>
-            <p className="text-xs text-muted-foreground/70 mb-4">Start an assessment to see your progress here</p>
-            <Link href="/platform/assessments/new">
-              <Button size="sm" variant="outline" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Start Assessment
-              </Button>
-            </Link>
-          </div>
+          <Empty className="py-12 border-0">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <ClipboardList className="size-6 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No recent activity yet</EmptyTitle>
+              <EmptyDescription>Start an assessment to see your progress here</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Link href="/platform/assessments/new">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Start Assessment
+                </Button>
+              </Link>
+            </EmptyContent>
+          </Empty>
         </div>
       </div>
     </div>

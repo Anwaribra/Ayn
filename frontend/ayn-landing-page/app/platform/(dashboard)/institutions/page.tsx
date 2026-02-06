@@ -11,11 +11,13 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useState } from "react"
 import type { Institution } from "@/lib/types"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function InstitutionsPage() {
   const { user } = useAuth()
   return (
-    <ProtectedRoute allowedRoles={["ADMIN"]}>
+    <ProtectedRoute allowedRoles={["ADMIN", "INSTITUTION_ADMIN"]}>
       <InstitutionsPageContent user={user} />
     </ProtectedRoute>
   )
@@ -29,7 +31,7 @@ function InstitutionsPageContent({ user }: { user: { role?: string } | null }) {
     inst.name.toLowerCase().includes(search.toLowerCase()),
   )
 
-  const isAdmin = user?.role === "ADMIN"
+  const canManage = user?.role === "ADMIN" || user?.role === "INSTITUTION_ADMIN"
 
   return (
     <div className="min-h-screen">
@@ -54,7 +56,7 @@ function InstitutionsPageContent({ user }: { user: { role?: string } | null }) {
               className="pl-10 bg-background/50"
             />
           </div>
-          {isAdmin && (
+          {canManage && (
             <Link href="/platform/institutions/new">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -68,29 +70,35 @@ function InstitutionsPageContent({ user }: { user: { role?: string } | null }) {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
-                <div className="h-6 bg-muted rounded w-3/4 mb-4" />
-                <div className="h-4 bg-muted rounded w-full mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3" />
+              <div key={i} className="bg-card/50 border border-border rounded-xl p-6">
+                <Skeleton className="h-6 w-3/4 mb-4" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
             ))}
           </div>
         ) : filteredInstitutions?.length === 0 ? (
-          <div className="text-center py-16 bg-card/50 border border-border rounded-xl">
-            <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No institutions found</h3>
-            <p className="text-muted-foreground mb-4">
-              {search ? "Try adjusting your search" : "Get started by adding your first institution"}
-            </p>
-            {isAdmin && !search && (
-              <Link href="/platform/institutions/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Institution
-                </Button>
-              </Link>
-            )}
-          </div>
+          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Building2 className="size-6 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No institutions found</EmptyTitle>
+              <EmptyDescription>
+                {search ? "Try adjusting your search" : "Get started by adding your first institution"}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              {canManage && !search && (
+                <Link href="/platform/institutions/new">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Institution
+                  </Button>
+                </Link>
+              )}
+            </EmptyContent>
+          </Empty>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredInstitutions?.map((institution: Institution) => (

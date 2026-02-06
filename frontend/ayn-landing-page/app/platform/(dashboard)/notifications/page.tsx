@@ -3,9 +3,12 @@
 import { Header } from "@/components/platform/header"
 import { api } from "@/lib/api"
 import useSWR from "swr"
+import { toast } from "sonner"
 import { Bell, Check, CheckCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Notification } from "@/lib/types"
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function NotificationsPage() {
   const { data: notifications, isLoading, mutate } = useSWR("notifications", () => api.getNotifications())
@@ -15,7 +18,7 @@ export default function NotificationsPage() {
       await api.markNotificationAsRead(id)
       mutate()
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Failed to mark as read")
     }
   }
 
@@ -26,8 +29,9 @@ export default function NotificationsPage() {
         await api.markNotificationAsRead(notification.id)
       }
       mutate()
+      toast.success("All marked as read")
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Failed to mark all as read")
     }
   }
 
@@ -52,18 +56,22 @@ export default function NotificationsPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
-                <div className="h-5 bg-muted rounded w-1/3 mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3" />
+              <div key={i} className="bg-card/50 border border-border rounded-xl p-6">
+                <Skeleton className="h-5 w-1/3 mb-2" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
             ))}
           </div>
         ) : notifications?.length === 0 ? (
-          <div className="text-center py-16 bg-card/50 border border-border rounded-xl">
-            <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No notifications</h3>
-            <p className="text-muted-foreground">You're all caught up!</p>
-          </div>
+          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Bell className="size-6 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No notifications</EmptyTitle>
+              <EmptyDescription>You're all caught up!</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <div className="space-y-3">
             {notifications?.map((notification: Notification) => (

@@ -3,7 +3,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
+import logging
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # Use bcrypt directly to avoid passlib compatibility issues
 # bcrypt has a 72-byte limit, so we'll handle that
@@ -16,9 +19,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             plain_password.encode('utf-8'),
             hashed_password.encode('utf-8')
         )
-    except Exception as e:
-        # Log error for debugging
-        print(f"Password verification error: {e}")
+    except (ValueError, TypeError) as e:
+        logger.warning("Password verification failed: %s", type(e).__name__)
         return False
 
 

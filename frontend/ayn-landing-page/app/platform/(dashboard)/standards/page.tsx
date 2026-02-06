@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
@@ -13,6 +14,14 @@ import type { Standard } from "@/lib/types"
 
 export default function StandardsPage() {
   const { user } = useAuth()
+  return (
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <StandardsPageContent user={user} />
+    </ProtectedRoute>
+  )
+}
+
+function StandardsPageContent({ user }: { user: { role?: string } | null }) {
   const { data: standards, isLoading } = useSWR("standards", () => api.getStandards())
   const [search, setSearch] = useState("")
 
@@ -104,3 +113,4 @@ export default function StandardsPage() {
     </div>
   )
 }
+

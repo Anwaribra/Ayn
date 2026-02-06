@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
@@ -13,6 +14,14 @@ import type { Institution } from "@/lib/types"
 
 export default function InstitutionsPage() {
   const { user } = useAuth()
+  return (
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <InstitutionsPageContent user={user} />
+    </ProtectedRoute>
+  )
+}
+
+function InstitutionsPageContent({ user }: { user: { role?: string } | null }) {
   const { data: institutions, isLoading } = useSWR("institutions", () => api.getInstitutions())
   const [search, setSearch] = useState("")
 
@@ -110,3 +119,4 @@ export default function InstitutionsPage() {
     </div>
   )
 }
+

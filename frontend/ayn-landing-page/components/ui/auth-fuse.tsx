@@ -432,7 +432,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setIsLoading(true);
         try {
             // Use AuthContext register to update user state
-            const response = await api.register({ name, email, password, role: "TEACHER" });
+            const response = await api.register({ name, email, password });
             log('[Auth] Email signup successful:', response.user.email);
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);

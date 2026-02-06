@@ -3,9 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.core.db import connect_db, disconnect_db
+from app.core.rate_limit import limiter
 
 # Import routers
 from app.auth.router import router as auth_router
@@ -46,11 +50,14 @@ app = FastAPI(
     description="Educational Quality Assurance & Accreditation SaaS Platform",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
-# CORS middleware
+# CORS middleware (use settings in production; allow_origins from env CORS_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporarily allow all for debugging
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,8 +88,15 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy"}
+    """Health check endpoint; verifies DB connectivity."""
+    from app.core.db import get_db
+    try:
+        db = get_db()
+        await db.user.find_first()
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        logger.warning("Health check DB ping failed: %s", e)
+        return {"status": "degraded", "database": "disconnected"}
 
 
 if __name__ == "__main__":

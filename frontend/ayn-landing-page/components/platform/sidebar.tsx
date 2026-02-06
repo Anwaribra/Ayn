@@ -24,39 +24,15 @@ import {
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
+// Horus AI first; then Dashboard, Assessments, Evidence, Notifications. Only ADMIN sees Institutions and Standards.
 const navItems = [
-  {
-    href: "/platform/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
-  },
-  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: ["ADMIN", "INSTITUTION_ADMIN"] },
-  {
-    href: "/platform/standards",
-    label: "Standards",
-    icon: FileCheck,
-    roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
-  },
-  {
-    href: "/platform/assessments",
-    label: "Assessments",
-    icon: ClipboardList,
-    roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
-  },
-  {
-    href: "/platform/evidence",
-    label: "Evidence",
-    icon: FileText,
-    roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
-  },
-  {
-    href: "/platform/notifications",
-    label: "Notifications",
-    icon: Bell,
-    roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
-  },
-  { href: "/platform/ai-tools", label: "AI Tools", icon: Sparkles, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/ai-tools", label: "Horus AI", icon: Sparkles, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: ["ADMIN"] },
+  { href: "/platform/standards", label: "Standards", icon: FileCheck, roles: ["ADMIN"] },
+  { href: "/platform/assessments", label: "Assessments", icon: ClipboardList, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/evidence", label: "Evidence", icon: FileText, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
+  { href: "/platform/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "TEACHER", "AUDITOR"] },
 ]
 
 const adminItems = [
@@ -154,7 +130,7 @@ export function Sidebar() {
             <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-accent text-accent-foreground">
-              {user.role}
+              {user.role === "ADMIN" ? "Admin" : "User"}
             </span>
           </div>
         )}

@@ -62,19 +62,17 @@ async def create_assessment(
             )
     
     try:
-        # Note: standardId is not in the current schema, but we validate it exists
-        # In production, you might want to add standardId to Assessment model
         assessment = await db.assessment.create(
             data={
                 "institutionId": request.institutionId,
                 "userId": current_user["id"],
+                "standardId": request.standardId,
                 "status": "DRAFT",
             }
         )
         
         logger.info(f"User {current_user['email']} created assessment: {assessment.id}")
         
-        # Fetch with answers
         assessment_with_answers = await db.assessment.find_unique(
             where={"id": assessment.id},
             include={"answers": True}
@@ -90,6 +88,7 @@ async def create_assessment(
             submittedAt=getattr(assessment_with_answers, 'submittedAt', None),
             reviewedAt=getattr(assessment_with_answers, 'reviewedAt', None),
             reviewerComment=getattr(assessment_with_answers, 'reviewerComment', None),
+            standardId=getattr(assessment_with_answers, 'standardId', None),
             answers=[
                 AssessmentAnswerResponse(
                     id=ans.id,
@@ -101,8 +100,8 @@ async def create_assessment(
                 for ans in (assessment_with_answers.answers or [])
             ]
         )
-    except Exception as e:
-        logger.error(f"Error creating assessment: {e}")
+    except Exception:
+        logger.exception("Error creating assessment")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create assessment"
@@ -140,9 +139,8 @@ async def get_assessment(
                 detail="Access denied. You can only view assessments for your institution"
             )
     
-    # Derive standardId from first answer's criterion (assessment model has no standardId)
-    standard_id = None
-    if assessment.answers:
+    standard_id = getattr(assessment, 'standardId', None)
+    if standard_id is None and assessment.answers:
         first_answer = assessment.answers[0]
         if getattr(first_answer, "criterion", None) is not None:
             standard_id = first_answer.criterion.standardId
@@ -157,6 +155,7 @@ async def get_assessment(
         submittedAt=getattr(assessment, 'submittedAt', None),
         reviewedAt=getattr(assessment, 'reviewedAt', None),
         reviewerComment=getattr(assessment, 'reviewerComment', None),
+        standardId=standard_id,
         answers=[
             AssessmentAnswerResponse(
                 id=ans.id,
@@ -284,14 +283,12 @@ async def save_assessment_answers(
 @router.post("/{assessment_id}/submit", response_model=SubmitResponse)
 async def submit_assessment(
     assessment_id: str,
-    current_user: dict = Depends(require_roles(["ADMIN", "TEACHER"]))
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Submit assessment for review.
     
-    Changes status from DRAFT to SUBMITTED.
-    
-    **Teachers and Admins only** - Requires TEACHER or ADMIN role.
+    Changes status from DRAFT to SUBMITTED. Any authenticated user can submit their own assessment.
     """
     db = get_db()
     
@@ -302,19 +299,12 @@ async def submit_assessment(
             detail="Assessment not found"
         )
     
-    # Check access
-    if current_user["role"] != "ADMIN":
-        if current_user.get("institutionId") != assessment.institutionId:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
-            )
-        # Only the creator can submit
-        if assessment.userId != current_user["id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only submit your own assessments"
-            )
+    # Only the creator or admin can submit
+    if current_user["role"] != "ADMIN" and assessment.userId != current_user["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only submit your own assessments"
+        )
     
     # Only allow submission from DRAFT status
     if assessment.status != "DRAFT":
@@ -324,11 +314,11 @@ async def submit_assessment(
         )
     
     try:
-        # Note: submittedAt field doesn't exist in schema, only updating status
         updated_assessment = await db.assessment.update(
             where={"id": assessment_id},
             data={
-                "status": "SUBMITTED"
+                "status": "SUBMITTED",
+                "submittedAt": datetime.utcnow()
             }
         )
         
@@ -379,12 +369,12 @@ async def review_assessment(
         )
     
     try:
-        # Note: reviewedAt and reviewerComment fields don't exist in schema, only updating status
-        # In production, you might want to add these fields to the Assessment model
         updated_assessment = await db.assessment.update(
             where={"id": assessment_id},
             data={
-                "status": "REVIEWED"
+                "status": "REVIEWED",
+                "reviewedAt": datetime.utcnow(),
+                "reviewerComment": request.reviewerComment
             }
         )
         
@@ -446,6 +436,7 @@ async def list_assessments(
                 submittedAt=getattr(assess, 'submittedAt', None),
                 reviewedAt=getattr(assess, 'reviewedAt', None),
                 reviewerComment=getattr(assess, 'reviewerComment', None),
+                standardId=getattr(assess, 'standardId', None),
                 answers=[
                     AssessmentAnswerResponse(
                         id=ans.id,

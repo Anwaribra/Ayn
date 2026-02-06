@@ -68,7 +68,7 @@ export default function DashboardPage() {
       roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
     },
     {
-      label: "AI Tools",
+      label: "Horus AI",
       href: "/platform/ai-tools",
       icon: TrendingUp,
       roles: ["ADMIN", "TEACHER", "AUDITOR"],

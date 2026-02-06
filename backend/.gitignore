@@ -47,6 +47,9 @@ env.bak/
 *.sublime-project
 *.sublime-workspace
 
+# Node (Prisma CLI)
+node_modules/
+
 # Prisma
 prisma/migrations/
 prisma/dev.db

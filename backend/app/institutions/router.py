@@ -12,8 +12,7 @@ from app.institutions.models import (
     AssignUserRequest,
     AssignUserResponse
 )
-from app.standards.models import LinkStandardRequest, LinkStandardResponse
-from app.standards.models import LinkStandardRequest, LinkStandardResponse
+from app.standards.models import LinkStandardRequest, LinkStandardResponse, StandardResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -53,8 +52,8 @@ async def create_institution(
             createdAt=institution.createdAt,
             updatedAt=institution.updatedAt
         )
-    except Exception as e:
-        logger.error(f"Error creating institution: {e}")
+    except Exception:
+        logger.exception("Error creating institution")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create institution"
@@ -113,8 +112,8 @@ async def update_institution(
             createdAt=updated_institution.createdAt,
             updatedAt=updated_institution.updatedAt
         )
-    except Exception as e:
-        logger.error(f"Error updating institution: {e}")
+    except Exception:
+        logger.exception("Error updating institution")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update institution"
@@ -278,10 +277,25 @@ async def link_standard_to_institution(
             detail="Standard not found"
         )
     
-    # Note: Since there's no InstitutionStandard junction table in the current schema,
-    # we'll just verify both exist and return success.
-    # In a production system, you'd create a junction table record here.
-    # For now, this endpoint validates the link can be made.
+    # Create or ensure link exists (unique constraint prevents duplicates)
+    try:
+        await db.institution_standard.create(
+            data={
+                "institutionId": institution_id,
+                "standardId": request.standardId,
+            }
+        )
+    except Exception as e:
+        if "Unique constraint" in str(e) or "unique" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Standard is already linked to this institution"
+            )
+        logger.error(f"Error linking standard: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to link standard"
+        )
     
     logger.info(f"Admin {current_user['email']} linked standard {request.standardId} to institution {institution_id}")
     
@@ -290,3 +304,65 @@ async def link_standard_to_institution(
         institutionId=institution_id,
         standardId=request.standardId
     )
+
+
+@router.get("/{institution_id}/standards", response_model=List[StandardResponse])
+async def list_institution_standards(
+    institution_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    List standards linked to an institution.
+    
+    Returns standards that are linked to the given institution.
+    """
+    db = get_db()
+    institution = await db.institution.find_unique(
+        where={"id": institution_id},
+        include={"institutionStandards": {"include": {"standard": True}}}
+    )
+    if not institution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Institution not found"
+        )
+    if current_user["role"] != "ADMIN" and current_user.get("institutionId") != institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    standards = []
+    for link in (institution.institutionStandards or []):
+        if getattr(link, "standard", None):
+            standards.append(link.standard)
+    return [
+        StandardResponse(id=s.id, title=s.title, description=s.description)
+        for s in standards
+    ]
+
+
+@router.delete("/{institution_id}/standards/{standard_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def unlink_standard_from_institution(
+    institution_id: str,
+    standard_id: str,
+    current_user: dict = require_admin
+):
+    """
+    Unlink a standard from an institution.
+    
+    **Admin only** - Requires ADMIN role.
+    """
+    db = get_db()
+    link = await db.institution_standard.find_first(
+        where={
+            "institutionId": institution_id,
+            "standardId": standard_id,
+        }
+    )
+    if not link:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link not found"
+        )
+    await db.institution_standard.delete(where={"id": link.id})
+    logger.info(f"Admin {current_user['email']} unlinked standard {standard_id} from institution {institution_id}")

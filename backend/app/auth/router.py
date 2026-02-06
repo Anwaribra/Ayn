@@ -1,6 +1,7 @@
 """Authentication router."""
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.core.db import get_db
+from app.core.rate_limit import limiter
 from app.core.utils import get_password_hash, verify_password, create_access_token
 from app.auth.models import (
     RegisterRequest,
@@ -23,7 +24,8 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(request: RegisterRequest):
+@limiter.limit("5/minute")
+async def register(req: Request, request: RegisterRequest):
     """
     Register a new user.
     
@@ -35,13 +37,11 @@ async def register(request: RegisterRequest):
     """
     db = get_db()
     
-    # Validate role
+    # Default to TEACHER (regular user) for platform users; only ADMIN is set separately
+    role = (request.role or "TEACHER").strip().upper()
     valid_roles = ["ADMIN", "TEACHER", "AUDITOR"]
-    if request.role.upper() not in valid_roles:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
-        )
+    if role not in valid_roles:
+        role = "TEACHER"
     
     # Check if user already exists
     existing_user = await db.user.find_unique(where={"email": request.email})
@@ -70,7 +70,7 @@ async def register(request: RegisterRequest):
                 "name": request.name,
                 "email": request.email,
                 "password": hashed_password,
-                "role": request.role.upper(),
+                "role": role,
                 "institutionId": request.institutionId,
             }
         )
@@ -91,7 +91,7 @@ async def register(request: RegisterRequest):
             access_token=access_token
         )
     except Exception as e:
-        logger.error(f"Error creating user: {e}")
+        logger.exception("Error creating user")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user"
@@ -99,7 +99,8 @@ async def register(request: RegisterRequest):
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(request: LoginRequest):
+@limiter.limit("10/minute")
+async def login(req: Request, request: LoginRequest):
     """
     Login user and return access token.
     

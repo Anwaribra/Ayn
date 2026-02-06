@@ -1,6 +1,7 @@
 """AI router."""
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.core.middlewares import get_current_user
+from app.core.rate_limit import limiter
 from app.auth.dependencies import require_roles
 from app.ai.models import (
     GenerateAnswerRequest,
@@ -22,7 +23,9 @@ ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
 
 
 @router.post("/generate-answer", response_model=AIResponse)
+@limiter.limit("30/minute")
 async def generate_answer(
+    req: Request,
     request: GenerateAnswerRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
@@ -63,7 +66,9 @@ async def generate_answer(
 
 
 @router.post("/summarize", response_model=AIResponse)
+@limiter.limit("30/minute")
 async def summarize(
+    req: Request,
     request: SummarizeRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
@@ -104,7 +109,9 @@ async def summarize(
 
 
 @router.post("/comment", response_model=AIResponse)
+@limiter.limit("30/minute")
 async def generate_comment(
+    req: Request,
     request: CommentRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
@@ -145,7 +152,9 @@ async def generate_comment(
 
 
 @router.post("/explain", response_model=AIResponse)
+@limiter.limit("30/minute")
 async def explain(
+    req: Request,
     request: ExplainRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
@@ -186,7 +195,9 @@ async def explain(
 
 
 @router.post("/evidence/extract", response_model=AIResponse)
+@limiter.limit("30/minute")
 async def extract_evidence(
+    req: Request,
     request: ExtractEvidenceRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):

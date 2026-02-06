@@ -94,7 +94,7 @@ class ApiClient {
     name: string
     email: string
     password: string
-    role: import("./types").UserRole
+    role?: import("./types").UserRole | null
     institutionId?: string | null
   }) {
     const response = await this.request<{

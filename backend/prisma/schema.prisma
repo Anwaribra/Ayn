@@ -43,10 +43,26 @@ model Institution {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
-  assessments Assessment[]
+  users                 User[]
+  assessments           Assessment[]
+  institutionStandards  InstitutionStandard[]
 
   @@index([name])
+}
+
+// Institution–Standard link (many-to-many)
+model InstitutionStandard {
+  id            String   @id @default(uuid())
+  institutionId String
+  standardId    String
+  createdAt     DateTime @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  standard    Standard   @relation(fields: [standardId], references: [id], onDelete: Cascade)
+
+  @@unique([institutionId, standardId])
+  @@index([institutionId])
+  @@index([standardId])
 }
 
 // Standard Model
@@ -55,7 +71,9 @@ model Standard {
   title       String
   description String?
 
-  criteria    Criterion[]
+  criteria     Criterion[]
+  assessments  Assessment[]
+  institutionStandards InstitutionStandard[]
 
   @@index([title])
 }
@@ -76,19 +94,25 @@ model Criterion {
 
 // Assessment Model
 model Assessment {
-  id            String            @id @default(uuid())
-  institutionId String
-  userId        String
-  status        AssessmentStatus   @default(DRAFT)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id              String            @id @default(uuid())
+  institutionId  String
+  userId         String
+  standardId     String?
+  status         AssessmentStatus   @default(DRAFT)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+  reviewerComment String?
 
   institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
   user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  standard      Standard? @relation(fields: [standardId], references: [id], onDelete: SetNull)
   answers       AssessmentAnswer[]
 
   @@index([institutionId])
   @@index([userId])
+  @@index([standardId])
   @@index([status])
 }
 

@@ -62,7 +62,7 @@ export default function AdminPage() {
       <div className="min-h-screen">
         <Header title="Admin Panel" description="Platform administration and management" />
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4">

@@ -24,11 +24,28 @@ const playfairDisplay = Playfair_Display({
   style: ["normal", "italic"],
 })
 
+const siteDescription =
+  "Powered by Horus Engine for ISO 21001 & NAQAAE Standards. The comprehensive platform for educational quality assurance and accreditation excellence."
+const siteTitle = "Ayn — Education Quality & Accreditation Platform"
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ayn-edu.com"
+
 export const metadata: Metadata = {
-  title: "Ayn — Education Quality & Accreditation Platform",
-  description:
-    "Powered by Horus Engine for ISO 21001 & NAQAAE Standards. The comprehensive platform for educational quality assurance and accreditation excellence.",
+  title: siteTitle,
+  description: siteDescription,
   generator: "v0.app",
+  openGraph: {
+    title: siteTitle,
+    description: siteDescription,
+    url: siteUrl,
+    siteName: "Ayn",
+    images: [{ url: "/apple-icon.png", width: 512, height: 512, alt: "Ayn" }],
+    locale: "en",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+  },
   icons: {
     icon: [
       {

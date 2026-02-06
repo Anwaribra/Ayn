@@ -79,7 +79,7 @@ export default function DashboardPage() {
         description="Here's an overview of your quality assurance progress"
       />
 
-      <div className="p-4 md:p-8 space-y-8">
+      <div className="p-4 md:p-[var(--spacing-content)] space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat) => (

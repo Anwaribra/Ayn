@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
       <div className="min-h-screen">
         <Header title="Manage Users" description="View and manage platform users" />
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
           {/* Search Bar */}
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

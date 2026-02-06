@@ -14,6 +14,8 @@ import { AynLogo } from "@/components/ayn-logo";
 import { getGoogleIdToken } from "@/lib/google-auth";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
+import { log } from "@/lib/logger";
+import { toast } from "sonner";
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
 
 // Password Input with visibility toggle
@@ -148,6 +150,7 @@ function SignInForm(props: {
     err: string | null;
     toggle: () => void;
 }) {
+    const emailId = useId();
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -166,6 +169,7 @@ function SignInForm(props: {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            aria-describedby={props.err ? "auth-form-error" : undefined}
         >
             <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-4 h-4" />
@@ -173,7 +177,7 @@ function SignInForm(props: {
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <AynLogo size="md" />
+                <AynLogo size="md" heroStyle />
             </div>
 
             <div className="flex flex-col gap-2 text-center">
@@ -182,24 +186,29 @@ function SignInForm(props: {
             </div>
 
             {props.err && (
-                <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
                     {props.err}
                 </div>
             )}
 
             <div className="grid gap-4">
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Email</Label>
-                    <Input name="email" type="email" required placeholder="Email" className="h-11 rounded-lg border-border" />
+                    <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
                 </div>
                 <div className="grid gap-2">
                     <div className="flex items-center justify-between">
                         <Label className="text-xs text-muted-foreground">Password</Label>
-                        <button type="button" className="text-[10px] text-muted-foreground hover:text-foreground">
+                        <button
+                            type="button"
+                            className="text-[10px] text-muted-foreground hover:text-foreground"
+                            onClick={() => toast.info("Password reset coming soon")}
+                            aria-label="Forgot password (coming soon)"
+                        >
                             Forgot password?
                         </button>
                     </div>
-                    <PasswordInput name="password" required placeholder="Password" />
+                    <PasswordInput name="password" required placeholder="Password" aria-invalid={!!props.err} />
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (
@@ -241,6 +250,8 @@ function SignUpForm(props: {
     err: string | null;
     toggle: () => void;
 }) {
+    const nameId = useId();
+    const emailId = useId();
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
@@ -260,6 +271,7 @@ function SignUpForm(props: {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            aria-describedby={props.err ? "auth-form-error" : undefined}
         >
             <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-4 h-4" />
@@ -267,7 +279,7 @@ function SignUpForm(props: {
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <AynLogo size="md" />
+                <AynLogo size="md" heroStyle />
             </div>
 
             <div className="flex flex-col gap-2 text-center">
@@ -276,23 +288,23 @@ function SignUpForm(props: {
             </div>
 
             {props.err && (
-                <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
                     {props.err}
                 </div>
             )}
 
             <div className="grid gap-4">
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Full Name</Label>
-                    <Input name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-border" />
+                    <Label htmlFor={nameId} className="text-xs text-muted-foreground">Full Name</Label>
+                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Email</Label>
-                    <Input name="email" type="email" required placeholder="Email" className="h-11 rounded-lg border-border" />
+                    <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Password</Label>
-                    <PasswordInput name="password" required placeholder="Password" />
+                    <Label className="text-xs text-muted-foreground">Password <span className="text-muted-foreground/70 font-normal">(min 8 characters)</span></Label>
+                    <PasswordInput name="password" required placeholder="Password" minLength={8} aria-invalid={!!props.err} />
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (
@@ -336,22 +348,22 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     React.useEffect(() => {
         let hasProcessed = false; // Prevent multiple syncs
 
-        console.log('[Auth] Setting up auth state listener...');
+        log('[Auth] Setting up auth state listener...');
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[Auth] Auth state changed:', event, session?.user?.email);
+            log('[Auth] Auth state changed:', event, session?.user?.email);
 
             if (event === 'SIGNED_IN' && session?.access_token && !hasProcessed) {
                 hasProcessed = true; // Mark as processed
-                console.log('[Auth] User signed in via OAuth, syncing with backend...');
+                log('[Auth] User signed in via OAuth, syncing with backend...');
                 setIsLoading(true);
                 setError(null);
 
                 try {
                     await api.syncWithSupabase(session.access_token);
-                    console.log('[Auth] Sync successful, clearing Supabase session...');
+                    log('[Auth] Sync successful, clearing Supabase session...');
                     await supabase.auth.signOut();
-                    console.log('[Auth] Redirecting to dashboard...');
+                    log('[Auth] Redirecting to dashboard...');
                     window.location.href = "/platform/dashboard";
                 } catch (err) {
                     console.error('[Auth] Sync failed:', err);
@@ -363,7 +375,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         });
 
         return () => {
-            console.log('[Auth] Cleaning up auth state listener');
+            log('[Auth] Cleaning up auth state listener');
             subscription.unsubscribe();
         };
     }, []);
@@ -372,7 +384,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const handleGoogleSignIn = async () => {
         setError(null);
         setIsLoading(true);
-        console.log('[Auth] Starting Supabase Google OAuth...');
+        log('[Auth] Starting Supabase Google OAuth...');
 
         try {
             const { error } = await supabase.auth.signInWithOAuth({
@@ -387,7 +399,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 throw error;
             }
 
-            console.log('[Auth] Redirecting to Google...');
+            log('[Auth] Redirecting to Google...');
             // Supabase will handle the redirect automatically
         } catch (err) {
             console.error('[Auth] Google Sign-In failed:', err);
@@ -402,7 +414,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         try {
             // Use AuthContext login to update user state
             const response = await api.login(email, password);
-            console.log('[Auth] Email login successful:', response.user.email);
+            log('[Auth] Email login successful:', response.user.email);
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
@@ -421,7 +433,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         try {
             // Use AuthContext register to update user state
             const response = await api.register({ name, email, password, role: "TEACHER" });
-            console.log('[Auth] Email signup successful:', response.user.email);
+            log('[Auth] Email signup successful:', response.user.email);
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
@@ -436,7 +448,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     return (
         <div className="fixed inset-0 z-50 flex bg-background">
-            <div className="flex w-full items-center justify-center p-8 md:w-1/2 overflow-y-auto">
+            <div className="flex w-full items-center justify-center p-6 md:w-1/2 md:p-[var(--spacing-content)] overflow-y-auto">
                 <div className="w-full max-w-[400px]">
                     {isSignIn ? (
                         <SignInForm

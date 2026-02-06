@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { api } from "./api"
+import { log } from "./logger"
 import type { User } from "./types"
 
 interface AuthContextType {
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set user immediately to prevent redirect
       const parsedUser = JSON.parse(storedUser)
       setUser(parsedUser)
-      console.log('[AuthContext] User loaded from localStorage:', parsedUser.email)
+      log('[AuthContext] User loaded from localStorage:', parsedUser.email)
 
       // Then verify token is still valid in the background
       api
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((freshUser) => {
           setUser(freshUser)
           localStorage.setItem("user", JSON.stringify(freshUser))
-          console.log('[AuthContext] User verified with backend:', freshUser.email)
+          log('[AuthContext] User verified with backend:', freshUser.email)
         })
         .catch((error) => {
           console.error('[AuthContext] Token verification failed:', error)
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .finally(() => setIsLoading(false))
     } else {
-      console.log('[AuthContext] No user in localStorage')
+      log('[AuthContext] No user in localStorage')
       setIsLoading(false)
     }
   }, [])

@@ -1,5 +1,7 @@
 // API client for Horus Engine Platform
 
+import { log } from "./logger"
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 class ApiClient {
@@ -21,7 +23,7 @@ class ApiClient {
     }
 
     const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`[API Request] ${options.method || 'GET'} ${fullUrl}`);
+    log(`[API Request] ${options.method || 'GET'} ${fullUrl}`);
 
     const response = await fetch(fullUrl, {
       ...options,
@@ -81,10 +83,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ access_token: supabaseToken }),
     })
-    console.log('[API] Supabase sync successful, storing tokens...');
+    log('[API] Supabase sync successful, storing tokens...');
     localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
-    console.log('[API] User logged in:', response.user.email);
+    log('[API] User logged in:', response.user.email);
     return response
   }
 

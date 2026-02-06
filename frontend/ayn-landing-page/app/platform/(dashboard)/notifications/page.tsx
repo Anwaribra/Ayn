@@ -37,7 +37,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen">
       <Header title="Notifications" description={`${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}`} />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
         {/* Actions Bar */}
         {unreadCount > 0 && (
           <div className="flex justify-end">

@@ -78,7 +78,7 @@ export default function UploadEvidencePage() {
     <div className="min-h-screen">
       <Header title="Upload Evidence" description="Upload evidence files for your assessments" />
 
-      <div className="p-4 md:p-8 max-w-3xl">
+      <div className="p-4 md:p-[var(--spacing-content)] max-w-3xl">
         <Link
           href="/platform/evidence"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"

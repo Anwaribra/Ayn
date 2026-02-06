@@ -40,7 +40,7 @@ export function Header({ title, description, breadcrumbs }: HeaderProps) {
     : "Notifications"
 
   return (
-    <header className="flex items-center justify-between py-6 px-4 md:px-8 border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-30">
+    <header className="flex items-center justify-between py-6 px-4 md:px-[var(--spacing-content)] border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-30">
       <div className={SIDEBAR_MOBILE_OFFSET + " min-w-0 flex-1"}>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <Breadcrumb className="mb-2">

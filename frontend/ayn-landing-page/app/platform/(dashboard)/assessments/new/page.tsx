@@ -65,7 +65,7 @@ export default function NewAssessmentPage() {
         ]}
       />
 
-      <div className="p-4 md:p-8 max-w-2xl">
+      <div className="p-4 md:p-[var(--spacing-content)] max-w-2xl">
         <Link
           href="/platform/assessments"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"

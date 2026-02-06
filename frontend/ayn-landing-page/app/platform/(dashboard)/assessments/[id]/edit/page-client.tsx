@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { useParams, useRouter } from "next/navigation"
@@ -73,17 +74,7 @@ export function EditAssessmentPageClient() {
   const isLoading = loadingAssessment || loadingCriteria
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <Header title="Loading..." />
-        <div className="p-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3" />
-            <div className="h-4 bg-muted rounded w-2/3" />
-          </div>
-        </div>
-      </div>
-    )
+    return <DetailPageSkeleton title="Loading assessment..." statBlocks={0} showSecondaryBlock />
   }
 
   if (!assessment || assessment.status !== "DRAFT") {
@@ -124,7 +115,7 @@ export function EditAssessmentPageClient() {
         ]}
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
         <div className="flex items-center justify-between">
           <Link
             href={`/platform/assessments/${id}`}

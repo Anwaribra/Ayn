@@ -1,6 +1,7 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
+import { log } from "@/lib/logger"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
 import { Loader2 } from "lucide-react"
@@ -25,7 +26,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
       if (!isLoading && isAuthenticated && allowedRoles && user) {
         if (!allowedRoles.includes(user.role)) {
-          console.log('[ProtectedRoute] Redirecting to dashboard - insufficient permissions')
+          log('[ProtectedRoute] Redirecting to dashboard - insufficient permissions')
           router.push("/platform/dashboard")
         }
       }

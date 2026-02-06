@@ -37,7 +37,7 @@ export default function AssessmentsPage() {
         ]}
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">

@@ -7,9 +7,17 @@ interface AynLogoProps {
   size?: "sm" | "md" | "lg" | "xl"
   withGlow?: boolean
   animated?: boolean
+  /** Match hero style: gradient from foreground to primary (blue) like the hero headline */
+  heroStyle?: boolean
 }
 
-export function AynLogo({ className, size = "md", withGlow = true, animated = false }: AynLogoProps) {
+export function AynLogo({
+  className,
+  size = "md",
+  withGlow = true,
+  animated = false,
+  heroStyle = false,
+}: AynLogoProps) {
   const sizeClasses = {
     sm: "text-3xl",
     md: "text-5xl",
@@ -19,7 +27,7 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
 
   return (
     <div className={cn("relative inline-flex items-center justify-center", className)}>
-      {withGlow && (
+      {withGlow && !heroStyle && (
         <>
           <div
             className={cn(
@@ -44,17 +52,25 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
       )}
       <span
         className={cn(
-          "relative flex font-bold text-foreground tracking-tight z-10",
+          "relative flex font-bold tracking-tight z-10",
           animated && "animate-float",
           sizeClasses[size],
+          heroStyle
+            ? "bg-gradient-to-r from-foreground via-foreground/95 to-primary/90 bg-clip-text text-transparent"
+            : "text-foreground",
         )}
-        style={{
-          textShadow: "0 0 30px rgba(var(--primary), 0.3), 0 0 60px rgba(var(--primary), 0.2)",
-          filter: animated
-            ? "drop-shadow(0 0 20px rgba(var(--primary),0.4))"
-            : "drop-shadow(0 0 15px rgba(var(--primary),0.3))",
-          opacity: 1,
-        }}
+        style={
+          heroStyle
+            ? undefined
+            : {
+                textShadow:
+                  "0 0 30px rgba(var(--primary), 0.3), 0 0 60px rgba(var(--primary), 0.2)",
+                filter: animated
+                  ? "drop-shadow(0 0 20px rgba(var(--primary),0.4))"
+                  : "drop-shadow(0 0 15px rgba(var(--primary),0.3))",
+                opacity: 1,
+              }
+        }
       >
         Ayn
       </span>

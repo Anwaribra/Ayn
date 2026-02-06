@@ -39,7 +39,7 @@ export default function AdminSettingsPage() {
       <div className="min-h-screen">
         <Header title="System Settings" description="Configure platform settings" />
 
-        <div className="p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
             <p className="text-amber-300 text-sm">
               Settings configuration is currently managed through environment variables and backend configuration.

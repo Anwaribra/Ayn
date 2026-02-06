@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
@@ -41,17 +42,7 @@ export function AssessmentDetailPageClient() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen">
-        <Header title="Loading..." />
-        <div className="p-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3" />
-            <div className="h-4 bg-muted rounded w-2/3" />
-          </div>
-        </div>
-      </div>
-    )
+    return <DetailPageSkeleton title="Loading assessment..." statBlocks={2} showSecondaryBlock />
   }
 
   if (!assessment) {
@@ -79,7 +70,7 @@ export function AssessmentDetailPageClient() {
         ]}
       />
 
-      <div className="p-4 md:p-8 space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
         <Link
           href="/platform/assessments"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"

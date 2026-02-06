@@ -114,7 +114,7 @@ export default function AIToolsPage() {
     <div className="min-h-screen">
       <Header title="AI Tools" description="AI-powered assistance for quality assurance" />
 
-      <div className="p-4 md:p-8">
+      <div className="p-4 md:p-[var(--spacing-content)]">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tools Panel */}
           <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">

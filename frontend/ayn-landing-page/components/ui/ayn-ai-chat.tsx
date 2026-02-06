@@ -130,132 +130,121 @@ export default function AynAIChat() {
   }
 
   return (
-    <div
-      className={cn(
-        "relative w-full min-h-[calc(100vh-8rem)] rounded-xl overflow-hidden flex flex-col items-center",
-        "bg-black"
-      )}
-    >
-      {/* Blue/purple glow from bottom like reference */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 80% 60% at 50% 100%, rgba(99, 102, 241, 0.35) 0%, rgba(139, 92, 246, 0.2) 40%, transparent 70%)",
-        }}
-        aria-hidden
-      />
-
-      <div className="relative z-10 flex-1 w-full flex flex-col items-center justify-center px-4">
-        {/* Title + subtitle at top center */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl font-semibold text-white drop-shadow-sm">
-              Horus AI
-            </h1>
-            <p className="mt-2 text-neutral-200">
-              Build something amazing — just start typing below.
-            </p>
-          </div>
+    <div className="w-full max-w-3xl mx-auto flex flex-col min-h-[calc(100vh-12rem)]">
+      {/* Card container: same visual language as Dashboard / Assessments */}
+      <div className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
+        {/* Header: same hierarchy as other platform pages */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-semibold text-foreground">
+            Horus AI
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ask about your certificate or documents — type below.
+          </p>
         </div>
 
-        {/* Messages (when present) above input */}
-        {messages.length > 0 && (
-          <div className="w-full max-w-3xl flex-1 overflow-y-auto space-y-4 mb-4 min-h-[120px] max-h-[40vh]">
-            {messages.map((msg) => (
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[160px] max-h-[45vh]">
+          {messages.length === 0 && !isLoading && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Sparkles className="w-10 h-10 text-muted-foreground/60 mb-3" />
+              <p className="text-sm text-muted-foreground">
+                Ask anything about your uploaded certificate or documents.
+              </p>
+            </div>
+          )}
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={cn(
+                "flex w-full",
+                msg.role === "user" ? "justify-end" : "justify-start"
+              )}
+            >
               <div
-                key={msg.id}
                 className={cn(
-                  "flex w-full",
-                  msg.role === "user" ? "justify-end" : "justify-start"
+                  "max-w-[85%] rounded-xl px-4 py-3 text-sm",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 border border-border text-foreground"
                 )}
               >
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-3 text-sm",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-white/10 border border-neutral-600 text-neutral-100"
-                  )}
-                >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl px-4 py-3 bg-white/10 border border-neutral-600 text-neutral-400 text-sm">
-                  <span className="animate-pulse">Thinking...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-
-        {/* Input box: wide, translucent dark, paperclip left, send right */}
-        <div className="w-full max-w-3xl mb-[20vh]">
-          <form onSubmit={handleSubmit}>
-            <div className="relative bg-black/60 backdrop-blur-md rounded-xl border border-neutral-700">
-              <Textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value)
-                  adjustHeight()
-                }}
-                placeholder="Type your request..."
-                className={cn(
-                  "w-full px-4 py-3 resize-none border-none",
-                  "bg-transparent text-white text-sm",
-                  "focus-visible:ring-0 focus-visible:ring-offset-0",
-                  "placeholder:text-neutral-400 min-h-[48px]"
-                )}
-                style={{ overflow: "hidden" }}
-                rows={1}
-                disabled={isLoading}
-              />
-              <div className="flex items-center justify-between p-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-neutral-700"
-                  aria-label="Attach file"
-                >
-                  <Paperclip className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!message.trim() || isLoading}
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-2 rounded-lg transition-colors",
-                    message.trim() && !isLoading
-                      ? "bg-neutral-600 text-white hover:bg-neutral-500"
-                      : "bg-neutral-700 text-neutral-400 cursor-not-allowed"
-                  )}
-                >
-                  <ArrowUpIcon className="w-4 h-4" />
-                  <span className="sr-only">Send</span>
-                </Button>
+                <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
-          </form>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="rounded-xl px-4 py-3 bg-muted/50 border border-border text-muted-foreground text-sm">
+                <span className="animate-pulse">Thinking...</span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {/* Quick Actions: two rows, dark bg, light border, rounded (like reference) */}
-          <div className="flex items-center justify-center flex-wrap gap-3 mt-6">
-            {QUICK_ACTIONS.map((action) => (
+        {/* Input: same style as platform inputs */}
+        <form onSubmit={handleSubmit}>
+          <div className="rounded-xl border border-border bg-background/50">
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value)
+                adjustHeight()
+              }}
+              placeholder="Type your request..."
+              className={cn(
+                "w-full px-4 py-3 resize-none border-0 bg-transparent text-foreground text-sm",
+                "focus-visible:ring-0 focus-visible:ring-offset-0",
+                "placeholder:text-muted-foreground min-h-[48px]"
+              )}
+              style={{ overflow: "hidden" }}
+              rows={1}
+              disabled={isLoading}
+            />
+            <div className="flex items-center justify-between px-3 pb-3">
               <Button
-                key={action.label}
                 type="button"
-                variant="outline"
-                className="flex items-center gap-2 rounded-lg border-neutral-700 bg-black/50 text-neutral-300 hover:text-white hover:bg-neutral-700 text-xs px-4 py-2"
-                onClick={() => handleQuickAction(action.prompt)}
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent"
+                aria-label="Attach file"
               >
-                <action.icon className="w-4 h-4 shrink-0" />
-                <span>{action.label}</span>
+                <Paperclip className="w-4 h-4" />
               </Button>
-            ))}
+              <Button
+                type="submit"
+                disabled={!message.trim() || isLoading}
+                size="sm"
+                className={cn(
+                  message.trim() && !isLoading
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "opacity-60 cursor-not-allowed"
+                )}
+              >
+                <ArrowUpIcon className="w-4 h-4" />
+                <span className="sr-only">Send</span>
+              </Button>
+            </div>
           </div>
+        </form>
+
+        {/* Quick Actions: same as platform buttons */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          {QUICK_ACTIONS.map((action) => (
+            <Button
+              key={action.label}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 rounded-lg border-border bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent text-xs"
+              onClick={() => handleQuickAction(action.prompt)}
+            >
+              <action.icon className="w-3.5 h-3.5 shrink-0" />
+              <span>{action.label}</span>
+            </Button>
+          ))}
         </div>
       </div>
     </div>

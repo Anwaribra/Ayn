@@ -4,6 +4,7 @@ import React from "react"
 import { useAuth } from "@/lib/auth-context"
 import { Bell, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
 import useSWR from "swr"
 import { api } from "@/lib/api"
@@ -70,7 +71,24 @@ export function Header({ title, description, breadcrumbs }: HeaderProps) {
         {description && <p className="text-muted-foreground mt-1">{description}</p>}
       </div>
 
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
+        {user && (
+          <div className="hidden sm:flex items-center gap-2 min-w-0">
+            <Avatar className="h-8 w-8 border border-border">
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                {user.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-foreground truncate max-w-[120px]">
+              {user.name?.split(" ")[0] ?? "User"}
+            </span>
+          </div>
+        )}
         <Link href="/platform/notifications" aria-label={notificationsAriaLabel}>
           <Button variant="ghost" size="icon" className="relative" aria-label={notificationsAriaLabel}>
             <Bell className="w-5 h-5" />

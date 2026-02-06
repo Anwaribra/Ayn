@@ -81,10 +81,10 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       <div className="flex items-center gap-3 px-4 py-6 border-b border-border">
-        <AynLogo size={collapsed ? "sm" : "md"} />
+        <AynLogo size={collapsed ? "sm" : "md"} heroStyle withGlow={false} />
         {!collapsed && (
           <div>
-            <h1 className="font-semibold text-foreground">Horus Engine</h1>
+            <h1 className="font-semibold text-foreground">Ayn</h1>
             <p className="text-xs text-muted-foreground">Platform</p>
           </div>
         )}
@@ -99,13 +99,16 @@ export function Sidebar() {
               href={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary/10 text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent",
               )}
             >
-              <item.icon className="w-5 h-5 shrink-0" />
+              {isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r bg-primary" aria-hidden />
+              )}
+              <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-primary" : "group-hover:text-primary/80")} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           )
@@ -113,7 +116,8 @@ export function Sidebar() {
 
         {filteredAdminItems.length > 0 && (
           <>
-            <div className="pt-4 pb-2">
+            <div className="border-t border-border my-3 pt-3" />
+            <div className="pb-2">
               {!collapsed && (
                 <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Admin</p>
               )}
@@ -126,13 +130,16 @@ export function Sidebar() {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                    "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
                     isActive
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary/10 text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent",
                   )}
                 >
-                  <item.icon className="w-5 h-5 shrink-0" />
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r bg-primary" aria-hidden />
+                  )}
+                  <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-primary" : "group-hover:text-primary/80")} />
                   {!collapsed && <span>{item.label}</span>}
                 </Link>
               )

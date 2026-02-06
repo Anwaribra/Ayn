@@ -3,6 +3,7 @@
 import { Header } from "@/components/platform/header"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 import useSWR from "swr"
 import { CheckCircle2, FileText, TrendingUp, ClipboardList, ArrowRight, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ export default function DashboardPage() {
       icon: CheckCircle2,
       color: "text-green-400",
       bgColor: "bg-green-400/10",
+      borderColor: "border-l-green-400",
     },
     {
       label: "Evidence Files",
@@ -26,6 +28,7 @@ export default function DashboardPage() {
       icon: FileText,
       color: "text-blue-400",
       bgColor: "bg-blue-400/10",
+      borderColor: "border-l-blue-400",
     },
     {
       label: "Progress",
@@ -33,6 +36,7 @@ export default function DashboardPage() {
       icon: TrendingUp,
       color: "text-amber-400",
       bgColor: "bg-amber-400/10",
+      borderColor: "border-l-amber-400",
     },
     {
       label: "Total Assessments",
@@ -40,6 +44,7 @@ export default function DashboardPage() {
       icon: ClipboardList,
       color: "text-zinc-400",
       bgColor: "bg-zinc-400/10",
+      borderColor: "border-l-zinc-400",
     },
   ]
 
@@ -85,9 +90,12 @@ export default function DashboardPage() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-border/80 hover:shadow-lg transition-all duration-300 group"
+              className={cn(
+                "bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-300 group relative overflow-hidden border-l-4",
+                stat.borderColor,
+              )}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className={`p-2.5 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-300`}>
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
@@ -95,15 +103,15 @@ export default function DashboardPage() {
               <div>
                 {isLoading ? (
                   <div className="space-y-2">
-                    <div className="h-8 w-24 bg-muted rounded-lg overflow-hidden relative">
+                    <div className="h-10 w-28 bg-muted rounded-lg overflow-hidden relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
                     </div>
-                    <div className="h-4 w-16 bg-muted/50 rounded" />
+                    <div className="h-3 w-20 bg-muted/50 rounded" />
                   </div>
                 ) : (
                   <>
-                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                    <p className="text-4xl font-bold tracking-tight text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">{stat.label}</p>
                   </>
                 )}
               </div>
@@ -149,7 +157,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredActions.map((action) => (
               <Link key={action.href} href={action.href}>
-                <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4 hover:bg-accent/50 transition-colors group cursor-pointer">
+                <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-5 hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 group cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-muted rounded-lg">

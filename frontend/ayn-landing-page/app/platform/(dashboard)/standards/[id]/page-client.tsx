@@ -53,7 +53,15 @@ export function StandardDetailPageClient() {
 
   return (
     <div className="min-h-screen">
-      <Header title={standard.title} description={standard.description || undefined} />
+      <Header
+        title={standard.title}
+        description={standard.description || undefined}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Standards", href: "/platform/standards" },
+          { label: standard.title },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         <Link

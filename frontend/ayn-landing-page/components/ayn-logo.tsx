@@ -44,7 +44,7 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
       )}
       <span
         className={cn(
-          "relative flex font-arabic font-bold text-foreground transform -scale-x-100 z-10",
+          "relative flex font-bold text-foreground tracking-tight z-10",
           animated && "animate-float",
           sizeClasses[size],
         )}
@@ -56,7 +56,7 @@ export function AynLogo({ className, size = "md", withGlow = true, animated = fa
           opacity: 1,
         }}
       >
-        ع
+        Ayn
       </span>
     </div>
   )

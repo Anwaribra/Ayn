@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { toast } from "sonner"
 
 export default function NewInstitutionPage() {
   const [name, setName] = useState("")
@@ -28,6 +29,7 @@ export default function NewInstitutionPage() {
 
     try {
       const institution = await api.createInstitution({ name, description })
+      toast.success("Institution created")
       router.push(`/platform/institutions/${institution.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create institution")
@@ -39,7 +41,15 @@ export default function NewInstitutionPage() {
   return (
     <ProtectedRoute allowedRoles={["ADMIN"]}>
       <div className="min-h-screen">
-        <Header title="Create Institution" description="Add a new educational institution" />
+        <Header
+          title="Create Institution"
+          description="Add a new educational institution"
+          breadcrumbs={[
+            { label: "Dashboard", href: "/platform/dashboard" },
+            { label: "Institutions", href: "/platform/institutions" },
+            { label: "New" },
+          ]}
+        />
 
         <div className="p-4 md:p-8 max-w-2xl">
           <Link
@@ -53,7 +63,7 @@ export default function NewInstitutionPage() {
           <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div id="form-error" className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
                   {error}
                 </div>
               )}
@@ -67,6 +77,8 @@ export default function NewInstitutionPage() {
                   placeholder="Cairo University"
                   required
                   className="bg-background/50"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "form-error" : undefined}
                 />
               </div>
 

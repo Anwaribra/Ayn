@@ -20,7 +20,9 @@ import {
   GraduationCap,
   Library,
   ShieldCheck,
-  Search
+  Search,
+  Menu,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AynLogo } from "@/components/ayn-logo"
@@ -274,7 +276,7 @@ const features = [
   {
     icon: Brain,
     title: "AI-Powered Analysis",
-    description: "Horus Engine provides intelligent gap analysis and recommendations for your institution",
+    description: "Upload your policy documents. Horus Engine compares them against ISO 21001's 10 core requirements and highlights specific gaps in your documentation.",
     gradient: "from-purple-500/20 to-blue-500/20",
     borderGradient: "from-purple-500 via-blue-500 to-purple-500",
     size: "large"
@@ -282,7 +284,7 @@ const features = [
   {
     icon: FileCheck,
     title: "ISO 21001 & NAQAAE",
-    description: "Full compliance with international education standards",
+    description: "Map criteria to ISO 21001 and NAQAAE frameworks. Submit assessments and get reviewer feedback in one place.",
     gradient: "from-emerald-500/20 to-teal-500/20",
     borderGradient: "from-emerald-500 via-teal-500 to-emerald-500",
     size: "normal"
@@ -290,7 +292,7 @@ const features = [
   {
     icon: Shield,
     title: "Evidence Management",
-    description: "Centralized document repository with smart organization",
+    description: "Upload PDFs, images, and docs to a central repository. Link each file to the criterion it supports.",
     gradient: "from-amber-500/20 to-orange-500/20",
     borderGradient: "from-amber-500 via-orange-500 to-amber-500",
     size: "normal"
@@ -298,7 +300,7 @@ const features = [
   {
     icon: BarChart3,
     title: "Real-time Analytics",
-    description: "Track progress with live dashboards and insights",
+    description: "See compliance percentage, assessment progress, and evidence counts per institution on the dashboard.",
     gradient: "from-blue-500/20 to-cyan-500/20",
     borderGradient: "from-blue-500 via-cyan-500 to-blue-500",
     size: "normal"
@@ -306,7 +308,7 @@ const features = [
   {
     icon: Zap,
     title: "Automated Workflows",
-    description: "Streamlined assessment and review processes",
+    description: "Draft → Submit → Reviewed. Teachers fill criteria; auditors add comments; status updates in one flow.",
     gradient: "from-pink-500/20 to-rose-500/20",
     borderGradient: "from-pink-500 via-rose-500 to-pink-500",
     size: "normal"
@@ -314,7 +316,7 @@ const features = [
   {
     icon: Users,
     title: "Team Collaboration",
-    description: "Role-based access with seamless teamwork",
+    description: "Roles: Admin, Teacher, Auditor. Institution-scoped access so each school or center sees only its data.",
     gradient: "from-indigo-500/20 to-violet-500/20",
     borderGradient: "from-indigo-500 via-violet-500 to-indigo-500",
     size: "normal"
@@ -470,16 +472,24 @@ function WorkflowStep({ step, index, isActive }: { step: typeof workflowSteps[0]
   )
 }
 
-// Nav Link with underline animation
+// Nav Link - real anchor with smooth scroll on same-page click
 function NavLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (href.startsWith("#")) {
+      e.preventDefault()
+      document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" })
+    }
+    onClick?.()
+  }
   return (
-    <button
-      onClick={onClick}
+    <Link
+      href={href}
+      onClick={handleClick}
       className="relative text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 py-1 group"
     >
       {children}
       <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-gradient-to-r from-blue-400 to-sky-300 group-hover:w-full transition-all duration-300" />
-    </button>
+    </Link>
   )
 }
 
@@ -487,7 +497,10 @@ function NavLink({ href, children, onClick }: { href: string; children: React.Re
 function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const lastScrollY = useRef(0)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -509,9 +522,42 @@ function LandingNavbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
-  }
+  // Focus trap and restore for mobile menu
+  useEffect(() => {
+    if (!mobileOpen) return
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const focusable = dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
+    const list = Array.from(focusable)
+    const first = list[0]
+    if (first) {
+      requestAnimationFrame(() => (first as HTMLElement).focus())
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return
+      const current = document.activeElement
+      const idx = list.indexOf(current as HTMLElement)
+      if (idx === -1) return
+      if (e.shiftKey) {
+        if (idx === 0) {
+          e.preventDefault()
+          list[list.length - 1].focus()
+        }
+      } else {
+        if (idx === list.length - 1) {
+          e.preventDefault()
+          list[0].focus()
+        }
+      }
+    }
+    dialog.addEventListener("keydown", handleKeyDown)
+    return () => {
+      dialog.removeEventListener("keydown", handleKeyDown)
+      menuButtonRef.current?.focus()
+    }
+  }, [mobileOpen])
+
+  const closeMobile = () => setMobileOpen(false)
 
   return (
     <motion.div
@@ -544,34 +590,96 @@ function LandingNavbar() {
           </motion.div>
         </Link>
 
-        {/* Center Nav Links */}
+        {/* Center Nav Links - Desktop */}
         <div className="hidden md:flex items-center gap-6">
-          <NavLink href="#features" onClick={() => scrollToSection("features")}>
+          <NavLink href="#features">
             Features
           </NavLink>
-          <NavLink href="#about" onClick={() => scrollToSection("about")}>
+          <NavLink href="#how-it-works">
+            How it works
+          </NavLink>
+          <NavLink href="#about">
             About
           </NavLink>
         </div>
 
-        {/* Right Side - Theme Toggle & Auth */}
+        {/* Right Side - Theme Toggle, Mobile menu button, Auth */}
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <div className="w-px h-4 bg-border/50" />
+          {/* Mobile menu button */}
+          <Button
+            ref={menuButtonRef}
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+          <div className="w-px h-4 bg-border/50 hidden md:block" />
           <Link
             href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 px-2 py-1.5"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 px-2 py-1.5 hidden md:inline"
           >
-            Login
+            Log in
           </Link>
           <MagneticButton
             asChild
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-1.5 h-auto rounded-full"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-1.5 h-auto rounded-full hidden md:inline-flex"
           >
-            <Link href="/signup">Get Started</Link>
+            <Link href="/signup">Sign in</Link>
           </MagneticButton>
         </div>
       </nav>
+
+      {/* Mobile dropdown - Features & About + Log in / Sign in */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden top-20"
+            aria-hidden
+            onClick={closeMobile}
+          />
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-label="Mobile menu"
+            aria-modal="true"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed left-4 right-4 top-[72px] z-50 md:hidden rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-xl py-4 px-4 [&_a]:block [&_a]:py-3 [&_a]:px-3 [&_a]:rounded-lg [&_a]:hover:bg-accent"
+          >
+            <div className="flex flex-col gap-0">
+              <NavLink href="#features" onClick={closeMobile}>
+                Features
+              </NavLink>
+              <NavLink href="#how-it-works" onClick={closeMobile}>
+                How it works
+              </NavLink>
+              <NavLink href="#about" onClick={closeMobile}>
+                About
+              </NavLink>
+              <div className="border-t border-border my-2" />
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-accent"
+                onClick={closeMobile}
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg text-center"
+                onClick={closeMobile}
+              >
+                Sign in
+              </Link>
+            </div>
+          </motion.div>
+        </>
+      )}
     </motion.div>
   )
 }
@@ -625,13 +733,21 @@ export default function Home() {
 
   return (
     <div ref={containerRef} className="bg-background text-foreground">
+      {/* Skip link - visible on focus for accessibility */}
+      <a
+        href="#main-content"
+        className="fixed left-4 top-4 z-[100] -translate-y-[200%] rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-lg outline-none focus:translate-y-0 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-transform"
+      >
+        Skip to main content
+      </a>
+
       {/* Cursor Glow Effect */}
       <CursorGlow />
 
       <LandingNavbar />
 
       {/* ===================== SECTION 1: HERO WITH DASHBOARD PREVIEW ===================== */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-16">
+      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-16">
         {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />
@@ -651,7 +767,7 @@ export default function Home() {
 
               {/* Subtitle */}
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-6 text-foreground/90 tracking-tight">
-                The primary Education Quality & Accreditation Platform
+                Your Education Quality & Accreditation Platform
               </h2>
 
               {/* Description */}
@@ -662,10 +778,10 @@ export default function Home() {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3">
                 <ShinyButton
-                  href="/signup"
+                  href="/login"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-6 py-5 text-sm font-medium w-full sm:w-auto"
                 >
-                  Get Started
+                  View Demo
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </ShinyButton>
                 <Button
@@ -702,8 +818,8 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* Right Side - Dashboard Preview with Safari Mockup */}
-            <div className="relative hidden lg:block">
+            {/* Right Side - Dashboard Preview: full mockup on md+, compact card on sm */}
+            <div className="relative hidden md:block">
               {/* Glow effect behind the mockup */}
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 blur-3xl scale-110" />
 
@@ -724,14 +840,29 @@ export default function Home() {
                 </div>
               </Safari_01>
             </div>
+            {/* Small screens: compact preview card */}
+            <div className="relative flex md:hidden justify-center mt-8">
+              <Link
+                href="/login"
+                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all"
+              >
+                <div className="w-14 h-14 rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <Lock className="w-7 h-7 text-primary/80" />
+                </div>
+                <span className="text-sm font-medium text-foreground">View Demo</span>
+                <span className="text-xs text-muted-foreground">See the platform in action</span>
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
           <button
+            type="button"
             onClick={scrollToFeatures}
             className="text-muted-foreground hover:text-foreground transition-colors flex flex-col items-center gap-2"
+            aria-label="Scroll to features"
           >
             <span className="text-[10px] uppercase tracking-widest font-medium opacity-50">Discover</span>
             <ChevronDown className="w-5 h-5 animate-bounce" />
@@ -809,7 +940,102 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Section Divider */}
+      <div className="relative h-px">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
 
+      {/* ===================== SECTION: HOW IT WORKS ===================== */}
+      <section id="how-it-works" className="relative py-24 md:py-32 px-6 overflow-hidden">
+        {/* Strong background - gradient strip */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,var(--primary)_0.08,transparent_50%)] pointer-events-none" />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={staggerContainer}
+            className="text-center mb-16 md:mb-20"
+          >
+            <motion.div
+              variants={fadeInUp}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-semibold uppercase tracking-wider mb-4"
+            >
+              Process
+            </motion.div>
+            <motion.h2
+              variants={fadeInUp}
+              className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
+            >
+              <span className="bg-gradient-to-r from-foreground via-foreground to-primary/90 bg-clip-text text-transparent">
+                How it works
+              </span>
+            </motion.h2>
+            <motion.p
+              variants={fadeInUp}
+              className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto"
+            >
+              Four steps from evidence to accreditation. Simple, transparent, and built for quality teams.
+            </motion.p>
+          </motion.div>
+
+          {/* Steps - horizontal on desktop, stacked on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4">
+            {workflowSteps.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="relative group"
+              >
+                {/* Connector arrow - desktop only, between cards */}
+                {index < workflowSteps.length - 1 && (
+                  <div className="hidden lg:block absolute top-20 left-[calc(50%+5rem)] w-[calc(100%-6rem)] h-px z-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-r from-border via-primary/40 to-border" />
+                    <div className="absolute -right-2 top-1/2 -translate-y-1/2 text-primary/60">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative h-full rounded-2xl border-2 border-border bg-card/60 backdrop-blur-sm p-6 md:p-8 transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 group-hover:-translate-y-1">
+                  {/* Accent bar - left */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary/50 via-primary to-primary/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Step number - bold */}
+                  <div className="text-5xl md:text-6xl font-bold text-foreground/10 group-hover:text-primary/20 transition-colors absolute top-4 right-4">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+
+                  {/* Icon */}
+                  <motion.div
+                    whileHover={{ scale: 1.08 }}
+                    className="relative z-10 w-16 h-16 md:w-20 md:h-20 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20"
+                  >
+                    <step.icon className="w-8 h-8 md:w-9 md:h-9 text-primary" />
+                  </motion.div>
+
+                  <h3 className="relative z-10 text-xl font-bold text-foreground mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="relative z-10 text-muted-foreground text-sm md:text-base leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section Divider */}
+      <div className="relative h-px">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
 
       {/* ===================== SECTION 5: ABOUT / AUDIENCE ===================== */}
       <section id="about" className="relative py-24 px-6 overflow-hidden">
@@ -829,11 +1055,65 @@ export default function Home() {
             </motion.p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {[
-              { title: "For Schools", icon: School },
-              { title: "For Universities", icon: GraduationCap },
-              { title: "For Training Centers", icon: Library },
+              {
+                title: "For Schools",
+                icon: School,
+                benefits: [
+                  "Align curricula and policies with national K–12 quality frameworks.",
+                  "Track teacher qualifications, PD, and classroom evidence in one place.",
+                  "Prepare for school inspections and accreditation visits with ready evidence.",
+                  "Involve staff in self-assessment and improvement plans without extra paperwork.",
+                ],
+              },
+              {
+                title: "For Universities",
+                icon: GraduationCap,
+                benefits: [
+                  "Map programs to ISO 21001 and NAQAAE at the faculty and program level.",
+                  "Manage program reviews, learning outcomes, and external audit evidence.",
+                  "Support research and teaching quality with a single evidence repository.",
+                  "Keep accreditation cycles on track with dashboards and deadline visibility.",
+                ],
+              },
+              {
+                title: "For Training Centers",
+                icon: Library,
+                benefits: [
+                  "Document competency-based curricula and trainer credentials for auditors.",
+                  "Link certificates, attendance, and assessments to specific criteria.",
+                  "Show compliance for vocational and professional certification bodies.",
+                  "Scale quality across multiple branches with one shared platform.",
+                ],
+              },
+            ].map((item, idx) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="group relative p-8 rounded-3xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 flex flex-col text-left"
+              >
+                <div className="mb-5 w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
+                  <item.icon className="w-7 h-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight mb-4">{item.title}</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {item.benefits.map((benefit, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-primary mt-0.5 shrink-0">•</span>
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
               { title: "ISO 21001 Ready", icon: Award },
               { title: "NAQAAE Compatible", icon: ShieldCheck },
               { title: "Evidence-First Approach", icon: Search },
@@ -843,13 +1123,13 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="group relative p-8 rounded-3xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center text-center"
+                transition={{ duration: 0.5, delay: (idx + 3) * 0.1 }}
+                className="group relative p-6 rounded-3xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center text-center"
               >
-                <div className="mb-6 w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                  <item.icon className="w-7 h-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="mb-4 w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
+                  <item.icon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
-                <h3 className="text-lg font-semibold tracking-tight">{item.title}</h3>
+                <h3 className="text-base font-semibold tracking-tight">{item.title}</h3>
               </motion.div>
             ))}
           </div>
@@ -898,7 +1178,7 @@ export default function Home() {
               href="/signup"
               className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-medium shadow-xl shadow-primary/20"
             >
-              Get Started Now
+              Create account
               <ArrowRight className="ml-2 h-5 w-5" />
             </ShinyButton>
           </motion.div>

@@ -174,7 +174,6 @@ function SignInForm(props: {
 
             <div className="flex items-center justify-center gap-3">
                 <AynLogo size="md" />
-                <span className="text-2xl font-light tracking-wider text-foreground">Ayn</span>
             </div>
 
             <div className="flex flex-col gap-2 text-center">
@@ -269,7 +268,6 @@ function SignUpForm(props: {
 
             <div className="flex items-center justify-center gap-3">
                 <AynLogo size="md" />
-                <span className="text-2xl font-light tracking-wider text-foreground">Ayn</span>
             </div>
 
             <div className="flex flex-col gap-2 text-center">

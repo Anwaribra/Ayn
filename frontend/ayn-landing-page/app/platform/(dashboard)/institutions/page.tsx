@@ -24,7 +24,14 @@ export default function InstitutionsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Institutions" description="Manage educational institutions" />
+      <Header
+        title="Institutions"
+        description="Manage educational institutions"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Institutions" },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Actions Bar */}

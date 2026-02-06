@@ -120,9 +120,7 @@ dmypy.json
 *.ps1
 !setup.sh
 !start_server.sh
-!stop_server.sh
-
-# Test files (optional - remove if you want to keep them)
+!stop_server.sh# Test files (optional - remove if you want to keep them)
 test_*.py
 *_test.py
 tests/__pycache__/

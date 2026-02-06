@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 import type { Institution, Standard } from "@/lib/types"
 
 export default function NewAssessmentPage() {
@@ -43,6 +44,7 @@ export default function NewAssessmentPage() {
         institutionId: selectedInstitutionId,
         standardId,
       })
+      toast.success("Assessment created")
       router.push(`/platform/assessments/${assessment.id}/edit`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create assessment")
@@ -53,7 +55,15 @@ export default function NewAssessmentPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Create Assessment" description="Start a new quality assessment" />
+      <Header
+        title="Create Assessment"
+        description="Start a new quality assessment"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Assessments", href: "/platform/assessments" },
+          { label: "New" },
+        ]}
+      />
 
       <div className="p-4 md:p-8 max-w-2xl">
         <Link

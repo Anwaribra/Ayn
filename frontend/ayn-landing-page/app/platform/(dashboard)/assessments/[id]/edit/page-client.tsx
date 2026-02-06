@@ -113,7 +113,16 @@ export function EditAssessmentPageClient() {
 
   return (
     <div className="min-h-screen">
-      <Header title={`Edit Assessment #${assessment.id.slice(0, 8)}`} description="Fill in the assessment answers" />
+      <Header
+        title={`Edit Assessment #${assessment.id.slice(0, 8)}`}
+        description="Fill in the assessment answers"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Assessments", href: "/platform/assessments" },
+          { label: `#${assessment.id.slice(0, 8)}`, href: `/platform/assessments/${id}` },
+          { label: "Edit" },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         <div className="flex items-center justify-between">

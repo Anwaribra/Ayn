@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { toast } from "sonner"
 
 export function ReviewAssessmentPageClient() {
   const { id } = useParams()
@@ -27,6 +28,7 @@ export function ReviewAssessmentPageClient() {
     setIsSubmitting(true)
     try {
       await api.reviewAssessment(id as string, reviewerComment)
+      toast.success("Assessment reviewed")
       router.push(`/platform/assessments/${id}`)
     } catch (err) {
       console.error(err)
@@ -69,6 +71,12 @@ export function ReviewAssessmentPageClient() {
         <Header
           title={`Review Assessment #${assessment.id.slice(0, 8)}`}
           description="Review and provide feedback on this assessment"
+          breadcrumbs={[
+            { label: "Dashboard", href: "/platform/dashboard" },
+            { label: "Assessments", href: "/platform/assessments" },
+            { label: `#${assessment.id.slice(0, 8)}`, href: `/platform/assessments/${id}` },
+            { label: "Review" },
+          ]}
         />
 
         <div className="p-4 md:p-8 space-y-6">

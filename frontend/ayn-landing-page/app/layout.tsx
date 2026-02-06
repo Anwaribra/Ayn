@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/lib/theme-context"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 const geist = Geist({
@@ -79,6 +80,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <ThemeProvider>
           {children}
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
         <Analytics />
       </body>

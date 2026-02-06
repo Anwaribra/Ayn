@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { toast } from "sonner"
 
 export default function NewStandardPage() {
   const [title, setTitle] = useState("")
@@ -28,6 +29,7 @@ export default function NewStandardPage() {
 
     try {
       const standard = await api.createStandard({ title, description })
+      toast.success("Standard created")
       router.push(`/platform/standards/${standard.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create standard")
@@ -39,7 +41,15 @@ export default function NewStandardPage() {
   return (
     <ProtectedRoute allowedRoles={["ADMIN"]}>
       <div className="min-h-screen">
-        <Header title="Create Standard" description="Add a new quality standard" />
+        <Header
+          title="Create Standard"
+          description="Add a new quality standard"
+          breadcrumbs={[
+            { label: "Dashboard", href: "/platform/dashboard" },
+            { label: "Standards", href: "/platform/standards" },
+            { label: "New" },
+          ]}
+        />
 
         <div className="p-4 md:p-8 max-w-2xl">
           <Link
@@ -53,7 +63,7 @@ export default function NewStandardPage() {
           <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div id="form-error" className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
                   {error}
                 </div>
               )}
@@ -67,6 +77,8 @@ export default function NewStandardPage() {
                   placeholder="ISO 21001"
                   required
                   className="bg-background/50"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "form-error" : undefined}
                 />
               </div>
 

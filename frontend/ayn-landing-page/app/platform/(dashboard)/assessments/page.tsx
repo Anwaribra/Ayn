@@ -28,7 +28,14 @@ export default function AssessmentsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Assessments" description="Quality assurance assessments" />
+      <Header
+        title="Assessments"
+        description="Quality assurance assessments"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Assessments" },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Actions Bar */}

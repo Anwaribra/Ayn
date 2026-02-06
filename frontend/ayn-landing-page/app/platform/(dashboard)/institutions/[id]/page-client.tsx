@@ -48,7 +48,15 @@ export function InstitutionDetailPageClient() {
 
   return (
     <div className="min-h-screen">
-      <Header title={institution.name} description={institution.description || undefined} />
+      <Header
+        title={institution.name}
+        description={institution.description || undefined}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Institutions", href: "/platform/institutions" },
+          { label: institution.name },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         <Link

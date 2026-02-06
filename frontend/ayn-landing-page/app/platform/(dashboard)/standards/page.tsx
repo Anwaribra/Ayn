@@ -22,7 +22,14 @@ export default function StandardsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Standards" description="Quality assurance standards and criteria" />
+      <Header
+        title="Standards"
+        description="Quality assurance standards and criteria"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Standards" },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         {/* Actions Bar */}

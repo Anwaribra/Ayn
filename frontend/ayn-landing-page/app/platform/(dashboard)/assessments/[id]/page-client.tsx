@@ -70,7 +70,14 @@ export function AssessmentDetailPageClient() {
 
   return (
     <div className="min-h-screen">
-      <Header title={`Assessment #${assessment.id.slice(0, 8)}`} />
+      <Header
+        title={`Assessment #${assessment.id.slice(0, 8)}`}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Assessments", href: "/platform/assessments" },
+          { label: `#${assessment.id.slice(0, 8)}` },
+        ]}
+      />
 
       <div className="p-4 md:p-8 space-y-6">
         <Link

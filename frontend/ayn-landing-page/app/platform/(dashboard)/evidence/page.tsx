@@ -68,10 +68,10 @@ export default function EvidencePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Evidence" description="Manage uploaded evidence files" />
 
-      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] max-w-7xl mx-auto space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-80">
@@ -95,7 +95,7 @@ export default function EvidencePage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6">
+              <div key={i} className="bg-card border border-border rounded-xl p-6 shadow-sm">
                 <Skeleton className="h-12 w-12 rounded-lg mb-4" />
                 <Skeleton className="h-5 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2" />
@@ -103,7 +103,7 @@ export default function EvidencePage() {
             ))}
           </div>
         ) : filteredEvidence?.length === 0 ? (
-          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+          <Empty className="bg-card border border-border rounded-xl py-16 border-solid shadow-sm">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FileText className="size-6 text-muted-foreground" />
@@ -129,7 +129,7 @@ export default function EvidencePage() {
             {filteredEvidence?.map((item: Evidence) => (
               <div
                 key={item.id}
-                className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-foreground/20 transition-all"
+                className="bg-card border border-border rounded-xl p-6 shadow-sm hover:border-primary/30 transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="p-3 bg-muted rounded-lg">

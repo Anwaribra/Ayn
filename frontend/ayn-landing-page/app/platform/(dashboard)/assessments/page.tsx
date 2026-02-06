@@ -12,6 +12,7 @@ import Link from "next/link"
 import { useState } from "react"
 import type { Assessment, AssessmentStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/platform/status-badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -34,7 +35,7 @@ export default function AssessmentsPage() {
   const canCreate = user?.role === "ADMIN" || user?.role === "INSTITUTION_ADMIN" || user?.role === "TEACHER"
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header
         title="Assessments"
         description="Quality assurance assessments"
@@ -44,7 +45,7 @@ export default function AssessmentsPage() {
         ]}
       />
 
-      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
+      <div className="p-4 md:p-[var(--spacing-content)] max-w-7xl mx-auto space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -84,17 +85,19 @@ export default function AssessmentsPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6 flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-                <Skeleton className="h-6 w-20 rounded-full" />
-              </div>
+              <Card key={i} className="border-border shadow-sm">
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : filteredAssessments?.length === 0 ? (
-          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+          <Empty className="bg-card border border-border rounded-xl py-16 border-solid shadow-sm">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <ClipboardList className="size-6 text-muted-foreground" />
@@ -119,7 +122,8 @@ export default function AssessmentsPage() {
           <div className="space-y-4">
             {filteredAssessments?.map((assessment: Assessment) => (
               <Link key={assessment.id} href={`/platform/assessments/${assessment.id}`}>
-                <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-foreground/20 transition-all group cursor-pointer">
+                <Card className="border-border shadow-sm hover:border-primary/30 transition-all group cursor-pointer">
+                  <CardContent className="p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-muted rounded-lg">
@@ -144,7 +148,8 @@ export default function AssessmentsPage() {
                       </p>
                     </div>
                   )}
-                </div>
+                  </CardContent>
+                </Card>
               </Link>
             ))}
           </div>

@@ -38,7 +38,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications?.filter((n: Notification) => !n.read).length || 0
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Notifications" description={`${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}`} />
 
       <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
@@ -56,14 +56,14 @@ export default function NotificationsPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-card/50 border border-border rounded-xl p-6">
+              <div key={i} className="bg-card border border-border rounded-xl p-6 shadow-sm">
                 <Skeleton className="h-5 w-1/3 mb-2" />
                 <Skeleton className="h-4 w-2/3" />
               </div>
             ))}
           </div>
         ) : notifications?.length === 0 ? (
-          <Empty className="bg-card/50 border border-border rounded-xl py-16 border-solid">
+          <Empty className="bg-card border border-border rounded-xl py-16 border-solid shadow-sm">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <Bell className="size-6 text-muted-foreground" />
@@ -77,8 +77,8 @@ export default function NotificationsPage() {
             {notifications?.map((notification: Notification) => (
               <div
                 key={notification.id}
-                className={`bg-card/50 backdrop-blur-sm border rounded-xl p-6 transition-all ${
-                  notification.read ? "border-border" : "border-foreground/20 bg-accent/20"
+                className={`bg-card border rounded-xl p-6 shadow-sm transition-all ${
+                  notification.read ? "border-border" : "border-primary/30 bg-accent/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">

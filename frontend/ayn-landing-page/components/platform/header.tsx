@@ -28,7 +28,7 @@ interface HeaderProps {
 
 export function Header({ title, description, breadcrumbs }: HeaderProps) {
   return (
-    <header className={SIDEBAR_MOBILE_OFFSET + " py-6 px-4 md:px-[var(--spacing-content)] border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-30"}>
+    <header className={SIDEBAR_MOBILE_OFFSET + " py-6 px-4 md:px-[var(--spacing-content)] border-b border-border bg-background sticky top-0 z-30"}>
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <Breadcrumb className="mb-2">

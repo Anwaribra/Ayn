@@ -85,12 +85,14 @@ export function DesktopSidebar({
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col bg-sidebar border-r border-sidebar-border w-[300px] flex-shrink-0",
+        "h-full hidden md:flex md:flex-col bg-sidebar border-r border-sidebar-border flex-shrink-0 shadow-sm",
+        "px-3 py-4",
         className
       )}
       animate={{
-        width: animate ? (open ? "300px" : "72px") : "300px",
+        width: animate ? (open ? "280px" : "72px") : "280px",
       }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       {...props}
@@ -126,17 +128,26 @@ export function MobileSidebar({
         </div>
         <AnimatePresence>
           {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className={cn(
-                "fixed h-full w-full inset-0 bg-background p-10 z-[100] flex flex-col justify-between",
-                className
-              )}
-            >
-              <button
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[99] md:hidden"
+                onClick={() => setOpen(false)}
+                aria-hidden
+              />
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={cn(
+                  "fixed h-full w-full max-w-sm inset-y-0 left-0 bg-sidebar border-r border-sidebar-border p-6 pt-14 z-[100] flex flex-col shadow-xl",
+                  className
+                )}
+              >
+                <button
                 type="button"
                 className="absolute right-10 top-10 z-50 text-foreground cursor-pointer p-2"
                 onClick={() => setOpen(!open)}
@@ -145,7 +156,8 @@ export function MobileSidebar({
                 <X className="w-5 h-5" />
               </button>
               {children}
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
@@ -171,13 +183,21 @@ export function SidebarLink({
       href={link.href}
       onClick={onClick}
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2.5 px-3 rounded-lg transition-colors",
-        isActive ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+        "relative flex items-center justify-start gap-3 group/sidebar py-2.5 px-3 rounded-lg transition-all duration-200",
+        isActive
+          ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+          : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
         className
       )}
       {...props}
     >
-      {link.icon}
+      {isActive && (
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r bg-primary"
+          aria-hidden
+        />
+      )}
+      <span className="flex shrink-0 [&_svg]:size-5">{link.icon}</span>
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",

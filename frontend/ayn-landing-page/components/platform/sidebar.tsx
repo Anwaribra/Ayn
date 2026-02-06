@@ -70,18 +70,18 @@ function PlatformSidebarContent() {
 
   return (
     <>
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex items-center gap-3 px-4 py-6 border-b border-sidebar-border">
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+        <div className="flex items-center gap-3 px-2 py-5 border-b border-sidebar-border shrink-0">
           <AynLogo size={open ? "md" : "sm"} heroStyle withGlow={false} />
           {open && (
-            <div>
-              <h1 className="font-semibold text-sidebar-foreground">Ayn</h1>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
               <p className="text-xs text-muted-foreground">Platform</p>
             </div>
           )}
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {filteredNavItems.map((item) => {
             const { isActive, ...link } = toLinkItem(item, pathname)
             return (
@@ -124,16 +124,16 @@ function PlatformSidebarContent() {
         </nav>
       </div>
 
-      <div className="p-4 border-t border-sidebar-border space-y-3">
-        <div className="flex items-center gap-2">
+      <div className="p-3 border-t border-sidebar-border space-y-3 shrink-0">
+        <div className="flex items-center gap-2 px-1">
           <ThemeToggle variant="icon" className="shrink-0" />
-          {open && <span className="text-sm text-muted-foreground">Dark / Light</span>}
+          {open && <span className="text-xs text-muted-foreground">Theme</span>}
         </div>
         {user && open && (
-          <div className="mb-3 px-3">
+          <div className="mb-2 px-2 py-2 rounded-lg bg-sidebar-accent/50">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-            <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
+            <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
               {user.role === "ADMIN" ? "Admin" : "User"}
             </span>
           </div>
@@ -142,7 +142,7 @@ function PlatformSidebarContent() {
           type="button"
           onClick={handleLogout}
           className={cn(
-            "flex items-center justify-start gap-2 w-full py-2.5 px-3 rounded-lg transition-colors",
+            "flex items-center justify-start gap-2 w-full py-2.5 px-3 rounded-lg transition-colors text-sm",
             "text-muted-foreground hover:text-destructive hover:bg-destructive/10",
           )}
         >

@@ -158,13 +158,13 @@ export default function AynAIChat() {
             >
               <div
                 className={cn(
-                  "max-w-[85%] rounded-xl px-4 py-3 text-sm",
+                  "max-w-[85%] rounded-xl px-4 py-3 text-sm shadow-sm",
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-card/80 border border-border text-foreground backdrop-blur-sm"
+                    : "bg-card border border-border text-foreground"
                 )}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
               </div>
             </div>
           ))}
@@ -182,7 +182,7 @@ export default function AynAIChat() {
       {/* Fixed input section at bottom (same shape as reference) */}
       <div className="w-full flex flex-col items-center pb-8 pt-4 px-4">
         <div className="w-full max-w-3xl">
-          <div className="relative rounded-xl border border-border bg-card/80 dark:bg-card/90 backdrop-blur-md shadow-lg">
+          <div className="relative rounded-xl border border-border bg-card shadow-md">
             <Textarea
               ref={textareaRef}
               value={message}
@@ -240,7 +240,7 @@ export default function AynAIChat() {
                 key={action.label}
                 type="button"
                 variant="outline"
-                className="flex items-center gap-2 rounded-full border-border bg-card/50 dark:bg-card/80 text-muted-foreground hover:text-foreground hover:bg-accent/50 text-xs backdrop-blur-sm"
+                className="flex items-center gap-2 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent text-xs shadow-sm transition-colors"
                 onClick={() => handleQuickAction(action.prompt)}
               >
                 <action.icon className="w-3.5 h-3.5 shrink-0" />

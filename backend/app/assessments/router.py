@@ -165,8 +165,7 @@ async def get_assessment(
                 reviewerComment=ans.reviewerComment
             )
             for ans in (assessment.answers or [])
-        ],
-        standardId=standard_id
+        ]
     )
 
 

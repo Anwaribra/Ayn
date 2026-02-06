@@ -17,25 +17,31 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const router = useRouter()
 
   useEffect(() => {
-    // Add small delay to ensure AuthContext has loaded user from localStorage
     const timer = setTimeout(() => {
       if (!isLoading && !isAuthenticated) {
-        console.log('[ProtectedRoute] Redirecting to login - no user found')
-        router.push("/platform/login")
+        // Don't redirect if we have a token (AuthContext may not have applied user yet)
+        const hasToken =
+          typeof window !== "undefined" && !!localStorage.getItem("access_token")
+        if (!hasToken) {
+          router.push("/platform/login")
+        }
       }
 
       if (!isLoading && isAuthenticated && allowedRoles && user) {
         if (!allowedRoles.includes(user.role)) {
-          log('[ProtectedRoute] Redirecting to dashboard - insufficient permissions')
+          log("[ProtectedRoute] Redirecting to dashboard - insufficient permissions")
           router.push("/platform/dashboard")
         }
       }
-    }, 100) // Small delay to let AuthContext load
+    }, 150)
 
     return () => clearTimeout(timer)
   }, [isLoading, isAuthenticated, user, allowedRoles, router])
 
-  if (isLoading) {
+  // Show loader while loading, or when we have a token but user not set yet (avoid redirect flash)
+  const hasToken =
+    typeof window !== "undefined" && !!localStorage.getItem("access_token")
+  if (isLoading || (!isAuthenticated && hasToken)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

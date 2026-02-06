@@ -46,6 +46,7 @@ export interface Assessment {
   reviewedAt: string | null
   reviewerComment: string | null
   answers: AssessmentAnswer[]
+  standardId?: string | null
   institution?: Institution
   user?: User
 }

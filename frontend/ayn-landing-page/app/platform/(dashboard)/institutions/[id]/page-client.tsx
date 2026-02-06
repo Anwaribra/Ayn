@@ -9,6 +9,7 @@ import { useParams } from "next/navigation"
 import { Building2, Users, Calendar, ArrowLeft, Edit, LinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export function InstitutionDetailPageClient() {
   const { id } = useParams()
@@ -114,11 +115,11 @@ export function InstitutionDetailPageClient() {
           <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Admin Actions</h3>
             <div className="flex flex-wrap gap-4">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => toast.info("Coming soon")} aria-label="Assign users to institution">
                 <Users className="w-4 h-4 mr-2" />
                 Assign Users
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => toast.info("Coming soon")} aria-label="Link standards to institution">
                 <LinkIcon className="w-4 h-4 mr-2" />
                 Link Standards
               </Button>

@@ -91,6 +91,7 @@ class AssessmentResponse(BaseModel):
     reviewedAt: Optional[datetime] = None
     reviewerComment: Optional[str] = None
     answers: List[AssessmentAnswerResponse] = []
+    standardId: Optional[str] = None
 
     class Config:
         from_attributes = True

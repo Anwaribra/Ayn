@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import type { Criterion } from "@/lib/types"
+import { toast } from "sonner"
 
 export function EditAssessmentPageClient() {
   const { id } = useParams()
@@ -24,13 +24,9 @@ export function EditAssessmentPageClient() {
     api.getAssessment(id as string),
   )
 
-  // We need to get criteria - assuming we have standard info in assessment
   const { data: criteria, isLoading: loadingCriteria } = useSWR(
-    assessment ? `criteria-for-assessment` : null,
-    async () => {
-      // For now, return empty - in real app, we'd get standardId from assessment
-      return [] as Criterion[]
-    },
+    assessment?.standardId ? `criteria-${assessment.standardId}` : null,
+    () => api.getCriteria(assessment!.standardId!),
   )
 
   useEffect(() => {
@@ -51,9 +47,10 @@ export function EditAssessmentPageClient() {
         answer,
       }))
       await api.saveAssessmentAnswers(id as string, answersArray)
+      toast.success("Assessment saved")
       router.push(`/platform/assessments/${id}`)
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Failed to save assessment")
     } finally {
       setIsSaving(false)
     }
@@ -64,8 +61,9 @@ export function EditAssessmentPageClient() {
     try {
       const response = await api.generateAnswer(`Generate a comprehensive answer for the criterion: ${criterionTitle}`)
       setAnswers((prev) => ({ ...prev, [criterionId]: response.result }))
+      toast.success("Answer generated")
     } catch (err) {
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : "Failed to generate answer")
     } finally {
       setGeneratingAI(null)
     }

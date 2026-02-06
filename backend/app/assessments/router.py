@@ -123,7 +123,7 @@ async def get_assessment(
     
     assessment = await db.assessment.find_unique(
         where={"id": assessment_id},
-        include={"answers": True}
+        include={"answers": {"include": {"criterion": True}}}
     )
     
     if not assessment:
@@ -140,6 +140,13 @@ async def get_assessment(
                 detail="Access denied. You can only view assessments for your institution"
             )
     
+    # Derive standardId from first answer's criterion (assessment model has no standardId)
+    standard_id = None
+    if assessment.answers:
+        first_answer = assessment.answers[0]
+        if getattr(first_answer, "criterion", None) is not None:
+            standard_id = first_answer.criterion.standardId
+
     return AssessmentResponse(
         id=assessment.id,
         institutionId=assessment.institutionId,
@@ -159,7 +166,8 @@ async def get_assessment(
                 reviewerComment=ans.reviewerComment
             )
             for ans in (assessment.answers or [])
-        ]
+        ],
+        standardId=standard_id
     )
 
 

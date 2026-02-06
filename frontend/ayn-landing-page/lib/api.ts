@@ -74,7 +74,7 @@ class ApiClient {
   }
 
   async syncWithSupabase(supabaseToken: string) {
-    console.log('[API] Syncing with Supabase...');
+    log('[API] Syncing with Supabase...');
     const response = await this.request<{
       user: import("./types").User
       access_token: string

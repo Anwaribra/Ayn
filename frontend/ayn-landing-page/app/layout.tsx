@@ -29,6 +29,12 @@ const siteDescription =
 const siteTitle = "Ayn — Education Quality & Accreditation Platform"
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ayn-edu.com"
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+}
+
 export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,

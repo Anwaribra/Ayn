@@ -84,12 +84,10 @@ function SidebarSection({
   if (filtered.length === 0) return null
 
   return (
-    <div className="space-y-1">
-      {open && (
-        <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          {title}
-        </p>
-      )}
+    <div className="space-y-0.5">
+      <p className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {title}
+      </p>
       {filtered.map((item) => {
         const { isActive, ...link } = toLinkItem(item, pathname)
         return (
@@ -121,17 +119,15 @@ function PlatformSidebarContent() {
   return (
     <>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="flex items-center gap-3 px-2 py-5 border-b border-sidebar-border shrink-0">
-          <AynLogo size={open ? "md" : "sm"} heroStyle withGlow={false} />
-          {open && (
-            <div className="min-w-0">
-              <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
-              <p className="text-xs text-muted-foreground">Platform</p>
-            </div>
-          )}
+        <div className="flex items-center gap-3 px-2 py-4 border-b border-sidebar-border shrink-0">
+          <AynLogo size="md" heroStyle withGlow={false} />
+          <div className="min-w-0">
+            <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
+            <p className="text-xs text-muted-foreground">Platform</p>
+          </div>
         </div>
 
-        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-3 overflow-y-auto">
           {sections.map((section) => (
             <SidebarSection
               key={section.title}
@@ -159,9 +155,9 @@ function PlatformSidebarContent() {
       <div className="p-3 border-t border-sidebar-border space-y-3 shrink-0">
         <div className="flex items-center gap-2 px-1">
           <ThemeToggle variant="icon" className="shrink-0" />
-          {open && <span className="text-xs text-muted-foreground">Theme</span>}
+          <span className="text-xs text-muted-foreground">Theme</span>
         </div>
-        {user && open && (
+        {user && (
           <div className="mb-2 px-2 py-2 rounded-lg bg-sidebar-accent/50">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -179,7 +175,7 @@ function PlatformSidebarContent() {
           )}
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {open && <span>Logout</span>}
+          <span>Logout</span>
         </button>
       </div>
     </>
@@ -187,10 +183,10 @@ function PlatformSidebarContent() {
 }
 
 export function Sidebar() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   return (
-    <UiSidebar open={open} setOpen={setOpen}>
+    <UiSidebar open={open} setOpen={setOpen} animate={false}>
       <SidebarBody className="flex flex-col justify-between gap-10 h-full">
         <PlatformSidebarContent />
       </SidebarBody>

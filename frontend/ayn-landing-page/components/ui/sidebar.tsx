@@ -87,14 +87,13 @@ export function DesktopSidebar({
       className={cn(
         "h-full hidden md:flex md:flex-col bg-sidebar border-r border-sidebar-border flex-shrink-0 shadow-sm",
         "px-3 py-4",
+        !animate && "w-[280px]",
         className
       )}
-      animate={{
-        width: animate ? (open ? "280px" : "72px") : "280px",
-      }}
+      animate={animate ? { width: open ? "280px" : "72px" } : undefined}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={animate ? () => setOpen(true) : undefined}
+      onMouseLeave={animate ? () => setOpen(false) : undefined}
       {...props}
     >
       {children}

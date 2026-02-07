@@ -46,6 +46,7 @@ model Institution {
   users                 User[]
   assessments           Assessment[]
   institutionStandards  InstitutionStandard[]
+  gapAnalyses           GapAnalysis[]
 
   @@index([name])
 }
@@ -74,6 +75,7 @@ model Standard {
   criteria     Criterion[]
   assessments  Assessment[]
   institutionStandards InstitutionStandard[]
+  gapAnalyses  GapAnalysis[]
 
   @@index([title])
 }
@@ -152,6 +154,27 @@ model Evidence {
 
   @@index([criterionId])
   @@index([uploadedById])
+}
+
+// Gap Analysis Model
+model GapAnalysis {
+  id                  String   @id @default(uuid())
+  institutionId       String
+  standardId          String
+  assessmentId        String?
+  overallScore        Float
+  summary             String   @db.Text
+  gapsJson            String   @db.Text
+  recommendationsJson String   @db.Text
+  archived            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  institution  Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  standard     Standard    @relation(fields: [standardId], references: [id], onDelete: SetNull)
+
+  @@index([institutionId])
+  @@index([standardId])
+  @@index([archived])
 }
 
 // Notification Model

@@ -35,7 +35,12 @@ class ApiClient {
       if (response.status === 401) {
         localStorage.removeItem("access_token")
         localStorage.removeItem("user")
-        window.location.href = "/platform/login"
+        // Dispatch a custom event so the auth context can handle navigation
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+          // Fallback: redirect via location if event isn't handled
+          window.location.assign("/platform/login")
+        }
       }
       const error = await response.json().catch(() => ({ detail: "An error occurred" }))
       throw new Error(error.detail || "An error occurred")
@@ -305,6 +310,13 @@ class ApiClient {
   }
 
   // AI
+  async chat(messages: { role: "user" | "assistant"; content: string }[], context?: string) {
+    return this.request<import("./types").AIResponse>("/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages, context }),
+    })
+  }
+
   async generateAnswer(prompt: string, context?: string) {
     return this.request<import("./types").AIResponse>("/ai/generate-answer", {
       method: "POST",
@@ -338,6 +350,37 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ text, criteria }),
     })
+  }
+
+  // Gap Analysis
+  async generateGapAnalysis(standardId: string, assessmentId?: string) {
+    return this.request<import("./types").GapAnalysis>("/gap-analysis/generate", {
+      method: "POST",
+      body: JSON.stringify({ standardId, assessmentId }),
+    })
+  }
+
+  async getGapAnalyses() {
+    return this.request<import("./types").GapAnalysisListItem[]>("/gap-analysis")
+  }
+
+  async getGapAnalysis(id: string) {
+    return this.request<import("./types").GapAnalysis>(`/gap-analysis/${id}`)
+  }
+
+  async deleteGapAnalysis(id: string) {
+    return this.request(`/gap-analysis/${id}`, { method: "DELETE" })
+  }
+
+  async archiveGapAnalysis(id: string, archived: boolean = true) {
+    return this.request(`/gap-analysis/${id}/archive`, {
+      method: "POST",
+      body: JSON.stringify({ archived }),
+    })
+  }
+
+  async getArchivedGapAnalyses() {
+    return this.request<import("./types").GapAnalysisListItem[]>("/gap-analysis/archived/list")
   }
 
 }

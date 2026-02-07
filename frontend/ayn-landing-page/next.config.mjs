@@ -1,19 +1,38 @@
 /** @type {import('next').NextConfig} */
-// Configuration for Oblien deployment (Full Next.js, no static export)
 const nextConfig = {
-  // No output: 'export' - use full Next.js features
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
-    // Enable image optimization (Oblien supports it)
     unoptimized: false,
   },
   trailingSlash: true,
-  // No basePath needed - Oblien handles subdomain routing
-  // basePath: '', // Remove this for Oblien
-  // assetPrefix: '', // Remove this for Oblien
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig
-

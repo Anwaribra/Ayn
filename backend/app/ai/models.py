@@ -1,6 +1,28 @@
 """Pydantic models for AI module."""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal
+
+
+class ChatMessage(BaseModel):
+    """A single message in a conversation."""
+    role: Literal["user", "assistant"] = Field(..., description="Role of the message sender")
+    content: str = Field(..., min_length=1, max_length=10000, description="Message content")
+
+
+class ChatRequest(BaseModel):
+    """Request model for multi-turn chat."""
+    messages: List[ChatMessage] = Field(..., min_length=1, max_length=50, description="Conversation history")
+    context: Optional[str] = Field(None, max_length=200, description="Context hint (e.g. 'gap_analysis', 'evidence_analysis')")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "messages": [
+                    {"role": "user", "content": "What are the key requirements for ISO 21001 compliance?"}
+                ],
+                "context": "assessment_help"
+            }
+        }
 
 
 class GenerateAnswerRequest(BaseModel):

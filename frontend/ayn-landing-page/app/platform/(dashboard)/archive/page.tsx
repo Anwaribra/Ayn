@@ -1,24 +1,541 @@
 "use client"
 
-import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
+import useSWR from "swr"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Eye,
+  Download,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  Calendar,
+  Target,
+  TrendingUp,
+} from "lucide-react"
+import type { GapAnalysis, GapItem } from "@/lib/types"
+import { toast } from "sonner"
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+const STATUS_CONFIG = {
+  met: { label: "Met", icon: CheckCircle2, color: "text-emerald-500" },
+  partially_met: { label: "Partially Met", icon: AlertTriangle, color: "text-amber-500" },
+  not_met: { label: "Not Met", icon: XCircle, color: "text-red-500" },
+  no_evidence: { label: "No Evidence", icon: HelpCircle, color: "text-muted-foreground" },
+}
+
+function getScoreColor(score: number) {
+  if (score >= 70) return "text-emerald-500"
+  if (score >= 40) return "text-amber-500"
+  return "text-red-500"
+}
+
+function getScoreBg(score: number) {
+  if (score >= 70) return "bg-emerald-500/10"
+  if (score >= 40) return "bg-amber-500/10"
+  return "bg-red-500/10"
+}
+
+// ─── PDF Export ──────────────────────────────────────────────────────────────
+
+function exportToPDF(report: GapAnalysis) {
+  // Create a printable HTML document and trigger browser print
+  const statusLabels: Record<string, string> = {
+    met: "Met",
+    partially_met: "Partially Met",
+    not_met: "Not Met",
+    no_evidence: "No Evidence",
+  }
+
+  const gapRows = report.gaps
+    .map(
+      (g) => `
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd">${g.criterionTitle}</td>
+      <td style="padding:8px;border:1px solid #ddd">${statusLabels[g.status] || g.status}</td>
+      <td style="padding:8px;border:1px solid #ddd">${g.priority}</td>
+      <td style="padding:8px;border:1px solid #ddd">${g.gap || "-"}</td>
+      <td style="padding:8px;border:1px solid #ddd">${g.recommendation || "-"}</td>
+    </tr>`
+    )
+    .join("")
+
+  const recommendations = report.recommendations
+    .map((r, i) => `<li>${r}</li>`)
+    .join("")
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Gap Analysis Report - ${report.standardTitle}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+        h1 { color: #1a1a2e; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        h2 { color: #333; margin-top: 30px; }
+        .meta { color: #666; margin-bottom: 20px; }
+        .score { font-size: 48px; font-weight: bold; color: ${report.overallScore >= 70 ? "#10b981" : report.overallScore >= 40 ? "#f59e0b" : "#ef4444"}; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th { background: #f5f5f5; padding: 8px; border: 1px solid #ddd; text-align: left; }
+        .summary { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        @media print { body { margin: 20px; } }
+      </style>
+    </head>
+    <body>
+      <h1>Gap Analysis Report</h1>
+      <p class="meta">Standard: ${report.standardTitle} | Generated: ${formatDateTime(report.createdAt)}</p>
+      <div class="score">${report.overallScore.toFixed(1)}% Compliance</div>
+      <h2>Executive Summary</h2>
+      <div class="summary">${report.summary}</div>
+      <h2>Criteria Analysis</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Criterion</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Gap</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>${gapRows}</tbody>
+      </table>
+      <h2>Top Recommendations</h2>
+      <ol>${recommendations}</ol>
+      <hr style="margin-top:40px" />
+      <p style="color:#999;font-size:12px">Generated by Horus AI - Ayn Platform</p>
+    </body>
+    </html>
+  `
+
+  const printWindow = window.open("", "_blank")
+  if (printWindow) {
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => printWindow.print(), 500)
+  }
+}
+
+// ─── Report Detail Dialog ────────────────────────────────────────────────────
+
+function ReportDetailDialog({
+  report,
+  open,
+  onOpenChange,
+}: {
+  report: GapAnalysis | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  if (!report) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getScoreBg(report.overallScore)}`}>
+              <span className={`text-sm font-bold ${getScoreColor(report.overallScore)}`}>
+                {report.overallScore.toFixed(0)}%
+              </span>
+            </div>
+            <div>
+              <div>{report.standardTitle}</div>
+              <div className="text-sm font-normal text-muted-foreground">
+                {formatDateTime(report.createdAt)}
+              </div>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-4">
+          {/* Summary */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Executive Summary
+            </h3>
+            <p className="text-sm leading-relaxed bg-muted/30 rounded-lg p-4">{report.summary}</p>
+          </div>
+
+          {/* Criteria */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Criteria Analysis ({report.gaps.length} criteria)
+            </h3>
+            <div className="space-y-2">
+              {report.gaps.map((gap, i) => {
+                const config = STATUS_CONFIG[gap.status]
+                const StatusIcon = config.icon
+                return (
+                  <div key={i} className="border border-border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <StatusIcon className={`h-4 w-4 ${config.color}`} />
+                        <span className="text-sm font-medium">{gap.criterionTitle}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {gap.priority}
+                      </Badge>
+                    </div>
+                    {gap.gap && (
+                      <p className="text-xs text-muted-foreground">
+                        <strong>Gap:</strong> {gap.gap}
+                      </p>
+                    )}
+                    {gap.recommendation && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <strong>Action:</strong> {gap.recommendation}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          {report.recommendations.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Top Recommendations
+              </h3>
+              <ol className="space-y-2">
+                {report.recommendations.map((rec, i) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    {rec}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+          <Button variant="outline" className="gap-2" onClick={() => exportToPDF(report)}>
+            <Download className="h-4 w-4" />
+            Export PDF
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function ArchivePage() {
   return (
     <ProtectedRoute>
-    <Card className="border-border/60">
-      <CardHeader>
-        <CardTitle className="text-base">Archived Reports</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm text-muted-foreground">
-        <p>No archived reports yet. Generate a gap analysis export to keep a history of submissions.</p>
-        <Button asChild size="sm">
-          <Link href="/platform/gap-analysis">Run gap analysis</Link>
-        </Button>
-      </CardContent>
-    </Card>
+      <ArchiveContent />
     </ProtectedRoute>
+  )
+}
+
+function ArchiveContent() {
+  const { user } = useAuth()
+  const [selectedReport, setSelectedReport] = useState<GapAnalysis | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+
+  const {
+    data: archived,
+    isLoading,
+    mutate: mutateArchived,
+  } = useSWR(user ? "archived-analyses" : null, () => api.getArchivedGapAnalyses())
+
+  const handleView = async (id: string) => {
+    try {
+      const report = await api.getGapAnalysis(id)
+      setSelectedReport(report)
+      setDetailDialogOpen(true)
+    } catch {
+      toast.error("Failed to load report")
+    }
+  }
+
+  const handleUnarchive = async (id: string) => {
+    try {
+      await api.archiveGapAnalysis(id, false)
+      toast.success("Report restored")
+      mutateArchived()
+    } catch {
+      toast.error("Failed to restore report")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Permanently delete this archived report?")) return
+    try {
+      await api.deleteGapAnalysis(id)
+      toast.success("Report deleted")
+      mutateArchived()
+    } catch {
+      toast.error("Failed to delete report")
+    }
+  }
+
+  const handleExport = async (id: string) => {
+    try {
+      const report = await api.getGapAnalysis(id)
+      exportToPDF(report)
+    } catch {
+      toast.error("Failed to export report")
+    }
+  }
+
+  // Group by month for timeline view
+  const groupedArchives = (archived ?? []).reduce<Record<string, typeof archived>>((acc, report) => {
+    if (!report) return acc
+    const monthKey = new Date(report.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+    })
+    if (!acc[monthKey]) acc[monthKey] = []
+    acc[monthKey]!.push(report)
+    return acc
+  }, {})
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header
+        title="Report Archive"
+        description="Archived gap analysis reports and compliance history"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/platform/dashboard" },
+          { label: "Archive" },
+        ]}
+      />
+
+      <div className="p-4 md:p-[var(--spacing-content)] max-w-7xl mx-auto space-y-6">
+        {/* Stats */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Archived
+              </CardTitle>
+              <Archive className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold">{archived?.length ?? 0}</div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Average Score
+              </CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                <div className={`text-2xl font-bold ${getScoreColor(
+                  archived && archived.length > 0
+                    ? archived.reduce((s, r) => s + r.overallScore, 0) / archived.length
+                    : 0
+                )}`}>
+                  {archived && archived.length > 0
+                    ? (archived.reduce((s, r) => s + r.overallScore, 0) / archived.length).toFixed(1)
+                    : "0"}%
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Trend
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold text-muted-foreground">
+                  {archived && archived.length >= 2 ? (
+                    <span className={getScoreColor(
+                      archived[0].overallScore - archived[archived.length - 1].overallScore > 0 ? 70 : 30
+                    )}>
+                      {archived[0].overallScore > archived[archived.length - 1].overallScore ? "Improving" : "Review needed"}
+                    </span>
+                  ) : (
+                    "N/A"
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Timeline */}
+        {isLoading ? (
+          <Card className="border-border bg-card shadow-sm">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : !archived || archived.length === 0 ? (
+          <Card className="border-border bg-card shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-4">
+                  <Archive className="h-8 w-8" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No archived reports</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Run a gap analysis and archive it to keep a historical record of your compliance journey.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(groupedArchives).map(([month, reports]) => (
+              <div key={month}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">{month}</h2>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                <div className="space-y-3 pl-2 border-l-2 border-border ml-2">
+                  {reports?.map((report) => (
+                    <div
+                      key={report.id}
+                      className="relative pl-6"
+                    >
+                      {/* Timeline dot */}
+                      <div className={`absolute left-[-9px] top-5 h-4 w-4 rounded-full border-2 border-background ${getScoreBg(report.overallScore)}`}>
+                        <div className={`absolute inset-1 rounded-full ${
+                          report.overallScore >= 70 ? "bg-emerald-500" : report.overallScore >= 40 ? "bg-amber-500" : "bg-red-500"
+                        }`} />
+                      </div>
+
+                      <Card className="border-border bg-card shadow-sm hover:bg-muted/20 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 min-w-0">
+                              <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${getScoreBg(report.overallScore)}`}>
+                                <span className={`text-lg font-bold ${getScoreColor(report.overallScore)}`}>
+                                  {report.overallScore.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{report.standardTitle}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {formatDateTime(report.createdAt)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                  {report.summary}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-4">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleView(report.id)}
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleExport(report.id)}
+                                title="Export PDF"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleUnarchive(report.id)}
+                                title="Restore"
+                              >
+                                <ArchiveRestore className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleDelete(report.id)}
+                                title="Delete permanently"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ReportDetailDialog
+        report={selectedReport}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+      />
+    </div>
   )
 }

@@ -373,6 +373,50 @@ html {
   animation: spotlight 2s ease 0.75s 1 forwards;
 }
 
+/* ─── Platform Brand Utilities ─────────────────────────────────────────────── */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--brand) 0%, oklch(0.55 0.15 200) 100%);
+}
+
+.brand-text {
+  color: var(--brand);
+}
+
+.brand-bg {
+  background-color: var(--brand);
+}
+
+.brand-bg-subtle {
+  background-color: color-mix(in oklch, var(--brand) 10%, transparent);
+}
+
+.brand-border {
+  border-color: color-mix(in oklch, var(--brand) 20%, transparent);
+}
+
+/* Score colors */
+.score-high {
+  color: oklch(0.7 0.17 162);
+}
+
+.score-medium {
+  color: oklch(0.75 0.15 75);
+}
+
+.score-low {
+  color: oklch(0.6 0.2 25);
+}
+
+/* Card hover animation for platform pages */
+.platform-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.platform-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
 /* Accessibility: Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
 

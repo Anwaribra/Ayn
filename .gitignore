@@ -62,3 +62,4 @@ lerna-debug.log*
 notuse/
 notuse/*
 
+.cursor/plans/

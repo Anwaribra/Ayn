@@ -17,7 +17,7 @@ async def get_dashboard_metrics(
     """
     Get dashboard metrics.
     
-    Returns simple metrics for the dashboard:
+    Returns metrics for the dashboard:
     - completedCriteriaCount: Number of criteria with completed answers
     - evidenceCount: Total number of evidence files
     - assessmentProgressPercentage: Overall assessment progress (0-100)
@@ -31,106 +31,61 @@ async def get_dashboard_metrics(
     
     try:
         # Determine scope based on user role
-        if current_user["role"] == "ADMIN":
-            # Admin sees all
-            institution_filter = None
-        else:
-            # Others see only their institution
-            institution_id = current_user.get("institutionId")
-            if not institution_id:
-                # User has no institution, return zeros
-                return DashboardMetricsResponse(
-                    completedCriteriaCount=0,
-                    evidenceCount=0,
-                    assessmentProgressPercentage=0.0,
-                    totalAssessments=0
-                )
-            institution_filter = institution_id
+        is_admin = current_user["role"] == "ADMIN"
+        institution_id = None if is_admin else current_user.get("institutionId")
         
-        # 1. Count completed criteria (AssessmentAnswer records with non-null answers)
-        if institution_filter:
-            # Get assessments for this institution
-            assessments = await db.assessment.find_many(
-                where={"institutionId": institution_filter}
+        if not is_admin and not institution_id:
+            # User has no institution, return zeros
+            return DashboardMetricsResponse(
+                completedCriteriaCount=0,
+                evidenceCount=0,
+                assessmentProgressPercentage=0.0,
+                totalAssessments=0
             )
-            assessment_ids = [assess.id for assess in assessments]
-            
-            if assessment_ids:
-                # Get all answers for these assessments and filter for non-null
-                # Prisma Python doesn't support {"in": ...} syntax, so we query all and filter
-                all_answers = await db.assessmentanswer.find_many()
-                # Filter to only answers for these assessments
-                filtered_answers = [ans for ans in all_answers if ans.assessmentId in assessment_ids]
-                completed_criteria = [ans for ans in filtered_answers if ans.answer is not None]
-                completed_criteria_count = len(completed_criteria)
-            else:
-                completed_criteria_count = 0
-        else:
-            # Admin: count all
-            all_answers = await db.assessmentanswer.find_many()
-            completed_criteria = [ans for ans in all_answers if ans.answer is not None]
-            completed_criteria_count = len(completed_criteria)
         
-        # 2. Count evidence files
-        if institution_filter:
-            # For evidence, we need to check through users in the institution
+        # Build assessment filter
+        assessment_where = {} if is_admin else {"institutionId": institution_id}
+        
+        # 1. Get assessment IDs for this scope
+        assessments = await db.assessment.find_many(
+            where=assessment_where
+        )
+        assessment_ids = [a.id for a in assessments]
+        total_assessments = len(assessments)
+        
+        # 2. Count answers using Prisma "in" filter (fixes N+1)
+        if assessment_ids:
+            answer_where = {"assessmentId": {"in": assessment_ids}}
+            all_answers = await db.assessmentanswer.find_many(where=answer_where)
+            total_answers = len(all_answers)
+            completed_criteria_count = sum(1 for ans in all_answers if ans.answer is not None)
+        else:
+            total_answers = 0
+            completed_criteria_count = 0
+        
+        # 3. Count evidence files (use Prisma "in" filter)
+        if is_admin:
+            evidence_list = await db.evidence.find_many()
+            evidence_count = len(evidence_list)
+        else:
+            # Get user IDs for this institution
             users = await db.user.find_many(
-                where={"institutionId": institution_filter}
+                where={"institutionId": institution_id}
             )
-            user_ids = [user.id for user in users]
-            
+            user_ids = [u.id for u in users]
             if user_ids:
-                # Prisma Python doesn't support {"in": ...} syntax, so we query all and filter
-                all_evidence = await db.evidence.find_many()
-                evidence_list = [ev for ev in all_evidence if ev.uploadedById in user_ids]
+                evidence_list = await db.evidence.find_many(
+                    where={"uploadedById": {"in": user_ids}}
+                )
                 evidence_count = len(evidence_list)
             else:
                 evidence_count = 0
-        else:
-            # Admin: count all
-            evidence_list = await db.evidence.find_many()
-            evidence_count = len(evidence_list)
-        
-        # 3. Count total assessments
-        if institution_filter:
-            assessments_list = await db.assessment.find_many(
-                where={"institutionId": institution_filter}
-            )
-            total_assessments = len(assessments_list)
-        else:
-            # Admin: count all
-            assessments_list = await db.assessment.find_many()
-            total_assessments = len(assessments_list)
         
         # 4. Calculate assessment progress percentage
-        # Progress = (completed criteria / total criteria in assessments) * 100
-        if institution_filter:
-            if assessment_ids:
-                # Get all criteria for assessments in this institution
-                # First, get all criteria IDs from assessment answers
-                # Prisma Python doesn't support {"in": ...} syntax, so we query all and filter
-                all_answers_raw = await db.assessmentanswer.find_many()
-                all_answers = [ans for ans in all_answers_raw if ans.assessmentId in assessment_ids]
-                total_criteria_in_assessments = len(all_answers)
-                
-                if total_criteria_in_assessments > 0:
-                    assessment_progress = (completed_criteria_count / total_criteria_in_assessments) * 100
-                else:
-                    assessment_progress = 0.0
-            else:
-                assessment_progress = 0.0
+        if total_answers > 0:
+            assessment_progress = round((completed_criteria_count / total_answers) * 100, 2)
         else:
-            # Admin: calculate for all
-            all_answers = await db.assessmentanswer.find_many()
-            total_criteria_in_assessments = len(all_answers)
-            
-            if total_criteria_in_assessments > 0:
-                assessment_progress = (completed_criteria_count / total_criteria_in_assessments) * 100
-            else:
-                assessment_progress = 0.0
-        
-        # Round to 2 decimal places
-        assessment_progress = round(assessment_progress, 2)
+            assessment_progress = 0.0
         
         logger.info(f"User {current_user['email']} fetched dashboard metrics")
         

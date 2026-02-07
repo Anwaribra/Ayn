@@ -5,6 +5,7 @@ from app.core.rate_limit import limiter
 from app.auth.dependencies import require_roles
 from app.ai.models import (
     GenerateAnswerRequest,
+    ChatRequest,
     SummarizeRequest,
     CommentRequest,
     ExplainRequest,
@@ -20,6 +21,50 @@ router = APIRouter()
 
 # Allowed roles for AI endpoints
 ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
+
+
+@router.post("/chat", response_model=AIResponse)
+@limiter.limit("30/minute")
+async def chat(
+    req: Request,
+    request: ChatRequest,
+    current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
+):
+    """
+    Multi-turn chat with Horus AI.
+    
+    **Teacher, Auditor, and Admin only** - Requires TEACHER, AUDITOR, or ADMIN role.
+    
+    Sends the full conversation history to Horus AI for context-aware responses.
+    
+    - **messages**: List of conversation messages [{role, content}]
+    - **context**: Optional context hint (e.g. 'gap_analysis', 'evidence_analysis')
+    """
+    try:
+        client = get_gemini_client()
+        messages_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
+        result = client.chat(
+            messages=messages_dicts,
+            context=request.context
+        )
+        
+        logger.info(f"User {current_user['email']} used Horus AI chat ({len(request.messages)} messages)")
+        
+        return AIResponse(
+            result=result,
+            model="gemini-2.0-flash"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error in chat: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate chat response: {str(e)}"
+        )
 
 
 @router.post("/generate-answer", response_model=AIResponse)

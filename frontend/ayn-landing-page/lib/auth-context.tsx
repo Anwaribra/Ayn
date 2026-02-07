@@ -33,7 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (storedUser && token) {
       // Set user immediately to prevent redirect
-      const parsedUser = JSON.parse(storedUser)
+      let parsedUser: User | null = null
+      try {
+        parsedUser = JSON.parse(storedUser)
+      } catch {
+        console.error('[AuthContext] Failed to parse stored user, clearing localStorage')
+        localStorage.removeItem("user")
+        localStorage.removeItem("access_token")
+        setIsLoading(false)
+        return
+      }
+      if (!parsedUser) {
+        setIsLoading(false)
+        return
+      }
       setUser(parsedUser)
       log('[AuthContext] User loaded from localStorage:', parsedUser.email)
 

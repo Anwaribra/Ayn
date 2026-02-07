@@ -57,11 +57,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <main className="flex min-h-[calc(100vh-73px)] flex-col px-6 py-6 md:px-10 md:py-8">
-            {children}
-          </main>
-        </div>
+        <main className="flex flex-1 flex-col overflow-y-auto px-6 py-6 md:px-10 md:py-8">
+          {children}
+        </main>
       </div>
 
       {!sidebarOpen && (

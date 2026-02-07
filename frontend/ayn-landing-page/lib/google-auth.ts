@@ -62,9 +62,11 @@ export async function getGoogleIdToken(): Promise<string> {
     throw new Error("Google Identity Services is not available on this page.")
   }
 
+  const googleId = window.google!.accounts!.id!
+
   return new Promise<string>((resolve, reject) => {
     try {
-      window.google.accounts.id.initialize({
+      googleId.initialize({
         client_id: clientId,
         ux_mode: 'popup',
         callback: (response: { credential: string }) => {
@@ -77,7 +79,7 @@ export async function getGoogleIdToken(): Promise<string> {
       })
 
       // Force display the selector
-      window.google.accounts.id.prompt((notification) => {
+      googleId.prompt((notification) => {
         if (notification.isNotDisplayed()) {
           // If prompt is blocked, try to use the manual button click logic
           console.warn("Prompt suppressed. Using manual sign-in trigger instead.");

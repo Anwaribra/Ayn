@@ -6,6 +6,7 @@ import React, { useState, createContext, useContext } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Menu, X } from "lucide-react"
 
+/* ---------------- Context ---------------- */
 export interface SidebarLinkItem {
   label: string
   href: string
@@ -22,12 +23,11 @@ const SidebarContext = createContext<SidebarContextProps | undefined>(undefined)
 
 export function useSidebar() {
   const context = useContext(SidebarContext)
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider")
-  }
+  if (!context) throw new Error("useSidebar must be used within Sidebar")
   return context
 }
 
+/* ---------------- Provider ---------------- */
 export function SidebarProvider({
   children,
   open: openProp,
@@ -39,9 +39,11 @@ export function SidebarProvider({
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>
   animate?: boolean
 }) {
-  const [openState, setOpenState] = useState(false)
-  const open = openProp !== undefined ? openProp : openState
-  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState
+  const [internalOpen, setInternalOpen] = useState(true)
+
+  const open = openProp ?? internalOpen
+  const setOpen = setOpenProp ?? setInternalOpen
+
   return (
     <SidebarContext.Provider value={{ open, setOpen, animate }}>
       {children}
@@ -49,6 +51,7 @@ export function SidebarProvider({
   )
 }
 
+/* ---------------- Root ---------------- */
 export function Sidebar({
   children,
   open,
@@ -67,33 +70,32 @@ export function Sidebar({
   )
 }
 
+/* ---------------- Body ---------------- */
 export function SidebarBody(props: React.ComponentProps<typeof motion.div>) {
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <MobileSidebar>{props.children}</MobileSidebar>
     </>
   )
 }
 
+/* ---------------- Desktop ---------------- */
 export function DesktopSidebar({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof motion.div>) {
-  const { open, setOpen, animate } = useSidebar()
+  const { open, animate } = useSidebar()
+
   return (
     <motion.div
       className={cn(
-        "h-full hidden md:flex md:flex-col bg-sidebar border-r border-sidebar-border flex-shrink-0 shadow-sm",
-        "px-3 py-4",
-        !animate && "w-[280px]",
+        "hidden md:flex flex-col h-screen min-h-0 bg-sidebar border-r border-sidebar-border flex-shrink-0",
         className
       )}
-      animate={animate ? { width: open ? "280px" : "72px" } : undefined}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      onMouseEnter={animate ? () => setOpen(true) : undefined}
-      onMouseLeave={animate ? () => setOpen(false) : undefined}
+      animate={animate ? { width: open ? 280 : 72 } : undefined}
+      transition={{ type: "spring", stiffness: 260, damping: 30 }}
       {...props}
     >
       {children}
@@ -101,69 +103,57 @@ export function DesktopSidebar({
   )
 }
 
-export function MobileSidebar({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<"div">) {
+/* ---------------- Mobile ---------------- */
+export function MobileSidebar({ children }: { children: React.ReactNode }) {
   const { open, setOpen } = useSidebar()
+
   return (
-    <>
-      <div
-        className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar border-b border-sidebar-border w-full"
-        )}
-        {...props}
-      >
-        <div className="flex justify-end z-20 w-full">
-          <button
-            type="button"
-            className="text-sidebar-foreground cursor-pointer p-2"
-            onClick={() => setOpen(!open)}
-            aria-label="Toggle menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
-        <AnimatePresence>
-          {open && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[99] md:hidden"
+    <div className="md:hidden">
+      {/* Mobile Top Bar */}
+      <div className="h-14 flex items-center justify-end px-4 border-b bg-sidebar">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/40 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+            />
+
+            <motion.aside
+              className="fixed left-0 top-0 h-screen w-[280px] bg-sidebar z-50 flex flex-col"
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            >
+              <button
+                className="absolute right-3 top-3"
                 onClick={() => setOpen(false)}
-                aria-hidden
-              />
-              <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={cn(
-                  "fixed h-full w-full max-w-sm inset-y-0 left-0 bg-sidebar border-r border-sidebar-border p-6 pt-14 z-[100] flex flex-col shadow-xl",
-                  className
-                )}
-              >
-                <button
-                type="button"
-                className="absolute right-10 top-10 z-50 text-foreground cursor-pointer p-2"
-                onClick={() => setOpen(!open)}
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
               </button>
               {children}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 
+/* ---------------- Link ---------------- */
 export function SidebarLink({
   link,
   isActive,
@@ -177,32 +167,32 @@ export function SidebarLink({
   className?: string
 } & Omit<LinkProps, "href">) {
   const { open, animate } = useSidebar()
+
   return (
     <Link
       href={link.href}
       onClick={onClick}
       className={cn(
-        "relative flex items-center justify-start gap-3 group/sidebar py-2.5 px-3 rounded-lg transition-all duration-200",
+        "relative flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors",
         isActive
           ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-          : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
         className
       )}
       {...props}
     >
       {isActive && (
-        <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r bg-primary"
-          aria-hidden
-        />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
       )}
-      <span className="flex shrink-0 [&_svg]:size-5">{link.icon}</span>
+
+      <span className="[&_svg]:size-5 shrink-0">{link.icon}</span>
+
       <motion.span
         animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
+          display: animate ? (open ? "inline-block" : "none") : "inline-block",
         }}
-        className="text-sm whitespace-pre inline-block !p-0 !m-0"
+        className="text-sm whitespace-nowrap"
       >
         {link.label}
       </motion.span>

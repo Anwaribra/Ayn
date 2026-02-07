@@ -35,7 +35,7 @@ import {
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 /* ------------------ Roles ------------------ */
-export enum Role {
+enum Role {
   ADMIN = "ADMIN",
   INSTITUTION_ADMIN = "INSTITUTION_ADMIN",
   TEACHER = "TEACHER",
@@ -52,69 +52,24 @@ type NavItem = {
 
 /* ------------------ Navigation ------------------ */
 const generalItems: NavItem[] = [
-  {
-    href: "/platform/dashboard",
-    label: "Horus AI",
-    icon: Sparkles,
-    roles: Object.values(Role),
-  },
-  {
-    href: "/platform/overview",
-    label: "Overview",
-    icon: LayoutDashboard,
-    roles: Object.values(Role),
-  },
+  { href: "/platform/dashboard", label: "Horus AI", icon: Sparkles, roles: Object.values(Role) },
+  { href: "/platform/overview", label: "Overview", icon: LayoutDashboard, roles: Object.values(Role) },
 ]
 
 const complianceItems: NavItem[] = [
-  {
-    href: "/platform/institutions",
-    label: "Institutions",
-    icon: Building2,
-    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN],
-  },
-  {
-    href: "/platform/standards",
-    label: "Standards",
-    icon: FileCheck,
-    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN],
-  },
-  {
-    href: "/platform/assessments",
-    label: "Assessments",
-    icon: ClipboardList,
-    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN, Role.TEACHER, Role.AUDITOR],
-  },
-  {
-    href: "/platform/evidence",
-    label: "Evidence",
-    icon: FileText,
-    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN, Role.TEACHER, Role.AUDITOR],
-  },
+  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: [Role.ADMIN, Role.INSTITUTION_ADMIN] },
+  { href: "/platform/standards", label: "Standards", icon: FileCheck, roles: [Role.ADMIN, Role.INSTITUTION_ADMIN] },
+  { href: "/platform/assessments", label: "Assessments", icon: ClipboardList, roles: Object.values(Role) },
+  { href: "/platform/evidence", label: "Evidence", icon: FileText, roles: Object.values(Role) },
 ]
 
 const accountItems: NavItem[] = [
-  {
-    href: "/platform/notifications",
-    label: "Notifications",
-    icon: Bell,
-    roles: Object.values(Role),
-  },
+  { href: "/platform/notifications", label: "Notifications", icon: Bell, roles: Object.values(Role) },
 ]
 
 const adminItems: NavItem[] = [
-  {
-    href: "/platform/admin",
-    label: "Admin Panel",
-    icon: Settings,
-    roles: [Role.ADMIN],
-  },
-  {
-    href: "/platform/admin/users",
-    label: "Manage Users",
-    icon: Users,
-    roles: [Role.ADMIN],
-  },
+  { href: "/platform/admin", label: "Admin Panel", icon: Settings, roles: [Role.ADMIN] },
+  { href: "/platform/admin/users", label: "Manage Users", icon: Users, roles: [Role.ADMIN] },
 ]
 
 const sections = [
@@ -124,14 +79,8 @@ const sections = [
 ] as const
 
 /* ------------------ Helpers ------------------ */
-function toLinkItem(
-  item: NavItem,
-  pathname: string
-): SidebarLinkItem & { isActive: boolean } {
-  const isActive =
-    pathname === item.href ||
-    pathname.startsWith(`${item.href}/`)
-
+function toLinkItem(item: NavItem, pathname: string): SidebarLinkItem & { isActive: boolean } {
+  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
   return {
     label: item.label,
     href: item.href,
@@ -154,22 +103,16 @@ function SidebarSection({
 }) {
   const { setOpen } = useSidebar()
 
-  const visibleItems = useMemo(
-    () => items.filter(canAccess),
-    [items, canAccess]
-  )
-
-  if (!visibleItems.length) return null
+  const visible = useMemo(() => items.filter(canAccess), [items, canAccess])
+  if (!visible.length) return null
 
   return (
     <div className="space-y-1">
       <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
-
-      {visibleItems.map((item) => {
+      {visible.map((item) => {
         const { isActive, ...link } = toLinkItem(item, pathname)
-
         return (
           <SidebarLink
             key={link.href}
@@ -191,15 +134,11 @@ function PlatformSidebarContent() {
   const { open, setOpen } = useSidebar()
 
   const canAccess = useCallback(
-    (item: NavItem) =>
-      !!user && item.roles.includes(user.role as Role),
+    (item: NavItem) => !!user && item.roles.includes(user.role as Role),
     [user]
   )
 
-  const adminVisible = useMemo(
-    () => adminItems.some(canAccess),
-    [canAccess]
-  )
+  const showAdmin = useMemo(() => adminItems.some(canAccess), [canAccess])
 
   const handleLogout = async () => {
     await logout()
@@ -207,23 +146,15 @@ function PlatformSidebarContent() {
   }
 
   return (
-    <>
-      {/* ---------- Header ---------- */}
-      <div className="flex items-center gap-3 px-3 py-4 border-b border-sidebar-border">
-        <Link
-          href="/"
-          onClick={() => setOpen(false)}
-          aria-label="Go to home"
-          className="rounded-md hover:bg-sidebar-accent/30 transition-colors"
-        >
-          <AynLogo size={open ? "md" : "sm"} heroStyle />
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-3 py-4 border-b shrink-0">
+        <Link href="/" onClick={() => setOpen(false)}>
+          <AynLogo size={open ? "md" : "sm"} />
         </Link>
 
         {open && (
-          <span
-            aria-hidden
-            className="text-[10px] px-1.5 py-0.5 rounded border bg-sidebar-accent/50"
-          >
+          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-muted">
             BETA
           </span>
         )}
@@ -233,14 +164,10 @@ function PlatformSidebarContent() {
             <TooltipTrigger asChild>
               <button
                 onClick={() => setOpen(!open)}
-                className="p-2 rounded-lg hover:bg-sidebar-accent/50"
+                className="p-2 rounded-lg hover:bg-muted"
                 aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
               >
-                {open ? (
-                  <PanelLeftClose className="h-5 w-5" />
-                ) : (
-                  <ChevronRight className="h-5 w-5" />
-                )}
+                {open ? <PanelLeftClose size={18} /> : <ChevronRight size={18} />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
@@ -250,8 +177,8 @@ function PlatformSidebarContent() {
         </div>
       </div>
 
-      {/* ---------- Navigation ---------- */}
-      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 min-h-0 px-3 py-4 space-y-4 overflow-y-auto overscroll-none">
         {sections.map((section) => (
           <SidebarSection
             key={section.title}
@@ -261,7 +188,7 @@ function PlatformSidebarContent() {
           />
         ))}
 
-        {adminVisible && (
+        {showAdmin && (
           <>
             <div className="border-t my-3" />
             <SidebarSection
@@ -274,20 +201,20 @@ function PlatformSidebarContent() {
         )}
       </nav>
 
-      {/* ---------- Footer ---------- */}
-      <div className="px-3 py-4 border-t space-y-3">
-        <div className="flex items-center gap-2 px-1">
+      {/* Footer */}
+      <div className="px-3 py-4 border-t shrink-0 space-y-3">
+        <div className="flex items-center gap-2">
           <ThemeToggle variant="icon" />
           {open && <span className="text-xs">Theme</span>}
         </div>
 
         {user && (
-          <div className="px-2 py-2 rounded-lg bg-sidebar-accent/50">
+          <div className="rounded-lg bg-muted px-2 py-2">
             <p className="text-sm font-medium truncate">{user.name}</p>
             {open && (
               <>
                 <p className="text-xs truncate">{user.email}</p>
-                <span className="inline-block mt-1 text-xs px-2 rounded-full bg-sidebar-accent">
+                <span className="inline-block mt-1 text-xs px-2 rounded-full bg-background">
                   {user.role}
                 </span>
               </>
@@ -298,13 +225,12 @@ function PlatformSidebarContent() {
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm hover:bg-destructive/10 hover:text-destructive"
-          aria-describedby="logout-desc"
         >
-          <LogOut className="h-5 w-5" />
+          <LogOut size={18} />
           {open && <span>Logout</span>}
         </button>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -313,10 +239,23 @@ export function Sidebar() {
   const [open, setOpen] = useState(true)
 
   return (
-    <UiSidebar open={open} setOpen={setOpen} animate>
-      <SidebarBody className="flex flex-col justify-between h-full">
-        <PlatformSidebarContent />
-      </SidebarBody>
-    </UiSidebar>
+    <>
+      <UiSidebar open={open} setOpen={setOpen} animate className="h-screen">
+        <SidebarBody className="h-full">
+          <PlatformSidebarContent />
+        </SidebarBody>
+      </UiSidebar>
+
+      {/* Floating open button (when closed) */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed left-2 top-4 z-50 rounded-lg p-2 shadow-md bg-background hover:bg-muted"
+          aria-label="Open sidebar"
+        >
+          <ChevronRight size={20} />
+        </button>
+      )}
+    </>
   )
 }

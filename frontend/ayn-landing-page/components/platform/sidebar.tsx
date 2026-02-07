@@ -79,8 +79,12 @@ const sections = [
 ] as const
 
 /* ------------------ Helpers ------------------ */
-function toLinkItem(item: NavItem, pathname: string): SidebarLinkItem & { isActive: boolean } {
-  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+function toLinkItem(
+  item: NavItem,
+  pathname: string
+): SidebarLinkItem & { isActive: boolean } {
+  const isActive =
+    pathname === item.href || pathname.startsWith(`${item.href}/`)
   return {
     label: item.label,
     href: item.href,
@@ -111,6 +115,7 @@ function SidebarSection({
       <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
+
       {visible.map((item) => {
         const { isActive, ...link } = toLinkItem(item, pathname)
         return (
@@ -138,7 +143,10 @@ function PlatformSidebarContent() {
     [user]
   )
 
-  const showAdmin = useMemo(() => adminItems.some(canAccess), [canAccess])
+  const showAdmin = useMemo(
+    () => adminItems.some(canAccess),
+    [canAccess]
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -146,9 +154,10 @@ function PlatformSidebarContent() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 py-4 border-b shrink-0">
+      <div className="flex items-center gap-3 px-3 py-4 shrink-0
+        shadow-[inset_-1px_0_0_0_hsl(var(--border))]">
         <Link href="/" onClick={() => setOpen(false)}>
           <AynLogo size={open ? "md" : "sm"} />
         </Link>
@@ -165,9 +174,12 @@ function PlatformSidebarContent() {
               <button
                 onClick={() => setOpen(!open)}
                 className="p-2 rounded-lg hover:bg-muted"
-                aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
               >
-                {open ? <PanelLeftClose size={18} /> : <ChevronRight size={18} />}
+                {open ? (
+                  <PanelLeftClose size={18} />
+                ) : (
+                  <ChevronRight size={18} />
+                )}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
@@ -178,7 +190,7 @@ function PlatformSidebarContent() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 min-h-0 px-3 py-4 space-y-4 overflow-y-auto overscroll-none">
+      <nav className="flex-1 min-h-0 px-3 py-4 space-y-4 overflow-y-auto">
         {sections.map((section) => (
           <SidebarSection
             key={section.title}
@@ -190,7 +202,7 @@ function PlatformSidebarContent() {
 
         {showAdmin && (
           <>
-            <div className="border-t my-3" />
+            <div className="my-3 border-t" />
             <SidebarSection
               title="Admin"
               items={adminItems}
@@ -202,7 +214,7 @@ function PlatformSidebarContent() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t shrink-0 space-y-3">
+      <div className="px-3 py-4 shrink-0 border-t space-y-3">
         <div className="flex items-center gap-2">
           <ThemeToggle variant="icon" />
           {open && <span className="text-xs">Theme</span>}
@@ -240,18 +252,21 @@ export function Sidebar() {
 
   return (
     <>
-      <UiSidebar open={open} setOpen={setOpen} animate className="h-screen">
+      <UiSidebar
+        open={open}
+        setOpen={setOpen}
+        animate={false}   // 🔴 مهم: وقف animation العرض
+        className="h-screen w-[280px] overflow-hidden"
+      >
         <SidebarBody className="h-full">
           <PlatformSidebarContent />
         </SidebarBody>
       </UiSidebar>
 
-      {/* Floating open button (when closed) */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
           className="fixed left-2 top-4 z-50 rounded-lg p-2 shadow-md bg-background hover:bg-muted"
-          aria-label="Open sidebar"
         >
           <ChevronRight size={20} />
         </button>

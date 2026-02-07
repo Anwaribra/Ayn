@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -38,6 +39,7 @@ const signals = [
 
 export default function AnalyticsPage() {
   return (
+    <ProtectedRoute>
     <div className="min-h-screen">
       <Header
         title="Quality Insights"
@@ -79,5 +81,6 @@ export default function AnalyticsPage() {
         </Card>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

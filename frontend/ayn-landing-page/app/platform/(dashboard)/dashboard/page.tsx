@@ -3,9 +3,11 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function DashboardPage() {
   return (
+    <ProtectedRoute>
     <div className="space-y-6">
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-border/60">
@@ -33,5 +35,6 @@ export default function DashboardPage() {
         </Card>
       </section>
     </div>
+    </ProtectedRoute>
   )
 }

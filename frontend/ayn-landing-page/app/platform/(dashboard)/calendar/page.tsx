@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,7 @@ const schedule = [
 
 export default function CalendarPage() {
   return (
+    <ProtectedRoute>
     <div className="min-h-screen">
       <Header
         title="Review Calendar"
@@ -85,5 +87,6 @@ export default function CalendarPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

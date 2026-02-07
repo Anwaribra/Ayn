@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function SettingsPage() {
   return (
+    <ProtectedRoute>
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <Card className="border-border/60">
         <CardHeader>
@@ -39,5 +41,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+    </ProtectedRoute>
   )
 }

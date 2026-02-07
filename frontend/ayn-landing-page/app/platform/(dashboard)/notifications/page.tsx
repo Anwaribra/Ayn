@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { toast } from "sonner"
@@ -11,6 +12,14 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function NotificationsPage() {
+  return (
+    <ProtectedRoute>
+      <NotificationsPageContent />
+    </ProtectedRoute>
+  )
+}
+
+function NotificationsPageContent() {
   const { data: notifications, isLoading, mutate } = useSWR("notifications", () => api.getNotifications())
 
   const handleMarkAsRead = async (id: string) => {

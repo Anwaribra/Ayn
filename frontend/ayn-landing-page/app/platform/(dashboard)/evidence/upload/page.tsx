@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { useState, useCallback } from "react"
@@ -75,6 +76,7 @@ export default function UploadEvidencePage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen">
       <Header title="Upload Evidence" description="Upload evidence files for your assessments" />
 
@@ -188,5 +190,6 @@ export default function UploadEvidencePage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

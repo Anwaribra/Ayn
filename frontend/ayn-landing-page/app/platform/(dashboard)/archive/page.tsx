@@ -3,9 +3,11 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function ArchivePage() {
   return (
+    <ProtectedRoute>
     <Card className="border-border/60">
       <CardHeader>
         <CardTitle className="text-base">Archived Reports</CardTitle>
@@ -17,5 +19,6 @@ export default function ArchivePage() {
         </Button>
       </CardContent>
     </Card>
+    </ProtectedRoute>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
@@ -119,6 +120,14 @@ function EmptyState({
 }
 
 export default function OverviewPage() {
+  return (
+    <ProtectedRoute>
+      <OverviewPageContent />
+    </ProtectedRoute>
+  )
+}
+
+function OverviewPageContent() {
   const { user } = useAuth()
   const { data: metrics, isLoading } = useSWR(user ? "dashboard-metrics" : null, () =>
     api.getDashboardMetrics(),
@@ -276,5 +285,6 @@ export default function OverviewPage() {
         </Card>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
@@ -17,6 +18,14 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyCont
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AssessmentsPage() {
+  return (
+    <ProtectedRoute>
+      <AssessmentsPageContent />
+    </ProtectedRoute>
+  )
+}
+
+function AssessmentsPageContent() {
   const { user } = useAuth()
   const { data: assessments, isLoading } = useSWR("assessments", () => api.getAssessments())
   const [search, setSearch] = useState("")

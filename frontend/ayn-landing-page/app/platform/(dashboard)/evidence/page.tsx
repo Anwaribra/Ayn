@@ -2,9 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function EvidencePage() {
   return (
+    <ProtectedRoute>
     <div className="space-y-6">
       <Card className="border-dashed border-border/70 bg-muted/20">
         <CardHeader>
@@ -32,5 +34,6 @@ export default function EvidencePage() {
         </CardContent>
       </Card>
     </div>
+    </ProtectedRoute>
   )
 }

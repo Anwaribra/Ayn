@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { Header } from "@/components/platform/header"
+import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -40,6 +41,7 @@ export default function NewAssessmentPage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen">
       <Header
         title="Create Assessment"
@@ -103,5 +105,6 @@ export default function NewAssessmentPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

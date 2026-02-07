@@ -16,7 +16,6 @@ import {
   BookOpen,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
 interface Message {
@@ -93,7 +92,6 @@ function QuickActionButton({
 }
 
 export default function AynAIChat() {
-  const { user } = useAuth()
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -164,13 +162,6 @@ export default function AynAIChat() {
         className="absolute inset-0 pointer-events-none bg-gradient-to-t from-primary/15 via-primary/5 to-transparent"
         aria-hidden
       />
-
-      {/* Signed-in indicator on home */}
-      {user && (
-        <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur-md border border-border text-sm text-muted-foreground">
-          Signed in as <span className="font-medium text-foreground">{user.name}</span>
-        </div>
-      )}
 
       {/* Scrollable messages (when present) */}
       {hasMessages && (

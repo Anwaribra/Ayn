@@ -121,10 +121,10 @@ function PlatformSidebarContent() {
     <>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         <Link
-          href="/platform/dashboard"
+          href="/"
           onClick={() => setOpen(false)}
           className="flex items-center gap-3 px-2 py-4 border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent/30 transition-colors rounded-t-lg"
-          aria-label="Ayn home"
+          aria-label="Ayn site home"
         >
           <AynLogo size="md" heroStyle withGlow={false} />
           <div className="min-w-0">

@@ -3,13 +3,15 @@
 import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AynLogo } from "@/components/ayn-logo"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { useAuth } from "@/lib/auth-context"
 import { NavLink, MagneticButton } from "./landing-utils"
 
 export function LandingNavbar() {
+  const { user, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -110,18 +112,46 @@ export function LandingNavbar() {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
           <div className="w-px h-4 bg-border/50 hidden md:block" />
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 px-2 py-1.5 hidden md:inline"
-          >
-            Log in
-          </Link>
-          <MagneticButton
-            asChild
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-1.5 h-auto rounded-full hidden md:inline-flex"
-          >
-            <Link href="/signup">Sign in</Link>
-          </MagneticButton>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground hidden md:inline" title={user.email}>
+                Signed in as <span className="font-medium text-foreground">{user.name}</span>
+              </span>
+              <MagneticButton
+                asChild
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-1.5 h-auto rounded-full hidden md:inline-flex"
+              >
+                <Link href="/platform/dashboard">Platform</Link>
+              </MagneticButton>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 hidden md:inline-flex gap-1.5"
+                onClick={async () => {
+                  await logout()
+                  window.location.href = "/"
+                }}
+              >
+                <LogOut className="w-4 h-4" />
+                Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 px-2 py-1.5 hidden md:inline"
+              >
+                Log in
+              </Link>
+              <MagneticButton
+                asChild
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-1.5 h-auto rounded-full hidden md:inline-flex"
+              >
+                <Link href="/signup">Sign in</Link>
+              </MagneticButton>
+            </>
+          )}
         </div>
       </nav>
 
@@ -152,20 +182,49 @@ export function LandingNavbar() {
                 About
               </NavLink>
               <div className="border-t border-border my-2" />
-              <Link
-                href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-accent"
-                onClick={closeMobile}
-              >
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg text-center"
-                onClick={closeMobile}
-              >
-                Sign in
-              </Link>
+              {user ? (
+                <>
+                  <p className="text-sm text-muted-foreground py-2 px-2">
+                    Signed in as <span className="font-medium text-foreground">{user.name}</span>
+                  </p>
+                  <Link
+                    href="/platform/dashboard"
+                    className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg text-center block"
+                    onClick={closeMobile}
+                  >
+                    Platform
+                  </Link>
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 py-2 px-4 rounded-lg w-full text-left flex items-center gap-2"
+                    onClick={async () => {
+                      closeMobile()
+                      await logout()
+                      window.location.href = "/"
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 px-2 rounded-lg hover:bg-accent"
+                    onClick={closeMobile}
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg text-center"
+                    onClick={closeMobile}
+                  >
+                    Sign in
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </>

@@ -1,5 +1,4 @@
 import type { ReactNode } from "react"
-import { AuthProvider } from "@/lib/auth-context"
 
 export const metadata = {
   title: "Horus Engine Platform | Ayn",
@@ -7,5 +6,5 @@ export const metadata = {
 }
 
 export default function PlatformLayout({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>
+  return <>{children}</>
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
@@ -119,13 +120,18 @@ function PlatformSidebarContent() {
   return (
     <>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="flex items-center gap-3 px-2 py-4 border-b border-sidebar-border shrink-0">
+        <Link
+          href="/platform/dashboard"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-3 px-2 py-4 border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent/30 transition-colors rounded-t-lg"
+          aria-label="Ayn home"
+        >
           <AynLogo size="md" heroStyle withGlow={false} />
           <div className="min-w-0">
             <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
             <p className="text-xs text-muted-foreground">Platform</p>
           </div>
-        </div>
+        </Link>
 
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto">
           {sections.map((section) => (

@@ -16,6 +16,7 @@ import {
   BookOpen,
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 import { toast } from "sonner"
 
 interface Message {
@@ -69,7 +70,30 @@ const QUICK_ACTIONS = [
   { icon: ImageIcon, label: "Image / evidence", prompt: "I want to ask about an image or evidence I attached." },
 ]
 
+function QuickActionButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="flex items-center gap-2 rounded-full border-border bg-card/50 text-muted-foreground hover:text-foreground hover:bg-accent/80 backdrop-blur-sm text-xs min-h-[44px] touch-manipulation px-4"
+      onClick={onClick}
+    >
+      {icon}
+      <span>{label}</span>
+    </Button>
+  )
+}
+
 export default function AynAIChat() {
+  const { user } = useAuth()
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -119,11 +143,6 @@ export default function AynAIChat() {
     }
   }, [isLoading, adjustHeight])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    sendMessage(message)
-  }
-
   const handleQuickAction = (prompt: string) => {
     setMessage(prompt)
     textareaRef.current?.focus()
@@ -132,17 +151,32 @@ export default function AynAIChat() {
   const hasMessages = messages.length > 0 || isLoading
 
   return (
-    <div className="relative w-full min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <div
+      className="relative w-full min-h-screen flex flex-col items-center overflow-x-hidden bg-background"
+      style={{ backgroundAttachment: "fixed" }}
+    >
+      {/* Ruixen-style background: deep base + primary glow (Ayn colors) */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_70%_at_50%_100%,var(--primary)/20_0%,transparent_50%),linear-gradient(to_bottom,transparent_0%,var(--primary)/10_100%)]"
+        aria-hidden
+      />
       <div
         className="absolute inset-0 pointer-events-none bg-gradient-to-t from-primary/15 via-primary/5 to-transparent"
         aria-hidden
       />
 
-      {/* Scrollable messages area (only takes space when there are messages) */}
+      {/* Signed-in indicator on home */}
+      {user && (
+        <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur-md border border-border text-sm text-muted-foreground">
+          Signed in as <span className="font-medium text-foreground">{user.name}</span>
+        </div>
+      )}
+
+      {/* Scrollable messages (when present) */}
       {hasMessages && (
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto min-h-0 px-4 pt-6"
+          className="flex-1 w-full overflow-y-auto min-h-0 px-4 pt-6"
         >
           <div className="w-full max-w-3xl mx-auto space-y-4 pb-4">
             {messages.map((msg) => (
@@ -158,7 +192,7 @@ export default function AynAIChat() {
                     "max-w-[85%] rounded-xl px-4 py-3 text-sm shadow-sm",
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-foreground"
+                      : "bg-card/80 backdrop-blur-md border border-border text-foreground"
                   )}
                 >
                   <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
@@ -167,7 +201,7 @@ export default function AynAIChat() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="rounded-xl px-4 py-3 bg-card/80 border border-border text-muted-foreground text-sm backdrop-blur-sm">
+                <div className="rounded-xl px-4 py-3 bg-card/80 backdrop-blur-md border border-border text-muted-foreground text-sm">
                   <span className="animate-pulse">Thinking...</span>
                 </div>
               </div>
@@ -177,24 +211,28 @@ export default function AynAIChat() {
         </div>
       )}
 
-      {/* Centered block: title + input + quick actions (in the middle, not fixed to bottom) */}
+      {/* Centered block: title + input + quick actions (Ruixen layout) */}
       <div
         className={cn(
           "w-full flex flex-col items-center px-4 py-8",
           hasMessages ? "shrink-0" : "flex-1 justify-center min-h-0"
         )}
       >
-        <div className="w-full max-w-3xl flex flex-col items-center gap-6">
+        {/* Centered AI title */}
+        <div className="flex-1 w-full flex flex-col items-center justify-center shrink-0">
           <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+            <h1 className="text-4xl font-semibold text-foreground drop-shadow-sm">
               Horus AI
             </h1>
-            <p className="mt-2 text-muted-foreground text-sm md:text-base">
-              Tell Horus AI what&apos;s the plan
+            <p className="mt-2 text-muted-foreground">
+              Build something amazing — just start typing below.
             </p>
           </div>
+        </div>
 
-          <div className="w-full relative rounded-xl border border-border bg-card shadow-md">
+        {/* Input box section (Ruixen-style: semi-transparent, backdrop blur, our colors) */}
+        <div className="w-full max-w-3xl mb-[10vh] md:mb-[15vh]">
+          <div className="relative bg-card/60 backdrop-blur-md rounded-xl border border-border">
             <Textarea
               ref={textareaRef}
               value={message}
@@ -208,9 +246,9 @@ export default function AynAIChat() {
                   sendMessage(message)
                 }
               }}
-              placeholder="Build an AI agent for customer support..."
+              placeholder="Type your request..."
               className={cn(
-                "w-full px-4 py-3 resize-none border-0 bg-transparent text-foreground text-sm min-h-[48px] md:min-h-[52px]",
+                "w-full px-4 py-3 resize-none border-none bg-transparent text-foreground text-sm min-h-[48px] md:min-h-[52px]",
                 "focus-visible:ring-0 focus-visible:ring-offset-0",
                 "placeholder:text-muted-foreground"
               )}
@@ -218,12 +256,14 @@ export default function AynAIChat() {
               rows={1}
               disabled={isLoading}
             />
-            <div className="flex items-center justify-between p-2 md:p-3 border-t border-border/50">
+
+            {/* Footer buttons */}
+            <div className="flex items-center justify-between p-3 border-t border-border/50">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:text-foreground hover:bg-accent min-h-[44px] min-w-[44px] touch-manipulation"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 min-h-[44px] min-w-[44px] touch-manipulation"
                 aria-label="Attach file"
               >
                 <Paperclip className="w-4 h-4" />
@@ -245,18 +285,15 @@ export default function AynAIChat() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
+          {/* Quick actions (Ruixen-style grid, Ayn colors) */}
+          <div className="flex items-center justify-center flex-wrap gap-3 mt-6">
             {QUICK_ACTIONS.map((action) => (
-              <Button
+              <QuickActionButton
                 key={action.label}
-                type="button"
-                variant="outline"
-                className="flex items-center gap-2 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent text-xs shadow-sm min-h-[44px] touch-manipulation px-4"
+                icon={<action.icon className="w-4 h-4 shrink-0" />}
+                label={action.label}
                 onClick={() => handleQuickAction(action.prompt)}
-              >
-                <action.icon className="w-3.5 h-3.5 shrink-0" />
-                <span>{action.label}</span>
-              </Button>
+              />
             ))}
           </div>
         </div>

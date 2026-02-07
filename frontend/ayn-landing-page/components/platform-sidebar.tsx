@@ -2,12 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Archive, LayoutDashboard, Search, Settings, Upload } from "lucide-react"
+import { Archive, Bot, LayoutDashboard, LogOut, Search, Settings, Upload } from "lucide-react"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 
 const navItems = [
+  { href: "/platform/horus-ai", label: "Horus AI", icon: Bot },
   { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/platform/evidence", label: "Evidence Upload", icon: Upload },
   { href: "/platform/gap-analysis", label: "Gap Analysis", icon: Search },
@@ -15,20 +17,9 @@ const navItems = [
   { href: "/platform/settings", label: "Settings", icon: Settings },
 ]
 
-const fallbackUser = {
-  name: "Amina Hassan",
-  email: "amina@horus.ai",
-  role: "Quality Lead",
-}
-
 export default function PlatformSidebar({ open }: { open: boolean }) {
   const pathname = usePathname()
-  const { user } = useAuth()
-  const displayUser = {
-    name: user?.name ?? fallbackUser.name,
-    email: user?.email ?? fallbackUser.email,
-    role: fallbackUser.role,
-  }
+  const { user, isAuthenticated, logout } = useAuth()
 
   return (
     <aside
@@ -38,8 +29,8 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
       )}
     >
       <div className={cn("flex items-center gap-3 px-4 py-5", open ? "justify-start" : "justify-center")}>
-        <Link href="/platform" className="flex items-center gap-2 text-sm font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold">
+        <Link href="/platform/horus-ai" className="flex items-center gap-2 text-sm font-semibold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 via-primary/40 to-transparent text-xs font-bold text-primary-foreground shadow-sm">
             H
           </span>
           <span
@@ -48,7 +39,7 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
               open ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
             )}
           >
-            Horus AI
+            Ayn
           </span>
         </Link>
       </div>
@@ -63,12 +54,18 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
+                "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
                 active
-                  ? "bg-muted text-foreground"
+                  ? "bg-gradient-to-r from-primary/20 via-primary/10 to-transparent text-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >
+              <span
+                className={cn(
+                  "absolute left-0 h-6 w-1 rounded-full bg-transparent transition-all",
+                  active ? "bg-primary" : "group-hover:bg-muted-foreground/30"
+                )}
+              />
               <Icon className="h-4 w-4" />
               <span
                 className={cn(
@@ -86,15 +83,32 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
       <div className="mt-auto border-t border-border/60 px-3 py-4">
         {open && (
           <div className="mb-4 rounded-xl border border-border/60 bg-muted/30 p-3">
-            <p className="text-sm font-medium text-foreground">{displayUser.name}</p>
-            <p className="text-xs text-muted-foreground">{displayUser.email}</p>
-            <p className="mt-2 text-xs font-medium text-muted-foreground">{displayUser.role}</p>
+            <p className="text-sm font-medium text-foreground">
+              {isAuthenticated ? user?.name : "Account not connected"}
+            </p>
+            {isAuthenticated && user?.email ? (
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Sign in to sync your workspace</p>
+            )}
           </div>
         )}
         <div className={cn("flex items-center", open ? "justify-between" : "justify-center")}>
           {open && <span className="text-xs text-muted-foreground">Theme</span>}
           <ThemeToggle variant="icon" />
         </div>
+        {open && isAuthenticated && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-4 w-full justify-start gap-2"
+            onClick={() => logout()}
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        )}
       </div>
     </aside>
   )

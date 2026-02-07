@@ -12,6 +12,11 @@ import { cn } from "@/lib/utils"
 
 const headerContent = [
   {
+    match: (pathname: string) => pathname.startsWith("/platform/horus-ai"),
+    title: "Horus AI",
+    description: "Ask questions, summarize evidence, and generate compliance-ready responses.",
+  },
+  {
     match: (pathname: string) => pathname === "/platform" || pathname.startsWith("/platform/dashboard"),
     title: "Dashboard",
     description: "Track your compliance activity, evidence uploads, and progress at a glance.",
@@ -45,7 +50,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const header = useMemo(() => {
     return (
       headerContent.find((item) => item.match(pathname)) ?? {
-        title: "Horus AI Platform",
+        title: "Ayn Workspace",
         description: "Welcome to your compliance workspace.",
       }
     )
@@ -61,7 +66,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <div className="flex flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
                 <Link href="/platform" className="text-sm font-semibold tracking-tight">
-                  Horus AI
+                  عين
                 </Link>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -80,8 +85,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 </Tooltip>
               </div>
               <div className="text-left md:text-right">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Platform</p>
-                <p className="text-sm font-medium text-foreground">Horus AI Workspace</p>
+                <p className="text-sm font-medium text-foreground">Ayn Workspace</p>
               </div>
             </div>
             <div className="px-6 pb-5">

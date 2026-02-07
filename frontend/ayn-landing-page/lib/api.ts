@@ -94,7 +94,6 @@ class ApiClient {
     name: string
     email: string
     password: string
-    role?: import("./types").UserRole | null
     institutionId?: string | null
   }) {
     const response = await this.request<{
@@ -213,7 +212,7 @@ class ApiClient {
     return this.request<import("./types").Assessment>(`/assessments/${id}`)
   }
 
-  async createAssessment(data: { institutionId: string; standardId: string }) {
+  async createAssessment(data: { standardId: string }) {
     return this.request<import("./types").Assessment>("/assessments", {
       method: "POST",
       body: JSON.stringify(data),
@@ -341,17 +340,6 @@ class ApiClient {
     })
   }
 
-  // Admin - Users
-  async getUsers() {
-    return this.request<import("./types").User[]>("/admin/users")
-  }
-
-  async updateUserRole(userId: string, role: import("./types").UserRole) {
-    return this.request(`/admin/users/${userId}/role`, {
-      method: "PUT",
-      body: JSON.stringify({ role }),
-    })
-  }
 }
 
 export const api = new ApiClient()

@@ -57,7 +57,7 @@ export function ReviewAssessmentPageClient() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["ADMIN", "AUDITOR"]}>
+    <ProtectedRoute>
       <div className="min-h-screen">
         <Header
           title={`Review Assessment #${assessment.id.slice(0, 8)}`}

@@ -39,7 +39,7 @@ export default function NewStandardPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["ADMIN"]}>
+    <ProtectedRoute>
       <div className="min-h-screen">
         <Header
           title="Create Standard"

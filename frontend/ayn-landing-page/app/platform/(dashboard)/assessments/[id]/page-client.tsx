@@ -3,7 +3,6 @@
 import { Header } from "@/components/platform/header"
 import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useParams } from "next/navigation"
 import { ClipboardList, ArrowLeft, Edit, Send, CheckCircle } from "lucide-react"
@@ -14,7 +13,6 @@ import { useState } from "react"
 
 export function AssessmentDetailPageClient() {
   const { id } = useParams()
-  const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
@@ -23,9 +21,9 @@ export function AssessmentDetailPageClient() {
     mutate,
   } = useSWR(id ? `assessment-${id}` : null, () => api.getAssessment(id as string))
 
-  const canEdit = assessment?.status === "DRAFT" && (user?.role === "TEACHER" || user?.role === "ADMIN")
-  const canSubmit = assessment?.status === "DRAFT" && (user?.role === "TEACHER" || user?.role === "ADMIN")
-  const canReview = assessment?.status === "SUBMITTED" && (user?.role === "AUDITOR" || user?.role === "ADMIN")
+  const canEdit = assessment?.status === "DRAFT"
+  const canSubmit = assessment?.status === "DRAFT"
+  const canReview = assessment?.status === "SUBMITTED"
 
   const handleSubmit = async () => {
     if (!assessment) return

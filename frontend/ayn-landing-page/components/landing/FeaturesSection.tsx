@@ -36,7 +36,7 @@ export function FeaturesSection() {
           variants={staggerContainer}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8"
         >
-          {features.map((feature, index) => {
+          {features.map((feature) => {
             const Icon = feature.icon
             return (
               <motion.div

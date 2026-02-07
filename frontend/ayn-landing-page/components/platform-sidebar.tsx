@@ -2,7 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+
 import { Archive, Bot, LayoutDashboard, LogOut, Search, Settings, Upload } from "lucide-react"
+
+import { Archive, Bot, LayoutDashboard, Search, Settings, Upload } from "lucide-react"
+
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -19,7 +23,11 @@ const navItems = [
 
 export default function PlatformSidebar({ open }: { open: boolean }) {
   const pathname = usePathname()
+
   const { user, isAuthenticated, logout } = useAuth()
+=======
+  const { user, isAuthenticated } = useAuth()
+
 
   return (
     <aside
@@ -31,7 +39,8 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
       <div className={cn("flex items-center gap-3 px-4 py-5", open ? "justify-start" : "justify-center")}>
         <Link href="/platform/horus-ai" className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 via-primary/40 to-transparent text-xs font-bold text-primary-foreground shadow-sm">
-            A
+
+
           </span>
           <span
             className={cn(
@@ -39,7 +48,8 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
               open ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
             )}
           >
-            Ayn
+
+            Horus AI Platform
           </span>
         </Link>
       </div>

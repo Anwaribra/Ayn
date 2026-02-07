@@ -7,7 +7,7 @@ from datetime import datetime
 # Assessment Request Models
 class AssessmentCreateRequest(BaseModel):
     """Request model for creating an assessment."""
-    institutionId: str = Field(..., description="Institution ID")
+    institutionId: Optional[str] = Field(None, description="Institution ID (auto-filled from current user if omitted)")
     standardId: str = Field(..., description="Standard ID")
 
     class Config:

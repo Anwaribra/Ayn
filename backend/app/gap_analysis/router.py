@@ -187,6 +187,40 @@ async def list_gap_analyses(
     ]
 
 
+# ─── List Archived Reports (MUST be before /{gap_analysis_id}) ───────────────
+
+@router.get("/archived/list", response_model=List[GapAnalysisListItem])
+async def list_archived_gap_analyses(
+    current_user: dict = Depends(get_current_user),
+):
+    """List all archived gap analysis reports for the user's institution."""
+    db = get_db()
+
+    if not current_user.get("institutionId"):
+        return []
+
+    records = await db.gapanalysis.find_many(
+        where={
+            "institutionId": current_user["institutionId"],
+            "archived": True,
+        },
+        order={"createdAt": "desc"},
+        include={"standard": True},
+    )
+
+    return [
+        GapAnalysisListItem(
+            id=r.id,
+            standardTitle=r.standard.title if r.standard else "Unknown Standard",
+            overallScore=r.overallScore,
+            summary=r.summary,
+            archived=r.archived,
+            createdAt=r.createdAt,
+        )
+        for r in records
+    ]
+
+
 # ─── Get Single Gap Analysis ─────────────────────────────────────────────────
 
 @router.get("/{gap_analysis_id}", response_model=GapAnalysisResponse)
@@ -290,37 +324,3 @@ async def archive_gap_analysis(
     logger.info(f"User {current_user['email']} {action} gap analysis {gap_analysis_id}")
 
     return {"message": f"Gap analysis {action} successfully"}
-
-
-# ─── List Archived Reports ───────────────────────────────────────────────────
-
-@router.get("/archived/list", response_model=List[GapAnalysisListItem])
-async def list_archived_gap_analyses(
-    current_user: dict = Depends(get_current_user),
-):
-    """List all archived gap analysis reports for the user's institution."""
-    db = get_db()
-
-    if not current_user.get("institutionId"):
-        return []
-
-    records = await db.gapanalysis.find_many(
-        where={
-            "institutionId": current_user["institutionId"],
-            "archived": True,
-        },
-        order={"createdAt": "desc"},
-        include={"standard": True},
-    )
-
-    return [
-        GapAnalysisListItem(
-            id=r.id,
-            standardTitle=r.standard.title if r.standard else "Unknown Standard",
-            overallScore=r.overallScore,
-            summary=r.summary,
-            archived=r.archived,
-            createdAt=r.createdAt,
-        )
-        for r in records
-    ]

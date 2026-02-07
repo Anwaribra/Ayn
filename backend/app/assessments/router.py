@@ -37,8 +37,16 @@ async def create_assessment(
     """
     db = get_db()
     
+    # Auto-fill institutionId from current user if not provided
+    institution_id = request.institutionId or current_user.get("institutionId")
+    if not institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No institution associated with your account. Please provide institutionId."
+        )
+    
     # Verify institution exists
-    institution = await db.institution.find_unique(where={"id": request.institutionId})
+    institution = await db.institution.find_unique(where={"id": institution_id})
     if not institution:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -55,7 +63,7 @@ async def create_assessment(
     
     # Check if user belongs to the institution (unless admin)
     if current_user["role"] != "ADMIN":
-        if current_user.get("institutionId") != request.institutionId:
+        if current_user.get("institutionId") != institution_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only create assessments for your own institution"
@@ -64,7 +72,7 @@ async def create_assessment(
     try:
         assessment = await db.assessment.create(
             data={
-                "institutionId": request.institutionId,
+                "institutionId": institution_id,
                 "userId": current_user["id"],
                 "standardId": request.standardId,
                 "status": "DRAFT",
@@ -216,9 +224,7 @@ async def save_assessment_answers(
     
     # Verify all criteria exist and belong to the same standard
     criterion_ids = [ans.criterionId for ans in request.answers]
-    # Prisma Python doesn't support {"in": ...} syntax, so we query all and filter
-    all_criteria = await db.criterion.find_many()
-    criteria = [c for c in all_criteria if c.id in criterion_ids]
+    criteria = await db.criterion.find_many(where={"id": {"in": criterion_ids}})
     
     if len(criteria) != len(criterion_ids):
         raise HTTPException(

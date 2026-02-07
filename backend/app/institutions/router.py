@@ -279,7 +279,7 @@ async def link_standard_to_institution(
     
     # Create or ensure link exists (unique constraint prevents duplicates)
     try:
-        await db.institution_standard.create(
+        await db.institutionstandard.create(
             data={
                 "institutionId": institution_id,
                 "standardId": request.standardId,
@@ -353,7 +353,7 @@ async def unlink_standard_from_institution(
     **Admin only** - Requires ADMIN role.
     """
     db = get_db()
-    link = await db.institution_standard.find_first(
+    link = await db.institutionstandard.find_first(
         where={
             "institutionId": institution_id,
             "standardId": standard_id,
@@ -364,5 +364,5 @@ async def unlink_standard_from_institution(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Link not found"
         )
-    await db.institution_standard.delete(where={"id": link.id})
+    await db.institutionstandard.delete(where={"id": link.id})
     logger.info(f"Admin {current_user['email']} unlinked standard {standard_id} from institution {institution_id}")

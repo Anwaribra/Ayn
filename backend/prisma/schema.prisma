@@ -160,7 +160,7 @@ model Evidence {
 model GapAnalysis {
   id                  String   @id @default(uuid())
   institutionId       String
-  standardId          String
+  standardId          String?
   assessmentId        String?
   overallScore        Float
   summary             String   @db.Text
@@ -170,7 +170,7 @@ model GapAnalysis {
   createdAt           DateTime @default(now())
 
   institution  Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  standard     Standard    @relation(fields: [standardId], references: [id], onDelete: SetNull)
+  standard     Standard?   @relation(fields: [standardId], references: [id], onDelete: SetNull)
 
   @@index([institutionId])
   @@index([standardId])

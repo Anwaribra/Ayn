@@ -1,4 +1,5 @@
 """AI router."""
+import asyncio
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.core.middlewares import get_current_user
 from app.core.rate_limit import limiter
@@ -43,9 +44,10 @@ async def chat(
     try:
         client = get_gemini_client()
         messages_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
-        result = client.chat(
+        result = await asyncio.to_thread(
+            client.chat,
             messages=messages_dicts,
-            context=request.context
+            context=request.context,
         )
         
         logger.info(f"User {current_user['email']} used Horus AI chat ({len(request.messages)} messages)")
@@ -86,9 +88,10 @@ async def generate_answer(
     """
     try:
         client = get_gemini_client()
-        result = client.generate_text(
+        result = await asyncio.to_thread(
+            client.generate_text,
             prompt=request.prompt,
-            context=request.context
+            context=request.context,
         )
         
         logger.info(f"User {current_user['email']} generated AI answer")
@@ -129,9 +132,10 @@ async def summarize(
     """
     try:
         client = get_gemini_client()
-        result = client.summarize(
+        result = await asyncio.to_thread(
+            client.summarize,
             content=request.content,
-            max_length=request.maxLength
+            max_length=request.maxLength,
         )
         
         logger.info(f"User {current_user['email']} summarized content with AI")
@@ -172,9 +176,10 @@ async def generate_comment(
     """
     try:
         client = get_gemini_client()
-        result = client.generate_comment(
+        result = await asyncio.to_thread(
+            client.generate_comment,
             text=request.text,
-            focus=request.focus
+            focus=request.focus,
         )
         
         logger.info(f"User {current_user['email']} generated AI comments")
@@ -215,9 +220,10 @@ async def explain(
     """
     try:
         client = get_gemini_client()
-        result = client.explain(
+        result = await asyncio.to_thread(
+            client.explain,
             topic=request.topic,
-            level=request.level
+            level=request.level,
         )
         
         logger.info(f"User {current_user['email']} requested AI explanation for: {request.topic}")
@@ -258,9 +264,10 @@ async def extract_evidence(
     """
     try:
         client = get_gemini_client()
-        result = client.extract_evidence(
+        result = await asyncio.to_thread(
+            client.extract_evidence,
             text=request.text,
-            criteria=request.criteria
+            criteria=request.criteria,
         )
         
         logger.info(f"User {current_user['email']} extracted evidence with AI")

@@ -6,6 +6,7 @@ export interface User {
   id: string
   name: string
   email: string
+  role: "ADMIN" | "TEACHER" | "AUDITOR"
   institutionId: string | null
   createdAt: string
 }

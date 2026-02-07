@@ -1,4 +1,5 @@
 """Gap analysis AI service - generates structured gap reports using Gemini."""
+import asyncio
 import json
 import logging
 from typing import List, Dict, Any, Optional
@@ -180,7 +181,7 @@ async def generate_gap_analysis(
 
     client = get_gemini_client()
 
-    try:
+    def _sync_generate():
         if USE_NEW_API:
             response = client.client.models.generate_content(
                 model=client.model_name,
@@ -190,12 +191,14 @@ async def generate_gap_analysis(
                 ),
                 contents=prompt,
             )
-            result_text = response.text
+            return response.text
         else:
             full_prompt = f"{SYSTEM_PROMPT}\n\n---\n\n{prompt}"
             response = client.model.generate_content(full_prompt)
-            result_text = response.text
+            return response.text
 
+    try:
+        result_text = await asyncio.to_thread(_sync_generate)
         return _parse_gap_response(result_text)
 
     except Exception as e:

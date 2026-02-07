@@ -68,6 +68,8 @@ export default function PlatformSidebar() {
     router.push("/platform/login")
   }
 
+  const headerContainerClass = "px-4 pt-5 pb-4 space-y-4"
+
   return (
     <aside
       className={cn(
@@ -75,7 +77,7 @@ export default function PlatformSidebar() {
         open ? "w-72" : "w-16"
       )}
     >
-      <div className="px-4 pt-5 pb-4 space-y-4">
+      <div className={headerContainerClass}>
         <Link
           href="/"
           className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-muted/60 transition-colors"

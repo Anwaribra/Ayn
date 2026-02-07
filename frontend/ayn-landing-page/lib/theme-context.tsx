@@ -1,4 +1,5 @@
 "use client"
+/* eslint-disable react-refresh/only-export-components */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 
@@ -107,4 +108,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
     return useContext(ThemeContext)
 }
-

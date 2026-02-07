@@ -1,8 +1,23 @@
 // Lightweight helper for loading Google Identity Services and getting an ID token
 
+interface GooglePromptNotification {
+  isNotDisplayed: () => boolean
+}
+
+interface GoogleAccountsId {
+  initialize: (options: { client_id: string; ux_mode?: "popup" | "redirect"; callback: (response: { credential: string }) => void }) => void
+  prompt: (listener: (notification: GooglePromptNotification) => void) => void
+}
+
+interface GoogleNamespace {
+  accounts?: {
+    id?: GoogleAccountsId
+  }
+}
+
 declare global {
   interface Window {
-    google?: any
+    google?: GoogleNamespace
   }
 }
 
@@ -62,7 +77,7 @@ export async function getGoogleIdToken(): Promise<string> {
       })
 
       // Force display the selector
-      window.google.accounts.id.prompt((notification: any) => {
+      window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed()) {
           // If prompt is blocked, try to use the manual button click logic
           console.warn("Prompt suppressed. Using manual sign-in trigger instead.");
@@ -74,4 +89,3 @@ export async function getGoogleIdToken(): Promise<string> {
     }
   })
 }
-

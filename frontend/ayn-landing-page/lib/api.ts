@@ -19,11 +19,11 @@ class ApiClient {
     }
 
     if (token) {
-      ; (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
     }
 
-    const fullUrl = `${API_BASE_URL}${endpoint}`;
-    log(`[API Request] ${options.method || 'GET'} ${fullUrl}`);
+    const fullUrl = `${API_BASE_URL}${endpoint}`
+    log(`[API Request] ${options.method || "GET"} ${fullUrl}`)
 
     const response = await fetch(fullUrl, {
       ...options,
@@ -74,7 +74,7 @@ class ApiClient {
   }
 
   async syncWithSupabase(supabaseToken: string) {
-    log('[API] Syncing with Supabase...');
+    log("[API] Syncing with Supabase...")
     const response = await this.request<{
       user: import("./types").User
       access_token: string
@@ -83,10 +83,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ access_token: supabaseToken }),
     })
-    log('[API] Supabase sync successful, storing tokens...');
+    log("[API] Supabase sync successful, storing tokens...")
     localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
-    log('[API] User logged in:', response.user.email);
+    log("[API] User logged in:", response.user.email)
     return response
   }
 

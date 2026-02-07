@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display } from "next/font/google"
@@ -113,4 +114,3 @@ export default function RootLayout({
     </html>
   )
 }
-

@@ -142,7 +142,7 @@ export default function AynAIChat() {
             Horus AI
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Build something amazing — just start typing below.
+            Tell Horus AI what&apos;s the plan — قول لـ Horus AI إيه الخطة
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export default function AynAIChat() {
                   sendMessage(message)
                 }
               }}
-              placeholder="Type your request..."
+              placeholder="Tell Horus AI what you need..."
               className={cn(
                 "w-full px-4 py-3 resize-none border-0 bg-transparent text-foreground text-sm",
                 "focus-visible:ring-0 focus-visible:ring-offset-0",

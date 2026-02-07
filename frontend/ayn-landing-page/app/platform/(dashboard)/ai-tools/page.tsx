@@ -1,11 +1,5 @@
-"use client"
-
-import AynAIChat from "@/components/ui/ayn-ai-chat"
+import { redirect } from "next/navigation"
 
 export default function AIToolsPage() {
-  return (
-    <div className="min-h-screen w-full">
-      <AynAIChat />
-    </div>
-  )
+  redirect("/platform/dashboard")
 }

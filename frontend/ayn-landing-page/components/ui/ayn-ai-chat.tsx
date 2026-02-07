@@ -197,7 +197,7 @@ function MarkdownContent({ content }: { content: string }) {
     let key = 0
 
     while (remaining.length > 0) {
-      const boldMatch = remaining.match(/^(.*?)\*\*(.+?)\*\*(.*)$/s)
+      const boldMatch = remaining.match(/^([\s\S]*?)\*\*(.+?)\*\*([\s\S]*)$/)
       if (boldMatch) {
         if (boldMatch[1]) parts.push(<span key={key++}>{boldMatch[1]}</span>)
         parts.push(<strong key={key++} className="font-semibold text-foreground">{boldMatch[2]}</strong>)
@@ -205,7 +205,7 @@ function MarkdownContent({ content }: { content: string }) {
         continue
       }
 
-      const codeMatch = remaining.match(/^(.*?)`(.+?)`(.*)$/s)
+      const codeMatch = remaining.match(/^([\s\S]*?)`(.+?)`([\s\S]*)$/)
       if (codeMatch) {
         if (codeMatch[1]) parts.push(<span key={key++}>{codeMatch[1]}</span>)
         parts.push(

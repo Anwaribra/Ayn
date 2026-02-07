@@ -24,14 +24,20 @@ interface HeaderProps {
   title: string
   description?: string
   breadcrumbs?: HeaderBreadcrumbItem[]
+  actions?: React.ReactNode
 }
 
-export function Header({ title, description, breadcrumbs }: HeaderProps) {
+export function Header({ title, description, breadcrumbs, actions }: HeaderProps) {
   return (
-    <header className={SIDEBAR_MOBILE_OFFSET + " py-6 px-4 md:px-[var(--spacing-content)] border-b border-border bg-background sticky top-0 z-30"}>
-      <div className="min-w-0">
+    <header
+      className={
+        SIDEBAR_MOBILE_OFFSET +
+        " sticky top-0 z-30 border-b border-border/60 bg-background/95 px-4 py-6 backdrop-blur md:px-[var(--spacing-content)]"
+      }
+    >
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <Breadcrumb className="mb-2">
+          <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((item, i) => (
                 <React.Fragment key={i}>
@@ -54,8 +60,11 @@ export function Header({ title, description, breadcrumbs }: HeaderProps) {
             </BreadcrumbList>
           </Breadcrumb>
         )}
-        <h1 className="text-2xl font-bold text-foreground truncate">{title}</h1>
-        {description && <p className="text-muted-foreground mt-1">{description}</p>}
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-foreground truncate">{title}</h1>
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </header>
   )

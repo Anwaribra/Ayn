@@ -19,9 +19,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           },
         }}
       >
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-screen bg-gradient-to-br from-background via-background to-muted/40">
           <PlatformSidebar />
-          <main className="flex-1 overflow-x-hidden">{children}</main>
+          <main className="flex-1 overflow-x-hidden">
+            <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.08),_transparent_45%)]">
+              {children}
+            </div>
+          </main>
         </div>
       </SWRConfig>
     </ProtectedRoute>

@@ -13,6 +13,11 @@ import {
   type SidebarLinkItem,
 } from "@/components/ui/sidebar"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   LayoutDashboard,
   Building2,
   FileCheck,
@@ -23,6 +28,8 @@ import {
   Settings,
   Users,
   LogOut,
+  PanelLeftClose,
+  ChevronRight,
 } from "lucide-react"
 import { useState } from "react"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
@@ -120,18 +127,59 @@ function PlatformSidebarContent() {
   return (
     <>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <Link
-          href="/"
-          onClick={() => setOpen(false)}
-          className="flex items-center gap-3 px-2 py-4 border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent/30 transition-colors rounded-t-lg"
-          aria-label="Ayn site home"
-        >
-          <AynLogo size="md" heroStyle withGlow={false} />
-          <div className="min-w-0">
-            <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
-            <p className="text-xs text-muted-foreground">Platform</p>
-          </div>
-        </Link>
+        <div className="flex items-center gap-2 px-2 py-4 border-b border-sidebar-border shrink-0">
+          <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className={cn(
+              "flex items-center min-w-0 flex-1 hover:bg-sidebar-accent/30 transition-colors rounded-lg py-1 -my-1 px-1 -mx-1",
+              open ? "gap-3" : "justify-center"
+            )}
+            aria-label="Ayn site home"
+          >
+            <AynLogo
+              size={open ? "md" : "sm"}
+              heroStyle
+              withGlow={false}
+              className="shrink-0"
+            />
+            {open && (
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-semibold text-sidebar-foreground truncate">Ayn</h1>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded border border-sidebar-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                      "text-sidebar-foreground/80 bg-sidebar-accent/50"
+                    )}
+                  >
+                    BETA
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">Platform</p>
+              </div>
+            )}
+          </Link>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="shrink-0 rounded-lg p-2 text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+                aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                {open ? (
+                  <PanelLeftClose className="h-5 w-5" />
+                ) : (
+                  <ChevronRight className="h-5 w-5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {open ? "Collapse sidebar" : "Expand sidebar"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         <nav className="flex-1 p-3 space-y-3 overflow-y-auto">
           {sections.map((section) => (
@@ -192,7 +240,7 @@ export function Sidebar() {
   const [open, setOpen] = useState(true)
 
   return (
-    <UiSidebar open={open} setOpen={setOpen} animate={false}>
+    <UiSidebar open={open} setOpen={setOpen} animate={true}>
       <SidebarBody className="flex flex-col justify-between gap-10 h-full">
         <PlatformSidebarContent />
       </SidebarBody>

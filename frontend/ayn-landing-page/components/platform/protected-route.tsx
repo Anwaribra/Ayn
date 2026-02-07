@@ -5,15 +5,13 @@ import { log } from "@/lib/logger"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
 import { Loader2 } from "lucide-react"
-import type { UserRole } from "@/lib/types"
 
 interface ProtectedRouteProps {
   children: ReactNode
-  allowedRoles?: UserRole[]
 }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, isLoading, isAuthenticated } = useAuth()
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -27,16 +25,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         }
       }
 
-      if (!isLoading && isAuthenticated && allowedRoles && user) {
-        if (!allowedRoles.includes(user.role)) {
-          log("[ProtectedRoute] Redirecting to dashboard - insufficient permissions")
-          router.push("/platform/dashboard")
-        }
-      }
     }, 150)
 
     return () => clearTimeout(timer)
-  }, [isLoading, isAuthenticated, user, allowedRoles, router])
+  }, [isLoading, isAuthenticated, router])
 
   // Show loader while loading, or when we have a token but user not set yet (avoid redirect flash)
   const hasToken =
@@ -50,10 +42,6 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!isAuthenticated) {
-    return null
-  }
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return null
   }
 

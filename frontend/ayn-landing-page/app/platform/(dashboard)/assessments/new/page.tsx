@@ -4,7 +4,6 @@ import type React from "react"
 
 import { Header } from "@/components/platform/header"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import useSWR from "swr"
@@ -14,20 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import type { Institution, Standard } from "@/lib/types"
+import type { Standard } from "@/lib/types"
 
 export default function NewAssessmentPage() {
-  const { user } = useAuth()
   const router = useRouter()
-  const [institutionId, setInstitutionId] = useState("")
   const [standardId, setStandardId] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const { data: institutions } = useSWR("institutions", () => api.getInstitutions())
   const { data: standards } = useSWR("standards", () => api.getStandards())
-
-  const isAdmin = user?.role === "ADMIN"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,15 +29,7 @@ export default function NewAssessmentPage() {
     setIsLoading(true)
 
     try {
-      const selectedInstitutionId = isAdmin ? institutionId : user?.institutionId
-      if (!selectedInstitutionId) {
-        throw new Error("Please select an institution")
-      }
-
-      const assessment = await api.createAssessment({
-        institutionId: selectedInstitutionId,
-        standardId,
-      })
+      const assessment = await api.createAssessment({ standardId })
       toast.success("Assessment created")
       router.push(`/platform/assessments/${assessment.id}/edit`)
     } catch (err) {
@@ -80,24 +66,6 @@ export default function NewAssessmentPage() {
               <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{error}</div>
             )}
 
-            {isAdmin && (
-              <div className="space-y-2">
-                <Label htmlFor="institution">Institution *</Label>
-                <Select value={institutionId} onValueChange={setInstitutionId}>
-                  <SelectTrigger className="bg-background/50">
-                    <SelectValue placeholder="Select an institution" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {institutions?.map((inst: Institution) => (
-                      <SelectItem key={inst.id} value={inst.id}>
-                        {inst.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="standard">Standard *</Label>
               <Select value={standardId} onValueChange={setStandardId}>
@@ -115,7 +83,7 @@ export default function NewAssessmentPage() {
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading || !standardId || (isAdmin && !institutionId)}>
+              <Button type="submit" disabled={isLoading || !standardId}>
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

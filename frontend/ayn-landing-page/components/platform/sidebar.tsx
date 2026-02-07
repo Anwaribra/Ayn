@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useCallback, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { AynLogo } from "@/components/ayn-logo"
@@ -31,30 +32,89 @@ import {
   PanelLeftClose,
   ChevronRight,
 } from "lucide-react"
-import { useState } from "react"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
-type NavItem = { href: string; label: string; icon: typeof Sparkles; roles: string[] }
+/* ------------------ Roles ------------------ */
+export enum Role {
+  ADMIN = "ADMIN",
+  INSTITUTION_ADMIN = "INSTITUTION_ADMIN",
+  TEACHER = "TEACHER",
+  AUDITOR = "AUDITOR",
+}
 
+/* ------------------ Types ------------------ */
+type NavItem = {
+  href: string
+  label: string
+  icon: typeof Sparkles
+  roles: Role[]
+}
+
+/* ------------------ Navigation ------------------ */
 const generalItems: NavItem[] = [
-  { href: "/platform/dashboard", label: "Horus AI", icon: Sparkles, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/overview", label: "Overview", icon: LayoutDashboard, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  {
+    href: "/platform/dashboard",
+    label: "Horus AI",
+    icon: Sparkles,
+    roles: Object.values(Role),
+  },
+  {
+    href: "/platform/overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+    roles: Object.values(Role),
+  },
 ]
 
 const complianceItems: NavItem[] = [
-  { href: "/platform/institutions", label: "Institutions", icon: Building2, roles: ["ADMIN", "INSTITUTION_ADMIN"] },
-  { href: "/platform/standards", label: "Standards", icon: FileCheck, roles: ["ADMIN", "INSTITUTION_ADMIN"] },
-  { href: "/platform/assessments", label: "Assessments", icon: ClipboardList, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
-  { href: "/platform/evidence", label: "Evidence", icon: FileText, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  {
+    href: "/platform/institutions",
+    label: "Institutions",
+    icon: Building2,
+    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN],
+  },
+  {
+    href: "/platform/standards",
+    label: "Standards",
+    icon: FileCheck,
+    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN],
+  },
+  {
+    href: "/platform/assessments",
+    label: "Assessments",
+    icon: ClipboardList,
+    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN, Role.TEACHER, Role.AUDITOR],
+  },
+  {
+    href: "/platform/evidence",
+    label: "Evidence",
+    icon: FileText,
+    roles: [Role.ADMIN, Role.INSTITUTION_ADMIN, Role.TEACHER, Role.AUDITOR],
+  },
 ]
 
 const accountItems: NavItem[] = [
-  { href: "/platform/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"] },
+  {
+    href: "/platform/notifications",
+    label: "Notifications",
+    icon: Bell,
+    roles: Object.values(Role),
+  },
 ]
 
 const adminItems: NavItem[] = [
-  { href: "/platform/admin", label: "Admin Panel", icon: Settings, roles: ["ADMIN"] },
-  { href: "/platform/admin/users", label: "Manage Users", icon: Users, roles: ["ADMIN"] },
+  {
+    href: "/platform/admin",
+    label: "Admin Panel",
+    icon: Settings,
+    roles: [Role.ADMIN],
+  },
+  {
+    href: "/platform/admin/users",
+    label: "Manage Users",
+    icon: Users,
+    roles: [Role.ADMIN],
+  },
 ]
 
 const sections = [
@@ -63,41 +123,53 @@ const sections = [
   { title: "Account", items: accountItems },
 ] as const
 
+/* ------------------ Helpers ------------------ */
 function toLinkItem(
   item: NavItem,
   pathname: string
 ): SidebarLinkItem & { isActive: boolean } {
-  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+  const isActive =
+    pathname === item.href ||
+    pathname.startsWith(`${item.href}/`)
+
   return {
     label: item.label,
     href: item.href,
-    icon: <item.icon className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+    icon: <item.icon className="h-5 w-5 shrink-0" />,
     isActive,
   }
 }
 
+/* ------------------ Section ------------------ */
 function SidebarSection({
   title,
   items,
   pathname,
-  filter,
+  canAccess,
 }: {
   title: string
   items: NavItem[]
   pathname: string
-  filter: (item: NavItem) => boolean
+  canAccess: (item: NavItem) => boolean
 }) {
-  const { open, setOpen } = useSidebar()
-  const filtered = items.filter(filter)
-  if (filtered.length === 0) return null
+  const { setOpen } = useSidebar()
+
+  const visibleItems = useMemo(
+    () => items.filter(canAccess),
+    [items, canAccess]
+  )
+
+  if (!visibleItems.length) return null
 
   return (
     <div className="space-y-1">
-      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider first:pt-0">
+      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </p>
-      {filtered.map((item) => {
+
+      {visibleItems.map((item) => {
         const { isActive, ...link } = toLinkItem(item, pathname)
+
         return (
           <SidebarLink
             key={link.href}
@@ -111,122 +183,124 @@ function SidebarSection({
   )
 }
 
+/* ------------------ Content ------------------ */
 function PlatformSidebarContent() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
   const { open, setOpen } = useSidebar()
 
-  const filter = (item: NavItem) => !!user && item.roles.includes(user.role)
-  const filteredAdminItems = adminItems.filter(filter)
+  const canAccess = useCallback(
+    (item: NavItem) =>
+      !!user && item.roles.includes(user.role as Role),
+    [user]
+  )
+
+  const adminVisible = useMemo(
+    () => adminItems.some(canAccess),
+    [canAccess]
+  )
 
   const handleLogout = async () => {
     await logout()
-    window.location.href = "/platform/login"
+    router.push("/platform/login")
   }
 
   return (
     <>
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="flex items-center gap-3 px-3 py-4 border-b border-sidebar-border shrink-0">
-          <Link
-            href="/"
-            onClick={() => setOpen(false)}
-            className="inline-flex shrink-0 rounded-md hover:bg-sidebar-accent/30 transition-colors focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar"
-            aria-label="Go to Ayn home"
+      {/* ---------- Header ---------- */}
+      <div className="flex items-center gap-3 px-3 py-4 border-b border-sidebar-border">
+        <Link
+          href="/"
+          onClick={() => setOpen(false)}
+          aria-label="Go to home"
+          className="rounded-md hover:bg-sidebar-accent/30 transition-colors"
+        >
+          <AynLogo size={open ? "md" : "sm"} heroStyle />
+        </Link>
+
+        {open && (
+          <span
+            aria-hidden
+            className="text-[10px] px-1.5 py-0.5 rounded border bg-sidebar-accent/50"
           >
-            <AynLogo
-              size={open ? "md" : "sm"}
-              heroStyle
-              withGlow={false}
-              className="shrink-0"
-            />
-          </Link>
-          {open && (
-            <span
-              className={cn(
-                "shrink-0 rounded border border-sidebar-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
-                "text-sidebar-foreground/80 bg-sidebar-accent/50"
-              )}
-            >
-              BETA
-            </span>
-          )}
-          <div className="ml-auto shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setOpen(!open)}
-                  className="rounded-lg p-2 text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar"
-                  aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-                >
-                  {open ? (
-                    <PanelLeftClose className="h-5 w-5" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                {open ? "Collapse sidebar" : "Expand sidebar"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+            BETA
+          </span>
+        )}
+
+        <div className="ml-auto">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setOpen(!open)}
+                className="p-2 rounded-lg hover:bg-sidebar-accent/50"
+                aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                {open ? (
+                  <PanelLeftClose className="h-5 w-5" />
+                ) : (
+                  <ChevronRight className="h-5 w-5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {open ? "Collapse" : "Expand"}
+            </TooltipContent>
+          </Tooltip>
         </div>
-
-        <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
-          {sections.map((section) => (
-            <SidebarSection
-              key={section.title}
-              title={section.title}
-              items={section.items}
-              pathname={pathname}
-              filter={filter}
-            />
-          ))}
-
-          {filteredAdminItems.length > 0 && (
-            <>
-              <div className="border-t border-sidebar-border my-3 pt-3" />
-              <SidebarSection
-                title="Admin"
-                items={adminItems}
-                pathname={pathname}
-                filter={filter}
-              />
-            </>
-          )}
-        </nav>
       </div>
 
-      <div className="px-3 py-4 border-t border-sidebar-border space-y-3 shrink-0">
+      {/* ---------- Navigation ---------- */}
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        {sections.map((section) => (
+          <SidebarSection
+            key={section.title}
+            {...section}
+            pathname={pathname}
+            canAccess={canAccess}
+          />
+        ))}
+
+        {adminVisible && (
+          <>
+            <div className="border-t my-3" />
+            <SidebarSection
+              title="Admin"
+              items={adminItems}
+              pathname={pathname}
+              canAccess={canAccess}
+            />
+          </>
+        )}
+      </nav>
+
+      {/* ---------- Footer ---------- */}
+      <div className="px-3 py-4 border-t space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <ThemeToggle variant="icon" className="shrink-0" aria-label="Toggle theme" />
-          {open && <span className="text-xs text-muted-foreground">Theme</span>}
+          <ThemeToggle variant="icon" />
+          {open && <span className="text-xs">Theme</span>}
         </div>
+
         {user && (
-          <div className={cn("px-2 py-2 rounded-lg bg-sidebar-accent/50", open && "mb-1")}>
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
+          <div className="px-2 py-2 rounded-lg bg-sidebar-accent/50">
+            <p className="text-sm font-medium truncate">{user.name}</p>
             {open && (
               <>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
-                <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
-                  {user.role === "ADMIN" ? "Admin" : "User"}
+                <p className="text-xs truncate">{user.email}</p>
+                <span className="inline-block mt-1 text-xs px-2 rounded-full bg-sidebar-accent">
+                  {user.role}
                 </span>
               </>
             )}
           </div>
         )}
+
         <button
-          type="button"
           onClick={handleLogout}
-          className={cn(
-            "flex items-center justify-start gap-2 w-full py-2.5 px-3 rounded-lg transition-colors text-sm",
-            "text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar",
-          )}
-          aria-label="Log out"
+          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm hover:bg-destructive/10 hover:text-destructive"
+          aria-describedby="logout-desc"
         >
-          <LogOut className="h-5 w-5 shrink-0" />
+          <LogOut className="h-5 w-5" />
           {open && <span>Logout</span>}
         </button>
       </div>
@@ -234,12 +308,13 @@ function PlatformSidebarContent() {
   )
 }
 
+/* ------------------ Wrapper ------------------ */
 export function Sidebar() {
   const [open, setOpen] = useState(true)
 
   return (
-    <UiSidebar open={open} setOpen={setOpen} animate={true}>
-      <SidebarBody className="flex flex-col justify-between gap-10 h-full">
+    <UiSidebar open={open} setOpen={setOpen} animate>
+      <SidebarBody className="flex flex-col justify-between h-full">
         <PlatformSidebarContent />
       </SidebarBody>
     </UiSidebar>

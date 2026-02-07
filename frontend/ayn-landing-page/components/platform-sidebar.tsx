@@ -20,7 +20,7 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen flex-col border-r border-border/60 bg-background transition-[width] duration-300",
+        "sticky top-0 flex h-screen flex-col overflow-hidden border-r border-border/60 bg-background transition-[width] duration-300",
         open ? "w-64" : "w-16"
       )}
     >

@@ -12,10 +12,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground">
       <PlatformSidebar open={sidebarOpen} />
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex h-screen flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
             <div className="flex items-center gap-3">

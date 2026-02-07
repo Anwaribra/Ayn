@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { SWRConfig } from "swr"
 import { toast } from "sonner"
-import { Sidebar } from "@/components/platform/sidebar"
+import PlatformSidebar from "@/components/platform-sidebar"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }}
       >
         <div className="flex min-h-screen bg-background">
-          <Sidebar />
+          <PlatformSidebar />
           <main className="flex-1 overflow-x-hidden">{children}</main>
         </div>
       </SWRConfig>

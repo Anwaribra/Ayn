@@ -31,7 +31,7 @@ export default function PlatformSidebar({ open }: { open: boolean }) {
       <div className={cn("flex items-center gap-3 px-4 py-5", open ? "justify-start" : "justify-center")}>
         <Link href="/platform/horus-ai" className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 via-primary/40 to-transparent text-xs font-bold text-primary-foreground shadow-sm">
-            H
+            A
           </span>
           <span
             className={cn(

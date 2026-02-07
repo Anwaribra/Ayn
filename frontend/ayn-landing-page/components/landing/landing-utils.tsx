@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+/* eslint-disable react-refresh/only-export-components */
 import Link from "next/link"
 import { motion, useSpring, useMotionValue } from "framer-motion"
 import { Button } from "@/components/ui/button"

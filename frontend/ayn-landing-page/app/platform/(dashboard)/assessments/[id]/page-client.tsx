@@ -5,7 +5,7 @@ import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { ClipboardList, ArrowLeft, Edit, Send, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -15,7 +15,6 @@ import { useState } from "react"
 export function AssessmentDetailPageClient() {
   const { id } = useParams()
   const { user } = useAuth()
-  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {

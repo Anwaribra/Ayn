@@ -57,6 +57,7 @@ export function LandingNavbar() {
     if (!mobileOpen) return
     const dialog = dialogRef.current
     if (!dialog) return
+    const menuButton = menuButtonRef.current
     const focusable = dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
     const list = Array.from(focusable)
     const first = list[0]
@@ -81,7 +82,7 @@ export function LandingNavbar() {
     dialog.addEventListener("keydown", handleKeyDown)
     return () => {
       dialog.removeEventListener("keydown", handleKeyDown)
-      menuButtonRef.current?.focus()
+      menuButton?.focus()
     }
   }, [mobileOpen])
 

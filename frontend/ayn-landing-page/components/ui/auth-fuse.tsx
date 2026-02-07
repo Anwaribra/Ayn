@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useState, useId } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Shield, Brain, FileCheck, BarChart3, Zap, Users, ArrowLeft, Sparkles } from "lucide-react";
@@ -11,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AynLogo } from "@/components/ayn-logo";
-import { getGoogleIdToken } from "@/lib/google-auth";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { log } from "@/lib/logger";
@@ -342,7 +340,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const [isSignIn, setIsSignIn] = useState(defaultMode === "signin");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
 
     // Listen for Supabase auth state changes (handles OAuth redirects)
     React.useEffect(() => {

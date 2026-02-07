@@ -285,6 +285,5 @@ function OverviewPageContent() {
         </Card>
       </div>
     </div>
-    </ProtectedRoute>
   )
 }

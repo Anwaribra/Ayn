@@ -6,6 +6,7 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { Input } from "@/components/ui/input"
 
 import {
   Sparkles,
@@ -21,6 +22,10 @@ import {
   BookCheck,
   ClipboardCheck,
   FolderArchive,
+  Search,
+  ShieldCheck,
+  LineChart,
+  CalendarRange,
 } from "lucide-react"
 
 const navSections = [
@@ -29,7 +34,9 @@ const navSections = [
     items: [
       { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/platform/overview", label: "Executive Overview", icon: Sparkles },
+      { href: "/platform/analytics", label: "Insights", icon: LineChart },
       { href: "/platform/notifications", label: "Alerts", icon: Bell },
+      { href: "/platform/calendar", label: "Review Calendar", icon: CalendarRange },
     ],
   },
   {
@@ -61,6 +68,8 @@ export default function PlatformSidebar() {
     router.push("/platform/login")
   }
 
+  const headerContainerClass = "px-4 pt-5 pb-4 space-y-4"
+
   return (
     <aside
       className={cn(
@@ -68,7 +77,7 @@ export default function PlatformSidebar() {
         open ? "w-72" : "w-16"
       )}
     >
-      <div className="px-4 pt-5 pb-4">
+      <div className={headerContainerClass}>
         <Link
           href="/"
           className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-muted/60 transition-colors"
@@ -83,6 +92,25 @@ export default function PlatformSidebar() {
             </div>
           )}
         </Link>
+        {open && (
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Accreditation readiness
+            </div>
+            <p className="mt-2 text-lg font-semibold text-foreground">82%</p>
+            <p className="text-xs text-muted-foreground">On track for the next review cycle</p>
+          </div>
+        )}
+        {open && (
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tools & records..."
+              className="h-9 rounded-lg border-border/60 bg-background/70 pl-9 text-xs"
+            />
+          </div>
+        )}
       </div>
 
       {/* TOGGLE */}

@@ -1,24 +1,21 @@
 "use client"
 
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-const insights = [
-  { title: "Coverage by standard", detail: "Identify standards with limited evidence." },
-  { title: "Top risk areas", detail: "Surface criteria requiring immediate attention." },
-  { title: "Recommended actions", detail: "Generate a clear remediation checklist." },
-]
+import { Button } from "@/components/ui/button"
 
 export default function GapAnalysisPage() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      {insights.map((insight) => (
-        <Card key={insight.title} className="border-border/60">
-          <CardHeader>
-            <CardTitle className="text-base">{insight.title}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">{insight.detail}</CardContent>
-        </Card>
-      ))}
-    </div>
+    <Card className="border-border/60">
+      <CardHeader>
+        <CardTitle className="text-base">Gap Analysis</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm text-muted-foreground">
+        <p>No gap analysis results yet. Upload evidence to generate coverage insights.</p>
+        <Button asChild size="sm">
+          <Link href="/platform/evidence">Upload evidence</Link>
+        </Button>
+      </CardContent>
+    </Card>
   )
 }

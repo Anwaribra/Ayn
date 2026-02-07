@@ -3,12 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-const evidenceSteps = [
-  "Drag and drop evidence files into the upload queue.",
-  "Tag each file to the corresponding standard or criterion.",
-  "Track review status and analyst feedback in real time.",
-]
-
 export default function EvidencePage() {
   return (
     <div className="space-y-6">
@@ -31,15 +25,10 @@ export default function EvidencePage() {
         <CardHeader>
           <CardTitle className="text-base">How it will work</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            {evidenceSteps.map((step) => (
-              <li key={step} className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                <span>{step}</span>
-              </li>
-            ))}
-          </ul>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>Drag and drop evidence files into the upload queue.</p>
+          <p>Tag each file to the corresponding standard or criterion.</p>
+          <p>Track review status and analyst feedback in real time.</p>
         </CardContent>
       </Card>
     </div>

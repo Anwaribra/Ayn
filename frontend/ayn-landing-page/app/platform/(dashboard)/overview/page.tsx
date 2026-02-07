@@ -158,31 +158,24 @@ export default function OverviewPage() {
       title: "New Assessment",
       href: "/platform/assessments/new",
       icon: <Plus className="h-5 w-5" />,
-      roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER"],
     },
     {
       title: "Upload Evidence",
       href: "/platform/evidence/upload",
       icon: <FileText className="h-5 w-5" />,
-      roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER"],
     },
     {
       title: "View Standards",
       href: "/platform/standards",
       icon: <CheckCircle2 className="h-5 w-5" />,
-      roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
     },
     {
       title: "Horus AI",
       href: "/platform/dashboard",
       icon: <Sparkles className="h-5 w-5" />,
-      roles: ["ADMIN", "INSTITUTION_ADMIN", "TEACHER", "AUDITOR"],
     },
   ]
-
-  const filteredActions = quickActions.filter(
-    (action) => user && action.roles.includes(user.role),
-  )
+  const filteredActions = quickActions
 
   return (
     <div className="min-h-screen bg-background">

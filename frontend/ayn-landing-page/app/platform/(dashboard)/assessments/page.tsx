@@ -32,7 +32,7 @@ export default function AssessmentsPage() {
     return matchesStatus && matchesSearch
   })
 
-  const canCreate = user?.role === "ADMIN" || user?.role === "INSTITUTION_ADMIN" || user?.role === "TEACHER"
+  const canCreate = !!user
 
   return (
     <div className="min-h-screen bg-background">

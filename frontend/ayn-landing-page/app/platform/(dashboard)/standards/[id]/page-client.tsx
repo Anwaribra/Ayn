@@ -3,7 +3,6 @@
 import { Header } from "@/components/platform/header"
 import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useParams } from "next/navigation"
 import { BookOpen, ArrowLeft, Edit, Plus, CheckCircle2 } from "lucide-react"
@@ -13,7 +12,6 @@ import type { Criterion } from "@/lib/types"
 
 export function StandardDetailPageClient() {
   const { id } = useParams()
-  const { user } = useAuth()
   const { data: standard, isLoading: loadingStandard } = useSWR(id ? `standard-${id}` : null, () =>
     api.getStandard(id as string),
   )
@@ -21,7 +19,6 @@ export function StandardDetailPageClient() {
     api.getCriteria(id as string),
   )
 
-  const isAdmin = user?.role === "ADMIN"
   const isLoading = loadingStandard || loadingCriteria
 
   if (isLoading) {
@@ -75,14 +72,12 @@ export function StandardDetailPageClient() {
                 <p className="text-muted-foreground">{standard.description || "No description"}</p>
               </div>
             </div>
-            {isAdmin && (
-              <Link href={`/platform/standards/${id}/edit`}>
-                <Button variant="outline" size="sm">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              </Link>
-            )}
+            <Link href={`/platform/standards/${id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -90,14 +85,12 @@ export function StandardDetailPageClient() {
         <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-foreground">Criteria ({criteria?.length ?? 0})</h3>
-            {isAdmin && (
-              <Link href={`/platform/standards/${id}/criteria/new`}>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Criterion
-                </Button>
-              </Link>
-            )}
+            <Link href={`/platform/standards/${id}/criteria/new`}>
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Criterion
+              </Button>
+            </Link>
           </div>
 
           {!criteria || criteria.length === 0 ? (

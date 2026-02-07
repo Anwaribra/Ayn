@@ -1,14 +1,11 @@
 // Core types for the Horus Engine Platform
 
-export type UserRole = "ADMIN" | "INSTITUTION_ADMIN" | "TEACHER" | "AUDITOR"
-
 export type AssessmentStatus = "DRAFT" | "SUBMITTED" | "REVIEWED"
 
 export interface User {
   id: string
   name: string
   email: string
-  role: UserRole
   institutionId: string | null
   createdAt: string
 }

@@ -3,7 +3,6 @@
 import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { FileCheck, Plus, Search, ArrowRight, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,21 +14,19 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyCont
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function StandardsPage() {
-  const { user } = useAuth()
   return (
-    <ProtectedRoute allowedRoles={["ADMIN", "INSTITUTION_ADMIN"]}>
-      <StandardsPageContent user={user} />
+    <ProtectedRoute>
+      <StandardsPageContent />
     </ProtectedRoute>
   )
 }
 
-function StandardsPageContent({ user }: { user: { role?: string } | null }) {
+function StandardsPageContent() {
   const { data: standards, isLoading } = useSWR("standards", () => api.getStandards())
   const [search, setSearch] = useState("")
 
   const filteredStandards = standards?.filter((std: Standard) => std.title.toLowerCase().includes(search.toLowerCase()))
-
-  const canManage = user?.role === "ADMIN" || user?.role === "INSTITUTION_ADMIN"
+  const canManage = true
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,4 +118,3 @@ function StandardsPageContent({ user }: { user: { role?: string } | null }) {
     </div>
   )
 }
-

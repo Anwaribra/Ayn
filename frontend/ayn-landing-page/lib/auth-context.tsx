@@ -15,7 +15,6 @@ interface AuthContextType {
     name: string
     email: string
     password: string
-    role: "ADMIN" | "TEACHER" | "AUDITOR"
   }) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -69,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string
     email: string
     password: string
-    role: "ADMIN" | "TEACHER" | "AUDITOR"
   }) => {
     const response = await api.register(data)
     setUser(response.user)

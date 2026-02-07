@@ -54,7 +54,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["ADMIN"]}>
+    <ProtectedRoute>
       <div className="min-h-screen">
         <Header
           title="Edit Standard"

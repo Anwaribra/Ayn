@@ -1,20 +1,24 @@
 "use client"
 
-import { Header } from "@/components/platform/header"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+const insights = [
+  { title: "Coverage by standard", detail: "Identify standards with limited evidence." },
+  { title: "Top risk areas", detail: "Surface criteria requiring immediate attention." },
+  { title: "Recommended actions", detail: "Generate a clear remediation checklist." },
+]
 
 export default function GapAnalysisPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        title="Gap Analysis"
-        description="Identify compliance gaps across your evidence and standards."
-      />
-
-      <div className="p-4 md:p-[var(--spacing-content)] max-w-5xl mx-auto space-y-6">
-        <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-          <div className="text-sm text-muted-foreground">Run analysis to see compliance gaps</div>
-        </div>
-      </div>
+    <div className="grid gap-4 lg:grid-cols-3">
+      {insights.map((insight) => (
+        <Card key={insight.title} className="border-border/60">
+          <CardHeader>
+            <CardTitle className="text-base">{insight.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">{insight.detail}</CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

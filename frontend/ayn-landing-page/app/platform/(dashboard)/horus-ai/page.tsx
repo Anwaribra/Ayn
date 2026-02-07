@@ -3,6 +3,8 @@
 import AynAIChat from "@/components/ui/ayn-ai-chat"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 
+// Horus AI Platform Page
+
 export default function HorusAIPage() {
   return (
     <ProtectedRoute>

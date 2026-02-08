@@ -1,6 +1,5 @@
 """Main FastAPI application entry point."""
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from starlette.types import ASGIApp, Receive, Scope, Send, Message
@@ -127,17 +126,11 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# Raw ASGI CORS middleware — guarantees headers on ALL responses (including 403/401/500)
+# Raw ASGI CORS middleware — the ONLY CORS handler.
+# Guarantees headers on ALL responses including 403/401/500 error responses.
+# We do NOT use FastAPI's CORSMiddleware because it fails to add headers
+# on error responses from HTTPBearer and other exception handlers.
 app.add_middleware(CORSEverythingMiddleware)
-
-# Standard CORS middleware as additional layer
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Include routers
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -26,6 +26,8 @@ import {
   Plus,
   Copy,
   Check,
+  Pause,
+  Play,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -33,6 +35,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { motion, AnimatePresence } from "framer-motion"
+import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -142,7 +145,7 @@ function saveSessions(sessions: ChatSession[]) {
 }
 
 // ─── Markdown Renderer ──────────────────────────────────────────────────────────
-function MarkdownContent({ content }: { content: string }) {
+export function MarkdownContent({ content }: { content: string }) {
   const renderMarkdown = (text: string) => {
     const lines = text.split("\n")
     const elements: React.ReactNode[] = []
@@ -550,6 +553,78 @@ function ChatHistoryDrawer({
   )
 }
 
+// ─── Streaming Message Component ───────────────────────────────────────────────
+interface StreamingMessageProps {
+  content: string
+  isStreaming: boolean
+  onStop?: () => void
+}
+
+function StreamingMessage({ content, isStreaming, onStop }: StreamingMessageProps) {
+  const [isPaused, setIsPaused] = useState(false)
+  const { displayedText, isComplete, stopStreaming } = useStreamingText({
+    text: content,
+    speed: 35,
+    enabled: isStreaming && !isPaused,
+  })
+  const cursorVisible = useCursorBlink(isStreaming && !isComplete && !isPaused)
+
+  const handleStop = useCallback(() => {
+    stopStreaming()
+    onStop?.()
+  }, [stopStreaming, onStop])
+
+  const handlePauseToggle = useCallback(() => {
+    setIsPaused((prev) => !prev)
+  }, [])
+
+  const displayContent = isStreaming ? displayedText : content
+
+  return (
+    <div className="flex max-w-[80%] flex-col gap-1">
+      <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
+        <div className="relative">
+          <MarkdownContent content={displayContent} />
+          {isStreaming && !isComplete && (
+            <span
+              className={cn(
+                "inline-block w-[2px] h-[1.2em] bg-[var(--brand)] ml-0.5 align-middle transition-opacity duration-100",
+                cursorVisible ? "opacity-100" : "opacity-0"
+              )}
+            />
+          )}
+        </div>
+      </div>
+      {/* Controls for streaming */}
+      {isStreaming && (
+        <div className="flex items-center gap-1 pl-1">
+          <button
+            onClick={handlePauseToggle}
+            className="rounded-md p-1 text-muted-foreground/50 hover:bg-accent/50 hover:text-muted-foreground transition-colors"
+            title={isPaused ? "Resume" : "Pause"}
+          >
+            {isPaused ? (
+              <Play className="h-3 w-3" />
+            ) : (
+              <Pause className="h-3 w-3" />
+            )}
+          </button>
+          <button
+            onClick={handleStop}
+            className="rounded-md p-1 text-muted-foreground/50 hover:bg-accent/50 hover:text-muted-foreground transition-colors"
+            title="Stop"
+          >
+            <div className="h-3 w-3 bg-current rounded-sm" />
+          </button>
+          <span className="text-[10px] text-muted-foreground/40 ml-1">
+            {isPaused ? "Paused" : "Typing..."}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Chat Component ────────────────────────────────────────────────────────
 export default function AynAIChat() {
   const [message, setMessage] = useState("")
@@ -557,6 +632,7 @@ export default function AynAIChat() {
   const [isLoading, setIsLoading] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sessions, setSessions] = useState<ChatSession[]>([])
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -670,6 +746,8 @@ export default function AynAIChat() {
           timestamp: Date.now(),
         }
         setMessages((prev) => [...prev, assistantMsg])
+        // Set this message as streaming
+        setStreamingMessageId(assistantMsg.id)
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : "Failed to get response",
@@ -889,53 +967,62 @@ export default function AynAIChat() {
           >
             <div className="mx-auto w-full max-w-3xl space-y-1 px-4 py-6">
               <AnimatePresence initial={false}>
-                {messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className={cn(
-                      "group/msg flex w-full gap-3 py-2",
-                      msg.role === "user" ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 ring-1 ring-[var(--brand)]/10">
-                        <Bot className="h-4 w-4 text-[var(--brand)]" />
-                      </div>
-                    )}
-                    <div className="flex max-w-[80%] flex-col gap-1">
-                      <div
-                        className={cn(
-                          "px-4 py-3",
-                          msg.role === "user"
-                            ? "rounded-2xl rounded-br-md bg-[var(--brand)] text-[var(--brand-foreground)] shadow-md shadow-[var(--brand)]/10"
-                            : "rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 shadow-sm backdrop-blur-sm",
-                        )}
-                      >
-                        {msg.role === "assistant" ? (
-                          <MarkdownContent content={msg.content} />
-                        ) : (
-                          <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                            {msg.content}
-                          </p>
-                        )}
-                      </div>
-                      {/* Action buttons for assistant messages */}
+                {messages.map((msg, index) => {
+                  const isLatestAssistant = msg.role === "assistant" && msg.id === streamingMessageId
+                  const isStreaming = isLatestAssistant && !isLoading
+
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className={cn(
+                        "group/msg flex w-full gap-3 py-2",
+                        msg.role === "user" ? "justify-end" : "justify-start",
+                      )}
+                    >
                       {msg.role === "assistant" && (
-                        <div className="flex items-center gap-1 pl-1">
-                          <CopyButton text={msg.content} />
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 ring-1 ring-[var(--brand)]/10">
+                          <Bot className="h-4 w-4 text-[var(--brand)]" />
                         </div>
                       )}
-                    </div>
-                    {msg.role === "user" && (
-                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
-                        <User className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
+                      
+                      {msg.role === "assistant" ? (
+                        isLatestAssistant ? (
+                          <StreamingMessage
+                            content={msg.content}
+                            isStreaming={isStreaming}
+                            onStop={() => setStreamingMessageId(null)}
+                          />
+                        ) : (
+                          <div className="flex max-w-[80%] flex-col gap-1">
+                            <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
+                              <MarkdownContent content={msg.content} />
+                            </div>
+                            <div className="flex items-center gap-1 pl-1">
+                              <CopyButton text={msg.content} />
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="flex max-w-[80%] flex-col gap-1">
+                          <div className="rounded-2xl rounded-br-md bg-[var(--brand)] text-[var(--brand-foreground)] px-4 py-3 shadow-md shadow-[var(--brand)]/10">
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {msg.content}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {msg.role === "user" && (
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                    </motion.div>
+                  )
+                })}
               </AnimatePresence>
 
               {/* Loading indicator */}

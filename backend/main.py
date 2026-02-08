@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send, Message
 import logging
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -32,42 +32,76 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class CORSFixMiddleware(BaseHTTPMiddleware):
+class CORSEverythingMiddleware:
     """
-    Ensures CORS headers are present on ALL responses, including error responses.
+    Raw ASGI middleware that injects CORS headers into EVERY HTTP response.
     
-    FastAPI's CORSMiddleware can miss adding headers on error responses (e.g., 403
-    from HTTPBearer) when other middleware (like SlowAPI) interferes. This middleware
-    guarantees CORS headers are always set for allowed origins.
+    This runs at the ASGI level, so it catches responses from all sources:
+    FastAPI exception handlers, HTTPBearer 403s, SlowAPI, etc.
+    BaseHTTPMiddleware has a known bug where call_next misses some error responses.
     """
 
-    async def dispatch(self, request: Request, call_next):
-        origin = request.headers.get("origin")
-        
-        # Handle preflight OPTIONS requests
-        if request.method == "OPTIONS" and origin:
-            if origin in settings.cors_origins_list:
-                return JSONResponse(
-                    content="OK",
-                    headers={
-                        "Access-Control-Allow-Origin": origin,
-                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
-                        "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
-                        "Access-Control-Allow-Credentials": "true",
-                        "Access-Control-Max-Age": "600",
-                    },
-                )
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-        # Process the request normally
-        response = await call_next(request)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        # Ensure CORS headers on ALL responses for allowed origins
-        if origin and origin in settings.cors_origins_list:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Vary"] = "Origin"
+        # Extract Origin header from request
+        origin = None
+        for header_name, header_value in scope.get("headers", []):
+            if header_name == b"origin":
+                origin = header_value.decode("latin-1")
+                break
 
-        return response
+        # Check if origin is allowed
+        allowed = origin and origin in settings.cors_origins_list
+
+        # Handle preflight OPTIONS
+        if scope["method"] == "OPTIONS" and allowed:
+            response = JSONResponse(
+                content="OK",
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+                    "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Max-Age": "600",
+                },
+            )
+            await response(scope, receive, send)
+            return
+
+        # For non-OPTIONS requests, intercept the response to add CORS headers
+        if not allowed:
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_cors(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+
+                # Remove any existing CORS headers to avoid duplicates
+                headers = [
+                    (k, v) for k, v in headers
+                    if k.lower() not in (
+                        b"access-control-allow-origin",
+                        b"access-control-allow-credentials",
+                    )
+                ]
+
+                # Add CORS headers
+                headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
+                headers.append((b"access-control-allow-credentials", b"true"))
+                headers.append((b"vary", b"Origin"))
+
+                message["headers"] = headers
+
+            await send(message)
+
+        await self.app(scope, receive, send_with_cors)
 
 
 @asynccontextmanager
@@ -93,10 +127,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# Custom CORS middleware that guarantees headers on error responses
-app.add_middleware(CORSFixMiddleware)
+# Raw ASGI CORS middleware — guarantees headers on ALL responses (including 403/401/500)
+app.add_middleware(CORSEverythingMiddleware)
 
-# Standard CORS middleware as fallback
+# Standard CORS middleware as additional layer
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -143,4 +177,3 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-

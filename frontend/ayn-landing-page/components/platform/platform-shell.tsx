@@ -25,6 +25,7 @@ import {
   Archive,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform-sidebar"
+import FloatingAIBar from "@/components/platform/floating-ai-bar"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -376,6 +377,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         {/* ── Page content ─────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+
+      {/* ── Floating AI Bar (all pages except Horus AI) ────────────────── */}
+      <FloatingAIBar />
 
       {/* ── Search command palette ─────────────────────────────────────── */}
       <CommandDialog

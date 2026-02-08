@@ -112,6 +112,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description="Educational Quality Assurance & Accreditation SaaS Platform",
     lifespan=lifespan,
+    redirect_slashes=False,  # Prevent redirect loops when proxied through Vercel
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

@@ -4,20 +4,21 @@ const nextConfig = {
     unoptimized: false,
   },
   trailingSlash: true,
-  // Skip the automatic trailing-slash redirect for /api/* paths
-  // so the rewrite can proxy them directly to Railway without a redirect loop.
-  skipTrailingSlashRedirect: true,
 
-  // Proxy all /api/* requests to the backend.
-  // This eliminates CORS entirely — the browser sees same-origin requests.
+  // Proxy /api requests to the Railway backend.
+  // The browser sees same-origin requests — no CORS needed.
+  // Two rules: one for paths with trailing slash (after trailingSlash redirect),
+  // one without. The trailing-slash version strips the slash before forwarding.
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production.up.railway.app"
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ]
+    return {
+      beforeFiles: [
+        {
+          source: "/api/:path*",
+          destination: `${backendUrl}/api/:path*`,
+        },
+      ],
+    }
   },
 
   async headers() {

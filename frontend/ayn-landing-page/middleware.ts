@@ -20,6 +20,21 @@ const AUTH_PATHS = ["/platform/login", "/platform/register"]
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Skip trailing-slash handling for API routes (they proxy to Railway)
+  const isApiRoute = pathname.startsWith("/api/") || pathname === "/api"
+
+  // Since we use skipTrailingSlashRedirect, manually add trailing slash
+  // for non-API page routes that don't already have one
+  if (
+    !isApiRoute &&
+    !pathname.endsWith("/") &&
+    !pathname.includes(".") // skip files like .js, .css, .ico
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname + "/"
+    return NextResponse.redirect(url, 308)
+  }
+
   // Check for access token in cookies (server-side check)
   // Note: The token is stored in localStorage client-side,
   // so we use a cookie-based approach for middleware checks

@@ -1064,13 +1064,14 @@ function ChatInput({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-lg text-muted-foreground/50 hover:text-foreground"
+                  className="h-8 w-8 rounded-lg text-muted-foreground/30 cursor-not-allowed"
                   aria-label="Attach file"
+                  disabled
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Attach file</TooltipContent>
+              <TooltipContent>File attachment coming soon</TooltipContent>
             </Tooltip>
           </div>
           <div className="flex items-center gap-2.5">

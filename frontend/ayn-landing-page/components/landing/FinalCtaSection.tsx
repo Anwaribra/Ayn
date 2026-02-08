@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { fadeInUp, ShinyButton, staggerContainer } from "./landing-utils"
 
 export function FinalCtaSection() {
@@ -26,23 +28,32 @@ export function FinalCtaSection() {
           className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
         >
           <span className="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Start Your Quality Journey
+            Ready to Simplify Accreditation?
           </span>
         </motion.h2>
         <motion.p
           variants={fadeInUp}
           className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto"
         >
-          Join the platform designed to transform educational quality assurance.
+          Join institutions using Ayn to streamline compliance with AI assistance.
         </motion.p>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
           <ShinyButton
             href="/signup"
             className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-medium shadow-xl shadow-primary/20"
           >
-            Create account
+            Start Free Trial
             <ArrowRight className="ml-2 h-5 w-5" />
           </ShinyButton>
+          <Link href="/platform/horus-ai">
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 py-6 text-base font-medium h-auto"
+            >
+              Try Horus AI
+            </Button>
+          </Link>
         </motion.div>
       </motion.div>
     </section>

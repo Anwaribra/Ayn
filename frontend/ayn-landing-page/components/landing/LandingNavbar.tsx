@@ -104,7 +104,7 @@ export function LandingNavbar() {
         className={cn(
           "flex items-center justify-between gap-6 px-4 py-2.5 rounded-full border transition-all duration-500",
           scrolled
-            ? "bg-background/80 backdrop-blur-xl border-border/50 shadow-lg shadow-black/10 dark:shadow-black/20"
+            ? "bg-background/80 backdrop-blur-xl border-border/50 shadow-lg shadow-black/10"
             : "bg-background/50 backdrop-blur-md border-border/30"
         )}
         style={{ maxWidth: "720px", width: "100%" }}
@@ -201,7 +201,7 @@ export function LandingNavbar() {
                 asChild
                 className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-2 h-9 rounded-full hidden md:inline-flex font-medium"
               >
-                <Link href="/signup">Sign in</Link>
+                <Link href="/signup">Get Started</Link>
               </MagneticButton>
             </>
           )}
@@ -275,7 +275,7 @@ export function LandingNavbar() {
                     className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-3 px-4 rounded-lg text-center block mt-1"
                     onClick={closeMobile}
                   >
-                    Sign in
+                    Get Started
                   </Link>
                 </>
               )}

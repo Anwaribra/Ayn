@@ -1,8 +1,32 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { audienceItems, trustBadges } from "./landing-data"
+import { School, GraduationCap, Library, Award, ShieldCheck, Users } from "lucide-react"
 import { fadeInUp, staggerContainer } from "./landing-utils"
+
+const audiences = [
+  {
+    title: "Schools",
+    icon: School,
+    description: "Streamline accreditation preparation with organized evidence and AI guidance.",
+  },
+  {
+    title: "Universities",
+    icon: GraduationCap,
+    description: "Manage program reviews and quality standards across multiple faculties.",
+  },
+  {
+    title: "Training Centers",
+    icon: Library,
+    description: "Document competencies and certifications for professional bodies.",
+  },
+]
+
+const values = [
+  { title: "ISO 21001 Aligned", icon: Award },
+  { title: "NAQAAE Compatible", icon: ShieldCheck },
+  { title: "Built for Teams", icon: Users },
+]
 
 export function AboutSection() {
   return (
@@ -16,56 +40,49 @@ export function AboutSection() {
           className="text-center mb-16"
         >
           <motion.h2 variants={fadeInUp} className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-            Excellence for Every Institution
+            Built for Educational Excellence
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-muted-foreground max-w-2xl mx-auto">
-            Built for every educational institution seeking excellence in quality assurance.
+            Quality assurance tools designed for every type of educational institution.
           </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {audienceItems.map((item, idx) => (
+        {/* Audience cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {audiences.map((item, idx) => (
             <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="group relative p-8 rounded-3xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 flex flex-col text-left"
+              className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg text-center"
             >
-              <div className="mb-5 w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                <item.icon className="w-7 h-7 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="mb-5 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                <item.icon className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold tracking-tight mb-4">{item.title}</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {item.benefits.map((benefit, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="text-primary mt-0.5 shrink-0">•</span>
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-              </ul>
+              <h3 className="text-lg font-semibold tracking-tight mb-2">{item.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {item.description}
+              </p>
             </motion.div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {trustBadges.map((item, idx) => (
-            <motion.div
-              key={item.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: (idx + 3) * 0.1 }}
-              className="group relative p-6 rounded-3xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center text-center"
-            >
-              <div className="mb-4 w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                <item.icon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <h3 className="text-base font-semibold tracking-tight">{item.title}</h3>
-            </motion.div>
+        {/* Value props */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex flex-wrap justify-center gap-8 md:gap-12"
+        >
+          {values.map((item) => (
+            <div key={item.title} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <item.icon className="w-4 h-4 text-primary" />
+              <span>{item.title}</span>
+            </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

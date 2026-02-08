@@ -59,7 +59,7 @@ export function HowItWorksSection() {
                   </div>
                 </div>
               )}
-              <div className="relative h-full rounded-2xl border-2 border-border bg-card/60 backdrop-blur-sm p-6 md:p-8 transition-all duration-300 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 group-hover:-translate-y-1">
+              <div className="relative h-full rounded-2xl border border-border bg-card p-6 md:p-8 transition-all duration-300 hover:border-primary/30 hover:shadow-lg group-hover:-translate-y-1">
                 <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary/50 via-primary to-primary/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="text-5xl md:text-6xl font-bold text-foreground/10 group-hover:text-primary/20 transition-colors absolute top-4 right-4">
                   {String(index + 1).padStart(2, "0")}

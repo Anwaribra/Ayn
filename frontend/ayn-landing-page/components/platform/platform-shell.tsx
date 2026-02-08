@@ -4,8 +4,6 @@ import {
   type ReactNode,
   Fragment,
   useState,
-  useEffect,
-  useCallback,
   useMemo,
 } from "react"
 import Link from "next/link"
@@ -13,19 +11,14 @@ import { usePathname, useRouter } from "next/navigation"
 import useSWR from "swr"
 import {
   PanelLeftOpen,
-  Search,
   Bell,
   ChevronRight,
   LogOut,
   Settings,
-  LayoutDashboard,
-  Bot,
-  FileText,
-  BarChart3,
-  Archive,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform-sidebar"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
+import { CommandPalette, CommandPaletteTrigger } from "./command-palette"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -42,14 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -86,36 +71,10 @@ const ROUTE_LABELS: Record<string, string> = {
   overview: "Overview",
 }
 
-// ─── Search command palette items ────────────────────────────────────────────
-
-const searchItems = [
-  { href: "/platform/horus-ai", label: "Horus AI", icon: Bot },
-  { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/platform/evidence", label: "Evidence", icon: FileText },
-  {
-    href: "/platform/gap-analysis",
-    label: "Gap Analysis",
-    icon: Search,
-  },
-  {
-    href: "/platform/assessments",
-    label: "Assessments",
-    icon: BarChart3,
-  },
-  { href: "/platform/archive", label: "Accreditation Archive", icon: Archive },
-  {
-    href: "/platform/notifications",
-    label: "Notifications",
-    icon: Bell,
-  },
-  { href: "/platform/settings", label: "Settings", icon: Settings },
-]
-
 // ─── Shell component ─────────────────────────────────────────────────────────
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuth()
@@ -147,26 +106,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const notificationCount = useMemo(
     () => notifications?.filter((n) => !n.read).length ?? 0,
     [notifications],
-  )
-
-  // ── Keyboard shortcut: Cmd/Ctrl + K to toggle search palette ────────────
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault()
-        setSearchOpen((prev) => !prev)
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
-
-  const handleSearchSelect = useCallback(
-    (href: string) => {
-      setSearchOpen(false)
-      router.push(href)
-    },
-    [router],
   )
 
   return (
@@ -239,37 +178,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           {/* Right side: search + notifications + user menu */}
-          <div className="flex items-center gap-1">
-            {/* Search trigger — desktop */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden h-8 items-center gap-2 px-2.5 text-muted-foreground hover:text-foreground md:flex"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search className="h-3.5 w-3.5" />
-              <span className="text-xs">Search…</span>
-              <kbd className="pointer-events-none ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </Button>
-
-            {/* Search trigger — mobile */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground md:hidden"
-                  onClick={() => setSearchOpen(true)}
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                Search (⌘K)
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex items-center gap-2">
+            {/* Command Palette Trigger */}
+            <CommandPaletteTrigger />
 
             {/* Notification bell */}
             <Tooltip>
@@ -381,35 +292,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       {/* ── Floating AI Bar (all pages except Horus AI) ────────────────── */}
       <FloatingAIBar />
 
-      {/* ── Search command palette ─────────────────────────────────────── */}
-      <CommandDialog
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        title="Search"
-        description="Navigate to any page"
-      >
-        <CommandInput placeholder="Search pages…" />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Navigate">
-            {searchItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <CommandItem
-                  key={item.href}
-                  value={item.label}
-                  onSelect={() =>
-                    handleSearchSelect(item.href)
-                  }
-                >
-                  <Icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </CommandItem>
-              )
-            })}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      {/* ── Command Palette ───────────────────────────────────────────── */}
+      <CommandPalette />
     </div>
   )
 }

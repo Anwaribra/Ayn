@@ -570,6 +570,17 @@ export default function AynAIChat() {
       setMessages(history)
     }
     setSessions(loadSessions())
+
+    // Check for initial prompt from command palette
+    const initialPrompt = localStorage.getItem("horus-ai-initial-prompt")
+    if (initialPrompt) {
+      // Clear it immediately to prevent re-triggering
+      localStorage.removeItem("horus-ai-initial-prompt")
+      // Send the message after a short delay to ensure component is ready
+      setTimeout(() => {
+        sendMessage(initialPrompt)
+      }, 100)
+    }
   }, [])
 
   useEffect(() => {

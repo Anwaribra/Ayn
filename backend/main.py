@@ -1,7 +1,9 @@
 """Main FastAPI application entry point."""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -30,6 +32,44 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class CORSFixMiddleware(BaseHTTPMiddleware):
+    """
+    Ensures CORS headers are present on ALL responses, including error responses.
+    
+    FastAPI's CORSMiddleware can miss adding headers on error responses (e.g., 403
+    from HTTPBearer) when other middleware (like SlowAPI) interferes. This middleware
+    guarantees CORS headers are always set for allowed origins.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        
+        # Handle preflight OPTIONS requests
+        if request.method == "OPTIONS" and origin:
+            if origin in settings.cors_origins_list:
+                return JSONResponse(
+                    content="OK",
+                    headers={
+                        "Access-Control-Allow-Origin": origin,
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+                        "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
+                        "Access-Control-Allow-Credentials": "true",
+                        "Access-Control-Max-Age": "600",
+                    },
+                )
+
+        # Process the request normally
+        response = await call_next(request)
+
+        # Ensure CORS headers on ALL responses for allowed origins
+        if origin and origin in settings.cors_origins_list:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Vary"] = "Origin"
+
+        return response
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
@@ -53,7 +93,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# CORS middleware (use settings in production; allow_origins from env CORS_ORIGINS)
+# Custom CORS middleware that guarantees headers on error responses
+app.add_middleware(CORSFixMiddleware)
+
+# Standard CORS middleware as fallback
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

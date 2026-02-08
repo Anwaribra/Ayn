@@ -8,7 +8,11 @@ import { AnimatedBeam } from "@/components/ui/animated-beam"
 
 export function HowItWorksSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const stepRefs = useRef<(HTMLDivElement | null)[]>([])
+  const stepRef1 = useRef<HTMLDivElement>(null)
+  const stepRef2 = useRef<HTMLDivElement>(null)
+  const stepRef3 = useRef<HTMLDivElement>(null)
+  const stepRef4 = useRef<HTMLDivElement>(null)
+  const stepRefs = [stepRef1, stepRef2, stepRef3, stepRef4]
 
   return (
     <section 
@@ -59,8 +63,8 @@ export function HowItWorksSection() {
                 <AnimatedBeam
                   key={`beam-${index}`}
                   containerRef={containerRef}
-                  fromRef={{ current: stepRefs.current[index] }}
-                  toRef={{ current: stepRefs.current[index + 1] }}
+                  fromRef={stepRefs[index]}
+                  toRef={stepRefs[index + 1]}
                   curvature={-20}
                   duration={2.5}
                   delay={index * 0.5}
@@ -77,7 +81,7 @@ export function HowItWorksSection() {
             {workflowSteps.map((step, index) => (
               <motion.div
                 key={step.title}
-                ref={(el) => { stepRefs.current[index] = el }}
+                ref={stepRefs[index]}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}

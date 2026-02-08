@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils"
 
 interface AnimatedBeamProps {
   className?: string
-  containerRef: React.RefObject<HTMLElement>
-  fromRef: React.RefObject<HTMLElement>
-  toRef: React.RefObject<HTMLElement>
+  containerRef: React.RefObject<HTMLElement | null>
+  fromRef: React.RefObject<HTMLElement | null>
+  toRef: React.RefObject<HTMLElement | null>
   curvature?: number
   duration?: number
   delay?: number
@@ -46,11 +46,15 @@ export function AnimatedBeam({
 
   useEffect(() => {
     const updatePath = () => {
-      if (!containerRef.current || !fromRef.current || !toRef.current) return
+      const container = containerRef.current
+      const from = fromRef.current
+      const to = toRef.current
+      
+      if (!container || !from || !to) return
 
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const fromRect = fromRef.current.getBoundingClientRect()
-      const toRect = toRef.current.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+      const fromRect = from.getBoundingClientRect()
+      const toRect = to.getBoundingClientRect()
 
       const svgWidth = containerRect.width
       const svgHeight = containerRect.height

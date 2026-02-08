@@ -48,15 +48,18 @@ class CORSEverythingMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Extract Origin header from request
+        # Extract Origin header from request (case-insensitive)
         origin = None
+        all_header_names = []
         for header_name, header_value in scope.get("headers", []):
-            if header_name == b"origin":
+            all_header_names.append(header_name.decode("latin-1"))
+            if header_name.lower() == b"origin":
                 origin = header_value.decode("latin-1")
-                break
 
         # Check if origin is allowed
-        allowed = origin and origin in settings.cors_origins_list
+        # Also support wildcard "*" to allow all origins
+        allowed_list = settings.cors_origins_list
+        allowed = origin and (origin in allowed_list or "*" in allowed_list)
 
         # Handle preflight OPTIONS
         if scope["method"] == "OPTIONS" and allowed:
@@ -80,7 +83,8 @@ class CORSEverythingMiddleware:
 
                 # Debug headers
                 headers.append((b"x-cors-middleware", b"active"))
-                headers.append((b"x-cors-debug", f"origin={origin},allowed={allowed},list_len={len(settings.cors_origins_list)}".encode("latin-1")))
+                hdr_names_str = "|".join(all_header_names[:15])
+                headers.append((b"x-cors-debug", f"origin={origin},allowed={allowed},hdrs={hdr_names_str}".encode("latin-1")))
 
                 if allowed:
                     # Remove any existing CORS headers to avoid duplicates

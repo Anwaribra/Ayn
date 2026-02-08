@@ -11,7 +11,6 @@ import { HowItWorksSection } from "@/components/landing/HowItWorksSection"
 import { AboutSection } from "@/components/landing/AboutSection"
 import { FinalCtaSection } from "@/components/landing/FinalCtaSection"
 import { FeatureShowcase } from "@/components/landing/feature-showcase"
-import { IntegrationLogos } from "@/components/landing/integration-logos"
 
 export default function Home() {
   useEffect(() => {
@@ -50,7 +49,6 @@ export default function Home() {
       <CursorGlow />
       <LandingNavbar />
       <Hero />
-      <IntegrationLogos />
       <SectionDivider />
       <FeatureShowcase />
       <SectionDivider />

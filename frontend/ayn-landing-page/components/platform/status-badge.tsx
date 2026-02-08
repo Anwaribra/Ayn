@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import type { AssessmentStatus } from "@/lib/types"
+import type { AssessmentStatus } from "@/types/assessment"
 
 interface StatusBadgeProps {
   status: AssessmentStatus

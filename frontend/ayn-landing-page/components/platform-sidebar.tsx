@@ -2,34 +2,30 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
 import {
   Archive,
   BarChart3,
   Bot,
-  ChevronDown,
+  ChevronLeft,
   FileText,
   LayoutDashboard,
-  LogOut,
   Search,
   Settings,
-  Upload,
   Bell,
-  Building2,
+  Sparkles,
 } from "lucide-react"
-
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/lib/auth-context"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
-// ─── Grouped Navigation ──────────────────────────────────────────────────────
+// ─── Navigation structure ─────────────────────────────────────────────────────
 
 interface NavItem {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
+  badge?: "ai"
+  notifiable?: boolean
 }
 
 interface NavGroup {
@@ -41,7 +37,7 @@ const navGroups: NavGroup[] = [
   {
     title: "AI Tools",
     items: [
-      { href: "/platform/horus-ai", label: "Horus AI", icon: Bot },
+      { href: "/platform/horus-ai", label: "Horus AI", icon: Bot, badge: "ai" },
     ],
   },
   {
@@ -56,131 +52,207 @@ const navGroups: NavGroup[] = [
   {
     title: "Reports",
     items: [
-      { href: "/platform/archive", label: "Archive", icon: Archive },
+      { href: "/platform/archive", label: "Accreditation Archive", icon: Archive },
     ],
   },
   {
     title: "System",
     items: [
+      { href: "/platform/notifications", label: "Notifications", icon: Bell, notifiable: true },
       { href: "/platform/settings", label: "Settings", icon: Settings },
     ],
   },
 ]
 
-export default function PlatformSidebar({ open }: { open: boolean }) {
+// ─── Sidebar component ───────────────────────────────────────────────────────
+
+interface PlatformSidebarProps {
+  open: boolean
+  onToggle: () => void
+  notificationCount?: number
+}
+
+export default function PlatformSidebar({
+  open,
+  onToggle,
+  notificationCount = 0,
+}: PlatformSidebarProps) {
   const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuth()
 
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen flex-col border-r border-border/60 bg-sidebar transition-[width] duration-300",
-        open ? "w-64" : "w-16"
+        "group/sidebar sticky top-0 flex h-screen flex-col border-r border-border/50 bg-sidebar transition-all duration-300 ease-in-out",
+        open ? "w-[260px]" : "w-[68px]",
       )}
     >
-      {/* Logo / Brand */}
-      <div className={cn("flex items-center gap-3 px-4 py-5", open ? "justify-start" : "justify-center")}>
-        <Link href="/platform/horus-ai" className="flex items-center gap-2 text-sm font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)] text-xs font-bold text-[var(--brand-foreground)] shadow-sm">
-            A
-          </span>
-          <span
+      {/* ── Brand ────────────────────────────────────────────────────────── */}
+      <div
+        className={cn(
+          "flex h-14 shrink-0 items-center border-b border-border/50 px-4",
+          open ? "justify-between" : "justify-center",
+        )}
+      >
+        <Link href="/platform/dashboard" className="flex items-center gap-2.5">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand)] to-[var(--brand-muted)] shadow-sm shadow-[var(--brand)]/20">
+            <span className="text-xs font-bold text-[var(--brand-foreground)]">A</span>
+            <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-white/10" />
+          </div>
+          <div
             className={cn(
-              "overflow-hidden whitespace-nowrap transition-all duration-300",
-              open ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
+              "overflow-hidden transition-all duration-300",
+              open ? "w-auto opacity-100" : "w-0 opacity-0",
             )}
           >
-            Ayn Platform
-          </span>
+            <p className="whitespace-nowrap text-sm font-semibold leading-tight text-foreground">
+              Ayn Platform
+            </p>
+            <p className="whitespace-nowrap text-[10px] leading-tight text-muted-foreground">
+              Quality Assurance
+            </p>
+          </div>
         </Link>
+
+        {open && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      {/* Navigation Groups */}
-      <nav className="flex-1 overflow-y-auto px-3 space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.title}>
-            {open && (
-              <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
-                {group.title}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+      {/* ── Navigation groups ───────────────────────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="space-y-6">
+          {navGroups.map((group) => (
+            <div key={group.title}>
+              {/* Group label */}
+              {open ? (
+                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/60">
+                  {group.title}
+                </p>
+              ) : (
+                <div className="mx-auto mb-2 h-px w-6 bg-border/60" />
+              )}
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                      active
-                        ? "bg-[var(--brand)]/10 text-[var(--brand)] font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                  >
-                    {active && (
-                      <span className="absolute left-0 h-5 w-[3px] rounded-full bg-[var(--brand)]" />
-                    )}
-                    <Icon className={cn("h-4 w-4 shrink-0", active && "text-[var(--brand)]")} />
-                    <span
+              {/* Group items */}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const active =
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`)
+                  const hasNotification =
+                    item.notifiable === true && notificationCount > 0
+
+                  const linkElement = (
+                    <Link
+                      href={item.href}
                       className={cn(
-                        "overflow-hidden whitespace-nowrap transition-all duration-300",
-                        open ? "max-w-[160px] opacity-100" : "max-w-0 opacity-0"
+                        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                        active
+                          ? "bg-[var(--brand)]/10 font-medium text-[var(--brand)]"
+                          : "text-muted-foreground hover:bg-accent/80 hover:text-foreground",
                       )}
                     >
-                      {item.label}
-                    </span>
-                  </Link>
-                )
-              })}
+                      {/* Active indicator bar */}
+                      {active && (
+                        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[var(--brand)]" />
+                      )}
+
+                      {/* Icon with optional notification dot */}
+                      <span className="relative shrink-0">
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 transition-colors",
+                            active && "text-[var(--brand)]",
+                          )}
+                        />
+                        {hasNotification && !open && (
+                          <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[var(--brand)] ring-2 ring-sidebar" />
+                        )}
+                      </span>
+
+                      {/* Label */}
+                      <span
+                        className={cn(
+                          "flex-1 overflow-hidden whitespace-nowrap transition-all duration-300",
+                          open
+                            ? "max-w-[160px] opacity-100"
+                            : "max-w-0 opacity-0",
+                        )}
+                      >
+                        {item.label}
+                      </span>
+
+                      {/* Notification count badge */}
+                      {open && hasNotification && (
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--brand)] px-1.5 text-[10px] font-bold text-[var(--brand-foreground)]">
+                          {notificationCount > 99
+                            ? "99+"
+                            : notificationCount}
+                        </span>
+                      )}
+
+                      {/* AI badge */}
+                      {open && item.badge === "ai" && (
+                        <span className="flex items-center gap-1 rounded-md bg-[var(--brand)]/10 px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand)]">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          AI
+                        </span>
+                      )}
+                    </Link>
+                  )
+
+                  // In collapsed state, wrap each item with a tooltip
+                  if (!open) {
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
+                          {linkElement}
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          sideOffset={8}
+                          className="text-xs font-medium"
+                        >
+                          {item.label}
+                          {hasNotification &&
+                            ` (${notificationCount})`}
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  }
+
+                  return (
+                    <div key={item.href}>{linkElement}</div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </nav>
 
-      {/* Bottom Section */}
-      <div className="mt-auto border-t border-border/60 px-3 py-4">
-        {open && (
-          <div className="mb-4 rounded-lg border border-border/60 bg-accent/30 p-3">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-[var(--brand)]/10 flex items-center justify-center">
-                <span className="text-xs font-bold text-[var(--brand)]">
-                  {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {isAuthenticated ? user?.name : "Not connected"}
-                </p>
-                {isAuthenticated && user?.email ? (
-                  <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">Sign in to sync</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className={cn("flex items-center", open ? "justify-between" : "justify-center")}>
-          {open && <span className="text-xs text-muted-foreground">Theme</span>}
+      {/* ── Bottom: theme toggle ────────────────────────────────────────── */}
+      <div className="shrink-0 border-t border-border/50 px-3 py-3">
+        <div
+          className={cn(
+            "flex items-center",
+            open ? "justify-between px-1" : "justify-center",
+          )}
+        >
+          {open && (
+            <span className="text-[11px] text-muted-foreground">
+              Theme
+            </span>
+          )}
           <ThemeToggle variant="icon" />
         </div>
-
-        {open && isAuthenticated && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3 w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-        )}
       </div>
     </aside>
   )

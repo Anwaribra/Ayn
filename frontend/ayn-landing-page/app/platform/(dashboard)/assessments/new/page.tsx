@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import type { Standard } from "@/lib/types"
+import type { Standard } from "@/types/standards"
 
 export default function NewAssessmentPage() {
   const router = useRouter()

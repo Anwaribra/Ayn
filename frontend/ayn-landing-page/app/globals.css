@@ -417,6 +417,36 @@ html {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
+/* ─── Platform Shell / Sidebar polish ──────────────────────────────────────── */
+
+/* Notification badge pulse */
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 40%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand) 0%, transparent); }
+}
+
+.badge-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Sidebar scrollbar styling */
+.group\/sidebar nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.group\/sidebar nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.group\/sidebar nav::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--foreground) 15%, transparent);
+  border-radius: 9999px;
+}
+
+.group\/sidebar nav::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--foreground) 25%, transparent);
+}
+
 /* Accessibility: Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
 

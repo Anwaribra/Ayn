@@ -15,12 +15,10 @@ from app.core.rate_limit import limiter
 from app.auth.router import router as auth_router
 from app.institutions.router import router as institutions_router
 from app.standards.router import router as standards_router
-# criteria router removed — CRUD handled via /api/standards/{id}/criteria
 from app.assessments.router import router as assessments_router
 from app.evidence.router import router as evidence_router
 from app.dashboard.router import router as dashboard_router
 from app.notifications.router import router as notifications_router
-# admin router removed — stub with no auth, admin features use require_admin
 from app.ai.router import router as ai_router
 from app.gap_analysis.router import router as gap_analysis_router
 
@@ -68,12 +66,10 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(institutions_router, prefix="/api/institutions", tags=["Institutions"])
 app.include_router(standards_router, prefix="/api/standards", tags=["Standards"])
-# criteria stub router removed
 app.include_router(assessments_router, prefix="/api/assessments", tags=["Assessments"])
 app.include_router(evidence_router, prefix="/api/evidence", tags=["Evidence"])
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
-# admin stub router removed
 app.include_router(ai_router, prefix="/api/ai", tags=["AI"])
 app.include_router(gap_analysis_router, prefix="/api/gap-analysis", tags=["Gap Analysis"])
 

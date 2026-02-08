@@ -1,6 +1,6 @@
 "use client"
 
-import AynAIChat from "@/components/ui/ayn-ai-chat"
+import AynAIChat from "@/components/platform/horus/ayn-ai-chat"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 
 export default function HorusAIPage() {

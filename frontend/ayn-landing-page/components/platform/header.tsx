@@ -12,9 +12,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-/** Left offset on mobile to clear the fixed sidebar menu button (3rem = 48px) */
-const SIDEBAR_MOBILE_OFFSET = "ml-12 md:ml-0"
-
 export interface HeaderBreadcrumbItem {
   label: string
   href?: string
@@ -23,21 +20,25 @@ export interface HeaderBreadcrumbItem {
 interface HeaderProps {
   title: string
   description?: string
+  /** Optional inline breadcrumbs (auto-breadcrumbs are in the shell header bar). */
   breadcrumbs?: HeaderBreadcrumbItem[]
   actions?: React.ReactNode
 }
 
+/**
+ * Page-level header for titles, descriptions, and actions.
+ *
+ * The shell top bar already provides auto-breadcrumbs and global controls
+ * (search, notifications, user menu), so this component focuses on
+ * page-specific context only. Breadcrumbs here are optional and
+ * displayed only when explicitly provided for sub-page navigation.
+ */
 export function Header({ title, description, breadcrumbs, actions }: HeaderProps) {
   return (
-    <header
-      className={
-        SIDEBAR_MOBILE_OFFSET +
-        " sticky top-0 z-30 border-b border-border/60 bg-background/95 px-4 py-6 backdrop-blur md:px-[var(--spacing-content)]"
-      }
-    >
+    <header className="px-4 pb-2 pt-6 md:px-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <Breadcrumb>
+          <Breadcrumb className="mb-1">
             <BreadcrumbList>
               {breadcrumbs.map((item, i) => (
                 <React.Fragment key={i}>
@@ -60,11 +61,19 @@ export function Header({ title, description, breadcrumbs, actions }: HeaderProps
             </BreadcrumbList>
           </Breadcrumb>
         )}
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-foreground truncate">{title}</h1>
-          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-semibold text-foreground">
+            {title}
+          </h1>
+          {description && (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          )}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
     </header>
   )

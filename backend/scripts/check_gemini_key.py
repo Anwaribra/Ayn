@@ -19,7 +19,7 @@ except Exception as e:
     print(f"Error loading settings: {e}")
 
 # Check .env file directly
-env_file = os.path.join(os.path.dirname(__file__), '.env')
+env_file = os.path.join(os.path.dirname(__file__), '..', '.env')
 if os.path.exists(env_file):
     print(f"\n.env file exists at: {env_file}")
     with open(env_file, 'r') as f:
@@ -37,4 +37,3 @@ if os.path.exists(env_file):
             print("GEMINI_API_KEY not found in .env file")
 else:
     print(f"\n.env file NOT found at: {env_file}")
-

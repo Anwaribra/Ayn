@@ -8,7 +8,7 @@ import { useParams } from "next/navigation"
 import { BookOpen, ArrowLeft, Edit, Plus, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import type { Criterion } from "@/lib/types"
+import type { Criterion } from "@/types/standards"
 
 export function StandardDetailPageClient() {
   const { id } = useParams()

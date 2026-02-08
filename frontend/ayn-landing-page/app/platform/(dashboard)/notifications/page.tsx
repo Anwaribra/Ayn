@@ -7,7 +7,7 @@ import useSWR from "swr"
 import { toast } from "sonner"
 import { Bell, Check, CheckCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Notification } from "@/lib/types"
+import type { Notification } from "@/types/notification"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 

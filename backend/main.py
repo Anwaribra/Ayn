@@ -160,6 +160,41 @@ async def health_check():
         return {"status": "degraded", "database": "disconnected"}
 
 
+@app.get("/api/debug/ai-status")
+async def ai_status():
+    """Check AI service configuration (no auth required, for debugging)."""
+    import os
+    gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
+    openrouter_key = getattr(settings, 'OPENROUTER_API_KEY', None) or os.getenv('OPENROUTER_API_KEY')
+    
+    result = {
+        "gemini_key_set": bool(gemini_key),
+        "gemini_key_prefix": (gemini_key[:8] + "...") if gemini_key else None,
+        "openrouter_key_set": bool(openrouter_key),
+        "openrouter_key_prefix": (openrouter_key[:8] + "...") if openrouter_key else None,
+        "openrouter_model": getattr(settings, 'OPENROUTER_MODEL', 'not set'),
+        "gemini_sdk_available": False,
+        "jwt_secret_set": bool(getattr(settings, 'JWT_SECRET', None)),
+        "database_url_set": bool(getattr(settings, 'DATABASE_URL', None)),
+    }
+    
+    try:
+        from app.ai.service import GEMINI_AVAILABLE, get_gemini_client
+        result["gemini_sdk_available"] = GEMINI_AVAILABLE
+        
+        # Try to instantiate the AI client
+        try:
+            client = get_gemini_client()
+            result["ai_client"] = "initialized"
+            result["ai_provider"] = client.provider
+        except Exception as e:
+            result["ai_client"] = f"error: {str(e)}"
+    except Exception as e:
+        result["ai_import_error"] = str(e)
+    
+    return result
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -33,18 +33,26 @@ class ApiClient {
     })
 
     if (!response.ok) {
+      log(`[API Error] ${response.status} ${response.statusText} for ${fullUrl}`)
       if (response.status === 401) {
         localStorage.removeItem("access_token")
         localStorage.removeItem("user")
-        // Dispatch a custom event so the auth context can handle navigation
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("auth:unauthorized"))
-          // Fallback: redirect via location if event isn't handled
           window.location.assign("/platform/login")
         }
       }
-      const error = await response.json().catch(() => ({ detail: "An error occurred" }))
-      throw new Error(error.detail || "An error occurred")
+      // Try to parse error body, show status code for debugging
+      const errorBody = await response.text().catch(() => "")
+      let detail = `Error ${response.status}`
+      try {
+        const parsed = JSON.parse(errorBody)
+        detail = parsed.detail || parsed.message || parsed.error || detail
+      } catch {
+        if (errorBody) detail = errorBody.slice(0, 200)
+      }
+      log(`[API Error Detail] ${detail}`)
+      throw new Error(detail)
     }
 
     return response.json()

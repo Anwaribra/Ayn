@@ -1,14 +1,93 @@
 "use client"
 
+import { useRef } from "react"
 import { motion } from "framer-motion"
 import { workflowSteps } from "./landing-data"
 import { fadeInUp, staggerContainer } from "./landing-utils"
-import { SimpleBeam } from "@/components/ui/animated-beam"
+import { AnimatedBeam } from "@/components/ui/animated-beam"
+import { cn } from "@/lib/utils"
+
+const StepCard = ({
+  ref,
+  step,
+  index,
+  className,
+}: {
+  ref: React.RefObject<HTMLDivElement | null>
+  step: (typeof workflowSteps)[0]
+  index: number
+  className?: string
+}) => {
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, delay: index * 0.15 }}
+      className={cn("relative group", className)}
+    >
+      {/* Step Number Badge */}
+      <motion.div
+        initial={{ scale: 0 }}
+        whileInView={{ scale: 1 }}
+        viewport={{ once: true }}
+        transition={{
+          type: "spring",
+          stiffness: 500,
+          damping: 30,
+          delay: 0.3 + index * 0.15,
+        }}
+        className="absolute -top-3 -left-3 z-20 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
+      >
+        {index + 1}
+      </motion.div>
+
+      {/* Card */}
+      <motion.div
+        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="relative h-full rounded-2xl border border-border bg-card p-6 transition-shadow duration-500 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30"
+      >
+        {/* Glow effect on hover */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        {/* Large background number */}
+        <div className="absolute top-3 right-3 text-5xl font-bold text-foreground/5 group-hover:text-primary/10 transition-colors duration-300 select-none">
+          {String(index + 1).padStart(2, "0")}
+        </div>
+
+        {/* Icon */}
+        <motion.div
+          whileHover={{ rotate: 5, scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          className="relative w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20"
+        >
+          <step.icon className="w-7 h-7 text-primary" />
+        </motion.div>
+
+        {/* Content */}
+        <h3 className="relative text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
+          {step.title}
+        </h3>
+        <p className="relative text-sm text-muted-foreground leading-relaxed">
+          {step.description}
+        </p>
+      </motion.div>
+    </motion.div>
+  )
+}
 
 export function HowItWorksSection() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const step1Ref = useRef<HTMLDivElement>(null)
+  const step2Ref = useRef<HTMLDivElement>(null)
+  const step3Ref = useRef<HTMLDivElement>(null)
+  const step4Ref = useRef<HTMLDivElement>(null)
+
   return (
-    <section 
-      id="how-it-works" 
+    <section
+      id="how-it-works"
       className="relative py-[var(--spacing-section-lg)] md:py-32 px-[var(--spacing-content)] overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5 pointer-events-none" />
@@ -40,79 +119,74 @@ export function HowItWorksSection() {
             variants={fadeInUp}
             className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto"
           >
-            Four steps from evidence to compliance. Simple, transparent, and built for quality teams.
+            Four steps from evidence to compliance. Simple, transparent, and
+            built for quality teams.
           </motion.p>
         </motion.div>
 
-        {/* Workflow Steps - Desktop with Beams */}
-        <div className="hidden lg:flex items-center justify-center gap-0">
-          {workflowSteps.map((step, index) => (
-            <motion.div
-              key={step.title}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="relative flex items-center"
-            >
-              {/* Card */}
-              <motion.div
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="relative w-64 rounded-2xl border border-border bg-card p-6 transition-shadow duration-500 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 group"
-              >
-                {/* Step Number Badge */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 500, 
-                    damping: 30,
-                    delay: 0.5 + index * 0.15 
-                  }}
-                  className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25 z-10"
-                >
-                  {index + 1}
-                </motion.div>
+        {/* Desktop Layout with Animated Beams */}
+        <div
+          ref={containerRef}
+          className="hidden lg:block relative"
+        >
+          {/* Animated Beams */}
+          <AnimatedBeam
+            containerRef={containerRef}
+            fromRef={step1Ref}
+            toRef={step2Ref}
+            curvature={20}
+            duration={3}
+            delay={0}
+            gradientStartColor="#3b82f6"
+            gradientStopColor="#8b5cf6"
+            pathWidth={3}
+          />
+          <AnimatedBeam
+            containerRef={containerRef}
+            fromRef={step2Ref}
+            toRef={step3Ref}
+            curvature={20}
+            duration={3}
+            delay={0.5}
+            gradientStartColor="#3b82f6"
+            gradientStopColor="#8b5cf6"
+            pathWidth={3}
+          />
+          <AnimatedBeam
+            containerRef={containerRef}
+            fromRef={step3Ref}
+            toRef={step4Ref}
+            curvature={20}
+            duration={3}
+            delay={1}
+            gradientStartColor="#3b82f6"
+            gradientStopColor="#8b5cf6"
+            pathWidth={3}
+          />
 
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
-                {/* Large background number */}
-                <div className="absolute top-3 right-3 text-5xl font-bold text-foreground/5 group-hover:text-primary/10 transition-colors duration-300 select-none">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-
-                {/* Icon */}
-                <motion.div
-                  whileHover={{ rotate: 5, scale: 1.1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  className="relative w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20"
-                >
-                  <step.icon className="w-7 h-7 text-primary" />
-                </motion.div>
-
-                {/* Content */}
-                <h3 className="relative text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-                  {step.title}
-                </h3>
-                <p className="relative text-sm text-muted-foreground leading-relaxed">
-                  {step.description}
-                </p>
-              </motion.div>
-
-              {/* Animated Beam Connector (except last) */}
-              {index < workflowSteps.length - 1 && (
-                <SimpleBeam 
-                  duration={2.5} 
-                  delay={index * 0.3}
-                  className="w-8"
-                />
-              )}
-            </motion.div>
-          ))}
+          {/* Cards Row */}
+          <div className="grid grid-cols-4 gap-8 relative z-10">
+            <StepCard
+              ref={step1Ref}
+              step={workflowSteps[0]}
+              index={0}
+            />
+            <StepCard
+              ref={step2Ref}
+              step={workflowSteps[1]}
+              index={1}
+            />
+            <StepCard
+              ref={step3Ref}
+              step={workflowSteps[2]}
+              index={2}
+            />
+            <StepCard
+              ref={step4Ref}
+              step={workflowSteps[3]}
+              index={3}
+            />
+          </div>
         </div>
 
         {/* Mobile/Tablet Grid - No beams */}
@@ -132,11 +206,11 @@ export function HowItWorksSection() {
                   initial={{ scale: 0 }}
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 500, 
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
                     damping: 30,
-                    delay: 0.3 + index * 0.1 
+                    delay: 0.3 + index * 0.1,
                   }}
                   className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
                 >
@@ -148,10 +222,10 @@ export function HowItWorksSection() {
               <div className="relative h-full rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 transition-all duration-500 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 group/card">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
-                
+
                 {/* Left border accent */}
                 <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary via-primary/50 to-primary opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
-                
+
                 {/* Large background number */}
                 <div className="absolute top-4 right-4 text-6xl font-bold text-foreground/5 group-hover/card:text-primary/10 transition-colors duration-300 select-none">
                   {String(index + 1).padStart(2, "0")}

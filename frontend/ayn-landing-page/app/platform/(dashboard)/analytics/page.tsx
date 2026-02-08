@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
     <div className="min-h-screen">
       <Header
         title="Quality Insights"
-        description="Measure accreditation readiness and spotlight gaps before the next review."
+        description="Measure compliance readiness and spotlight gaps before the next review."
       />
 
       <div className="p-4 md:p-[var(--spacing-content)] space-y-6">

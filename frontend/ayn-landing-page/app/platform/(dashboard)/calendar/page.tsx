@@ -23,7 +23,7 @@ const schedule = [
   {
     title: "Mock audit walkthrough",
     date: "May 06 • 9:00 AM",
-    owner: "Accreditation Lead",
+    owner: "Compliance Lead",
     status: "Needs prep",
   },
 ]
@@ -34,7 +34,7 @@ export default function CalendarPage() {
     <div className="min-h-screen">
       <Header
         title="Review Calendar"
-        description="Coordinate accreditation milestones, evidence reviews, and committee checkpoints."
+        description="Coordinate compliance milestones, evidence reviews, and committee checkpoints."
         actions={
           <Button size="sm" variant="outline">
             <CalendarDays className="mr-2 h-4 w-4" />

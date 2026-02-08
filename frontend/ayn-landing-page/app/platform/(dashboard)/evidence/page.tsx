@@ -455,7 +455,7 @@ function EvidenceContent() {
     <div className="min-h-screen bg-background">
       <Header
         title="Evidence Management"
-        description="Upload, organize, and link evidence files to accreditation criteria"
+        description="Upload, organize, and link evidence files to compliance criteria"
         breadcrumbs={[
           { label: "Dashboard", href: "/platform/dashboard" },
           { label: "Evidence" },
@@ -639,7 +639,7 @@ function EvidenceContent() {
                 <p className="mb-6 max-w-sm text-sm text-muted-foreground">
                   {searchQuery || filterStatus !== "all"
                     ? "Try adjusting your search or filter criteria."
-                    : "Upload evidence files to start linking them to your accreditation criteria."}
+                    : "Upload evidence files to start linking them to your compliance criteria."}
                 </p>
                 {!searchQuery && filterStatus === "all" && (
                   <Link href="/platform/evidence/upload">

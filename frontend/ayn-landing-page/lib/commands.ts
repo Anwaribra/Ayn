@@ -89,7 +89,7 @@ export const navigationCommands: Command[] = [
   {
     id: "standards",
     title: "Standards",
-    description: "Browse ISO and accreditation standards",
+    description: "Browse ISO and quality standards",
     icon: BookOpen,
     category: "Navigation",
     href: "/platform/standards",
@@ -97,8 +97,8 @@ export const navigationCommands: Command[] = [
   },
   {
     id: "archive",
-    title: "Accreditation Archive",
-    description: "Historical accreditation data",
+    title: "Compliance Archive",
+    description: "Historical compliance data",
     icon: Archive,
     category: "Navigation",
     href: "/platform/archive",
@@ -205,7 +205,7 @@ export const aiCommands: Command[] = [
     action: () => {
       localStorage.setItem(
         "horus-ai-initial-prompt",
-        "What types of evidence should I collect for accreditation and how should they be organized?"
+        "What types of evidence should I collect for compliance and how should they be organized?"
       )
     },
     keywords: ["evidence", "documents", "collect", "organize"],

@@ -367,7 +367,7 @@ const QUICK_ACTIONS = [
     label: "Evaluate evidence",
     description: "Evidence assessment guide",
     prompt:
-      "I want to evaluate my institution's evidence against accreditation criteria. What types of evidence should I collect and how should they be organized?",
+      "I want to evaluate my institution's evidence against compliance criteria. What types of evidence should I collect and how should they be organized?",
     gradient: "from-emerald-500/20 to-teal-500/20",
     iconColor: "text-emerald-400",
   },
@@ -403,7 +403,7 @@ const QUICK_ACTIONS = [
     label: "Assessment prep",
     description: "Audit readiness checklist",
     prompt:
-      "Help me prepare for an accreditation assessment. What should I have ready and what are common pitfalls to avoid?",
+      "Help me prepare for a compliance assessment. What should I have ready and what are common pitfalls to avoid?",
     gradient: "from-indigo-500/20 to-violet-500/20",
     iconColor: "text-indigo-400",
   },

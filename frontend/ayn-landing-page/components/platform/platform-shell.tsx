@@ -57,7 +57,7 @@ const ROUTE_LABELS: Record<string, string> = {
   evidence: "Evidence",
   "gap-analysis": "Gap Analysis",
   assessments: "Assessments",
-  archive: "Accreditation Archive",
+  archive: "Compliance Archive",
   standards: "Standards",
   notifications: "Notifications",
   settings: "Settings",

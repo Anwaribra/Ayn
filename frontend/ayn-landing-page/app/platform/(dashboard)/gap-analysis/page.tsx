@@ -562,7 +562,7 @@ function GapAnalysisContent() {
     <div className="min-h-screen bg-background">
       <Header
         title="Gap Analysis"
-        description="AI-powered compliance gap analysis against accreditation standards"
+        description="AI-powered compliance gap analysis against quality standards"
         breadcrumbs={[
           { label: "Dashboard", href: "/platform/dashboard" },
           { label: "Gap Analysis" },

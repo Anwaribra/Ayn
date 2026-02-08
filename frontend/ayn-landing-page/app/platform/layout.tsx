@@ -4,7 +4,7 @@ import { CommandPaletteProvider } from "@/components/platform/command-palette-pr
 
 export const metadata = {
   title: "Horus Engine Platform | Ayn",
-  description: "Educational Quality Assurance & Accreditation Platform",
+  description: "Educational Quality Assurance & Compliance Platform",
 }
 
 export default function PlatformLayout({ children }: { children: ReactNode }) {

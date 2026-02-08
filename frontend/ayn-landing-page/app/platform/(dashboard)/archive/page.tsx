@@ -169,7 +169,7 @@ function exportToPDF(report: GapAnalysis) {
       </style>
     </head>
     <body>
-      <h1>Accreditation Gap Analysis Report</h1>
+      <h1>Compliance Gap Analysis Report</h1>
       <p class="meta">Standard: <strong>${report.standardTitle}</strong> | Generated: ${formatDateTime(report.createdAt)} | By Horus AI</p>
       <div class="score-card">
         <div class="score">${report.overallScore.toFixed(1)}%</div>
@@ -199,7 +199,7 @@ function exportToPDF(report: GapAnalysis) {
   }
 }
 
-// ─── Accreditation Journey Tracker ──────────────────────────────────────────────
+// ─── Compliance Journey Tracker ──────────────────────────────────────────────
 
 interface JourneyStep {
   id: string
@@ -209,7 +209,7 @@ interface JourneyStep {
   status: "completed" | "current" | "upcoming"
 }
 
-function AccreditationJourney({
+function ComplianceJourney({
   reportCount,
   avgScore,
 }: {
@@ -256,9 +256,9 @@ function AccreditationJourney({
       status: avgScore >= 80 ? "current" : "upcoming",
     },
     {
-      id: "accredited",
-      label: "Accredited",
-      description: "Certification achieved",
+      id: "certified",
+      label: "Certified",
+      description: "Compliance achieved",
       icon: Award,
       status: avgScore >= 95 ? "completed" : "upcoming",
     },
@@ -608,16 +608,16 @@ function ArchiveContent() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        title="Accreditation Archive"
-        description="Your compliance history, accreditation journey, and archived gap analysis reports"
+        title="Compliance Archive"
+        description="Your compliance history, compliance journey, and archived gap analysis reports"
         breadcrumbs={[
           { label: "Dashboard", href: "/platform/dashboard" },
-          { label: "Accreditation Archive" },
+          { label: "Compliance Archive" },
         ]}
       />
 
       <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-        {/* Accreditation Journey Tracker */}
+        {/* Compliance Journey Tracker */}
         <Card className="overflow-hidden border-border bg-card shadow-sm">
           <div className="border-b border-border bg-gradient-to-r from-emerald-500/5 via-transparent to-purple-500/5">
             <CardHeader>
@@ -626,16 +626,16 @@ function ArchiveContent() {
                   <Milestone className="h-5 w-5 text-[var(--brand)]" />
                 </div>
                 <div>
-                  <CardTitle>Accreditation Journey</CardTitle>
+                  <CardTitle>Compliance Journey</CardTitle>
                   <CardDescription>
-                    Track your institution&apos;s path to accreditation
+                    Track your institution&apos;s path to compliance certification
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
           </div>
           <CardContent className="pt-6">
-            <AccreditationJourney
+            <ComplianceJourney
               reportCount={archived?.length ?? 0}
               avgScore={avgScore}
             />

@@ -52,7 +52,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Reports",
     items: [
-      { href: "/platform/archive", label: "Accreditation Archive", icon: Archive },
+      { href: "/platform/archive", label: "Compliance Archive", icon: Archive },
     ],
   },
   {

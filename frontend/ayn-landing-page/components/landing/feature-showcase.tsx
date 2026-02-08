@@ -171,7 +171,7 @@ export function FeatureShowcase() {
   const [activeFeature, setActiveFeature] = useState(features[0])
 
   return (
-    <section className="py-[var(--spacing-section)] px-[var(--spacing-content)]">
+    <section id="features" className="py-[var(--spacing-section)] px-[var(--spacing-content)]">
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <motion.div

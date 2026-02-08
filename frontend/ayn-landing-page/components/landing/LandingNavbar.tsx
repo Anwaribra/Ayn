@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AynLogo } from "@/components/ayn-logo"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,7 +122,6 @@ export function LandingNavbar() {
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
-          <ThemeToggle />
           <Button
             ref={menuButtonRef}
             variant="ghost"

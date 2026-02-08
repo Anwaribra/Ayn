@@ -14,7 +14,7 @@ import {
   Bell,
   Sparkles,
 } from "lucide-react"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
@@ -243,22 +243,7 @@ export default function PlatformSidebar({
         </div>
       </nav>
 
-      {/* ── Bottom: theme toggle ────────────────────────────────────────── */}
-      <div className="shrink-0 border-t border-border/50 px-3 py-3">
-        <div
-          className={cn(
-            "flex items-center",
-            open ? "justify-between px-1" : "justify-center",
-          )}
-        >
-          {open && (
-            <span className="text-[11px] text-muted-foreground">
-              Theme
-            </span>
-          )}
-          <ThemeToggle variant="icon" />
-        </div>
-      </div>
+
     </aside>
   )
 }

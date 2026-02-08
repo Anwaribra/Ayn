@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sparkles, TrendingUp, AlertCircle, Lightbulb, ArrowRight } from "lucide-react"
+import { Sparkles, TrendingUp, AlertCircle, Lightbulb, ArrowRight, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -18,34 +18,10 @@ interface Insight {
   }
 }
 
-const mockInsights: Insight[] = [
-  {
-    id: "1",
-    type: "tip",
-    title: "Evidence Collection",
-    description: "You have 3 criteria without evidence. Consider uploading supporting documents for ISO 21001 clauses 4.1, 5.2, and 7.4.",
-    action: {
-      label: "Upload Evidence",
-      href: "/platform/evidence/upload"
-    }
-  },
-  {
-    id: "2",
-    type: "trend",
-    title: "Progress Update",
-    description: "Your compliance score improved by 12% this month. Keep up the great work!",
-  },
-  {
-    id: "3",
-    type: "suggestion",
-    title: "Gap Analysis Available",
-    description: "Run an AI-powered gap analysis to identify areas for improvement before your next assessment.",
-    action: {
-      label: "Run Analysis",
-      href: "/platform/gap-analysis"
-    }
-  }
-]
+interface AIInsightsCardProps {
+  insights?: Insight[]
+  isLoading?: boolean
+}
 
 const insightIcons = {
   tip: Lightbulb,
@@ -61,7 +37,81 @@ const insightColors = {
   trend: "text-emerald-500 bg-emerald-500/10",
 }
 
-export function AIInsightsCard() {
+export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps) {
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
+                <Sparkles className="h-4 w-4 text-[var(--brand)]" />
+              </div>
+              <div>
+                <CardTitle className="text-base">AI Insights</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Personalized recommendations from Horus AI
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    )
+  }
+
+  if (insights.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
+                <Sparkles className="h-4 w-4 text-[var(--brand)]" />
+              </div>
+              <div>
+                <CardTitle className="text-base">AI Insights</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Personalized recommendations from Horus AI
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-6">
+              <p className="text-sm text-muted-foreground">
+                Start using the platform to get personalized AI insights
+              </p>
+              <Link href="/platform/horus-ai">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-2 text-xs gap-1 text-[var(--brand)] hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
+                >
+                  Chat with Horus AI
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -83,7 +133,7 @@ export function AIInsightsCard() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {mockInsights.map((insight, index) => {
+          {insights.map((insight, index) => {
             const Icon = insightIcons[insight.type]
             const colors = insightColors[insight.type]
             

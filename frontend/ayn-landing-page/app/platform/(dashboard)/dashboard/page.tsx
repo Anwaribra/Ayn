@@ -360,8 +360,6 @@ function DashboardInnerContent({
       label: "Criteria met",
       icon: <CheckCircle2 className="h-4 w-4" />,
       gradient: "bg-emerald-500",
-      trend: "+12%",
-      trendUp: true,
       isLoading,
     },
     {
@@ -370,8 +368,6 @@ function DashboardInnerContent({
       label: "Uploaded files",
       icon: <FileText className="h-4 w-4" />,
       gradient: "bg-blue-500",
-      trend: "On track",
-      trendUp: true,
       isLoading,
     },
     {

@@ -76,17 +76,7 @@ const duplicatedIntegrations = [...integrations, ...integrations]
 
 export function IntegrationLogos() {
   return (
-    <section className="py-16 overflow-hidden border-y border-border/50 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-[var(--spacing-content)] mb-8">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center text-sm text-muted-foreground"
-        >
-          Built on trusted standards and integrates with your favorite tools
-        </motion.p>
-      </div>
+    <section className="py-12 overflow-hidden border-y border-border/50 bg-muted/30">
 
       {/* Scrolling logos */}
       <div className="relative">

@@ -25,7 +25,7 @@ router = APIRouter()
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def register(req: Request, request: RegisterRequest):
+async def register(request: Request, body: RegisterRequest):
     """
     Register a new user.
     
@@ -38,13 +38,13 @@ async def register(req: Request, request: RegisterRequest):
     db = get_db()
     
     # Default to TEACHER (regular user) for platform users; only ADMIN is set separately
-    role = (request.role or "TEACHER").strip().upper()
+    role = (body.role or "TEACHER").strip().upper()
     valid_roles = ["ADMIN", "TEACHER", "AUDITOR"]
     if role not in valid_roles:
         role = "TEACHER"
     
     # Check if user already exists
-    existing_user = await db.user.find_unique(where={"email": request.email})
+    existing_user = await db.user.find_unique(where={"email": body.email})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -52,8 +52,8 @@ async def register(req: Request, request: RegisterRequest):
         )
     
     # Validate institution if provided
-    if request.institutionId:
-        institution = await db.institution.find_unique(where={"id": request.institutionId})
+    if body.institutionId:
+        institution = await db.institution.find_unique(where={"id": body.institutionId})
         if not institution:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -61,17 +61,17 @@ async def register(req: Request, request: RegisterRequest):
             )
     
     # Hash password
-    hashed_password = get_password_hash(request.password)
+    hashed_password = get_password_hash(body.password)
     
     # Create user
     try:
         user = await db.user.create(
             data={
-                "name": request.name,
-                "email": request.email,
+                "name": body.name,
+                "email": body.email,
                 "password": hashed_password,
                 "role": role,
-                "institutionId": request.institutionId,
+                "institutionId": body.institutionId,
             }
         )
         
@@ -100,7 +100,7 @@ async def register(req: Request, request: RegisterRequest):
 
 @router.post("/login", response_model=AuthResponse)
 @limiter.limit("10/minute")
-async def login(req: Request, request: LoginRequest):
+async def login(request: Request, body: LoginRequest):
     """
     Login user and return access token.
     
@@ -110,7 +110,7 @@ async def login(req: Request, request: LoginRequest):
     db = get_db()
     
     # Find user by email
-    user = await db.user.find_unique(where={"email": request.email})
+    user = await db.user.find_unique(where={"email": body.email})
     
     if not user:
         raise HTTPException(
@@ -120,7 +120,7 @@ async def login(req: Request, request: LoginRequest):
         )
     
     # Verify password
-    if not verify_password(request.password, user.password):
+    if not verify_password(body.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",

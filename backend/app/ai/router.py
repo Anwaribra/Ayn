@@ -27,8 +27,8 @@ ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
 @router.post("/chat", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def chat(
-    req: Request,
-    request: ChatRequest,
+    request: Request,
+    body: ChatRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -43,14 +43,14 @@ async def chat(
     """
     try:
         client = get_gemini_client()
-        messages_dicts = [{"role": m.role, "content": m.content} for m in request.messages]
+        messages_dicts = [{"role": m.role, "content": m.content} for m in body.messages]
         result = await asyncio.to_thread(
             client.chat,
             messages=messages_dicts,
-            context=request.context,
+            context=body.context,
         )
         
-        logger.info(f"User {current_user['email']} used Horus AI chat ({len(request.messages)} messages)")
+        logger.info(f"User {current_user['email']} used Horus AI chat ({len(body.messages)} messages)")
         
         return AIResponse(
             result=result,
@@ -72,8 +72,8 @@ async def chat(
 @router.post("/generate-answer", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def generate_answer(
-    req: Request,
-    request: GenerateAnswerRequest,
+    request: Request,
+    body: GenerateAnswerRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -90,8 +90,8 @@ async def generate_answer(
         client = get_gemini_client()
         result = await asyncio.to_thread(
             client.generate_text,
-            prompt=request.prompt,
-            context=request.context,
+            prompt=body.prompt,
+            context=body.context,
         )
         
         logger.info(f"User {current_user['email']} generated AI answer")
@@ -116,8 +116,8 @@ async def generate_answer(
 @router.post("/summarize", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def summarize(
-    req: Request,
-    request: SummarizeRequest,
+    request: Request,
+    body: SummarizeRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -134,8 +134,8 @@ async def summarize(
         client = get_gemini_client()
         result = await asyncio.to_thread(
             client.summarize,
-            content=request.content,
-            max_length=request.maxLength,
+            content=body.content,
+            max_length=body.maxLength,
         )
         
         logger.info(f"User {current_user['email']} summarized content with AI")
@@ -160,8 +160,8 @@ async def summarize(
 @router.post("/comment", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def generate_comment(
-    req: Request,
-    request: CommentRequest,
+    request: Request,
+    body: CommentRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -178,8 +178,8 @@ async def generate_comment(
         client = get_gemini_client()
         result = await asyncio.to_thread(
             client.generate_comment,
-            text=request.text,
-            focus=request.focus,
+            text=body.text,
+            focus=body.focus,
         )
         
         logger.info(f"User {current_user['email']} generated AI comments")
@@ -204,8 +204,8 @@ async def generate_comment(
 @router.post("/explain", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def explain(
-    req: Request,
-    request: ExplainRequest,
+    request: Request,
+    body: ExplainRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -222,11 +222,11 @@ async def explain(
         client = get_gemini_client()
         result = await asyncio.to_thread(
             client.explain,
-            topic=request.topic,
-            level=request.level,
+            topic=body.topic,
+            level=body.level,
         )
         
-        logger.info(f"User {current_user['email']} requested AI explanation for: {request.topic}")
+        logger.info(f"User {current_user['email']} requested AI explanation for: {body.topic}")
         
         return AIResponse(
             result=result,
@@ -248,8 +248,8 @@ async def explain(
 @router.post("/evidence/extract", response_model=AIResponse)
 @limiter.limit("30/minute")
 async def extract_evidence(
-    req: Request,
-    request: ExtractEvidenceRequest,
+    request: Request,
+    body: ExtractEvidenceRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
     """
@@ -266,8 +266,8 @@ async def extract_evidence(
         client = get_gemini_client()
         result = await asyncio.to_thread(
             client.extract_evidence,
-            text=request.text,
-            criteria=request.criteria,
+            text=body.text,
+            criteria=body.criteria,
         )
         
         logger.info(f"User {current_user['email']} extracted evidence with AI")

@@ -59,7 +59,7 @@ export const workflowSteps = [
   { icon: Upload, title: "Upload Evidence", description: "Collect and organize your documentation" },
   { icon: Sparkles, title: "AI Analysis", description: "Horus Engine analyzes your data" },
   { icon: FileText, title: "Generate Reports", description: "Get detailed insights and recommendations" },
-  { icon: Award, title: "Achieve Accreditation", description: "Meet standards with confidence" },
+  { icon: Award, title: "Achieve Compliance", description: "Meet standards with confidence" },
 ]
 
 export const audienceItems = [
@@ -69,7 +69,7 @@ export const audienceItems = [
     benefits: [
       "Align curricula and policies with national K–12 quality frameworks.",
       "Track teacher qualifications, PD, and classroom evidence in one place.",
-      "Prepare for school inspections and accreditation visits with ready evidence.",
+      "Prepare for school inspections and compliance reviews with ready evidence.",
       "Involve staff in self-assessment and improvement plans without extra paperwork.",
     ],
   },
@@ -80,7 +80,7 @@ export const audienceItems = [
       "Map programs to ISO 21001 and NAQAAE at the faculty and program level.",
       "Manage program reviews, learning outcomes, and external audit evidence.",
       "Support research and teaching quality with a single evidence repository.",
-      "Keep accreditation cycles on track with dashboards and deadline visibility.",
+      "Keep compliance cycles on track with dashboards and deadline visibility.",
     ],
   },
   {

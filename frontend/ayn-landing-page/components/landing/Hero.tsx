@@ -204,7 +204,7 @@ export function Hero() {
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
       "Streamline ISO 21001 compliance",
-      "Achieve NAQAAE accreditation",
+      "Achieve NAQAAE compliance",
       "AI-powered quality assurance",
     ],
     typingSpeed: 60,
@@ -240,7 +240,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Your Education Quality & Accreditation Platform
+                Your Education Quality & Compliance Platform
               </motion.h2>
               
               {/* Animated typewriter subtitle */}

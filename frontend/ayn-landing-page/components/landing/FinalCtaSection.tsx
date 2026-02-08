@@ -28,7 +28,7 @@ export function FinalCtaSection() {
           className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
         >
           <span className="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Ready to Simplify Accreditation?
+            Ready to Streamline Quality Compliance?
           </span>
         </motion.h2>
         <motion.p

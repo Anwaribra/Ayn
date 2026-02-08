@@ -8,7 +8,7 @@ const audiences = [
   {
     title: "Schools",
     icon: School,
-    description: "Streamline accreditation preparation with organized evidence and AI guidance.",
+    description: "Streamline compliance preparation with organized evidence and AI guidance.",
   },
   {
     title: "Universities",

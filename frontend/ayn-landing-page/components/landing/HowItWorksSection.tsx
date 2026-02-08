@@ -37,7 +37,7 @@ export function HowItWorksSection() {
             variants={fadeInUp}
             className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto"
           >
-            Four steps from evidence to accreditation. Simple, transparent, and built for quality teams.
+            Four steps from evidence to compliance. Simple, transparent, and built for quality teams.
           </motion.p>
         </motion.div>
 

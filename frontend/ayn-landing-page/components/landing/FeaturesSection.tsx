@@ -25,7 +25,7 @@ export function FeaturesSection() {
             Powerful Features
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-muted-foreground max-w-xl text-base">
-            Comprehensive tools for educational quality assurance and accreditation management.
+            Comprehensive tools for educational quality assurance and compliance management.
           </motion.p>
         </motion.div>
 

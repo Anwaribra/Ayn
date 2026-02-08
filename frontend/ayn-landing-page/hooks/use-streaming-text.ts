@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react"
 
 interface UseStreamingTextOptions {
   text: string
-  speed?: number // Characters per second
+  speed?: number // Characters per second (default: 80, fast: 150, instant: 1000)
   enabled?: boolean
   onComplete?: () => void
 }
 
 export function useStreamingText({
   text,
-  speed = 40,
+  speed = 80,
   enabled = true,
   onComplete,
 }: UseStreamingTextOptions) {

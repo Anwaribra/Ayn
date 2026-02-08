@@ -564,7 +564,7 @@ function StreamingMessage({ content, isStreaming, onStop }: StreamingMessageProp
   const [isPaused, setIsPaused] = useState(false)
   const { displayedText, isComplete, stopStreaming } = useStreamingText({
     text: content,
-    speed: 35,
+    speed: 120,
     enabled: isStreaming && !isPaused,
   })
   const cursorVisible = useCursorBlink(isStreaming && !isComplete && !isPaused)

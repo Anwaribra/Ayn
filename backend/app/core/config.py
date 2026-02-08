@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     
     # Gemini AI
     GEMINI_API_KEY: Optional[str] = None
+    
+    # OpenRouter (fallback AI provider)
+    OPENROUTER_API_KEY: Optional[str] = None
+    OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
 
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None

@@ -1,22 +1,28 @@
-"""Gemini AI service client."""
+"""AI service with Gemini primary + OpenRouter fallback."""
 from app.core.config import settings
 import logging
+import httpx
+import json
 from typing import Optional, List, Dict
 import os
 
 logger = logging.getLogger(__name__)
 
-# Try new API first, fallback to old API
+# Try importing Gemini SDK
+GEMINI_AVAILABLE = False
 try:
     from google import genai as new_genai
     from google.genai import types as genai_types
+    GEMINI_AVAILABLE = True
     USE_NEW_API = True
 except ImportError:
     try:
         import google.generativeai as old_genai
+        GEMINI_AVAILABLE = True
         USE_NEW_API = False
     except ImportError:
-        raise ImportError("Neither google-genai nor google-generativeai is installed. Run: pip install google-genai")
+        logger.warning("Gemini SDK not installed. Only OpenRouter will be available.")
+        USE_NEW_API = False
 
 
 # ─── Domain-Aware System Prompt ───────────────────────────────────────────────
@@ -100,6 +106,82 @@ Communication Guidelines
 """
 
 
+# ─── OpenRouter Client ────────────────────────────────────────────────────────
+class OpenRouterClient:
+    """OpenRouter API client (OpenAI-compatible) as fallback AI provider."""
+    
+    BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+    
+    def __init__(self, api_key: str, model: str = "google/gemini-2.0-flash-001"):
+        self.api_key = api_key
+        self.model = model
+        logger.info(f"OpenRouter client initialized with model: {model}")
+    
+    def _call(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
+        """Make a request to OpenRouter API."""
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                *[{"role": m["role"], "content": m["content"]} for m in messages],
+            ],
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ayn.vercel.app",
+            "X-Title": "Ayn Platform - Horus AI",
+        }
+        
+        response = httpx.post(
+            self.BASE_URL,
+            json=payload,
+            headers=headers,
+            timeout=60.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        return data["choices"][0]["message"]["content"]
+    
+    def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
+        system_instruction = SYSTEM_PROMPT
+        if context:
+            context_hints = {
+                "evidence_analysis": "\n\nThe user is currently analyzing evidence documents. Focus on evaluating evidence against accreditation criteria.",
+                "gap_analysis": "\n\nThe user is performing a gap analysis. Focus on identifying gaps between current state and standard requirements.",
+                "assessment_help": "\n\nThe user needs help with assessment answers. Guide them to provide comprehensive, evidence-backed responses.",
+                "self_study": "\n\nThe user is preparing a self-study report. Help structure their documentation for accreditation review.",
+            }
+            system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")
+        return self._call(messages, system_instruction)
+    
+    def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
+        full_prompt = prompt
+        if context:
+            full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
+        return self._call([{"role": "user", "content": full_prompt}], SYSTEM_PROMPT)
+    
+    def summarize(self, content: str, max_length: int = 100) -> str:
+        prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
+        return self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
+    
+    def generate_comment(self, text: str, focus: Optional[str] = None) -> str:
+        focus_part = f" with focus on {focus}" if focus else ""
+        prompt = f"Provide constructive comments and feedback on the following text{focus_part}:\n\n{text}"
+        return self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
+    
+    def explain(self, topic: str, level: str = "intermediate") -> str:
+        prompt = f"Explain {topic} at a {level} level. Be clear and comprehensive."
+        return self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
+    
+    def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
+        criteria_part = f" related to: {criteria}" if criteria else ""
+        prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
+        return self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
+
+
+# ─── Gemini Client ────────────────────────────────────────────────────────────
 class GeminiClient:
     """Google Gemini API client."""
     
@@ -107,7 +189,7 @@ class GeminiClient:
         """Initialize Gemini client with API key."""
         api_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not configured in environment variables. Please add GEMINI_API_KEY to your .env file.")
+            raise ValueError("GEMINI_API_KEY not configured.")
         
         self.api_key = api_key
         
@@ -119,189 +201,224 @@ class GeminiClient:
             self.model = old_genai.GenerativeModel('gemini-pro')
             self.model_name = "gemini-pro"
             self.client = None
+        
+        logger.info(f"Gemini client initialized with model: {self.model_name}")
     
     def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
-        """
-        Generate text using Gemini API with the domain-aware system prompt.
+        full_prompt = prompt
+        if context:
+            full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
         
-        Args:
-            prompt: The main prompt/question
-            context: Optional additional context
-        
-        Returns:
-            Generated text response
-        """
-        try:
-            full_prompt = prompt
-            if context:
-                full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
-            
-            if USE_NEW_API:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    ),
-                    contents=full_prompt,
-                )
-                return response.text
-            else:
-                # Old API: prepend system prompt to the user message
-                full_prompt_with_system = f"{SYSTEM_PROMPT}\n\n---\n\n{full_prompt}"
-                response = self.model.generate_content(full_prompt_with_system)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error generating text with Gemini: {e}")
-            raise Exception(f"Failed to generate text: {str(e)}")
+        if USE_NEW_API:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                ),
+                contents=full_prompt,
+            )
+            return response.text
+        else:
+            full_prompt_with_system = f"{SYSTEM_PROMPT}\n\n---\n\n{full_prompt}"
+            response = self.model.generate_content(full_prompt_with_system)
+            return response.text
     
     def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
-        """
-        Multi-turn chat using Gemini API with conversation history.
+        system_instruction = SYSTEM_PROMPT
+        if context:
+            context_hints = {
+                "evidence_analysis": "\n\nThe user is currently analyzing evidence documents. Focus on evaluating evidence against accreditation criteria.",
+                "gap_analysis": "\n\nThe user is performing a gap analysis. Focus on identifying gaps between current state and standard requirements.",
+                "assessment_help": "\n\nThe user needs help with assessment answers. Guide them to provide comprehensive, evidence-backed responses.",
+                "self_study": "\n\nThe user is preparing a self-study report. Help structure their documentation for accreditation review.",
+            }
+            system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")
         
-        Args:
-            messages: List of {"role": "user"|"assistant", "content": str}
-            context: Optional context hint (e.g. "gap_analysis", "evidence_review")
-        
-        Returns:
-            Generated assistant response
-        """
-        try:
-            # Build system instruction with optional context enhancement
-            system_instruction = SYSTEM_PROMPT
-            if context:
-                context_hints = {
-                    "evidence_analysis": "\n\nThe user is currently analyzing evidence documents. Focus on evaluating evidence against accreditation criteria.",
-                    "gap_analysis": "\n\nThe user is performing a gap analysis. Focus on identifying gaps between current state and standard requirements.",
-                    "assessment_help": "\n\nThe user needs help with assessment answers. Guide them to provide comprehensive, evidence-backed responses.",
-                    "self_study": "\n\nThe user is preparing a self-study report. Help structure their documentation for accreditation review.",
-                }
-                system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")
-            
-            if USE_NEW_API:
-                # Build conversation contents for Gemini
-                contents = []
-                for msg in messages:
-                    role = "user" if msg["role"] == "user" else "model"
-                    contents.append(
-                        genai_types.Content(
-                            role=role,
-                            parts=[genai_types.Part.from_text(text=msg["content"])]
-                        )
+        if USE_NEW_API:
+            contents = []
+            for msg in messages:
+                role = "user" if msg["role"] == "user" else "model"
+                contents.append(
+                    genai_types.Content(
+                        role=role,
+                        parts=[genai_types.Part.from_text(text=msg["content"])]
                     )
-                
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                    ),
-                    contents=contents,
                 )
-                return response.text
-            else:
-                # Old API fallback: concatenate history into a single prompt
-                history_text = ""
-                for msg in messages[:-1]:
-                    role_label = "User" if msg["role"] == "user" else "Assistant"
-                    history_text += f"{role_label}: {msg['content']}\n\n"
-                
-                last_msg = messages[-1]["content"] if messages else ""
-                full_prompt = f"{system_instruction}\n\n---\nConversation History:\n{history_text}\nUser: {last_msg}\n\nAssistant:"
-                response = self.model.generate_content(full_prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error in chat with Gemini: {e}")
-            raise Exception(f"Failed to generate chat response: {str(e)}")
+            
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                ),
+                contents=contents,
+            )
+            return response.text
+        else:
+            history_text = ""
+            for msg in messages[:-1]:
+                role_label = "User" if msg["role"] == "user" else "Assistant"
+                history_text += f"{role_label}: {msg['content']}\n\n"
+            
+            last_msg = messages[-1]["content"] if messages else ""
+            full_prompt = f"{system_instruction}\n\n---\nConversation History:\n{history_text}\nUser: {last_msg}\n\nAssistant:"
+            response = self.model.generate_content(full_prompt)
+            return response.text
     
     def summarize(self, content: str, max_length: int = 100) -> str:
-        """Summarize content using Gemini API."""
-        try:
-            prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
-            if USE_NEW_API:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    ),
-                    contents=prompt,
-                )
-                return response.text
-            else:
-                response = self.model.generate_content(prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error summarizing with Gemini: {e}")
-            raise Exception(f"Failed to summarize: {str(e)}")
+        prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
+        if USE_NEW_API:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                contents=prompt,
+            )
+            return response.text
+        else:
+            response = self.model.generate_content(prompt)
+            return response.text
     
     def generate_comment(self, text: str, focus: Optional[str] = None) -> str:
-        """Generate comments/feedback on text."""
-        try:
-            focus_part = f" with focus on {focus}" if focus else ""
-            prompt = f"Provide constructive comments and feedback on the following text{focus_part}:\n\n{text}"
-            if USE_NEW_API:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    ),
-                    contents=prompt,
-                )
-                return response.text
-            else:
-                response = self.model.generate_content(prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error generating comments with Gemini: {e}")
-            raise Exception(f"Failed to generate comments: {str(e)}")
+        focus_part = f" with focus on {focus}" if focus else ""
+        prompt = f"Provide constructive comments and feedback on the following text{focus_part}:\n\n{text}"
+        if USE_NEW_API:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                contents=prompt,
+            )
+            return response.text
+        else:
+            response = self.model.generate_content(prompt)
+            return response.text
     
     def explain(self, topic: str, level: str = "intermediate") -> str:
-        """Explain a topic or concept."""
-        try:
-            prompt = f"Explain {topic} at a {level} level. Be clear and comprehensive."
-            if USE_NEW_API:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    ),
-                    contents=prompt,
-                )
-                return response.text
-            else:
-                response = self.model.generate_content(prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error explaining with Gemini: {e}")
-            raise Exception(f"Failed to explain topic: {str(e)}")
+        prompt = f"Explain {topic} at a {level} level. Be clear and comprehensive."
+        if USE_NEW_API:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                contents=prompt,
+            )
+            return response.text
+        else:
+            response = self.model.generate_content(prompt)
+            return response.text
     
     def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
-        """Extract evidence from text related to criteria."""
-        try:
-            criteria_part = f" related to: {criteria}" if criteria else ""
-            prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
-            if USE_NEW_API:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    ),
-                    contents=prompt,
-                )
-                return response.text
-            else:
-                response = self.model.generate_content(prompt)
-                return response.text
-        except Exception as e:
-            logger.error(f"Error extracting evidence with Gemini: {e}")
-            raise Exception(f"Failed to extract evidence: {str(e)}")
+        criteria_part = f" related to: {criteria}" if criteria else ""
+        prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
+        if USE_NEW_API:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                contents=prompt,
+            )
+            return response.text
+        else:
+            response = self.model.generate_content(prompt)
+            return response.text
 
 
-# Global client instance
-_gemini_client: Optional[GeminiClient] = None
+# ─── AI Client with Fallback ─────────────────────────────────────────────────
+class HorusAIClient:
+    """
+    AI client with automatic fallback.
+    
+    Strategy: Try Gemini first. If Gemini fails (key missing, quota exceeded,
+    API error), automatically fall back to OpenRouter.
+    """
+    
+    def __init__(self):
+        self.gemini: Optional[GeminiClient] = None
+        self.openrouter: Optional[OpenRouterClient] = None
+        self._provider = "none"
+        
+        # Try to initialize Gemini
+        gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
+        if gemini_key and GEMINI_AVAILABLE:
+            try:
+                self.gemini = GeminiClient()
+                self._provider = "gemini"
+                logger.info("Primary AI provider: Gemini")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Gemini: {e}")
+        
+        # Try to initialize OpenRouter
+        openrouter_key = getattr(settings, 'OPENROUTER_API_KEY', None) or os.getenv('OPENROUTER_API_KEY')
+        if openrouter_key:
+            model = getattr(settings, 'OPENROUTER_MODEL', None) or "google/gemini-2.0-flash-001"
+            self.openrouter = OpenRouterClient(api_key=openrouter_key, model=model)
+            if self._provider == "none":
+                self._provider = "openrouter"
+            logger.info(f"Fallback AI provider: OpenRouter ({model})")
+        
+        if not self.gemini and not self.openrouter:
+            raise ValueError(
+                "No AI provider configured. Set GEMINI_API_KEY or OPENROUTER_API_KEY in environment variables."
+            )
+        
+        logger.info(f"HorusAI initialized — primary: {'Gemini' if self.gemini else 'OpenRouter'}, "
+                     f"fallback: {'OpenRouter' if self.openrouter and self.gemini else 'none'}")
+    
+    def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
+        """Call a method on Gemini first, fall back to OpenRouter on failure."""
+        last_error = None
+        
+        # Try Gemini first
+        if self.gemini:
+            try:
+                method = getattr(self.gemini, method_name)
+                result = method(*args, **kwargs)
+                return result
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Gemini {method_name} failed: {e}. Trying OpenRouter fallback...")
+        
+        # Fall back to OpenRouter
+        if self.openrouter:
+            try:
+                method = getattr(self.openrouter, method_name)
+                result = method(*args, **kwargs)
+                logger.info(f"OpenRouter fallback succeeded for {method_name}")
+                return result
+            except Exception as e:
+                last_error = e
+                logger.error(f"OpenRouter {method_name} also failed: {e}")
+        
+        raise Exception(f"All AI providers failed: {str(last_error)}")
+    
+    # ── Public API (same interface as GeminiClient) ──────────────────────────
+    
+    def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
+        return self._call_with_fallback("chat", messages=messages, context=context)
+    
+    def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
+        return self._call_with_fallback("generate_text", prompt=prompt, context=context)
+    
+    def summarize(self, content: str, max_length: int = 100) -> str:
+        return self._call_with_fallback("summarize", content=content, max_length=max_length)
+    
+    def generate_comment(self, text: str, focus: Optional[str] = None) -> str:
+        return self._call_with_fallback("generate_comment", text=text, focus=focus)
+    
+    def explain(self, topic: str, level: str = "intermediate") -> str:
+        return self._call_with_fallback("explain", topic=topic, level=level)
+    
+    def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
+        return self._call_with_fallback("extract_evidence", text=text, criteria=criteria)
+    
+    @property
+    def provider(self) -> str:
+        return self._provider
 
 
-def get_gemini_client() -> GeminiClient:
-    """Get or create Gemini client instance."""
-    global _gemini_client
-    if _gemini_client is None:
-        _gemini_client = GeminiClient()
-    return _gemini_client
+# ─── Global client instance ───────────────────────────────────────────────────
+_ai_client: Optional[HorusAIClient] = None
+
+
+def get_gemini_client() -> HorusAIClient:
+    """Get or create AI client instance (Gemini + OpenRouter fallback)."""
+    global _ai_client
+    if _ai_client is None:
+        _ai_client = HorusAIClient()
+    return _ai_client

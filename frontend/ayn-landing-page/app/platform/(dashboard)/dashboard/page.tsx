@@ -487,7 +487,7 @@ function DashboardContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden group">
+              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Target className="h-5 w-5 text-[var(--brand)]" />
@@ -504,8 +504,6 @@ function DashboardContent() {
                     <ProgressGauge value={progress} />
                   )}
                 </CardContent>
-                {/* Decorative glow */}
-                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[var(--brand)]/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </Card>
             </motion.div>
 
@@ -515,7 +513,7 @@ function DashboardContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden group">
+              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Activity className="h-5 w-5 text-[var(--brand)]" />
@@ -532,7 +530,6 @@ function DashboardContent() {
                     <ComplianceTrend />
                   )}
                 </CardContent>
-                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </Card>
             </motion.div>
 
@@ -542,7 +539,7 @@ function DashboardContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden group">
+              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <BarChart3 className="h-5 w-5 text-[var(--brand)]" />
@@ -598,7 +595,6 @@ function DashboardContent() {
                     </div>
                   )}
                 </CardContent>
-                <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </Card>
             </motion.div>
           </div>

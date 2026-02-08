@@ -4,6 +4,19 @@ const nextConfig = {
     unoptimized: false,
   },
   trailingSlash: true,
+
+  // Proxy all /api/* requests to the backend.
+  // This eliminates CORS entirely — the browser sees same-origin requests.
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production.up.railway.app"
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
+      },
+    ]
+  },
+
   async headers() {
     return [
       {

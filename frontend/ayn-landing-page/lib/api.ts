@@ -2,7 +2,9 @@
 
 import { log } from "./logger"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+// Use relative /api path so requests go through Next.js rewrites (same-origin, no CORS).
+// The rewrite in next.config.mjs proxies /api/* to the Railway backend.
+const API_BASE_URL = "/api"
 
 class ApiClient {
   private getToken(): string | null {
@@ -28,7 +30,6 @@ class ApiClient {
     const response = await fetch(fullUrl, {
       ...options,
       headers,
-      mode: "cors",
     })
 
     if (!response.ok) {

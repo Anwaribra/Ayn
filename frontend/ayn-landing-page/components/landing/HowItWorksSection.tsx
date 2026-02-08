@@ -1,23 +1,14 @@
 "use client"
 
-import { useRef } from "react"
 import { motion } from "framer-motion"
 import { workflowSteps } from "./landing-data"
 import { fadeInUp, staggerContainer } from "./landing-utils"
-import { AnimatedBeam } from "@/components/ui/animated-beam"
+import { SimpleBeam } from "@/components/ui/animated-beam"
 
 export function HowItWorksSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const stepRef1 = useRef<HTMLDivElement>(null)
-  const stepRef2 = useRef<HTMLDivElement>(null)
-  const stepRef3 = useRef<HTMLDivElement>(null)
-  const stepRef4 = useRef<HTMLDivElement>(null)
-  const stepRefs = [stepRef1, stepRef2, stepRef3, stepRef4]
-
   return (
     <section 
       id="how-it-works" 
-      ref={containerRef}
       className="relative py-[var(--spacing-section-lg)] md:py-32 px-[var(--spacing-content)] overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5 pointer-events-none" />
@@ -53,103 +44,138 @@ export function HowItWorksSection() {
           </motion.p>
         </motion.div>
 
-        {/* Workflow Grid with Animated Beams */}
-        <div className="relative">
-          {/* Animated Beams - Desktop Only */}
-          <div className="hidden lg:block absolute inset-0 pointer-events-none">
-            {workflowSteps.map((_, index) => {
-              if (index >= workflowSteps.length - 1) return null
-              return (
-                <AnimatedBeam
-                  key={`beam-${index}`}
-                  containerRef={containerRef}
-                  fromRef={stepRefs[index]}
-                  toRef={stepRefs[index + 1]}
-                  curvature={-20}
-                  duration={2.5}
-                  delay={index * 0.5}
-                  gradientStartColor="#3b82f6"
-                  gradientStopColor="#8b5cf6"
-                  pathWidth={3}
-                  pathOpacity={0.2}
-                />
-              )
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4 relative z-10">
-            {workflowSteps.map((step, index) => (
+        {/* Workflow Steps - Desktop with Beams */}
+        <div className="hidden lg:flex items-center justify-center gap-0">
+          {workflowSteps.map((step, index) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: index * 0.15 }}
+              className="relative flex items-center"
+            >
+              {/* Card */}
               <motion.div
-                key={step.title}
-                ref={stepRefs[index]}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative group"
+                whileHover={{ y: -8, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="relative w-64 rounded-2xl border border-border bg-card p-6 transition-shadow duration-500 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 group"
               >
                 {/* Step Number Badge */}
-                <div className="absolute -top-3 -left-1 z-20">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 500, 
-                      damping: 30,
-                      delay: 0.3 + index * 0.1 
-                    }}
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
-                  >
-                    {index + 1}
-                  </motion.div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 500, 
+                    damping: 30,
+                    delay: 0.5 + index * 0.15 
+                  }}
+                  className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25 z-10"
+                >
+                  {index + 1}
+                </motion.div>
+
+                {/* Glow effect on hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                {/* Large background number */}
+                <div className="absolute top-3 right-3 text-5xl font-bold text-foreground/5 group-hover:text-primary/10 transition-colors duration-300 select-none">
+                  {String(index + 1).padStart(2, "0")}
                 </div>
 
-                {/* Card */}
-                <div className="relative h-full rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 md:p-8 transition-all duration-500 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 group/card">
-                  {/* Glow effect on hover */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
-                  
-                  {/* Left border accent */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary via-primary/50 to-primary opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
-                  
-                  {/* Large background number */}
-                  <div className="absolute top-4 right-4 text-6xl font-bold text-foreground/5 group-hover/card:text-primary/10 transition-colors duration-300 select-none">
-                    {String(index + 1).padStart(2, "0")}
-                  </div>
+                {/* Icon */}
+                <motion.div
+                  whileHover={{ rotate: 5, scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="relative w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20"
+                >
+                  <step.icon className="w-7 h-7 text-primary" />
+                </motion.div>
 
-                  {/* Icon */}
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className="relative z-10 w-16 h-16 md:w-20 md:h-20 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 shadow-inner"
-                  >
-                    <step.icon className="w-8 h-8 md:w-9 md:h-9 text-primary" />
-                  </motion.div>
-
-                  {/* Content */}
-                  <h3 className="relative z-10 text-xl font-bold text-foreground mb-2 group-hover/card:text-primary transition-colors duration-300">
-                    {step.title}
-                  </h3>
-                  <p className="relative z-10 text-muted-foreground text-sm md:text-base leading-relaxed">
-                    {step.description}
-                  </p>
-
-                  {/* Arrow indicator (except last) */}
-                  {index < workflowSteps.length - 1 && (
-                    <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-background border border-border items-center justify-center">
-                      <motion.div
-                        animate={{ x: [0, 3, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-primary border-b-[4px] border-b-transparent"
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* Content */}
+                <h3 className="relative text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
+                  {step.title}
+                </h3>
+                <p className="relative text-sm text-muted-foreground leading-relaxed">
+                  {step.description}
+                </p>
               </motion.div>
-            ))}
-          </div>
+
+              {/* Animated Beam Connector (except last) */}
+              {index < workflowSteps.length - 1 && (
+                <SimpleBeam 
+                  duration={2.5} 
+                  delay={index * 0.3}
+                  className="w-8"
+                />
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mobile/Tablet Grid - No beams */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-6">
+          {workflowSteps.map((step, index) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="relative group"
+            >
+              {/* Step Number Badge */}
+              <div className="absolute -top-3 -left-1 z-20">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 500, 
+                    damping: 30,
+                    delay: 0.3 + index * 0.1 
+                  }}
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
+                >
+                  {index + 1}
+                </motion.div>
+              </div>
+
+              {/* Card */}
+              <div className="relative h-full rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 transition-all duration-500 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 group/card">
+                {/* Glow effect on hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+                
+                {/* Left border accent */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary via-primary/50 to-primary opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
+                
+                {/* Large background number */}
+                <div className="absolute top-4 right-4 text-6xl font-bold text-foreground/5 group-hover/card:text-primary/10 transition-colors duration-300 select-none">
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+
+                {/* Icon */}
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className="relative z-10 w-16 h-16 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 shadow-inner"
+                >
+                  <step.icon className="w-8 h-8 text-primary" />
+                </motion.div>
+
+                {/* Content */}
+                <h3 className="relative z-10 text-xl font-bold text-foreground mb-2 group-hover/card:text-primary transition-colors duration-300">
+                  {step.title}
+                </h3>
+                <p className="relative z-10 text-muted-foreground text-sm md:text-base leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* Bottom CTA */}

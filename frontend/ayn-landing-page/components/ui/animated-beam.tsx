@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +29,7 @@ export function AnimatedBeam({
   fromRef,
   toRef,
   curvature = 0,
-  duration = 2,
+  duration = 3,
   delay = 0,
   pathColor = "var(--primary)",
   pathWidth = 2,
@@ -56,30 +56,37 @@ export function AnimatedBeam({
       const fromRect = from.getBoundingClientRect()
       const toRect = to.getBoundingClientRect()
 
-      const svgWidth = containerRect.width
-      const svgHeight = containerRect.height
-      setSvgDimensions({ width: svgWidth, height: svgHeight })
+      setSvgDimensions({
+        width: containerRect.width,
+        height: containerRect.height,
+      })
 
       const startX = fromRect.left - containerRect.left + fromRect.width / 2 + startXOffset
       const startY = fromRect.top - containerRect.top + fromRect.height / 2 + startYOffset
       const endX = toRect.left - containerRect.left + toRect.width / 2 + endXOffset
       const endY = toRect.top - containerRect.top + toRect.height / 2 + endYOffset
 
-      // Create a quadratic bezier curve
+      // Control point for quadratic bezier
       const controlX = (startX + endX) / 2
-      const controlY = startY + curvature
+      const controlY = Math.min(startY, endY) + curvature
+      
       const d = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
       setPathD(d)
     }
 
     updatePath()
-    window.addEventListener("resize", updatePath)
     
-    // Initial delay to ensure DOM is ready
+    const handleResize = () => {
+      requestAnimationFrame(updatePath)
+    }
+    
+    window.addEventListener("resize", handleResize)
+    
+    // Delay initial calculation to ensure DOM is ready
     const timeout = setTimeout(updatePath, 100)
     
     return () => {
-      window.removeEventListener("resize", updatePath)
+      window.removeEventListener("resize", handleResize)
       clearTimeout(timeout)
     }
   }, [containerRef, fromRef, toRef, curvature, startXOffset, startYOffset, endXOffset, endYOffset])
@@ -88,35 +95,30 @@ export function AnimatedBeam({
 
   return (
     <svg
-      className={cn("absolute inset-0 pointer-events-none", className)}
       width={svgDimensions.width}
       height={svgDimensions.height}
-      style={{ zIndex: 1, overflow: "visible" }}
+      className={cn("absolute inset-0 pointer-events-none", className)}
+      style={{ overflow: "visible" }}
     >
       <defs>
-        <linearGradient id={`beam-gradient-${delay}`} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={gradientStartColor} stopOpacity="0" />
-          <stop offset="30%" stopColor={gradientStartColor} stopOpacity="1" />
-          <stop offset="70%" stopColor={gradientStopColor} stopOpacity="1" />
-          <stop offset="100%" stopColor={gradientStopColor} stopOpacity="0" />
+        <linearGradient
+          id={`gradient-${delay}`}
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor={gradientStartColor} />
+          <stop offset="100%" stopColor={gradientStopColor} />
         </linearGradient>
-        <filter id={`beam-glow-${delay}`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+        
+        <filter id={`glow-${delay}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        
-        {/* Gradient for the traveling dot */}
-        <radialGradient id={`dot-gradient-${delay}`}>
-          <stop offset="0%" stopColor={gradientStopColor} stopOpacity="1" />
-          <stop offset="50%" stopColor={gradientStartColor} stopOpacity="0.8" />
-          <stop offset="100%" stopColor={gradientStartColor} stopOpacity="0" />
-        </radialGradient>
       </defs>
 
-      {/* Background path (subtle) */}
+      {/* Static background path */}
       <path
         d={pathD}
         fill="none"
@@ -126,62 +128,35 @@ export function AnimatedBeam({
         strokeLinecap="round"
       />
 
-      {/* Animated gradient line */}
+      {/* Animated gradient path */}
       <motion.path
         d={pathD}
         fill="none"
-        stroke={`url(#beam-gradient-${delay})`}
+        stroke={`url(#gradient-${delay})`}
         strokeWidth={pathWidth + 2}
         strokeLinecap="round"
-        filter={`url(#beam-glow-${delay})`}
+        filter={`url(#glow-${delay})`}
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: [0, 1, 1, 0] }}
+        animate={{ 
+          pathLength: [0, 1, 1, 0],
+          opacity: [0, 1, 1, 0],
+          strokeDashoffset: [0, 0, 0, 0]
+        }}
         transition={{
-          pathLength: {
-            duration,
-            delay,
-            repeat: Infinity,
-            repeatDelay: 0.5,
-            ease: "easeInOut",
-          },
-          opacity: {
-            duration: duration * 0.8,
-            delay,
-            repeat: Infinity,
-            repeatDelay: 0.7,
-            times: [0, 0.2, 0.8, 1],
-            ease: "easeInOut",
-          },
+          duration,
+          delay,
+          repeat: Infinity,
+          repeatDelay: 0.5,
+          times: [0, 0.3, 0.7, 1],
+          ease: "easeInOut",
         }}
       />
 
-      {/* Traveling dot */}
+      {/* Glowing orb that travels along the path */}
       <motion.circle
-        r="6"
-        fill={`url(#dot-gradient-${delay})`}
-        filter={`url(#beam-glow-${delay})`}
-        initial={{ offsetDistance: "0%", opacity: 0 }}
-        animate={{ 
-          offsetDistance: "100%", 
-          opacity: [0, 1, 1, 0]
-        }}
-        transition={{
-          offsetDistance: {
-            duration,
-            delay,
-            repeat: Infinity,
-            repeatDelay: 0.5,
-            ease: "easeInOut",
-          },
-          opacity: {
-            duration,
-            delay,
-            repeat: Infinity,
-            repeatDelay: 0.5,
-            times: [0, 0.1, 0.9, 1],
-            ease: "easeInOut",
-          },
-        }}
+        r="5"
+        fill={gradientStopColor}
+        filter={`url(#glow-${delay})`}
       >
         <animateMotion
           dur={`${duration}s`}
@@ -190,7 +165,74 @@ export function AnimatedBeam({
           path={pathD}
           rotate="auto"
         />
+        <animate
+          attributeName="opacity"
+          values="0;1;1;0"
+          dur={`${duration}s`}
+          begin={`${delay}s`}
+          repeatCount="indefinite"
+          keyTimes="0;0.1;0.9;1"
+        />
       </motion.circle>
     </svg>
+  )
+}
+
+// Simpler horizontal beam for the workflow section
+interface SimpleBeamProps {
+  className?: string
+  reverse?: boolean
+  duration?: number
+  delay?: number
+}
+
+export function SimpleBeam({ 
+  className, 
+  reverse = false,
+  duration = 2,
+  delay = 0
+}: SimpleBeamProps) {
+  return (
+    <div className={cn("relative h-px flex-1 mx-2", className)}>
+      {/* Background line */}
+      <div className="absolute inset-0 bg-gradient-to-r from-border via-border to-border rounded-full" />
+      
+      {/* Animated gradient line */}
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: reverse 
+            ? "linear-gradient(90deg, transparent, #8b5cf6, #3b82f6, transparent)" 
+            : "linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent)",
+          backgroundSize: "200% 100%",
+        }}
+        animate={{
+          backgroundPosition: reverse ? ["100% 0%", "0% 0%"] : ["0% 0%", "100% 0%"],
+        }}
+        transition={{
+          duration,
+          delay,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
+      
+      {/* Glowing orb */}
+      <motion.div
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+        style={{
+          boxShadow: "0 0 10px 2px rgba(59, 130, 246, 0.5), 0 0 20px 4px rgba(139, 92, 246, 0.3)",
+        }}
+        animate={{
+          left: reverse ? ["100%", "0%"] : ["0%", "100%"],
+        }}
+        transition={{
+          duration,
+          delay,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
+    </div>
   )
 }

@@ -78,8 +78,9 @@ class CORSEverythingMiddleware:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
 
-                # Always add debug header to verify middleware is running
+                # Debug headers
                 headers.append((b"x-cors-middleware", b"active"))
+                headers.append((b"x-cors-debug", f"origin={origin},allowed={allowed},list_len={len(settings.cors_origins_list)}".encode("latin-1")))
 
                 if allowed:
                     # Remove any existing CORS headers to avoid duplicates

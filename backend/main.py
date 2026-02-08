@@ -150,7 +150,8 @@ async def root():
     return {
         "message": "Welcome to Ayn Platform API",
         "version": settings.APP_VERSION,
-        "docs": "/docs"
+        "docs": "/docs",
+        "cors": "asgi-v2"
     }
 
 

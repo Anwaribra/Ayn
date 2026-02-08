@@ -1121,8 +1121,53 @@ function ChatInput({
   sendMessage: (text: string) => void
   isLoading: boolean
 }) {
+  const [showSlashCommands, setShowSlashCommands] = useState(false)
+  const slashCommands = [
+    { command: "/analyze", description: "Analyze document or criteria" },
+    { command: "/gap", description: "Run gap analysis" },
+    { command: "/evidence", description: "Get evidence requirements" },
+    { command: "/iso", description: "Explain ISO standards" },
+  ]
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setMessage(value)
+    adjustHeight()
+    setShowSlashCommands(value.startsWith("/"))
+  }
+
+  const handleSlashSelect = (command: string) => {
+    setMessage(command + " ")
+    setShowSlashCommands(false)
+    textareaRef.current?.focus()
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
+      {/* Slash commands popup */}
+      {showSlashCommands && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-lg overflow-hidden z-50"
+        >
+          <div className="px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/50">
+            Commands
+          </div>
+          {slashCommands.map((cmd) => (
+            <button
+              key={cmd.command}
+              onClick={() => handleSlashSelect(cmd.command)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-accent/50 transition-colors"
+            >
+              <span className="text-sm font-mono text-[var(--brand)]">{cmd.command}</span>
+              <span className="text-xs text-muted-foreground">{cmd.description}</span>
+            </button>
+          ))}
+        </motion.div>
+      )}
+
       <div
         className={cn(
           "relative rounded-2xl border bg-card/60 shadow-sm backdrop-blur-sm transition-all duration-300",
@@ -1133,17 +1178,18 @@ function ChatInput({
         <Textarea
           ref={textareaRef}
           value={message}
-          onChange={(e) => {
-            setMessage(e.target.value)
-            adjustHeight()
-          }}
+          onChange={handleInputChange}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
               sendMessage(message)
+              setShowSlashCommands(false)
+            }
+            if (e.key === "Escape") {
+              setShowSlashCommands(false)
             }
           }}
-          placeholder="Ask about ISO 21001, NAQAAE, evidence, gap analysis..."
+          placeholder="Ask about ISO 21001, NAQAAE, evidence... Type / for commands"
           className={cn(
             "min-h-[48px] w-full resize-none border-none bg-transparent px-4 py-3.5 text-sm text-foreground",
             "focus-visible:ring-0 focus-visible:ring-offset-0",

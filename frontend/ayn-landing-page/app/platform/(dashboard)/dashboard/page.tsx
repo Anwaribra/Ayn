@@ -51,6 +51,9 @@ import {
 import { AmbientBackground } from "@/components/ui/ambient-background"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { CountUp } from "@/components/ui/animated-number"
+import { AIInsightsCard } from "@/components/platform/ai-insights-card"
+import { PageTransition } from "@/components/platform/page-transition"
 
 // ─── Animated Stat Card ─────────────────────────────────────────────────────
 
@@ -65,16 +68,14 @@ interface StatCardProps {
   isLoading?: boolean
 }
 
-function AnimatedNumber({ value }: { value: number }) {
-  return (
-    <motion.span
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      {value}
-    </motion.span>
-  )
+function AnimatedStatValue({ value, suffix = "" }: { value: string | number; suffix?: string }) {
+  const numericValue = typeof value === "string" ? parseFloat(value) : value
+  
+  if (isNaN(numericValue)) {
+    return <span>{value}</span>
+  }
+  
+  return <CountUp end={numericValue} suffix={suffix} duration={1.5} />
 }
 
 function StatCard({
@@ -130,11 +131,7 @@ function StatCard({
           ) : (
             <>
               <div className="text-3xl font-bold tracking-tight text-foreground">
-                {typeof value === "number" && !isNaN(numericValue) ? (
-                  <AnimatedNumber value={numericValue} />
-                ) : (
-                  value
-                )}
+                <AnimatedStatValue value={value} />
               </div>
               <div className="mt-1 flex items-center gap-2">
                 <p className="text-xs text-muted-foreground">{label}</p>
@@ -332,6 +329,30 @@ function DashboardContent() {
 
   const progress = metrics?.assessmentProgressPercentage ?? 0
 
+  return (
+    <PageTransition>
+      <DashboardInnerContent 
+        user={user} 
+        metrics={metrics} 
+        isLoading={isLoading} 
+        progress={progress} 
+      />
+    </PageTransition>
+  )
+}
+
+function DashboardInnerContent({ 
+  user, 
+  metrics, 
+  isLoading, 
+  progress 
+}: { 
+  user: any
+  metrics: any
+  isLoading: boolean
+  progress: number
+}) {
+
   const stats: StatCardProps[] = [
     {
       title: "Completed Criteria",
@@ -479,15 +500,16 @@ function DashboardContent() {
             ))}
           </div>
 
-          {/* Charts Section - Bento Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Charts Section - Bento Grid with AI Insights */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {/* Assessment Progress */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
+              className="lg:col-span-1"
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
+              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Target className="h-5 w-5 text-[var(--brand)]" />
@@ -512,8 +534,9 @@ function DashboardContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
+              className="lg:col-span-1"
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
+              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Activity className="h-5 w-5 text-[var(--brand)]" />
@@ -533,69 +556,14 @@ function DashboardContent() {
               </Card>
             </motion.div>
 
-            {/* Metrics Overview */}
+            {/* AI Insights Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
+              className="lg:col-span-2"
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <BarChart3 className="h-5 w-5 text-[var(--brand)]" />
-                    Metrics Overview
-                  </CardTitle>
-                  <CardDescription>Key metrics at a glance</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <Skeleton className="h-44 w-full" />
-                  ) : (
-                    <div className="h-44">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} barSize={40}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="hsl(var(--border))"
-                            vertical={false}
-                          />
-                          <XAxis
-                            dataKey="name"
-                            tick={{
-                              fill: "hsl(var(--muted-foreground))",
-                              fontSize: 11,
-                            }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            tick={{
-                              fill: "hsl(var(--muted-foreground))",
-                              fontSize: 11,
-                            }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              color: "hsl(var(--foreground))",
-                              fontSize: "12px",
-                            }}
-                          />
-                          <Bar
-                            dataKey="value"
-                            fill="var(--brand)"
-                            radius={[6, 6, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <AIInsightsCard />
             </motion.div>
           </div>
 
@@ -691,3 +659,5 @@ function DashboardContent() {
     </AmbientBackground>
   )
 }
+
+export { DashboardContent }

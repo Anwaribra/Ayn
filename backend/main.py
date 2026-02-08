@@ -208,6 +208,32 @@ async def ai_status():
     return result
 
 
+@app.post("/api/debug/test-chat")
+async def test_chat_no_auth(request: Request):
+    """Test chat endpoint without auth — for debugging only."""
+    try:
+        body = await request.json()
+        messages = body.get("messages", [])
+        
+        if not messages:
+            return {"error": "No messages provided", "body": body}
+        
+        from app.ai.service import get_gemini_client
+        client = get_gemini_client()
+        
+        import asyncio
+        result = await asyncio.to_thread(
+            client.chat,
+            messages=[{"role": m["role"], "content": m["content"]} for m in messages],
+            context=body.get("context"),
+        )
+        
+        return {"result": result[:200], "status": "success"}
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()[-500:]}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

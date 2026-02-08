@@ -192,6 +192,19 @@ async def ai_status():
     except Exception as e:
         result["ai_import_error"] = str(e)
     
+    # Also test a quick AI call
+    try:
+        client = get_gemini_client()
+        test_result = client.chat(
+            messages=[{"role": "user", "content": "Say hello in one word"}],
+            context=None,
+        )
+        result["ai_test"] = "success"
+        result["ai_test_response"] = test_result[:100]
+    except Exception as e:
+        result["ai_test"] = "failed"
+        result["ai_test_error"] = str(e)[:500]
+    
     return result
 
 

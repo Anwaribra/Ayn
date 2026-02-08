@@ -35,9 +35,13 @@ class CORSEverythingMiddleware:
     """
     Raw ASGI middleware that injects CORS headers into EVERY HTTP response.
     
-    This runs at the ASGI level, so it catches responses from all sources:
-    FastAPI exception handlers, HTTPBearer 403s, SlowAPI, etc.
-    BaseHTTPMiddleware has a known bug where call_next misses some error responses.
+    Railway's edge proxy strips the Origin header, so we cannot rely on it.
+    Instead, we always add permissive CORS headers using wildcard (*).
+    
+    NOTE: We use "*" instead of echoing Origin because Railway strips Origin.
+    This means we cannot use credentials mode with wildcard — the frontend
+    must use Authorization header (Bearer token) instead of cookies, which
+    is already the case (HTTPBearer).
     """
 
     def __init__(self, app: ASGIApp) -> None:
@@ -48,59 +52,40 @@ class CORSEverythingMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Extract Origin header from request (case-insensitive)
-        origin = None
-        all_header_names = []
-        for header_name, header_value in scope.get("headers", []):
-            all_header_names.append(header_name.decode("latin-1"))
-            if header_name.lower() == b"origin":
-                origin = header_value.decode("latin-1")
-
-        # Check if origin is allowed
-        # Also support wildcard "*" to allow all origins
-        allowed_list = settings.cors_origins_list
-        allowed = origin and (origin in allowed_list or "*" in allowed_list)
-
-        # Handle preflight OPTIONS
-        if scope["method"] == "OPTIONS" and allowed:
+        # Handle preflight OPTIONS — return immediately with CORS headers
+        if scope["method"] == "OPTIONS":
             response = JSONResponse(
                 content="OK",
                 headers={
-                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
                     "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Origin, X-Requested-With",
-                    "Access-Control-Allow-Credentials": "true",
                     "Access-Control-Max-Age": "600",
                 },
             )
             await response(scope, receive, send)
             return
 
-        # For ALL requests, intercept the response to add CORS headers
+        # For ALL other requests, intercept the response to add CORS headers
         async def send_with_cors(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
 
-                # Debug headers
-                headers.append((b"x-cors-middleware", b"active"))
-                hdr_names_str = "|".join(all_header_names[:15])
-                headers.append((b"x-cors-debug", f"origin={origin},allowed={allowed},hdrs={hdr_names_str}".encode("latin-1")))
+                # Remove any existing CORS headers to avoid duplicates
+                headers = [
+                    (k, v) for k, v in headers
+                    if k.lower() not in (
+                        b"access-control-allow-origin",
+                        b"access-control-allow-credentials",
+                        b"access-control-allow-methods",
+                        b"access-control-allow-headers",
+                    )
+                ]
 
-                if allowed:
-                    # Remove any existing CORS headers to avoid duplicates
-                    headers = [
-                        (k, v) for k, v in headers
-                        if k.lower() not in (
-                            b"access-control-allow-origin",
-                            b"access-control-allow-credentials",
-                        )
-                    ]
-
-                    # Add CORS headers
-                    headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
-                    headers.append((b"access-control-allow-credentials", b"true"))
-                    headers.append((b"vary", b"Origin"))
-                    headers.append((b"x-cors-origin-check", f"origin={origin},allowed={allowed}".encode("latin-1")))
+                # Always add permissive CORS headers
+                headers.append((b"access-control-allow-origin", b"*"))
+                headers.append((b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"))
+                headers.append((b"access-control-allow-headers", b"Authorization, Content-Type, Accept, Origin, X-Requested-With"))
 
                 message["headers"] = headers
 

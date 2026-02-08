@@ -73,28 +73,29 @@ class CORSEverythingMiddleware:
             await response(scope, receive, send)
             return
 
-        # For non-OPTIONS requests, intercept the response to add CORS headers
-        if not allowed:
-            await self.app(scope, receive, send)
-            return
-
+        # For ALL requests, intercept the response to add CORS headers
         async def send_with_cors(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
 
-                # Remove any existing CORS headers to avoid duplicates
-                headers = [
-                    (k, v) for k, v in headers
-                    if k.lower() not in (
-                        b"access-control-allow-origin",
-                        b"access-control-allow-credentials",
-                    )
-                ]
+                # Always add debug header to verify middleware is running
+                headers.append((b"x-cors-middleware", b"active"))
 
-                # Add CORS headers
-                headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
-                headers.append((b"access-control-allow-credentials", b"true"))
-                headers.append((b"vary", b"Origin"))
+                if allowed:
+                    # Remove any existing CORS headers to avoid duplicates
+                    headers = [
+                        (k, v) for k, v in headers
+                        if k.lower() not in (
+                            b"access-control-allow-origin",
+                            b"access-control-allow-credentials",
+                        )
+                    ]
+
+                    # Add CORS headers
+                    headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
+                    headers.append((b"access-control-allow-credentials", b"true"))
+                    headers.append((b"vary", b"Origin"))
+                    headers.append((b"x-cors-origin-check", f"origin={origin},allowed={allowed}".encode("latin-1")))
 
                 message["headers"] = headers
 

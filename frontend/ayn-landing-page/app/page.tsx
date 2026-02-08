@@ -7,7 +7,6 @@ import { log } from "@/lib/logger"
 import { CursorGlow, SectionDivider } from "@/components/landing/landing-utils"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { Hero } from "@/components/landing/Hero"
-import { FeaturesSection } from "@/components/landing/FeaturesSection"
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection"
 import { AboutSection } from "@/components/landing/AboutSection"
 import { FinalCtaSection } from "@/components/landing/FinalCtaSection"
@@ -54,8 +53,6 @@ export default function Home() {
       <IntegrationLogos />
       <SectionDivider />
       <FeatureShowcase />
-      <SectionDivider />
-      <FeaturesSection />
       <SectionDivider />
       <HowItWorksSection />
       <SectionDivider />

@@ -157,18 +157,7 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
         </div>
       </motion.div>
 
-      {/* Floating badge */}
-      <motion.div
-        className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[var(--brand)] text-[var(--brand-foreground)] text-xs font-medium shadow-lg flex items-center gap-1.5 whitespace-nowrap"
-        animate={{
-          y: isHovered ? 0 : 5,
-          opacity: isHovered ? 1 : 0.9,
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <Sparkles className="w-3 h-3" />
-        Click to preview
-      </motion.div>
+
     </motion.div>
   )
 }

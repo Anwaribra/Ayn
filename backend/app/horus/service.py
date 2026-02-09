@@ -1,10 +1,8 @@
 """
-Horus Service
+Horus AI Service
 
-Read-only platform intelligence.
-Queries state and produces observations.
-Does NOT write state.
-Does NOT trigger actions.
+Conversational intelligence with full platform awareness.
+Like ChatGPT, but can see and control the entire Ayn platform.
 """
 
 from datetime import datetime
@@ -13,137 +11,305 @@ from pydantic import BaseModel
 
 
 class Observation(BaseModel):
-    """A state observation from Horus."""
+    """A response from Horus."""
     content: str
     timestamp: datetime
-    state_hash: str  # For caching/invalidation
+    state_hash: str
+    suggested_actions: List[Dict[str, Any]] = []  # Only populated if user asks for help
 
 
 class HorusService:
     """
-    Horus AI - Read-only platform intelligence.
+    Horus AI - Conversational platform intelligence.
     
-    This service:
-    - Reads from platform state
-    - Produces observations about current state
-    - Never writes or modifies state
-    - Never triggers actions
-    - Never makes recommendations
+    Behavior:
+    - Talks naturally like ChatGPT
+    - Always aware of platform state
+    - Only suggests/triggers when explicitly asked
+    - Cross-module understanding
     """
     
     def __init__(self, state_manager):
         self.state_manager = state_manager
     
-    async def observe(self, user_id: str, query: Optional[str] = None) -> Observation:
+    async def chat(self, user_id: str, message: Optional[str] = None) -> Observation:
         """
-        Produce a state observation.
-        
-        Args:
-            user_id: The user whose state to observe
-            query: Optional specific query (does not change observation format)
-        
-        Returns:
-            Observation containing state description
+        Main chat interface. Natural conversation with platform awareness.
         """
         summary = await self.state_manager.get_state_summary(user_id)
+        state_hash = self._hash_state(summary)
         
-        # Build observation content
-        lines = []
+        # If no message, just return current state awareness
+        if not message:
+            return self._generate_awareness_greeting(summary, state_hash)
         
-        # Header
-        lines.append("Platform state:")
+        message_lower = message.lower()
         
-        # File state
-        lines.append(f"- Files: {summary.total_files} ({summary.analyzed_files} analyzed, {summary.unlinked_files} unlinked)")
+        # Check if user is asking for help/action
+        is_asking_for_help = any(word in message_lower for word in [
+            "help", "suggest", "what should", "what do", "how to", "guide", 
+            "assist", "recommend", "advice", "tip", "idea", "next step"
+        ])
         
-        # Evidence state
-        lines.append(f"- Evidence scopes: {summary.total_evidence} ({summary.linked_evidence} linked)")
+        # Check if user wants to trigger an action
+        is_triggering_action = any(phrase in message_lower for phrase in [
+            "create", "make", "add", "save", "link", "update", "delete", 
+            "remove", "analyze", "process", "generate"
+        ])
         
-        # Gap state
-        lines.append(f"- Gaps: {summary.total_gaps} ({summary.addressed_gaps} addressed, {summary.closed_gaps} closed)")
+        # Casual greetings
+        if any(word in message_lower for word in ["hello", "hi", "hey", "مرحب", "أهلا", "سلام"]):
+            return self._generate_awareness_greeting(summary, state_hash, conversational=True)
         
-        # Metrics
-        lines.append(f"- Metrics: {summary.total_metrics}")
+        # Status/state questions
+        if any(word in message_lower for word in ["status", "state", "what do you see", "what's happening", "update"]):
+            return self._generate_state_report(summary, state_hash)
         
-        # Cross-module observations
-        if summary.orphan_files:
-            lines.append("")
-            lines.append(f"Unlinked files ({len(summary.orphan_files)}):")
-            for f in summary.orphan_files[:3]:
-                standards = ", ".join(f.detected_standards) if f.detected_standards else "unanalyzed"
-                lines.append(f"- {f.name}: {standards}")
+        # User is asking for help/suggestions
+        if is_asking_for_help:
+            return self._generate_help_response(summary, state_hash, message)
         
-        if summary.addressable_gaps:
-            lines.append("")
-            lines.append(f"Gaps with potential file matches ({len(summary.addressable_gaps)}):")
-            for g in summary.addressable_gaps[:3]:
-                lines.append(f"- {g.standard} {g.clause}: {len(g.related_file_ids)} potential file(s)")
+        # User wants to trigger an action
+        if is_triggering_action:
+            return self._handle_action_request(summary, state_hash, message)
         
-        # Recent activity
-        if summary.last_event_type:
-            lines.append("")
-            lines.append(f"Last activity: {summary.last_event_type} at {summary.last_event_time.strftime('%H:%M') if summary.last_event_time else 'unknown'}")
+        # Default: conversational response with implicit awareness
+        return self._generate_conversational_response(summary, state_hash, message)
+    
+    def _generate_awareness_greeting(self, summary, state_hash, conversational=False) -> Observation:
+        """Generate a greeting that shows platform awareness."""
+        parts = []
         
-        # Query-specific observations (state only, no recommendations)
-        if query:
-            lines.append("")
-            lines.extend(self._observe_query(query, summary))
+        # Natural greeting
+        if conversational:
+            greetings = ["Hey there!", "Hello!", "Hi!", "أهلاً!", "مرحباً!"]
+            import random
+            parts.append(random.choice(greetings))
+        else:
+            parts.append("Horus is online.")
         
-        content = "\n".join(lines)
+        # Platform awareness - what's happening
+        awareness = []
+        
+        if summary.total_files == 0:
+            awareness.append("I see no files uploaded yet.")
+        else:
+            file_status = f"{summary.total_files} file{'s' if summary.total_files > 1 else ''} uploaded"
+            if summary.unlinked_files > 0:
+                file_status += f" ({summary.unlinked_files} not linked to evidence)"
+            awareness.append(f"I can see {file_status}.")
+        
+        if summary.total_evidence > 0:
+            awareness.append(f"{summary.total_evidence} evidence scope{'s' if summary.total_evidence > 1 else ''} defined.")
+        
+        if summary.total_gaps > 0:
+            open_gaps = summary.total_gaps - summary.closed_gaps
+            if open_gaps > 0:
+                awareness.append(f"{open_gaps} gap{'s' if open_gaps > 1 else ''} open.")
+        
+        if awareness:
+            parts.append(" " + " ".join(awareness))
+        
+        # Natural closing
+        if conversational:
+            parts.append(" What would you like to do?")
+        else:
+            parts.append("\n\nAsk me anything about your compliance project.")
+        
+        return Observation(
+            content="".join(parts),
+            timestamp=datetime.utcnow(),
+            state_hash=state_hash
+        )
+    
+    def _generate_state_report(self, summary, state_hash) -> Observation:
+        """Generate a structured state report when explicitly asked."""
+        lines = ["Here's what I see in your platform:", ""]
+        
+        # Files
+        if summary.total_files == 0:
+            lines.append("📁 Files: None uploaded yet")
+        else:
+            lines.append(f"📁 Files: {summary.total_files} total")
+            lines.append(f"   ✓ {summary.analyzed_files} analyzed")
+            lines.append(f"   ⚠ {summary.unlinked_files} not linked to evidence")
+        
+        lines.append("")
+        
+        # Evidence
+        if summary.total_evidence == 0:
+            lines.append("📋 Evidence: No scopes defined yet")
+        else:
+            lines.append(f"📋 Evidence: {summary.total_evidence} scope{'s' if summary.total_evidence > 1 else ''}")
+            orphan = summary.total_evidence - summary.linked_evidence
+            if orphan > 0:
+                lines.append(f"   ⚠ {orphan} without source files")
+        
+        lines.append("")
+        
+        # Gaps
+        if summary.total_gaps == 0:
+            lines.append("🔍 Gaps: None identified yet")
+        else:
+            open_gaps = summary.total_gaps - summary.closed_gaps
+            lines.append(f"🔍 Gaps: {summary.total_gaps} total")
+            lines.append(f"   ✓ {summary.closed_gaps} closed")
+            lines.append(f"   🔄 {summary.addressed_gaps} addressed")
+            lines.append(f"   ⚠ {open_gaps} open")
+        
+        lines.append("")
+        lines.append("Want me to suggest next steps?")
+        
+        return Observation(
+            content="\n".join(lines),
+            timestamp=datetime.utcnow(),
+            state_hash=state_hash
+        )
+    
+    def _generate_help_response(self, summary, state_hash, message) -> Observation:
+        """Generate helpful suggestions when user asks for help."""
+        suggestions = []
+        
+        # Analyze current state and suggest
+        if summary.total_files == 0:
+            suggestions.append("1. Upload compliance documents (quality manual, procedures, etc.)")
+        elif summary.unlinked_files > 0:
+            suggestions.append(f"1. Link your {summary.unlinked_files} unlinked file(s) to evidence scopes")
+            suggestions.append("   - Go to Evidence module and create scopes for each standard")
+            suggestions.append("   - Or ask me to 'analyze files' to auto-detect standards")
+        
+        if summary.total_evidence == 0 and summary.total_files > 0:
+            suggestions.append(f"{len(suggestions)+1}. Create evidence scopes for your standards")
+        elif summary.total_evidence > 0 and summary.linked_evidence < summary.total_evidence:
+            orphan = summary.total_evidence - summary.linked_evidence
+            suggestions.append(f"{len(suggestions)+1}. Link {orphan} evidence scope(s) to source files")
+        
+        if summary.total_gaps == 0 and summary.total_evidence > 0:
+            suggestions.append(f"{len(suggestions)+1}. Run gap analysis on your standards")
+        elif summary.total_gaps > 0:
+            open_gaps = summary.total_gaps - summary.closed_gaps
+            if open_gaps > 0:
+                suggestions.append(f"{len(suggestions)+1}. Address {open_gaps} open gap(s) with evidence")
+        
+        content = "Based on your current state, here's what I'd suggest:\n\n"
+        content += "\n".join(suggestions) if suggestions else "Your platform looks complete! 🎉"
+        content += "\n\nWant me to help with any of these? Just say the word."
         
         return Observation(
             content=content,
             timestamp=datetime.utcnow(),
-            state_hash=self._hash_state(summary)
+            state_hash=state_hash,
+            suggested_actions=self._generate_action_suggestions(summary)
         )
     
-    def _observe_query(self, query: str, summary) -> List[str]:
-        """Produce query-specific state observations."""
-        lines = []
-        query_lower = query.lower()
+    def _generate_conversational_response(self, summary, state_hash, message) -> Observation:
+        """Generate a natural conversational response."""
+        # Simple conversational responses with awareness
+        lower_msg = message.lower()
         
-        # File-related queries
-        if "file" in query_lower:
-            if summary.unlinked_files == 0 and summary.total_files > 0:
-                lines.append("All uploaded files are linked to evidence scopes.")
-            elif summary.total_files == 0:
-                lines.append("No files in state.")
-            else:
-                lines.append(f"{summary.unlinked_files} file(s) remain unlinked.")
+        # Thank you responses
+        if any(word in lower_msg for word in ["thanks", "thank you", "شكرا", "شكراً"]):
+            return Observation(
+                content="You're welcome! I'm here whenever you need anything about your compliance project.",
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash
+            )
         
-        # Gap-related queries
-        if "gap" in query_lower:
-            open_gaps = summary.total_gaps - summary.closed_gaps
-            if open_gaps == 0:
-                if summary.total_gaps == 0:
-                    lines.append("No gaps defined in state.")
-                else:
-                    lines.append("All defined gaps are closed.")
-            else:
-                lines.append(f"{open_gaps} gap(s) open.")
+        # Goodbye
+        if any(word in lower_msg for word in ["bye", "goodbye", "see you", "مع السلامة"]):
+            return Observation(
+                content="Goodbye! I'll keep an eye on your platform state. Come back anytime!",
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash
+            )
         
-        # Evidence-related queries
-        if "evidence" in query_lower:
-            if summary.total_evidence == 0:
-                lines.append("No evidence scopes defined.")
-            else:
-                orphan_evidence = summary.total_evidence - summary.linked_evidence
-                if orphan_evidence > 0:
-                    lines.append(f"{orphan_evidence} evidence scope(s) without source files.")
+        # Default response - acknowledge with awareness
+        awareness = []
+        if summary.total_files > 0:
+            awareness.append(f"{summary.total_files} file{'s' if summary.total_files > 1 else ''}")
+        if summary.total_evidence > 0:
+            awareness.append(f"{summary.total_evidence} evidence scope{'s' if summary.total_evidence > 1 else ''}")
+        if summary.total_gaps > 0:
+            awareness.append(f"{summary.total_gaps} gap{'s' if summary.total_gaps > 1 else ''}")
         
-        # Completeness queries
-        if "complete" in query_lower or "status" in query_lower:
-            if summary.unlinked_files > 0:
-                lines.append("State incomplete: unlinked files exist.")
-            else:
-                lines.append("File linkage complete.")
+        context = f" (I can see you have {', '.join(awareness)} in the system)" if awareness else ""
         
-        return lines if lines else ["State as described above."]
+        return Observation(
+            content=f"I understand.{context}\n\nFeel free to ask me about your platform state, or tell me what you'd like to do next.",
+            timestamp=datetime.utcnow(),
+            state_hash=state_hash
+        )
+    
+    def _handle_action_request(self, summary, state_hash, message) -> Observation:
+        """Handle requests to trigger actions."""
+        lower_msg = message.lower()
+        
+        # File analysis request
+        if "analyze" in lower_msg and ("file" in lower_msg or "document" in lower_msg):
+            if summary.total_files == 0:
+                return Observation(
+                    content="I'd love to analyze files, but there are none uploaded yet. Please upload some documents first!",
+                    timestamp=datetime.utcnow(),
+                    state_hash=state_hash
+                )
+            return Observation(
+                content=f"I'll analyze your {summary.total_files} file(s) to detect standards and clauses. This may take a moment...",
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash,
+                suggested_actions=[{"type": "analyze_files", "params": {}}]
+            )
+        
+        # Create evidence
+        if "create" in lower_msg and "evidence" in lower_msg:
+            return Observation(
+                content="I can help create evidence scopes. What standard/criteria do you want to create evidence for?",
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash,
+                suggested_actions=[{"type": "create_evidence", "params": {}}]
+            )
+        
+        # Run gap analysis
+        if ("gap" in lower_msg and ("analyze" in lower_msg or "analysis" in lower_msg)) or "run gap" in lower_msg:
+            return Observation(
+                content="I'll run a gap analysis on your standards. This will compare your evidence against criteria requirements...",
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash,
+                suggested_actions=[{"type": "run_gap_analysis", "params": {}}]
+            )
+        
+        # Generic action acknowledgment
+        return Observation(
+            content="I understand you want to take action. Let me know specifically what you'd like to create, update, or analyze.",
+            timestamp=datetime.utcnow(),
+            state_hash=state_hash
+        )
+    
+    def _generate_action_suggestions(self, summary) -> List[Dict[str, Any]]:
+        """Generate suggested actions based on state."""
+        actions = []
+        
+        if summary.total_files == 0:
+            actions.append({"type": "upload_files", "label": "Upload Documents", "priority": "high"})
+        elif summary.unlinked_files > 0:
+            actions.append({"type": "link_files", "label": f"Link {summary.unlinked_files} Files", "priority": "high"})
+        
+        if summary.total_evidence == 0:
+            actions.append({"type": "create_evidence", "label": "Create Evidence Scopes", "priority": "high"})
+        
+        if summary.total_gaps == 0 and summary.total_evidence > 0:
+            actions.append({"type": "run_gap_analysis", "label": "Run Gap Analysis", "priority": "medium"})
+        elif summary.total_gaps > 0 and (summary.total_gaps - summary.closed_gaps) > 0:
+            actions.append({"type": "address_gaps", "label": "Address Open Gaps", "priority": "medium"})
+        
+        return actions
     
     def _hash_state(self, summary) -> str:
         """Generate a hash of current state for caching."""
-        # Simple hash based on counts and last event
-        return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{summary.last_event_time}"
+        return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.utcnow().strftime('%Y%m%d%H')}"
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LEGACY STATE METHODS (for direct state queries)
+    # ═══════════════════════════════════════════════════════════════════════════
     
     async def get_files_state(self, user_id: str) -> Dict[str, Any]:
         """Get detailed files state."""

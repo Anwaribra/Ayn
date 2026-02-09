@@ -1,8 +1,7 @@
 """
-Horus API Router
+Horus AI API Router
 
-Read-only endpoints for platform intelligence.
-Horus observes state and produces observations.
+Conversational AI with full platform awareness.
 """
 
 from fastapi import APIRouter, Depends, Query
@@ -16,24 +15,48 @@ router = APIRouter(prefix="/horus", tags=["horus"])
 
 
 @router.get("/observe", response_model=Observation)
-async def observe_state(
-    query: Optional[str] = Query(None, description="Optional query context"),
+async def horus_chat(
+    query: Optional[str] = Query(None, description="User message to Horus"),
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
-    Get a state observation from Horus.
+    Chat with Horus AI.
     
-    Returns current platform state description.
-    Never recommendations or actions.
+    Horus is a conversational AI with full platform awareness.
+    - Talk naturally like ChatGPT
+    - Horus always sees platform state
+    - Ask for help/suggestions anytime
+    - Request actions when needed
     """
     state_manager = PlatformStateManager(db)
     horus = HorusService(state_manager)
     
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-    return await horus.observe(
+    
+    return await horus.chat(
         user_id=user_id,
-        query=query
+        message=query
+    )
+
+
+@router.post("/chat", response_model=Observation)
+async def horus_chat_post(
+    query: Optional[str] = Query(None, description="User message to Horus"),
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Chat with Horus AI (POST method for longer messages).
+    """
+    state_manager = PlatformStateManager(db)
+    horus = HorusService(state_manager)
+    
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    
+    return await horus.chat(
+        user_id=user_id,
+        message=query
     )
 
 

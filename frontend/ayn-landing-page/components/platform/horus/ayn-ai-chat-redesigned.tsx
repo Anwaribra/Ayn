@@ -12,8 +12,6 @@ import {
   Search, 
   MessageSquare, 
   ClipboardList,
-  Bot,
-  User,
   History,
   Plus,
   X,
@@ -170,22 +168,21 @@ function StreamingMessage({ content, isStreaming, onStop }: { content: string; i
   const displayContent = isStreaming ? displayedText : content
 
   return (
-    <div className="flex max-w-[85%] flex-col gap-2">
-      <div className="rounded-2xl rounded-bl-md bg-white border border-border/50 px-5 py-4 shadow-sm">
+    <div className="flex max-w-[90%] flex-col gap-2">
+      <div className="prose prose-sm max-w-none text-foreground">
         <MarkdownContent content={displayContent} />
         {isStreaming && !isComplete && (
           <span className={cn("inline-block w-[2px] h-[1.2em] bg-primary ml-0.5 align-middle", cursorVisible ? "opacity-100" : "opacity-0")} />
         )}
       </div>
       {isStreaming && (
-        <div className="flex items-center gap-2 pl-1">
+        <div className="flex items-center gap-2">
           <button onClick={() => setIsPaused((p) => !p)} className="rounded p-1 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary">
             {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
           </button>
           <button onClick={handleStop} className="rounded p-1 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary">
             <div className="h-3 w-3 bg-current rounded-sm" />
           </button>
-          <span className="text-[10px] text-muted-foreground">{isPaused ? "Paused" : "Typing..."}</span>
         </div>
       )}
     </div>
@@ -477,7 +474,7 @@ export default function AynAIChatRedesigned() {
       {hasMessages && (
         <>
           <div className="relative z-10 flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-8">
+            <div className="mx-auto w-full max-w-3xl space-y-8 px-6 py-8">
               <AnimatePresence initial={false}>
                 {messages.map((msg) => {
                   const isLatestAssistant = msg.role === "assistant" && msg.id === streamingMessageId
@@ -486,40 +483,28 @@ export default function AynAIChatRedesigned() {
                   return (
                     <motion.div
                       key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={cn("flex w-full gap-3", msg.role === "user" ? "justify-end" : "justify-start")}
+                      className={cn("flex w-full", msg.role === "user" ? "justify-end" : "justify-start")}
                     >
-                      {msg.role === "assistant" && (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                          <Bot className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
-
                       {msg.role === "assistant" ? (
                         isLatestAssistant ? (
                           <StreamingMessage content={msg.content} isStreaming={isStreaming} onStop={() => setStreamingMessageId(null)} />
                         ) : (
-                          <div className="flex max-w-[85%] flex-col gap-1">
-                            <div className="rounded-2xl rounded-bl-md bg-white border border-border/50 px-5 py-4 shadow-sm">
+                          <div className="flex max-w-[90%] flex-col gap-2">
+                            <div className="prose prose-sm max-w-none text-foreground">
                               <MarkdownContent content={msg.content} />
                             </div>
-                            <div className="flex items-center gap-1 pl-1">
+                            <div className="flex items-center gap-1 opacity-0 transition-opacity hover:opacity-100">
                               <CopyButton text={msg.content} />
                             </div>
                           </div>
                         )
                       ) : (
-                        <div className="flex max-w-[85%] flex-col gap-1">
-                          <div className="rounded-2xl rounded-br-md bg-primary text-primary-foreground px-5 py-4 shadow-md shadow-primary/10">
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                        <div className="max-w-[80%]">
+                          <div className="rounded-2xl bg-[#1a1a2e] px-5 py-3.5 text-white">
+                            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
                           </div>
-                        </div>
-                      )}
-
-                      {msg.role === "user" && (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                          <User className="h-4 w-4 text-primary" />
                         </div>
                       )}
                     </motion.div>
@@ -529,23 +514,17 @@ export default function AynAIChatRedesigned() {
 
               {/* Loading */}
               {isLoading && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="rounded-2xl rounded-bl-md bg-white border border-border/50 px-5 py-4 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {[0, 0.15, 0.3].map((delay, i) => (
-                          <motion.span
-                            key={i}
-                            animate={{ scale: [1, 1.3, 1] }}
-                            transition={{ duration: 0.6, repeat: Infinity, delay }}
-                            className="h-2 w-2 rounded-full bg-primary"
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground">Thinking...</span>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <div className="flex gap-1">
+                      {[0, 0.15, 0.3].map((delay, i) => (
+                        <motion.span
+                          key={i}
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay }}
+                          className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
+                        />
+                      ))}
                     </div>
                   </div>
                 </motion.div>

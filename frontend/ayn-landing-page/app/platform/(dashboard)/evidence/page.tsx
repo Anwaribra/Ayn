@@ -607,8 +607,8 @@ function LinkDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  standards: any[]
-  criteria: any[]
+  standards: any[] | undefined
+  criteria: any[] | undefined
   selectedStandardId: string
   setSelectedStandardId: (v: string) => void
   selectedCriterionId: string

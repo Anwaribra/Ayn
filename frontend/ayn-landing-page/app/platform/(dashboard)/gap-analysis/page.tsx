@@ -71,6 +71,7 @@ import {
   PolarRadiusAxis,
 } from "recharts"
 import { cn } from "@/lib/utils"
+import { Slider } from "@/components/ui/slider"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -713,7 +714,23 @@ function GapAnalysisContent() {
                       }
                     </span>
                   </div>
-                  <div className="pt-2">
+                  <div className="space-y-3 pt-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Target Score</span>
+                        <span className="font-medium text-primary">80%</span>
+                      </div>
+                      <Slider
+                        defaultValue={[80]}
+                        max={100}
+                        min={0}
+                        step={5}
+                        className="w-full"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Set your target compliance score
+                      </p>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"

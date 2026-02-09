@@ -3,94 +3,109 @@
 /**
  * HORUS AI INTERFACE
  * 
- * NOT a chat interface.
- * State observation display.
+ * Renders state observations from backend.
+ * No local state simulation.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { motion } from "framer-motion"
-import { 
-  Paperclip, 
-  History,
-  Plus,
-  X,
-  File,
-  Image as ImageIcon,
-  FileSpreadsheet,
-  FileText as FileTextIcon,
-} from "lucide-react"
+import { Paperclip, X, File, Image as ImageIcon, FileSpreadsheet, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useHorusBrain, useHorusObserver, useFileUploadHandler } from "@/lib/horus"
+import { api } from "@/lib/api"
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
+interface Observation {
+  id: string
+  content: string
+  timestamp: number
+}
 
 export default function AynAIChatRedesigned() {
-  const [observations, setObservations] = useState<Array<{id: string; content: string; timestamp: number}>>([])
+  const [observations, setObservations] = useState<Observation[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [uploadedFileIds, setUploadedFileIds] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   
-  // Horus integration
-  const brain = useHorusBrain()
-  const { observe } = useHorusObserver()
-  const { handleUpload } = useFileUploadHandler()
-  
-  // Get initial observation
+  // Load initial observation from backend
   useEffect(() => {
-    const obs = observe()
-    setObservations([{ id: obs.id, content: obs.content, timestamp: obs.timestamp }])
+    loadObservation()
   }, [])
   
-  // Auto-scroll
+  // Auto-scroll to latest
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [observations])
   
-  // File upload
+  const loadObservation = async (query?: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const obs = await api.horusObserve(query)
+      setObservations(prev => [...prev, {
+        id: obs.state_hash || Date.now().toString(),
+        content: obs.content,
+        timestamp: obs.timestamp
+      }])
+    } catch (err) {
+      setError("Failed to load state observation")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  // File upload - records to backend state
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     
     setPendingFiles(prev => [...prev, ...files].slice(0, 5))
     
+    // Upload each file and record to backend state
     for (const file of files.slice(0, 5)) {
-      const fileId = await handleUpload(file)
-      setUploadedFileIds(prev => [...prev, fileId])
+      const fileId = crypto.randomUUID()
+      try {
+        // Record file upload in backend state
+        await api.recordFileUpload(fileId, file.name, file.type, file.size)
+        
+        // Simulate analysis (in real app, this would be async processing)
+        const standards = detectStandards(file.name)
+        await api.recordFileAnalysis(fileId, standards, undefined, undefined, 0.7)
+      } catch (err) {
+        console.error("Failed to record file:", err)
+      }
     }
     
     if (fileInputRef.current) fileInputRef.current.value = ""
     
-    // Generate new observation after upload
-    setTimeout(() => {
-      const obs = observe("files uploaded")
-      setObservations(prev => [...prev, { id: obs.id, content: obs.content, timestamp: obs.timestamp }])
-    }, 200)
-  }, [handleUpload, observe])
+    // Clear pending and refresh observation
+    setPendingFiles([])
+    await loadObservation("files uploaded")
+  }, [])
   
   const removeFile = useCallback((index: number) => {
     setPendingFiles(prev => prev.filter((_, i) => i !== index))
-    setUploadedFileIds(prev => prev.filter((_, i) => i !== index))
   }, [])
-  
-  const refreshObservation = useCallback(() => {
-    const obs = observe("refresh")
-    setObservations(prev => [...prev, { id: obs.id, content: obs.content, timestamp: obs.timestamp }])
-  }, [observe])
   
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />
-    if (file.type.includes("pdf")) return <FileTextIcon className="h-4 w-4" />
+    if (file.type.includes("pdf")) return <FileText className="h-4 w-4" />
     if (file.type.includes("excel") || file.type.includes("sheet")) return <FileSpreadsheet className="h-4 w-4" />
     return <File className="h-4 w-4" />
   }
   
-  const summary = brain.getStateSummary()
-  const hasState = summary.fileCount > 0 || summary.evidenceCount > 0 || summary.gapCount > 0
+  // Detect standards from filename (client-side helper)
+  const detectStandards = (filename: string): string[] => {
+    const name = filename.toLowerCase()
+    const standards: string[] = []
+    if (name.includes("quality") || name.includes("manual")) standards.push("ISO9001")
+    if (name.includes("educational") || name.includes("eoms")) standards.push("ISO21001")
+    if (name.includes("naqaae")) standards.push("NAQAAE")
+    if (standards.length === 0) standards.push("ISO21001")
+    return standards
+  }
   
   return (
     <div className="relative flex h-[calc(100vh-56px)] w-full flex-col overflow-hidden bg-background">
@@ -101,16 +116,34 @@ export default function AynAIChatRedesigned() {
           <span className="text-xs text-muted-foreground/60">state observer</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={refreshObservation}>
-            Refresh
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => loadObservation()}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Refresh"}
           </Button>
         </div>
       </div>
       
+      {/* Error */}
+      {error && (
+        <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+      
       {/* Observations */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-6 p-6">
-          {observations.map((obs, i) => (
+          {observations.length === 0 && !isLoading && (
+            <div className="text-center text-sm text-muted-foreground">
+              No state observations yet.
+            </div>
+          )}
+          
+          {observations.map((obs) => (
             <motion.div
               key={obs.id}
               initial={{ opacity: 0 }}
@@ -165,16 +198,14 @@ export default function AynAIChatRedesigned() {
                 size="sm"
                 className="gap-2"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
               >
                 <Paperclip className="h-4 w-4" />
                 Attach
               </Button>
               
               <div className="flex-1 text-xs text-muted-foreground">
-                {hasState ? 
-                  `${summary.fileCount} files, ${summary.evidenceCount} evidence, ${summary.gapCount} gaps` :
-                  "No state recorded"
-                }
+                Files are recorded to platform state
               </div>
             </div>
           </div>

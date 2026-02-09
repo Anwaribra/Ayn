@@ -318,6 +318,114 @@ class ApiClient {
     })
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PLATFORM STATE APIs (Modules WRITE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  async recordFileUpload(fileId: string, name: string, type: string, size: number) {
+    return this.request("/state/files", {
+      method: "POST",
+      body: JSON.stringify({ fileId, name, file_type: type, size }),
+    })
+  }
+  
+  async recordFileAnalysis(fileId: string, standards: string[], documentType?: string, clauses?: string[], confidence?: number) {
+    return this.request(`/state/files/${fileId}/analyze`, {
+      method: "POST",
+      body: JSON.stringify({ standards, document_type: documentType, clauses, confidence }),
+    })
+  }
+  
+  async recordEvidenceCreated(evidenceId: string, title: string, type: string, criteriaRefs?: string[]) {
+    return this.request("/state/evidence", {
+      method: "POST",
+      body: JSON.stringify({ evidence_id: evidenceId, title, ev_type: type, criteria_refs: criteriaRefs }),
+    })
+  }
+  
+  async recordEvidenceLinked(evidenceId: string, fileIds: string[]) {
+    return this.request(`/state/evidence/${evidenceId}/link`, {
+      method: "POST",
+      body: JSON.stringify({ file_ids: fileIds }),
+    })
+  }
+  
+  async recordGapDefined(gapId: string, standard: string, clause: string, description: string, severity?: string) {
+    return this.request("/state/gaps", {
+      method: "POST",
+      body: JSON.stringify({ gap_id: gapId, standard, clause, description, severity }),
+    })
+  }
+  
+  async recordGapAddressed(gapId: string, evidenceId: string) {
+    return this.request(`/state/gaps/${gapId}/address`, {
+      method: "POST",
+      body: JSON.stringify({ evidence_id: evidenceId }),
+    })
+  }
+  
+  async recordGapClosed(gapId: string) {
+    return this.request(`/state/gaps/${gapId}/close`, {
+      method: "POST",
+    })
+  }
+  
+  async recordMetricUpdate(metricId: string, name: string, value: number, sourceModule: string) {
+    return this.request("/state/metrics", {
+      method: "POST",
+      body: JSON.stringify({ metric_id: metricId, name, value, source_module: sourceModule }),
+    })
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE READ APIs (Horus READS)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  async getStateSummary() {
+    return this.request<import("./types").StateSummary>("/state/summary")
+  }
+  
+  async getStateFiles() {
+    return this.request<import("./types").PlatformFile[]>("/state/files")
+  }
+  
+  async getStateEvidence() {
+    return this.request<import("./types").PlatformEvidence[]>("/state/evidence")
+  }
+  
+  async getStateGaps() {
+    return this.request<import("./types").PlatformGap[]>("/state/gaps")
+  }
+  
+  async getStateMetrics() {
+    return this.request<import("./types").PlatformMetric[]>("/state/metrics")
+  }
+  
+  async getStateEvents(limit?: number) {
+    return this.request<import("./types").PlatformEvent[]>(`/state/events?limit=${limit || 50}`)
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HORUS APIs (Read-only observations)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  async horusObserve(query?: string) {
+    const url = query ? `/horus/observe?query=${encodeURIComponent(query)}` : "/horus/observe"
+    return this.request<{content: string; timestamp: number; state_hash: string}>(url)
+  }
+  
+  async horusFilesState() {
+    return this.request("/horus/state/files")
+  }
+  
+  async horusGapsState() {
+    return this.request("/horus/state/gaps")
+  }
+  
+  async horusEvidenceState() {
+    return this.request("/horus/state/evidence")
+  }
+  
   // AI
   async chat(messages: { role: "user" | "assistant"; content: string }[], context?: string) {
     return this.request<import("./types").AIResponse>("/ai/chat", {

@@ -15,13 +15,7 @@ import {
   ChevronRight,
   LogOut,
   Settings,
-  LayoutDashboard,
-  Bot,
-  FileText,
-  BarChart3,
-  Sparkles,
 } from "lucide-react"
-import { Dock } from "@/components/ui/dock"
 import PlatformSidebar from "@/components/platform-sidebar"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
 import { CommandPalette, CommandPaletteTrigger } from "./command-palette"
@@ -300,55 +294,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* ── Command Palette ───────────────────────────────────────────── */}
       <CommandPalette />
-
-      {/* ── Floating Dock Navigation ───────────────────────────────────── */}
-      <PlatformDock />
     </div>
   )
-}
-
-// ─── Platform Dock Component ─────────────────────────────────────────────────
-
-function PlatformDock() {
-  const pathname = usePathname()
-  
-  // Don't show dock on login/register pages
-  if (pathname === "/platform/login" || pathname === "/platform/register") {
-    return null
-  }
-
-  const dockItems = [
-    {
-      id: "dashboard",
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      label: "Dashboard",
-      href: "/platform/dashboard",
-    },
-    {
-      id: "horus-ai",
-      icon: <Bot className="h-5 w-5" />,
-      label: "Horus AI",
-      href: "/platform/horus-ai",
-    },
-    {
-      id: "evidence",
-      icon: <FileText className="h-5 w-5" />,
-      label: "Evidence",
-      href: "/platform/evidence",
-    },
-    {
-      id: "gap-analysis",
-      icon: <Sparkles className="h-5 w-5" />,
-      label: "Gap Analysis",
-      href: "/platform/gap-analysis",
-    },
-    {
-      id: "analytics",
-      icon: <BarChart3 className="h-5 w-5" />,
-      label: "Analytics",
-      href: "/platform/analytics",
-    },
-  ]
-
-  return <Dock items={dockItems} />
 }

@@ -22,6 +22,8 @@ from app.dashboard.router import router as dashboard_router
 from app.notifications.router import router as notifications_router
 from app.ai.router import router as ai_router
 from app.gap_analysis.router import router as gap_analysis_router
+from app.platform_state.router import router as platform_state_router
+from app.horus.router import router as horus_router
 
 # Configure logging
 logging.basicConfig(
@@ -146,6 +148,8 @@ app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"]
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(ai_router, prefix="/api/ai", tags=["AI"])
 app.include_router(gap_analysis_router, prefix="/api/gap-analysis", tags=["Gap Analysis"])
+app.include_router(platform_state_router, prefix="/api", tags=["Platform State"])
+app.include_router(horus_router, prefix="/api", tags=["Horus"])
 
 
 @app.get("/")

@@ -169,25 +169,35 @@ You are Horus AI, the central intelligence of the Ayn Platform - a Quality Assur
 YOUR ROLE:
 - You are NOT just a chatbot - you are the brain that connects ALL platform modules
 - You have access to Evidence, Gap Analysis, Dashboard, and Archive modules
-- You help users navigate compliance (ISO 21001, ISO 9001, NAQAAE)
+- You are an expert in ALL educational ISO standards, not just one
+
+EDUCATIONAL STANDARDS YOU KNOW:
+1. ISO 21001:2018 - Educational organizations management systems (EOMS)
+2. ISO 9001:2015 - Quality management systems (applicable to education)
+3. NAQAAE - National Authority for Quality Assurance and Accreditation of Education (Egypt)
+4. ISO/IEC 17024 - Conformity assessment (certification programs)
+5. ISO 29993 - Learning services outside formal education
+6. ISO 29994 - E-learning quality
 
 CAPABILITIES:
-1. Analyze uploaded files and suggest where they fit in the compliance framework
-2. Connect evidence to specific compliance gaps
-3. Track progress across standards
+1. Analyze uploaded files and identify which standard(s) they relate to
+2. Connect evidence to specific compliance gaps across ANY standard
+3. Track progress across ALL standards simultaneously
 4. Suggest actions that span multiple modules
 5. Remember context across conversations
 
 CROSS-MODULE THINKING:
 When a user uploads a file:
-- Suggest saving it to Evidence
-- Check if it addresses any Gap Analysis items
+- Analyze it against ALL relevant educational standards
+- Suggest saving it to Evidence with appropriate standard tags
+- Check if it addresses any Gap Analysis items (any standard)
 - Note how it affects Dashboard metrics
 - Recommend Archive tags
 
 When a user asks about compliance:
-- Check current Evidence status
-- Reference relevant Gaps
+- Consider ALL educational standards (ISO 21001, ISO 9001, NAQAAE, etc.)
+- Check current Evidence status across standards
+- Reference relevant Gaps (any standard)
 - Suggest next steps across modules
 
 TONE:
@@ -195,14 +205,21 @@ TONE:
 - Always specific (reference actual items from context)
 - Action-oriented (suggest concrete next steps)
 - Educational (explain compliance concepts clearly)
+- Comprehensive (consider multiple standards when relevant)
 
 RESPONSE FORMAT:
 Provide clear, structured responses. When suggesting actions, use this format:
 [ACTION:module:description]
 Example: [ACTION:evidence:Save this file as ISO 21001 Policy evidence]
 
-If referencing specific items, be precise:
-"I see you have a gap in Clause 4.1 (Context of the Organization). The policy document you uploaded yesterday could address this."
+If referencing specific items, be precise and mention the relevant standard:
+"I see you have a gap in ISO 21001 Clause 4.1 (Context of the Organization). The policy document you uploaded yesterday could address this."
+
+IMPORTANT: Always analyze files comprehensively. A single document might:
+- Support ISO 21001 (educational management)
+- Support ISO 9001 (quality management)  
+- Support NAQAAE (local accreditation)
+- Identify ALL applicable standards and clauses.
     `.trim()
   }
 
@@ -416,45 +433,134 @@ If referencing specific items, be precise:
     // 2. Send to AI for analysis
     // 3. Parse response for document type, standard, clauses
     
-    // For now, return simulated analysis based on filename
+    // For now, return simulated analysis based on filename keywords
+    // Supporting ALL educational ISO standards
     const name = file.name.toLowerCase()
     
-    if (name.includes("policy") || name.includes("سياسة")) {
+    // ISO 9001 Quality Management
+    if (name.includes("quality") || name.includes("جودة")) {
+      if (name.includes("manual") || name.includes("كتيب")) {
+        return {
+          documentType: "manual",
+          standard: "ISO 9001",
+          clauses: ["4.1", "4.2", "4.3", "4.4"],
+          summary: "Quality Management System Manual",
+          keywords: ["quality manual", "QMS", "ISO 9001", "management system"],
+          confidence: 0.9
+        }
+      }
+      if (name.includes("policy") || name.includes("سياسة")) {
+        return {
+          documentType: "policy",
+          standard: "ISO 9001",
+          clauses: ["5.1", "5.2", "5.3"],
+          summary: "Quality Policy aligned with ISO 9001 requirements",
+          keywords: ["policy", "quality", "ISO 9001", "commitment"],
+          confidence: 0.88
+        }
+      }
+    }
+    
+    // ISO 21001 Educational Management
+    if (name.includes("educational") || name.includes("تعليمي") || name.includes("eoms")) {
       return {
         documentType: "policy",
         standard: "ISO 21001",
-        clauses: ["4.1", "4.2", "5.1"],
-        summary: "Quality policy document outlining institutional commitment",
-        keywords: ["policy", "quality", "commitment", "objectives"],
+        clauses: ["4.1", "4.2", "5.1", "6.1"],
+        summary: "Educational Organization Management System (EOMS) document",
+        keywords: ["education", "EOMS", "ISO 21001", "learning", "learner"],
+        confidence: 0.92
+      }
+    }
+    
+    // NAQAAE (Egyptian accreditation)
+    if (name.includes("naqaae") || name.includes("اعتماد") || name.includes("تقويم")) {
+      return {
+        documentType: "report",
+        standard: "NAQAAE",
+        clauses: ["Standard 1", "Standard 2", "Standard 3"],
+        summary: "NAQAAE accreditation or self-assessment document",
+        keywords: ["NAQAAE", "accreditation", "Egypt", "quality assurance"],
         confidence: 0.85
       }
     }
     
-    if (name.includes("procedure") || name.includes("إجراء")) {
+    // Generic Policy
+    if (name.includes("policy") || name.includes("سياسة")) {
+      return {
+        documentType: "policy",
+        standard: "ISO 21001",  // Default to educational standard
+        clauses: ["4.1", "4.2", "5.1"],
+        summary: "Institutional policy document (potentially covers ISO 21001 & ISO 9001)",
+        keywords: ["policy", "institutional", "compliance"],
+        confidence: 0.75
+      }
+    }
+    
+    // Procedures
+    if (name.includes("procedure") || name.includes("procedure") || name.includes("إجراء")) {
       return {
         documentType: "procedure",
         standard: "ISO 21001",
-        clauses: ["7.1", "7.2"],
+        clauses: ["7.1", "7.2", "7.3"],
         summary: "Operational procedure document",
-        keywords: ["procedure", "process", "steps"],
+        keywords: ["procedure", "process", "steps", "operations"],
         confidence: 0.78
       }
     }
     
-    if (name.includes("record") || name.includes("سجل")) {
+    // Curriculum / Learning
+    if (name.includes("curriculum") || name.includes("منهج") || name.includes("curriculum")) {
+      return {
+        documentType: "curriculum",
+        standard: "ISO 21001",
+        clauses: ["6.2", "6.3", "8.1"],
+        summary: "Curriculum design and development document",
+        keywords: ["curriculum", "learning", "education", "program design"],
+        confidence: 0.82
+      }
+    }
+    
+    // Assessment / Evaluation
+    if (name.includes("assessment") || name.includes("تقييم") || name.includes("exam")) {
+      return {
+        documentType: "assessment",
+        standard: "ISO 21001",
+        clauses: ["8.2", "8.3", "9.1"],
+        summary: "Assessment and evaluation procedures or records",
+        keywords: ["assessment", "evaluation", "examination", "testing"],
+        confidence: 0.8
+      }
+    }
+    
+    // Records / Evidence
+    if (name.includes("record") || name.includes("سجل") || name.includes("form")) {
       return {
         documentType: "record",
         standard: null,
-        summary: "Evidence record or form",
-        keywords: ["record", "evidence"],
+        summary: "Evidence record or form (may support multiple standards)",
+        keywords: ["record", "evidence", "form", "data"],
         confidence: 0.65
       }
     }
     
+    // Risk Management
+    if (name.includes("risk") || name.includes("مخاطر")) {
+      return {
+        documentType: "risk_assessment",
+        standard: "ISO 21001",
+        clauses: ["6.1", "6.2", "9.3"],
+        summary: "Risk assessment and management document",
+        keywords: ["risk", "assessment", "mitigation", "opportunities"],
+        confidence: 0.83
+      }
+    }
+    
+    // Default fallback
     return {
       documentType: "other",
       standard: null,
-      summary: "Document uploaded for analysis",
+      summary: "Document uploaded for analysis against educational standards",
       keywords: [],
       confidence: 0.3
     }
@@ -471,39 +577,47 @@ If referencing specific items, be precise:
   }> {
     const { state } = this.brain
     
-    // Dynamic quick actions based on platform state
+    // Dynamic quick actions covering ALL educational standards
     const actions = [
       {
-        label: "Explain ISO 21001",
-        description: "Key clauses & requirements",
-        prompt: "Explain the key requirements of ISO 21001 clause by clause, focusing on what an educational institution needs to implement."
+        label: "Compare ISO Standards",
+        description: "ISO 21001 vs ISO 9001 vs NAQAAE",
+        prompt: "Compare the key differences and similarities between ISO 21001 (Educational Management), ISO 9001 (Quality Management), and NAQAAE standards. Which clauses overlap and how do they complement each other for educational institutions?"
       },
       {
-        label: "Gap Analysis",
-        description: "Identify compliance gaps",
-        prompt: "Help me identify common compliance gaps in educational institutions and how to address them."
+        label: "Analyze My Documents",
+        description: "Check compliance across all standards",
+        prompt: "Analyze my uploaded documents and tell me which ISO 21001, ISO 9001, and NAQAAE requirements they cover. Identify gaps where I need more evidence."
       },
       {
-        label: "NAQAAE Guidance",
-        description: "Self-assessment help",
-        prompt: "Guide me through the NAQAAE self-assessment process. What are the main domains and required evidence?"
+        label: "Build Compliance Map",
+        description: "See all standards together",
+        prompt: "Create a comprehensive compliance map showing how ISO 21001, ISO 9001, and NAQAAE standards interact. Show me which documents can satisfy multiple standards simultaneously."
       }
     ]
     
     // Add contextual actions based on state
-    if (state.gaps.filter(g => g.suggestedFiles && g.suggestedFiles.length > 0).length > 0) {
-      actions.push({
-        label: "Link Files to Gaps",
-        description: "Connect uploaded files to gaps",
-        prompt: "Show me which of my uploaded files can address specific compliance gaps."
-      })
+    if (state.files.length > 0) {
+      const hasUnlinkedFiles = state.files.some(f => 
+        !state.evidence.some(e => e.files?.includes(f.id))
+      )
+      
+      if (hasUnlinkedFiles) {
+        actions.unshift({
+          label: "Analyze Uploaded Files",
+          description: `${state.files.length} file(s) ready for analysis`,
+          prompt: "Analyze all my uploaded files against ISO 21001, ISO 9001, and NAQAAE standards. Tell me what each file covers and which gaps they can address."
+        })
+      }
     }
     
-    if (state.files.length > 0 && state.evidence.length === 0) {
-      actions.push({
-        label: "Save Files as Evidence",
-        description: "Organize uploads in Evidence",
-        prompt: "Help me organize my uploaded files into the Evidence module for compliance tracking."
+    // If there are gaps with suggested files, prioritize that
+    const gapsWithSuggestions = state.gaps.filter(g => g.suggestedFiles && g.suggestedFiles.length > 0)
+    if (gapsWithSuggestions.length > 0) {
+      actions.unshift({
+        label: "Link Files to Gaps",
+        description: `${gapsWithSuggestions.length} gaps have matching files`,
+        prompt: "Show me which of my uploaded files can address specific compliance gaps across ISO 21001, ISO 9001, and NAQAAE standards."
       })
     }
     

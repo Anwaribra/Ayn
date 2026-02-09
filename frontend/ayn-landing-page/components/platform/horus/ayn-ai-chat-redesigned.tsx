@@ -54,27 +54,28 @@ const CHAT_STORAGE_KEY = "horus-ai-chat-history"
 const SESSIONS_STORAGE_KEY = "horus-ai-sessions"
 
 // ─── Quick Actions ──────────────────────────────────────────────────────────────
+// These cover ALL educational ISO standards, not just one
 const QUICK_ACTIONS = [
   {
     icon: FileText,
-    label: "Explain ISO 21001",
-    description: "Key clauses & requirements",
-    prompt: "Explain the key requirements of ISO 21001 clause by clause, focusing on what an educational institution needs to implement.",
+    label: "Compare All Standards",
+    description: "ISO 21001, 9001, NAQAAE",
+    prompt: "Compare ISO 21001 (Educational Management), ISO 9001 (Quality Management), and NAQAAE standards. Show me how they overlap and which documents can satisfy multiple standards.",
     color: "bg-blue-500/10 text-blue-600 border-blue-200",
   },
   {
     icon: Target,
-    label: "Gap Analysis",
-    description: "Identify compliance gaps",
-    prompt: "Help me identify common compliance gaps in educational institutions and how to address them.",
+    label: "Multi-Standard Gap Analysis",
+    description: "Check compliance across all standards",
+    prompt: "Help me identify compliance gaps across ISO 21001, ISO 9001, and NAQAAE. Which gaps are common across standards and which are unique to each?",
     color: "bg-emerald-500/10 text-emerald-600 border-emerald-200",
   },
   {
     icon: Lightbulb,
-    label: "NAQAAE Guidance",
-    description: "Self-assessment help",
-    prompt: "Guide me through the NAQAAE self-assessment process. What are the main domains and required evidence?",
-    color: "bg-amber-500/10 text-amber-600 border-amber-200",
+    label: "Universal Evidence Guide",
+    description: "Documents that cover multiple standards",
+    prompt: "What types of evidence documents can satisfy requirements across ISO 21001, ISO 9001, and NAQAAE simultaneously? Give me a comprehensive list with explanations.",
+    color: "bg-amber-500/10 text-amber-600 border-blue-200",
   },
 ]
 

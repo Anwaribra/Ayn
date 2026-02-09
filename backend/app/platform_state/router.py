@@ -18,6 +18,7 @@ Endpoints:
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
+from pydantic import BaseModel
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db, Prisma
 from .service import StateService
@@ -30,12 +31,15 @@ router = APIRouter(prefix="/state", tags=["platform-state"])
 # WRITE ENDPOINTS (Modules call these)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+class FileUploadRequest(BaseModel):
+    fileId: str
+    name: str
+    file_type: str
+    size: int
+
 @router.post("/files", response_model=PlatformFile)
 async def record_file_upload(
-    file_id: str,
-    name: str,
-    file_type: str,
-    size: int,
+    request: FileUploadRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -44,20 +48,23 @@ async def record_file_upload(
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_file_upload(
         user_id=user_id,
-        file_id=file_id,
-        name=name,
-        file_type=file_type,
-        size=size
+        file_id=request.fileId,
+        name=request.name,
+        file_type=request.file_type,
+        size=request.size
     )
 
+
+class FileAnalysisRequest(BaseModel):
+    standards: List[str]
+    document_type: Optional[str] = None
+    clauses: List[str] = []
+    confidence: float = 0
 
 @router.post("/files/{file_id}/analyze", response_model=PlatformFile)
 async def record_file_analysis(
     file_id: str,
-    standards: List[str],
-    document_type: Optional[str] = None,
-    clauses: List[str] = [],
-    confidence: float = 0,
+    request: FileAnalysisRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -65,19 +72,22 @@ async def record_file_analysis(
     service = StateService(db)
     return await service.record_file_analysis(
         file_id=file_id,
-        standards=standards,
-        document_type=document_type,
-        clauses=clauses,
-        confidence=confidence
+        standards=request.standards,
+        document_type=request.document_type,
+        clauses=request.clauses,
+        confidence=request.confidence
     )
 
 
+class EvidenceRequest(BaseModel):
+    evidence_id: str
+    title: str
+    ev_type: str
+    criteria_refs: List[str] = []
+
 @router.post("/evidence", response_model=PlatformEvidence)
 async def record_evidence_created(
-    evidence_id: str,
-    title: str,
-    ev_type: str,
-    criteria_refs: List[str] = [],
+    request: EvidenceRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -86,33 +96,39 @@ async def record_evidence_created(
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_evidence_created(
         user_id=user_id,
-        evidence_id=evidence_id,
-        title=title,
-        ev_type=ev_type,
-        criteria_refs=criteria_refs
+        evidence_id=request.evidence_id,
+        title=request.title,
+        ev_type=request.ev_type,
+        criteria_refs=request.criteria_refs
     )
 
+
+class EvidenceLinkRequest(BaseModel):
+    file_ids: List[str]
 
 @router.post("/evidence/{evidence_id}/link")
 async def record_evidence_linked(
     evidence_id: str,
-    file_ids: List[str],
+    request: EvidenceLinkRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """Record evidence linked to files."""
     service = StateService(db)
-    await service.record_evidence_linked(evidence_id, file_ids)
+    await service.record_evidence_linked(evidence_id, request.file_ids)
     return {"status": "ok"}
 
 
+class GapRequest(BaseModel):
+    gap_id: str
+    standard: str
+    clause: str
+    description: str
+    severity: str = "medium"
+
 @router.post("/gaps", response_model=PlatformGap)
 async def record_gap_defined(
-    gap_id: str,
-    standard: str,
-    clause: str,
-    description: str,
-    severity: str = "medium",
+    request: GapRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -121,24 +137,27 @@ async def record_gap_defined(
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_gap_defined(
         user_id=user_id,
-        gap_id=gap_id,
-        standard=standard,
-        clause=clause,
-        description=description,
-        severity=severity
+        gap_id=request.gap_id,
+        standard=request.standard,
+        clause=request.clause,
+        description=request.description,
+        severity=request.severity
     )
 
+
+class GapAddressRequest(BaseModel):
+    evidence_id: str
 
 @router.post("/gaps/{gap_id}/address")
 async def record_gap_addressed(
     gap_id: str,
-    evidence_id: str,
+    request: GapAddressRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """Record gap addressed by evidence."""
     service = StateService(db)
-    await service.record_gap_addressed(gap_id, evidence_id)
+    await service.record_gap_addressed(gap_id, request.evidence_id)
     return {"status": "ok"}
 
 
@@ -154,12 +173,15 @@ async def record_gap_closed(
     return {"status": "ok"}
 
 
+class MetricRequest(BaseModel):
+    metric_id: str
+    name: str
+    value: float
+    source_module: str
+
 @router.post("/metrics", response_model=PlatformMetric)
 async def record_metric_update(
-    metric_id: str,
-    name: str,
-    value: float,
-    source_module: str,
+    request: MetricRequest,
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -168,6 +190,11 @@ async def record_metric_update(
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_metric_update(
         user_id=user_id,
+        metric_id=request.metric_id,
+        name=request.name,
+        value=request.value,
+        source_module=request.source_module
+    )
         metric_id=metric_id,
         name=name,
         value=value,

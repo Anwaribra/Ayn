@@ -46,7 +46,6 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
-import { HorusBrainProvider } from "@/lib/horus"
 import type { Notification } from "@/types"
 
 // ─── Route labels for auto-breadcrumbs ───────────────────────────────────────
@@ -110,9 +109,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   )
 
   return (
-    <HorusBrainProvider>
-      <div className="flex min-h-screen bg-background text-foreground">
-        {/* ── Sidebar ────────────────────────────────────────────────────── */}
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* ── Sidebar ────────────────────────────────────────────────────── */}
         <PlatformSidebar
           open={sidebarOpen}
           onToggle={() => setSidebarOpen((prev) => !prev)}
@@ -296,7 +294,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* ── Command Palette ───────────────────────────────────────────── */}
       <CommandPalette />
-      </div>
-    </HorusBrainProvider>
+    </div>
   )
 }

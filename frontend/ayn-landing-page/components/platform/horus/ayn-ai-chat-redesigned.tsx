@@ -129,8 +129,10 @@ export default function AynAIChatRedesigned() {
       
       {/* Error */}
       {error && (
-        <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-          {error}
+        <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-medium">Backend state engine not ready</p>
+          <p className="mt-1 text-amber-700">The platform state database needs to be migrated.</p>
+          <p className="mt-2 text-xs text-amber-600">Run: prisma migrate dev --name add_platform_state</p>
         </div>
       )}
       

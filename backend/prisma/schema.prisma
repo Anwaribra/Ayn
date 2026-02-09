@@ -25,6 +25,13 @@ model User {
   evidence      Evidence[] @relation("EvidenceUploader")
   notifications Notification[]
 
+  // Platform State Relations
+  platformFiles    PlatformFile[]
+  platformEvidence PlatformEvidence[]
+  platformGaps     PlatformGap[]
+  platformMetrics  PlatformMetric[]
+  platformEvents   PlatformEvent[]
+
   @@index([email])
   @@index([institutionId])
 }
@@ -191,4 +198,118 @@ model Notification {
 
   @@index([userId])
   @@index([read])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLATFORM STATE MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+model PlatformFile {
+  id          String   @id
+  name        String
+  type        String
+  size        Int
+  userId      String
+  
+  // Analysis results
+  detectedStandards String[] @default([])
+  documentType String?
+  clauses     String[] @default([])
+  analysisConfidence Float @default(0)
+  
+  // State
+  status      String   @default("uploaded")
+  
+  // Cross-module links (stored as JSON)
+  linkedEvidenceIds Json @default("[]")
+  linkedGapIds  Json @default("[]")
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model PlatformEvidence {
+  id          String   @id
+  title       String
+  type        String
+  userId      String
+  
+  // State
+  status      String   @default("defined")
+  
+  // References
+  sourceFileIds Json @default("[]")
+  criteriaRefs Json @default("[]")
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model PlatformGap {
+  id          String   @id
+  standard    String
+  clause      String
+  description String
+  severity    String   @default("medium")
+  userId      String
+  
+  // State
+  status      String   @default("defined")
+  
+  // References
+  evidenceIds Json @default("[]")
+  relatedFileIds Json @default("[]")
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  closedAt    DateTime?
+  
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([standard])
+}
+
+model PlatformMetric {
+  id          String   @id
+  name        String
+  value       Float
+  previousValue Float?
+  sourceModule String
+  userId      String
+  
+  updatedAt   DateTime @updatedAt
+  
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([sourceModule])
+}
+
+model PlatformEvent {
+  id          String   @id @default(uuid())
+  type        String
+  userId      String
+  entityId    String?
+  metadata    Json     @default("{}")
+  timestamp   DateTime @default(now())
+  
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([type])
+  @@index([timestamp])
 }

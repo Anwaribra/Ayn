@@ -51,7 +51,7 @@ import {
 import { AmbientBackground } from "@/components/ui/ambient-background"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { CountUp } from "@/components/ui/animated-number"
+import { NumberTicker } from "@/components/ui/number-ticker"
 import { AIInsightsCard } from "@/components/platform/ai-insights-card"
 import { PageTransition } from "@/components/platform/page-transition"
 
@@ -75,7 +75,7 @@ function AnimatedStatValue({ value, suffix = "" }: { value: string | number; suf
     return <span>{value}</span>
   }
   
-  return <CountUp end={numericValue} suffix={suffix} duration={1.5} />
+  return <NumberTicker value={numericValue} suffix={suffix} duration={2} />
 }
 
 function StatCard({

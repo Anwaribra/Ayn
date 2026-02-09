@@ -1,12 +1,10 @@
 "use client"
 
-import type React from "react"
-
+import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
-import { useRouter } from "next/navigation"
-import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -15,17 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ArrowLeft, Upload, FileText, X, Loader2, Check } from "lucide-react"
+import { ArrowLeft, Loader2, Check } from "lucide-react"
 import Link from "next/link"
 import useSWR from "swr"
 import { toast } from "sonner"
+import { FileUpload } from "@/components/ui/file-upload"
+import { motion } from "framer-motion"
 
 const ALLOWED_TYPES = [
   ".pdf", ".doc", ".docx", ".xls", ".xlsx",
   ".jpg", ".jpeg", ".png", ".gif", ".txt",
 ]
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export default function UploadEvidencePage() {
   const router = useRouter()
@@ -33,7 +31,6 @@ export default function UploadEvidencePage() {
   const [uploading, setUploading] = useState(false)
   const [uploadedCount, setUploadedCount] = useState(0)
   const [error, setError] = useState("")
-  const [dragActive, setDragActive] = useState(false)
   const [selectedStandardId, setSelectedStandardId] = useState<string>("")
   const [selectedCriterionId, setSelectedCriterionId] = useState<string>("")
 
@@ -43,65 +40,10 @@ export default function UploadEvidencePage() {
     () => api.getCriteria(selectedStandardId)
   )
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
+  // Handle files from the new FileUpload component
+  const handleFilesAdded = useCallback((newFiles: File[]) => {
+    setFiles((prev) => [...prev, ...newFiles])
   }, [])
-
-  const validateFile = (file: File): string | null => {
-    const ext = "." + file.name.split(".").pop()?.toLowerCase()
-    if (!ALLOWED_TYPES.includes(ext)) {
-      return `${file.name}: Unsupported file type. Allowed: ${ALLOWED_TYPES.join(", ")}`
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      return `${file.name}: File too large. Maximum size is 10MB.`
-    }
-    return null
-  }
-
-  const addFiles = useCallback((newFiles: File[]) => {
-    const errors: string[] = []
-    const valid: File[] = []
-
-    for (const file of newFiles) {
-      const err = validateFile(file)
-      if (err) {
-        errors.push(err)
-      } else {
-        valid.push(file)
-      }
-    }
-
-    if (errors.length > 0) {
-      toast.error(errors.join("\n"))
-    }
-
-    if (valid.length > 0) {
-      setFiles((prev) => [...prev, ...valid])
-    }
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setDragActive(false)
-      const droppedFiles = Array.from(e.dataTransfer.files)
-      addFiles(droppedFiles)
-    },
-    [addFiles]
-  )
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      addFiles(Array.from(e.target.files))
-    }
-  }
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index))
@@ -151,10 +93,8 @@ export default function UploadEvidencePage() {
     }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  const handleUploadFiles = async (uploadedFiles: File[]) => {
+    await handleFilesAdded(uploadedFiles)
   }
 
   return (
@@ -179,7 +119,11 @@ export default function UploadEvidencePage() {
             Back to evidence
           </Link>
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 space-y-6"
+          >
             {error && (
               <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg whitespace-pre-line">
                 {error}
@@ -233,73 +177,28 @@ export default function UploadEvidencePage() {
               </div>
             </div>
 
-            {/* Drop Zone */}
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
-                dragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
-              }`}
-            >
-              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-foreground font-medium mb-2">
-                Drag and drop files here
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-              <input
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload"
-                accept={ALLOWED_TYPES.join(",")}
-              />
-              <label htmlFor="file-upload">
-                <Button variant="outline" asChild>
-                  <span>Select Files</span>
-                </Button>
-              </label>
-              <p className="text-xs text-muted-foreground mt-4">
-                Supported: PDF, Word, Excel, Images, Text (Max 10MB each)
-              </p>
-            </div>
+            {/* Advanced File Upload */}
+            <FileUpload
+              onUpload={handleUploadFiles}
+              accept={ALLOWED_TYPES.join(",")}
+              maxSize={10}
+              maxFiles={20}
+            />
 
-            {/* File List */}
+            {/* Selected Files List (if not using the upload component's internal list) */}
             {files.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium text-foreground">
-                  Selected Files ({files.length})
-                </h3>
-                {files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground truncate max-w-[200px] sm:max-w-none">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatFileSize(file.size)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      disabled={uploading}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <span className="text-sm text-muted-foreground">
+                  {files.length} file{files.length !== 1 ? "s" : ""} ready to upload
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFiles([])}
+                  disabled={uploading}
+                >
+                  Clear all
+                </Button>
               </div>
             )}
 
@@ -352,7 +251,7 @@ export default function UploadEvidencePage() {
                 </Button>
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </ProtectedRoute>

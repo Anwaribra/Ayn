@@ -201,13 +201,8 @@ function exportToPDF(report: GapAnalysis) {
 
 // ─── Compliance Journey Tracker ──────────────────────────────────────────────
 
-interface JourneyStep {
-  id: string
-  label: string
-  description: string
-  icon: React.ComponentType<{ className?: string }>
-  status: "completed" | "current" | "upcoming"
-}
+import { Timeline } from "@/components/ui/timeline"
+import { FileSearch, ClipboardCheck, Target, Search, Award } from "lucide-react"
 
 function ComplianceJourney({
   reportCount,
@@ -216,108 +211,55 @@ function ComplianceJourney({
   reportCount: number
   avgScore: number
 }) {
-  const steps: JourneyStep[] = [
+  const items = [
     {
       id: "self-assessment",
-      label: "Self-Assessment",
-      description: "Initial gap analysis",
-      icon: FileSearch,
-      status: reportCount > 0 ? "completed" : "current",
+      title: "Self-Assessment",
+      description: "Initial gap analysis completed",
+      status: reportCount > 0 ? ("completed" as const) : ("current" as const),
+      icon: <FileSearch className="h-5 w-5" />,
     },
     {
       id: "evidence",
-      label: "Evidence Collection",
-      description: "Upload & link evidence",
-      icon: ClipboardCheck,
+      title: "Evidence Collection",
+      description: "Upload & link evidence to criteria",
       status:
         reportCount > 0 && avgScore >= 30
           ? avgScore >= 60
-            ? "completed"
-            : "current"
-          : "upcoming",
+            ? ("completed" as const)
+            : ("current" as const)
+          : ("upcoming" as const),
+      icon: <ClipboardCheck className="h-5 w-5" />,
     },
     {
       id: "gap-closure",
-      label: "Gap Closure",
-      description: "Address findings",
-      icon: Target,
+      title: "Gap Closure",
+      description: "Address findings and improve",
       status:
         avgScore >= 60
           ? avgScore >= 80
-            ? "completed"
-            : "current"
-          : "upcoming",
+            ? ("completed" as const)
+            : ("current" as const)
+          : ("upcoming" as const),
+      icon: <Target className="h-5 w-5" />,
     },
     {
       id: "review",
-      label: "Site Review",
+      title: "Site Review",
       description: "External audit preparation",
-      icon: Search,
-      status: avgScore >= 80 ? "current" : "upcoming",
+      status: avgScore >= 80 ? ("current" as const) : ("upcoming" as const),
+      icon: <Search className="h-5 w-5" />,
     },
     {
       id: "certified",
-      label: "Certified",
-      description: "Compliance achieved",
-      icon: Award,
-      status: avgScore >= 95 ? "completed" : "upcoming",
+      title: "Certified",
+      description: "Compliance certification achieved",
+      status: avgScore >= 95 ? ("completed" as const) : ("upcoming" as const),
+      icon: <Award className="h-5 w-5" />,
     },
   ]
 
-  return (
-    <div className="flex items-center justify-between gap-2">
-      {steps.map((step, i) => {
-        const Icon = step.icon
-        return (
-          <div key={step.id} className="flex flex-1 items-center">
-            <div className="flex flex-col items-center text-center">
-              <div
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
-                  step.status === "completed"
-                    ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                    : step.status === "current"
-                      ? "bg-[var(--brand)]/10 text-[var(--brand)] ring-2 ring-[var(--brand)]/20"
-                      : "bg-muted text-muted-foreground",
-                )}
-              >
-                {step.status === "completed" ? (
-                  <CheckCircle2 className="h-5 w-5" />
-                ) : (
-                  <Icon className="h-5 w-5" />
-                )}
-              </div>
-              <p
-                className={cn(
-                  "mt-2 text-[11px] font-medium",
-                  step.status === "completed"
-                    ? "text-emerald-500"
-                    : step.status === "current"
-                      ? "text-foreground"
-                      : "text-muted-foreground",
-                )}
-              >
-                {step.label}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {step.description}
-              </p>
-            </div>
-            {i < steps.length - 1 && (
-              <div
-                className={cn(
-                  "mx-1 h-0.5 flex-1",
-                  step.status === "completed"
-                    ? "bg-emerald-500"
-                    : "bg-border",
-                )}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
+  return <Timeline items={items} />
 }
 
 // ─── Score Trend Chart ──────────────────────────────────────────────────────────

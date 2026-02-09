@@ -3,56 +3,91 @@
 /**
  * HORUS AI INTERFACE
  * 
- * Renders state observations from backend.
- * No local state simulation.
+ * State observer + Chat interface
  */
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Paperclip, X, File, Image as ImageIcon, FileSpreadsheet, FileText } from "lucide-react"
+import { Paperclip, X, File, Image as ImageIcon, FileSpreadsheet, FileText, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 
-interface Observation {
+interface Message {
   id: string
+  role: "user" | "assistant"
   content: string
   timestamp: number
 }
 
 export default function AynAIChatRedesigned() {
-  const [observations, setObservations] = useState<Observation[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState("")
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   
-  // Load initial observation from backend
+  // Welcome message on first load
   useEffect(() => {
-    loadObservation()
+    setMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: "Horus state observer active.\n\nPlatform state:\n- Files: 0\n- Evidence: 0\n- Gaps: 0\n\nUpload files or ask about platform state.",
+      timestamp: Date.now()
+    }])
   }, [])
   
   // Auto-scroll to latest
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [observations])
+  }, [messages])
   
-  const loadObservation = async (query?: string) => {
+  const handleSendMessage = async () => {
+    if (!input.trim() && pendingFiles.length === 0) return
+    
+    const userContent = input.trim() || "Uploaded files"
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userContent,
+      timestamp: Date.now()
+    }
+    
+    setMessages(prev => [...prev, userMsg])
+    setInput("")
     setIsLoading(true)
     setError(null)
+    
     try {
-      const obs = await api.horusObserve(query)
-      setObservations(prev => [...prev, {
+      // Send to backend
+      const obs = await api.horusObserve(userContent)
+      const assistantMsg: Message = {
         id: obs.state_hash || Date.now().toString(),
+        role: "assistant",
         content: obs.content,
-        timestamp: obs.timestamp
+        timestamp: obs.timestamp || Date.now()
+      }
+      setMessages(prev => [...prev, assistantMsg])
+    } catch (err: any) {
+      setError(err.message || "Failed to get response")
+      // Add error as assistant message
+      setMessages(prev => [...prev, {
+        id: "error-" + Date.now(),
+        role: "assistant",
+        content: "⚠️ " + (err.message || "Failed to get response from backend."),
+        timestamp: Date.now()
       }])
-    } catch (err) {
-      setError("Failed to load state observation")
-      console.error(err)
     } finally {
       setIsLoading(false)
+    }
+  }
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
     }
   }
   
@@ -80,9 +115,39 @@ export default function AynAIChatRedesigned() {
     
     if (fileInputRef.current) fileInputRef.current.value = ""
     
-    // Clear pending and refresh observation
+    // Clear pending and send message about files
     setPendingFiles([])
-    await loadObservation("files uploaded")
+    
+    // Trigger message send for files
+    const fileNames = files.map(f => f.name).join(", ")
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: `Uploaded: ${fileNames}`,
+      timestamp: Date.now()
+    }
+    setMessages(prev => [...prev, userMsg])
+    setIsLoading(true)
+    
+    try {
+      const obs = await api.horusObserve("files uploaded")
+      setMessages(prev => [...prev, {
+        id: obs.state_hash || Date.now().toString(),
+        role: "assistant",
+        content: obs.content,
+        timestamp: obs.timestamp || Date.now()
+      }])
+    } catch (err: any) {
+      setError(err.message)
+      setMessages(prev => [...prev, {
+        id: "error-" + Date.now(),
+        role: "assistant",
+        content: "⚠️ " + (err.message || "Failed to process files"),
+        timestamp: Date.now()
+      }])
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
   
   const removeFile = useCallback((index: number) => {
@@ -119,7 +184,7 @@ export default function AynAIChatRedesigned() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => loadObservation()}
+            onClick={() => handleSendMessage()}
             disabled={isLoading}
           >
             {isLoading ? "Loading..." : "Refresh"}
@@ -127,37 +192,83 @@ export default function AynAIChatRedesigned() {
         </div>
       </div>
       
-      {/* Error */}
-      {error && (
-        <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <p className="font-medium">Backend state engine not ready</p>
-          <p className="mt-1 text-amber-700">The platform state database needs to be migrated.</p>
-          <p className="mt-2 text-xs text-amber-600">Run: prisma migrate dev --name add_platform_state</p>
-        </div>
-      )}
-      
-      {/* Observations */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-6 p-6">
-          {observations.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && (
             <div className="text-center text-sm text-muted-foreground">
-              No state observations yet.
+              No messages yet.
             </div>
           )}
           
-          {observations.map((obs) => (
+          {messages.map((msg) => (
             <motion.div
-              key={obs.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="font-mono text-sm"
+              key={msg.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "flex gap-4",
+                msg.role === "user" ? "flex-row-reverse" : "flex-row"
+              )}
             >
-              <div className="mb-1 text-xs text-muted-foreground/60">
-                {new Date(obs.timestamp).toLocaleTimeString()}
+              {/* Avatar */}
+              <div className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium",
+                msg.role === "user" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {msg.role === "user" ? "You" : "H"}
               </div>
-              <pre className="whitespace-pre-wrap text-foreground/90">{obs.content}</pre>
+              
+              {/* Content */}
+              <div className={cn(
+                "flex-1 space-y-1",
+                msg.role === "user" ? "text-right" : "text-left"
+              )}>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{msg.role === "user" ? "You" : "Horus Observer"}</span>
+                  <span>•</span>
+                  <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div className={cn(
+                  "inline-block max-w-full rounded-2xl px-4 py-3 text-sm",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
+                )}>
+                  <pre className="whitespace-pre-wrap font-sans">{msg.content}</pre>
+                </div>
+              </div>
             </motion.div>
           ))}
+          
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex gap-4"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                H
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Horus Observer</span>
+                  <span>•</span>
+                  <span>Thinking...</span>
+                </div>
+                <div className="mt-1 inline-block rounded-2xl bg-muted px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0ms" }} />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "150ms" }} />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
           <div ref={scrollRef} />
         </div>
       </div>
@@ -197,18 +308,32 @@ export default function AynAIChatRedesigned() {
               />
               <Button
                 variant="ghost"
-                size="sm"
-                className="gap-2"
+                size="icon"
+                className="h-9 w-9 shrink-0"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
               >
                 <Paperclip className="h-4 w-4" />
-                Attach
               </Button>
               
-              <div className="flex-1 text-xs text-muted-foreground">
-                Files are recorded to platform state
-              </div>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask Horus about platform state..."
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                disabled={isLoading}
+              />
+              
+              <Button
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={handleSendMessage}
+                disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

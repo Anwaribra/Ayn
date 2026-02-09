@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
@@ -373,31 +373,17 @@ export default function AynAIChatRedesigned() {
       {/* Top Gradient Orb */}
       <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl" />
 
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-between border-b border-border/50 bg-background/80 px-6 py-3 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20">
-            <Bot className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold">Horus AI</h1>
-              <Badge variant="secondary" className="text-[9px] font-medium">Pro</Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground">Quality Assurance Advisor</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setHistoryOpen(true)}>
-            <History className="h-4 w-4" />
+      {/* Floating Actions */}
+      <div className="absolute right-6 top-4 z-20 flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/50 backdrop-blur-sm" onClick={() => setHistoryOpen(true)}>
+          <History className="h-4 w-4" />
+        </Button>
+        {messages.length > 0 && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/50 backdrop-blur-sm" onClick={clearChat}>
+            <Plus className="h-4 w-4" />
           </Button>
-          {messages.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearChat}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </header>
+        )}
+      </div>
 
       {/* Empty State - Hero Design */}
       {!hasMessages && (

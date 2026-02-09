@@ -60,16 +60,13 @@ import {
   X,
   CheckCircle2,
   Loader2,
-  Eye,
 } from "lucide-react"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import Link from "next/link"
 import type { Evidence } from "@/types/evidence"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GöÇGöÇGöÇ Helpers GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
 
 function getFileName(url: string): string {
   try {
@@ -138,7 +135,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-// â”€â”€â”€ Drag & Drop Upload Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GöÇGöÇGöÇ Drag & Drop Upload Zone GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
 
 function DropZone({
   onFilesSelected,
@@ -238,19 +235,17 @@ function DropZone({
   )
 }
 
-// â”€â”€â”€ Evidence Grid Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GöÇGöÇGöÇ Evidence Grid Card GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
 
 function EvidenceGridCard({
   ev,
   onLink,
   onDelete,
-  onPreview,
   isDeleting,
 }: {
   ev: Evidence
   onLink: () => void
   onDelete: () => void
-  onPreview: () => void
   isDeleting: boolean
 }) {
   return (
@@ -298,15 +293,6 @@ function EvidenceGridCard({
             variant="ghost"
             size="sm"
             className="h-7 gap-1 text-xs"
-            onClick={onPreview}
-          >
-            <Eye className="h-3 w-3" />
-            Preview
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 gap-1 text-xs"
             onClick={() => window.open(ev.fileUrl, "_blank")}
           >
             <ExternalLink className="h-3 w-3" />
@@ -336,7 +322,7 @@ function EvidenceGridCard({
   )
 }
 
-// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GöÇGöÇGöÇ Main Page GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
 
 export default function EvidencePage() {
   return (
@@ -358,8 +344,6 @@ function EvidenceContent() {
   const [isLinking, setIsLinking] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [previewEvidence, setPreviewEvidence] = useState<Evidence | null>(null)
-  const [previewOpen, setPreviewOpen] = useState(false)
 
   const {
     data: evidence,
@@ -376,7 +360,7 @@ function EvidenceContent() {
     () => api.getCriteria(selectedStandardId),
   )
 
-  // â”€â”€ Filter & search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // GöÇGöÇ Filter & search GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
   const filteredEvidence = (evidence ?? []).filter((ev) => {
     const matchesSearch =
       !searchQuery ||
@@ -388,7 +372,7 @@ function EvidenceContent() {
     return matchesSearch && matchesFilter
   })
 
-  // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // GöÇGöÇ Handlers GöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇGöÇ
   const handleFilesSelected = async (files: File[]) => {
     setIsUploading(true)
     let successCount = 0
@@ -460,11 +444,6 @@ function EvidenceContent() {
     setSelectedStandardId("")
     setSelectedCriterionId("")
     setLinkDialogOpen(true)
-  }
-
-  const openPreview = (ev: Evidence) => {
-    setPreviewEvidence(ev)
-    setPreviewOpen(true)
   }
 
   const linkedCount = evidence?.filter((e) => e.criterionId).length ?? 0
@@ -606,18 +585,24 @@ function EvidenceContent() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <ToggleGroup
-                type="single"
-                value={viewMode}
-                onValueChange={(v) => v && setViewMode(v as "grid" | "list")}
-              >
-                <ToggleGroupItem value="grid" aria-label="Grid view">
+              <div className="flex rounded-lg border border-border">
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-r-none"
+                  onClick={() => setViewMode("grid")}
+                >
                   <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="list" aria-label="List view">
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-l-none"
+                  onClick={() => setViewMode("list")}
+                >
                   <LayoutList className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
+                </Button>
+              </div>
               <Link href="/platform/evidence/upload">
                 <Button size="sm" className="gap-2">
                   <Upload className="h-3.5 w-3.5" />
@@ -628,12 +613,7 @@ function EvidenceContent() {
           </CardContent>
         </Card>
 
-        {/* Evidence Content with Resizable Preview */}
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="min-h-[500px]"
-        >
-          <ResizablePanel defaultSize={previewOpen ? 60 : 100} minSize={40}>
+        {/* Evidence Content */}
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -680,7 +660,6 @@ function EvidenceContent() {
                 ev={ev}
                 onLink={() => openLinkDialog(ev)}
                 onDelete={() => handleDelete(ev.id)}
-                onPreview={() => openPreview(ev)}
                 isDeleting={isDeleting === ev.id}
               />
             ))}
@@ -746,15 +725,6 @@ function EvidenceContent() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => openPreview(ev)}
-                              title="Preview file"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
                               onClick={() =>
                                 window.open(ev.fileUrl, "_blank")
                               }
@@ -791,92 +761,7 @@ function EvidenceContent() {
             </CardContent>
           </Card>
         )}
-          </ResizablePanel>
-
-          {previewOpen && previewEvidence && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={40} minSize={30}>
-                <Card className="h-full border-border bg-card shadow-sm">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Preview</CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setPreviewOpen(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${getFileColor(previewEvidence.fileUrl)}`}>
-                        {getFileIcon(previewEvidence.fileUrl)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {getFileName(previewEvidence.fileUrl)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {getFileType(previewEvidence.fileUrl)} â€¢ {formatDate(previewEvidence.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {previewEvidence.criterionId ? (
-                      <Badge
-                        variant="default"
-                        className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
-                      >
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
-                        Linked to Criterion
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-500/20 text-amber-500"
-                      >
-                        Not Linked
-                      </Badge>
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        onClick={() => window.open(previewEvidence.fileUrl, "_blank")}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Open File
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setPreviewEvidence(previewEvidence)
-                          setLinkDialogOpen(true)
-                        }}
-                      >
-                        <Link2 className="mr-2 h-4 w-4" />
-                        Link
-                      </Button>
-                    </div>
-
-                    {/* File Preview Placeholder */}
-                    <div className="rounded-lg border border-border bg-muted/30 p-8 text-center">
-                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Preview not available
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Click "Open File" to view
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
+      </div>
 
       {/* Link to Criterion Dialog */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>

@@ -16,28 +16,20 @@ import {
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 // Custom Horus AI Logo Icon
 function HorusAIIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 120 120"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <linearGradient id="horusGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#9333ea" />
-          <stop offset="50%" stopColor="#6366f1" />
-          <stop offset="100%" stopColor="#22d3ee" />
-        </linearGradient>
-      </defs>
-      <rect x="20" y="15" width="22" height="90" rx="4" fill="url(#horusGrad)"/>
-      <rect x="70" y="45" width="22" height="60" rx="4" fill="url(#horusGrad)"/>
-      <path d="M 42 52 Q 42 35 65 35 L 85 25 L 85 45 L 68 45 Q 58 45 58 55 L 58 75 L 42 75 Z" fill="url(#horusGrad)"/>
-      <path d="M 75 20 L 100 35 L 75 50 Z" fill="url(#horusGrad)"/>
-    </svg>
+    <div className={cn("relative shrink-0", className)}>
+      <Image
+        src="/logo2.png"
+        alt="Horus AI"
+        width={20}
+        height={20}
+        className="h-5 w-5 object-contain"
+      />
+    </div>
   )
 }
 

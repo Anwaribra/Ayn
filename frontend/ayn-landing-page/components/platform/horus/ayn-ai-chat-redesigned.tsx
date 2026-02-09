@@ -16,7 +16,12 @@ import {
   ArrowUp,
   FileText,
   Target,
-  Lightbulb
+  Lightbulb,
+  File,
+  Image as ImageIcon,
+  FileSpreadsheet,
+  FileText as FileTextIcon,
+  Trash2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -248,8 +253,10 @@ export default function AynAIChatRedesigned() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const history = loadChatHistory()
@@ -290,17 +297,48 @@ export default function AynAIChatRedesigned() {
   const clearChat = useCallback(() => {
     if (messages.length > 0) saveCurrentSession()
     setMessages([])
+    setSelectedFiles([])
     localStorage.removeItem(CHAT_STORAGE_KEY)
   }, [messages, saveCurrentSession])
 
+  // ─── File Handling ──────────────────────────────────────────────────────────────
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...files].slice(0, 5)) // Max 5 files
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }, [])
+
+  const removeFile = useCallback((index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />
+    if (file.type.includes("pdf")) return <FileTextIcon className="h-4 w-4" />
+    if (file.type.includes("excel") || file.type.includes("sheet")) return <FileSpreadsheet className="h-4 w-4" />
+    return <File className="h-4 w-4" />
+  }
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed || isLoading) return
+    const hasFiles = selectedFiles.length > 0
+    if ((!trimmed && !hasFiles) || isLoading) return
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed, timestamp: Date.now() }
+    // Build message content with file info
+    let content = trimmed
+    if (hasFiles) {
+      const fileList = selectedFiles.map(f => `[${f.name}]`).join(" ")
+      content = trimmed ? `${trimmed}\n\nAttached: ${fileList}` : `Attached: ${fileList}`
+    }
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content, timestamp: Date.now() }
     const updatedMessages = [...messages, userMsg]
     setMessages(updatedMessages)
     setMessage("")
+    setSelectedFiles([])
     setIsLoading(true)
 
     try {
@@ -321,7 +359,7 @@ export default function AynAIChatRedesigned() {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages])
+  }, [isLoading, messages, selectedFiles])
 
   const handleQuickAction = (prompt: string) => sendMessage(prompt)
   const hasMessages = messages.length > 0 || isLoading
@@ -409,6 +447,26 @@ export default function AynAIChatRedesigned() {
               className="mt-8 w-full"
             >
               <div className="relative rounded-2xl border border-border/50 bg-card/80 shadow-xl shadow-primary/5 backdrop-blur-xl">
+                {/* File Preview */}
+                {selectedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 border-b border-border/30 p-3">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm"
+                      >
+                        <span className="text-primary">{getFileIcon(file)}</span>
+                        <span className="max-w-[150px] truncate text-foreground">{file.name}</span>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-start gap-3 p-4">
                   <Sparkles className="mt-1 h-5 w-5 text-primary" />
                   <textarea
@@ -422,15 +480,33 @@ export default function AynAIChatRedesigned() {
                   />
                 </div>
                 <div className="flex items-center justify-between border-t border-border/30 px-4 py-3">
-                  <Button variant="ghost" size="sm" className="h-8 gap-2 text-muted-foreground hover:text-foreground">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Paperclip className="h-4 w-4" />
                     Attach file
+                    {selectedFiles.length > 0 && (
+                      <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                        {selectedFiles.length}
+                      </span>
+                    )}
                   </Button>
                   <Button
                     size="icon"
                     className="h-9 w-9 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
                     onClick={() => sendMessage(message)}
-                    disabled={!message.trim() || isLoading}
+                    disabled={(!message.trim() && selectedFiles.length === 0) || isLoading}
                   >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
@@ -507,26 +583,66 @@ export default function AynAIChatRedesigned() {
           {/* Input Bar (when messages exist) */}
           <div className="relative z-10 border-t border-border/50 bg-background/80 px-6 py-4 backdrop-blur-xl">
             <div className="mx-auto max-w-3xl">
-              <div className="flex items-end gap-3 rounded-2xl border border-border/50 bg-card/80 p-3 shadow-lg shadow-primary/5">
-                <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-xl">
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask me anything..."
-                  className="flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground/60 min-h-[36px] max-h-[120px]"
-                  rows={1}
-                />
-                <Button
-                  size="icon"
-                  className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  onClick={() => sendMessage(message)}
-                  disabled={!message.trim() || isLoading}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
+              <div className="rounded-2xl border border-border/50 bg-card/80 shadow-lg shadow-primary/5">
+                {/* File Preview */}
+                {selectedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 border-b border-border/30 px-3 py-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 rounded-lg bg-primary/5 px-2.5 py-1 text-xs"
+                      >
+                        <span className="text-primary">{getFileIcon(file)}</span>
+                        <span className="max-w-[120px] truncate text-foreground">{file.name}</span>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-end gap-3 p-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+                    className="hidden"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="relative h-9 w-9 shrink-0 rounded-xl"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    {selectedFiles.length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                        {selectedFiles.length}
+                      </span>
+                    )}
+                  </Button>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask me anything..."
+                    className="flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground/60 min-h-[36px] max-h-[120px]"
+                    rows={1}
+                  />
+                  <Button
+                    size="icon"
+                    className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                    onClick={() => sendMessage(message)}
+                    disabled={(!message.trim() && selectedFiles.length === 0) || isLoading}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

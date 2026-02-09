@@ -34,6 +34,7 @@ import { toast } from "sonner"
 import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MarkdownContent } from "./markdown-content"
+import { HorusLogo } from "./horus-logo"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -391,11 +392,16 @@ export default function AynAIChatRedesigned() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="flex flex-col items-center text-center w-full max-w-3xl"
           >
+            {/* Logo */}
+            <div className="mb-6">
+              <HorusLogo size={72} animate />
+            </div>
+
             {/* Greeting */}
             <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-              Hey! <span className="text-primary">Anwar</span>
+              Hey! <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Anwar</span>
             </h1>
-            <h2 className="mt-2 text-4xl font-semibold tracking-tight text-foreground/80 sm:text-5xl">
+            <h2 className="mt-2 text-3xl font-medium tracking-tight text-foreground/60 sm:text-4xl">
               What can I help with?
             </h2>
 

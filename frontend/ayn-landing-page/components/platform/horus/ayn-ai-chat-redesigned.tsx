@@ -31,6 +31,7 @@ import { toast } from "sonner"
 import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MarkdownContent } from "./markdown-content"
+import { useHorusBrain, useHorusChat, type AnalyzedFile } from "@/lib/horus"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -253,10 +254,17 @@ export default function AynAIChatRedesigned() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // ─── HORUS BRAIN INTEGRATION ────────────────────────────────────────────────────
+  const horus = useHorusBrain()
+  const horusChat = useHorusChat()
+  
+  // Local state for file selection (before adding to Horus)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [uploadedFileIds, setUploadedFileIds] = useState<string[]>([])
 
   useEffect(() => {
     const history = loadChatHistory()
@@ -297,23 +305,48 @@ export default function AynAIChatRedesigned() {
   const clearChat = useCallback(() => {
     if (messages.length > 0) saveCurrentSession()
     setMessages([])
-    setSelectedFiles([])
+    setPendingFiles([])
+    setUploadedFileIds([])
     localStorage.removeItem(CHAT_STORAGE_KEY)
   }, [messages, saveCurrentSession])
 
-  // ─── File Handling ──────────────────────────────────────────────────────────────
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── File Handling (Integrated with Horus Brain) ─────────────────────────────────
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
-    if (files.length > 0) {
-      setSelectedFiles((prev) => [...prev, ...files].slice(0, 5)) // Max 5 files
+    if (files.length === 0) return
+    
+    // Add to local pending state first
+    setPendingFiles((prev) => [...prev, ...files].slice(0, 5))
+    
+    // Upload each file to Horus Brain (shared context)
+    for (const file of files.slice(0, 5)) {
+      const fileId = horus.addFile({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        source: "chat",
+      })
+      setUploadedFileIds((prev) => [...prev, fileId])
+      
+      // Analyze the file
+      await horusChat.analyzeFile(fileId)
     }
-    // Reset input so same file can be selected again
+    
+    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = ""
-  }, [])
+  }, [horus, horusChat])
 
   const removeFile = useCallback((index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
-  }, [])
+    const fileToRemove = pendingFiles[index]
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
+    
+    // Also remove from Horus context
+    const fileId = uploadedFileIds[index]
+    if (fileId) {
+      horus.removeFile(fileId)
+      setUploadedFileIds((prev) => prev.filter((_, i) => i !== index))
+    }
+  }, [pendingFiles, uploadedFileIds, horus])
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />
@@ -324,13 +357,13 @@ export default function AynAIChatRedesigned() {
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim()
-    const hasFiles = selectedFiles.length > 0
+    const hasFiles = pendingFiles.length > 0
     if ((!trimmed && !hasFiles) || isLoading) return
 
     // Build message content with file info
     let content = trimmed
     if (hasFiles) {
-      const fileList = selectedFiles.map(f => `[${f.name}]`).join(" ")
+      const fileList = pendingFiles.map(f => `[${f.name}]`).join(" ")
       content = trimmed ? `${trimmed}\n\nAttached: ${fileList}` : `Attached: ${fileList}`
     }
 
@@ -338,17 +371,18 @@ export default function AynAIChatRedesigned() {
     const updatedMessages = [...messages, userMsg]
     setMessages(updatedMessages)
     setMessage("")
-    setSelectedFiles([])
+    setPendingFiles([])
     setIsLoading(true)
 
     try {
-      const chatHistory = updatedMessages.map((m) => ({ role: m.role, content: m.content }))
-      const response = await api.chat(chatHistory)
+      // Use Horus Chat Service with full platform context
+      const response = await horusChat.sendMessage(text, uploadedFileIds)
+      
       const assistantMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.result || "No response.",
-        timestamp: Date.now(),
+        id: response.id,
+        role: response.role,
+        content: response.content,
+        timestamp: response.timestamp,
       }
       setMessages((prev) => [...prev, assistantMsg])
       setStreamingMessageId(assistantMsg.id)
@@ -359,10 +393,13 @@ export default function AynAIChatRedesigned() {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, selectedFiles])
+  }, [isLoading, messages, pendingFiles, uploadedFileIds, horusChat])
 
   const handleQuickAction = (prompt: string) => sendMessage(prompt)
   const hasMessages = messages.length > 0 || isLoading
+  
+  // Get dynamic quick actions from Horus based on platform state
+  const dynamicQuickActions = horusChat.getQuickActions()
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -448,9 +485,9 @@ export default function AynAIChatRedesigned() {
             >
               <div className="relative rounded-2xl border border-border/50 bg-card/80 shadow-xl shadow-primary/5 backdrop-blur-xl">
                 {/* File Preview */}
-                {selectedFiles.length > 0 && (
+                {pendingFiles.length > 0 && (
                   <div className="flex flex-wrap gap-2 border-b border-border/30 p-3">
-                    {selectedFiles.map((file, index) => (
+                    {pendingFiles.map((file, index) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm"
@@ -496,9 +533,9 @@ export default function AynAIChatRedesigned() {
                   >
                     <Paperclip className="h-4 w-4" />
                     Attach file
-                    {selectedFiles.length > 0 && (
+                    {pendingFiles.length > 0 && (
                       <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                        {selectedFiles.length}
+                        {pendingFiles.length}
                       </span>
                     )}
                   </Button>
@@ -506,7 +543,7 @@ export default function AynAIChatRedesigned() {
                     size="icon"
                     className="h-9 w-9 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
                     onClick={() => sendMessage(message)}
-                    disabled={(!message.trim() && selectedFiles.length === 0) || isLoading}
+                    disabled={(!message.trim() && pendingFiles.length === 0) || isLoading}
                   >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
@@ -585,9 +622,9 @@ export default function AynAIChatRedesigned() {
             <div className="mx-auto max-w-3xl">
               <div className="rounded-2xl border border-border/50 bg-card/80 shadow-lg shadow-primary/5">
                 {/* File Preview */}
-                {selectedFiles.length > 0 && (
+                {pendingFiles.length > 0 && (
                   <div className="flex flex-wrap gap-2 border-b border-border/30 px-3 py-2">
-                    {selectedFiles.map((file, index) => (
+                    {pendingFiles.map((file, index) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 rounded-lg bg-primary/5 px-2.5 py-1 text-xs"
@@ -620,9 +657,9 @@ export default function AynAIChatRedesigned() {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Paperclip className="h-4 w-4" />
-                    {selectedFiles.length > 0 && (
+                    {pendingFiles.length > 0 && (
                       <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                        {selectedFiles.length}
+                        {pendingFiles.length}
                       </span>
                     )}
                   </Button>
@@ -638,7 +675,7 @@ export default function AynAIChatRedesigned() {
                     size="icon"
                     className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20"
                     onClick={() => sendMessage(message)}
-                    disabled={(!message.trim() && selectedFiles.length === 0) || isLoading}
+                    disabled={(!message.trim() && pendingFiles.length === 0) || isLoading}
                   >
                     <ArrowUp className="h-4 w-4" />
                   </Button>

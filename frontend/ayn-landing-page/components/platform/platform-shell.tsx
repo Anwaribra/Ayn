@@ -46,6 +46,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { HorusBrainProvider } from "@/lib/horus"
 import type { Notification } from "@/types"
 
 // ─── Route labels for auto-breadcrumbs ───────────────────────────────────────
@@ -109,13 +110,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* ── Sidebar ────────────────────────────────────────────────────── */}
-      <PlatformSidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen((prev) => !prev)}
-        notificationCount={notificationCount}
-      />
+    <HorusBrainProvider>
+      <div className="flex min-h-screen bg-background text-foreground">
+        {/* ── Sidebar ────────────────────────────────────────────────────── */}
+        <PlatformSidebar
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen((prev) => !prev)}
+          notificationCount={notificationCount}
+        />
 
       {/* ── Main content area ──────────────────────────────────────────── */}
       <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
@@ -294,6 +296,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* ── Command Palette ───────────────────────────────────────────── */}
       <CommandPalette />
-    </div>
+      </div>
+    </HorusBrainProvider>
   )
 }

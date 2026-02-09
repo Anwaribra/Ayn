@@ -151,9 +151,9 @@ class HorusService:
         return {
             "total": len(files),
             "by_status": {
-                "uploaded": len([f for f in files if f.status.value == "uploaded"]),
-                "analyzed": len([f for f in files if f.status.value == "analyzed"]),
-                "linked": len([f for f in files if f.status.value == "linked"]),
+                "uploaded": len([f for f in files if f.status == "uploaded"]),
+                "analyzed": len([f for f in files if f.status == "analyzed"]),
+                "linked": len([f for f in files if f.status == "linked"]),
             },
             "unlinked": [
                 {"id": f.id, "name": f.name, "standards": f.detected_standards}
@@ -167,9 +167,9 @@ class HorusService:
         return {
             "total": len(gaps),
             "by_status": {
-                "defined": len([g for g in gaps if g.status.value == "defined"]),
-                "addressed": len([g for g in gaps if g.status.value == "addressed"]),
-                "closed": len([g for g in gaps if g.status.value == "closed"]),
+                "defined": len([g for g in gaps if g.status == "defined"]),
+                "addressed": len([g for g in gaps if g.status == "addressed"]),
+                "closed": len([g for g in gaps if g.status == "closed"]),
             },
             "by_standard": {}
         }

@@ -230,11 +230,15 @@ class PlatformStateManager:
             )
             
             if existing:
+                # Prisma returns dict - use dict access
+                existing_id = existing["id"] if isinstance(existing, dict) else existing.id
+                existing_value = existing["value"] if isinstance(existing, dict) else existing.value
+                
                 metric = await self.db.platform_metrics.update(
-                    where={"id": existing.id},
+                    where={"id": existing_id},
                     data={
                         "value": metric_data["value"],
-                        "previous_value": existing.value,
+                        "previous_value": existing_value,
                         "updated_at": datetime.utcnow()
                     }
                 )

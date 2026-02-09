@@ -42,11 +42,17 @@ async def get_current_user(
             detail="User not found",
         )
     
+    # Prisma returns dict - handle both dict and object access
+    user_id = user["id"] if isinstance(user, dict) else user.id
+    user_email = user["email"] if isinstance(user, dict) else user.email
+    user_role = user["role"] if isinstance(user, dict) else user.role
+    user_institution = user.get("institutionId") if isinstance(user, dict) else user.institutionId
+    
     return {
-        "id": user.id,
-        "email": user.email,
-        "role": user.role,
-        "institutionId": user.institutionId,
+        "id": user_id,
+        "email": user_email,
+        "role": user_role,
+        "institutionId": user_institution,
     }
 
 

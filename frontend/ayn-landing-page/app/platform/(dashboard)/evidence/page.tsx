@@ -60,8 +60,10 @@ import {
   X,
   CheckCircle2,
   Loader2,
+  Eye,
 } from "lucide-react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import Link from "next/link"
 import type { Evidence } from "@/types/evidence"
 import { toast } from "sonner"
@@ -242,11 +244,13 @@ function EvidenceGridCard({
   ev,
   onLink,
   onDelete,
+  onPreview,
   isDeleting,
 }: {
   ev: Evidence
   onLink: () => void
   onDelete: () => void
+  onPreview: () => void
   isDeleting: boolean
 }) {
   return (
@@ -290,6 +294,15 @@ function EvidenceGridCard({
         </div>
         {/* Actions */}
         <div className="mt-3 flex items-center gap-1 border-t border-border/50 pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={onPreview}
+          >
+            <Eye className="h-3 w-3" />
+            Preview
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -345,6 +358,8 @@ function EvidenceContent() {
   const [isLinking, setIsLinking] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [previewEvidence, setPreviewEvidence] = useState<Evidence | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const {
     data: evidence,
@@ -445,6 +460,11 @@ function EvidenceContent() {
     setSelectedStandardId("")
     setSelectedCriterionId("")
     setLinkDialogOpen(true)
+  }
+
+  const openPreview = (ev: Evidence) => {
+    setPreviewEvidence(ev)
+    setPreviewOpen(true)
   }
 
   const linkedCount = evidence?.filter((e) => e.criterionId).length ?? 0
@@ -608,7 +628,12 @@ function EvidenceContent() {
           </CardContent>
         </Card>
 
-        {/* Evidence Content */}
+        {/* Evidence Content with Resizable Preview */}
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="min-h-[500px]"
+        >
+          <ResizablePanel defaultSize={previewOpen ? 60 : 100} minSize={40}>
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -655,6 +680,7 @@ function EvidenceContent() {
                 ev={ev}
                 onLink={() => openLinkDialog(ev)}
                 onDelete={() => handleDelete(ev.id)}
+                onPreview={() => openPreview(ev)}
                 isDeleting={isDeleting === ev.id}
               />
             ))}
@@ -720,6 +746,15 @@ function EvidenceContent() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
+                              onClick={() => openPreview(ev)}
+                              title="Preview file"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() =>
                                 window.open(ev.fileUrl, "_blank")
                               }
@@ -756,6 +791,92 @@ function EvidenceContent() {
             </CardContent>
           </Card>
         )}
+          </ResizablePanel>
+
+          {previewOpen && previewEvidence && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={40} minSize={30}>
+                <Card className="h-full border-border bg-card shadow-sm">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Preview</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setPreviewOpen(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${getFileColor(previewEvidence.fileUrl)}`}>
+                        {getFileIcon(previewEvidence.fileUrl)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {getFileName(previewEvidence.fileUrl)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {getFileType(previewEvidence.fileUrl)} • {formatDate(previewEvidence.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {previewEvidence.criterionId ? (
+                      <Badge
+                        variant="default"
+                        className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                      >
+                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        Linked to Criterion
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/20 text-amber-500"
+                      >
+                        Not Linked
+                      </Badge>
+                    )}
+
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => window.open(previewEvidence.fileUrl, "_blank")}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Open File
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setPreviewEvidence(previewEvidence)
+                          setLinkDialogOpen(true)
+                        }}
+                      >
+                        <Link2 className="mr-2 h-4 w-4" />
+                        Link
+                      </Button>
+                    </div>
+
+                    {/* File Preview Placeholder */}
+                    <div className="rounded-lg border border-border bg-muted/30 p-8 text-center">
+                      <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Preview not available
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Click "Open File" to view
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
 
       {/* Link to Criterion Dialog */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>

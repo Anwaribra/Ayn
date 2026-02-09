@@ -54,14 +54,16 @@ export class HorusChatService {
   // ═══════════════════════════════════════════════════════════════════════════
 
   async sendMessage(userMessage: string, attachedFiles?: string[]): Promise<ChatMessage> {
-    // Build context-rich prompt
+    // Build context-rich prompt (includes system instructions + context)
     const contextPrompt = this.buildContextPrompt(userMessage, attachedFiles)
+    
+    // Combine system prompt with user context
+    const fullPrompt = `${this.getSystemPrompt()}\n\n---\n\n${contextPrompt}`
     
     // Send to API with full context
     try {
       const response = await api.chat([
-        { role: "system", content: this.getSystemPrompt() },
-        { role: "user", content: contextPrompt }
+        { role: "user", content: fullPrompt }
       ])
 
       // Process response for cross-module actions

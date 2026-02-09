@@ -1,32 +1,22 @@
-// HORUS AI - Central Intelligence Exports
+// HORUS AI - Central Operating System
 // 
-// This is the main entry point for all Horus AI functionality.
-// Horus is the shared intelligence layer across all platform modules.
+// NOT a chatbot. NOT an assistant.
+// Read-only intelligence layer.
 
 export {
-  // Core Context
   HorusBrainProvider,
   useHorusBrain,
-  useModuleRegistration,
-  
-  // Types
-  type AnalyzedFile,
+  type PlatformFile,
   type EvidenceItem,
-  type GapAssessment,
-  type ComplianceMetrics,
-  type HorusInsight,
-  type HorusRecommendation,
-  type PlatformModule,
-  type ModuleAction,
-  type HorusState,
+  type GapItem,
+  type DashboardMetric,
+  type PlatformState,
+  type PlatformEvent,
+  type StateSummary,
 } from "./horus-brain-context"
 
 export {
-  // Chat Service
-  HorusChatService,
-  useHorusChat,
-  
-  // Types
-  type ChatMessage,
-  type ChatAction,
+  useHorusObserver,
+  useFileUploadHandler,
+  type HorusObservation,
 } from "./horus-chat-service"

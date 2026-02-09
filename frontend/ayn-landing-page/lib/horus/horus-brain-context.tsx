@@ -1,510 +1,369 @@
 "use client"
 
 /**
- * HORUS BRAIN - Central Intelligence Context
+ * HORUS BRAIN - Central Operating System
  * 
- * This is the core of the platform architecture.
- * Horus AI is not just a chatbot - it's the shared intelligence layer
- * that connects all platform modules.
+ * NOT a chatbot. NOT an assistant.
+ * This is the platform's read-only intelligence layer.
+ * 
+ * - Modules WRITE state
+ * - Horus READS state only
+ * - Produces state-aware observations
+ * - Never guides, never recommends, never explains workflows
  */
 
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from "react"
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
+// STATE TYPES - Platform Truth
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export interface AnalyzedFile {
+export interface PlatformFile {
   id: string
   name: string
   type: string
   size: number
-  content?: string  // Extracted text content
+  contentHash?: string
   analysis?: {
-    documentType: "policy" | "procedure" | "record" | "report" | "other"
-    standard?: "ISO 21001" | "ISO 9001" | "NAQAAE" | null
+    detectedStandards: ("ISO21001" | "ISO9001" | "NAQAAE")[]
+    documentType?: string
     clauses?: string[]
-    summary?: string
-    keywords?: string[]
     confidence: number
   }
   uploadedAt: number
-  source: "chat" | "evidence" | "direct"
+  // Cross-module links
+  linkedToEvidence?: string[]
+  linkedToGaps?: string[]
+  // State flags
+  isProcessed: boolean
 }
 
 export interface EvidenceItem {
   id: string
   title: string
   type: string
-  status: "pending" | "complete" | "missing"
-  linkedCriteria?: string[]
-  files?: string[]  // References to AnalyzedFile IDs
-  aiSummary?: string
-  aiTags?: string[]
+  status: "defined" | "linked" | "complete" | "void"
+  // References
+  sourceFiles: string[]
+  criteriaRefs: string[]
+  // Metadata
+  definedAt: number
+  lastModified: number
 }
 
-export interface GapAssessment {
+export interface GapItem {
   id: string
+  standard: "ISO21001" | "ISO9001" | "NAQAAE"
   clause: string
   description: string
-  status: "open" | "addressed" | "partial"
-  severity: "critical" | "high" | "medium" | "low"
-  evidenceIds?: string[]
-  suggestedFiles?: string[]  // AnalyzedFile IDs that might address this
+  status: "defined" | "addressed" | "closed" | "dormant"
+  // References
+  evidenceIds: string[]
+  relatedFileIds: string[]
+  // Metadata
+  definedAt: number
+  closedAt?: number
 }
 
-export interface ComplianceMetrics {
-  evidenceCompleteness: number  // 0-100
-  gapResolutionRate: number     // 0-100
-  iso21001Progress: number      // 0-100
-  naqaaeProgress: number        // 0-100
-  totalDocuments: number
-  pendingActions: number
-}
-
-export interface HorusInsight {
-  id: string
-  type: "suggestion" | "alert" | "completion" | "gap"
-  title: string
-  description: string
-  relatedModules: string[]
-  suggestedActions?: {
-    label: string
-    module: string
-    action: () => void
-  }[]
-  createdAt: number
-}
-
-export interface HorusRecommendation {
-  id: string
-  type: "file_to_evidence" | "file_to_gap" | "link_documents" | "complete_criteria"
-  priority: "high" | "medium" | "low"
-  description: string
-  sourceFiles?: string[]
-  targetModule: string
-  autoActionPossible?: boolean
-}
-
-export interface PlatformModule {
+export interface DashboardMetric {
   id: string
   name: string
-  icon?: string
-  status: "active" | "inactive" | "beta"
-  
-  // What this module provides
-  getData: () => Promise<Record<string, unknown>>
-  getActions: () => Promise<ModuleAction[]>
-  
-  // Event handlers
-  onInsight?: (insight: HorusInsight) => void
-  onRecommendation?: (rec: HorusRecommendation) => void
-  onFileAnalyzed?: (file: AnalyzedFile) => void
+  value: number
+  previousValue?: number
+  lastUpdated: number
+  sourceModule: string
 }
 
-export interface ModuleAction {
-  id: string
-  label: string
-  description?: string
-  icon?: string
-  handler: () => void | Promise<void>
-}
-
-export interface HorusState {
-  // Intelligence Artifacts
-  files: AnalyzedFile[]
-  evidence: EvidenceItem[]
-  gaps: GapAssessment[]
-  metrics: ComplianceMetrics
+export interface PlatformState {
+  // Core entities
+  files: Map<string, PlatformFile>
+  evidence: Map<string, EvidenceItem>
+  gaps: Map<string, GapItem>
+  metrics: Map<string, DashboardMetric>
   
-  // Reasoning Outputs
-  insights: HorusInsight[]
-  recommendations: HorusRecommendation[]
+  // Event log (immutable history)
+  events: PlatformEvent[]
   
-  // Module System
-  modules: Map<string, PlatformModule>
-  
-  // Session
+  // Computed
   lastActivity: number
-  activeContext?: string  // Current module context
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ACTIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-type HorusAction =
-  | { type: "REGISTER_MODULE"; payload: PlatformModule }
-  | { type: "UNREGISTER_MODULE"; payload: string }
-  | { type: "ADD_FILE"; payload: AnalyzedFile }
-  | { type: "UPDATE_FILE"; payload: { id: string; updates: Partial<AnalyzedFile> } }
-  | { type: "REMOVE_FILE"; payload: string }
-  | { type: "ADD_EVIDENCE"; payload: EvidenceItem }
-  | { type: "UPDATE_EVIDENCE"; payload: { id: string; updates: Partial<EvidenceItem> } }
-  | { type: "ADD_GAP"; payload: GapAssessment }
-  | { type: "UPDATE_GAP"; payload: { id: string; updates: Partial<GapAssessment> } }
-  | { type: "ADD_INSIGHT"; payload: HorusInsight }
-  | { type: "ADD_RECOMMENDATION"; payload: HorusRecommendation }
-  | { type: "MARK_RECOMMENDATION_DONE"; payload: string }
-  | { type: "UPDATE_METRICS"; payload: Partial<ComplianceMetrics> }
-  | { type: "SET_ACTIVE_CONTEXT"; payload: string }
-  | { type: "CLEAR_INSIGHTS" }
+export type PlatformEvent =
+  | { type: "file_uploaded"; fileId: string; timestamp: number }
+  | { type: "file_analyzed"; fileId: string; standards: string[]; timestamp: number }
+  | { type: "evidence_created"; evidenceId: string; timestamp: number }
+  | { type: "evidence_linked"; evidenceId: string; fileIds: string[]; timestamp: number }
+  | { type: "gap_defined"; gapId: string; timestamp: number }
+  | { type: "gap_addressed"; gapId: string; evidenceId: string; timestamp: number }
+  | { type: "gap_closed"; gapId: string; timestamp: number }
+  | { type: "metric_updated"; metricId: string; value: number; timestamp: number }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// REDUCER
+// ACTIONS - State Mutations (Modules Write)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const initialState: HorusState = {
-  files: [],
-  evidence: [],
-  gaps: [],
-  metrics: {
-    evidenceCompleteness: 0,
-    gapResolutionRate: 0,
-    iso21001Progress: 0,
-    naqaaeProgress: 0,
-    totalDocuments: 0,
-    pendingActions: 0,
-  },
-  insights: [],
-  recommendations: [],
-  modules: new Map(),
+type StateAction =
+  | { type: "FILE_UPLOADED"; payload: PlatformFile }
+  | { type: "FILE_ANALYZED"; payload: { id: string; analysis: PlatformFile["analysis"] } }
+  | { type: "EVIDENCE_CREATED"; payload: EvidenceItem }
+  | { type: "EVIDENCE_LINKED"; payload: { evidenceId: string; fileIds: string[] } }
+  | { type: "GAP_DEFINED"; payload: GapItem }
+  | { type: "GAP_ADDRESSED"; payload: { gapId: string; evidenceId: string } }
+  | { type: "GAP_CLOSED"; payload: string }
+  | { type: "METRIC_UPDATED"; payload: DashboardMetric }
+  | { type: "LOG_EVENT"; payload: PlatformEvent }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REDUCER - State Truth
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const initialState: PlatformState = {
+  files: new Map(),
+  evidence: new Map(),
+  gaps: new Map(),
+  metrics: new Map(),
+  events: [],
   lastActivity: Date.now(),
 }
 
-function horusReducer(state: HorusState, action: HorusAction): HorusState {
+function stateReducer(state: PlatformState, action: StateAction): PlatformState {
+  const newFiles = new Map(state.files)
+  const newEvidence = new Map(state.evidence)
+  const newGaps = new Map(state.gaps)
+  const newMetrics = new Map(state.metrics)
+  const newEvents = [...state.events]
+  
   switch (action.type) {
-    case "REGISTER_MODULE":
-      return {
-        ...state,
-        modules: new Map(state.modules).set(action.payload.id, action.payload),
-        lastActivity: Date.now(),
+    case "FILE_UPLOADED":
+      newFiles.set(action.payload.id, action.payload)
+      newEvents.push({
+        type: "file_uploaded",
+        fileId: action.payload.id,
+        timestamp: Date.now()
+      })
+      break
+      
+    case "FILE_ANALYZED": {
+      const file = newFiles.get(action.payload.id)
+      if (file) {
+        file.analysis = action.payload.analysis
+        file.isProcessed = true
+        newFiles.set(action.payload.id, file)
+        newEvents.push({
+          type: "file_analyzed",
+          fileId: action.payload.id,
+          standards: action.payload.analysis?.detectedStandards || [],
+          timestamp: Date.now()
+        })
       }
-    
-    case "UNREGISTER_MODULE":
-      const newModules = new Map(state.modules)
-      newModules.delete(action.payload)
-      return { ...state, modules: newModules, lastActivity: Date.now() }
-    
-    case "ADD_FILE":
-      return {
-        ...state,
-        files: [...state.files, action.payload],
-        lastActivity: Date.now(),
+      break
+    }
+      
+    case "EVIDENCE_CREATED":
+      newEvidence.set(action.payload.id, action.payload)
+      newEvents.push({
+        type: "evidence_created",
+        evidenceId: action.payload.id,
+        timestamp: Date.now()
+      })
+      break
+      
+    case "EVIDENCE_LINKED": {
+      const ev = newEvidence.get(action.payload.evidenceId)
+      if (ev) {
+        ev.sourceFiles = [...new Set([...ev.sourceFiles, ...action.payload.fileIds])]
+        ev.status = ev.sourceFiles.length > 0 ? "linked" : ev.status
+        ev.lastModified = Date.now()
+        newEvidence.set(action.payload.evidenceId, ev)
+        newEvents.push({
+          type: "evidence_linked",
+          evidenceId: action.payload.evidenceId,
+          fileIds: action.payload.fileIds,
+          timestamp: Date.now()
+        })
       }
-    
-    case "UPDATE_FILE":
-      return {
-        ...state,
-        files: state.files.map((f) =>
-          f.id === action.payload.id ? { ...f, ...action.payload.updates } : f
-        ),
-        lastActivity: Date.now(),
+      break
+    }
+      
+    case "GAP_DEFINED":
+      newGaps.set(action.payload.id, action.payload)
+      newEvents.push({
+        type: "gap_defined",
+        gapId: action.payload.id,
+        timestamp: Date.now()
+      })
+      break
+      
+    case "GAP_ADDRESSED": {
+      const gap = newGaps.get(action.payload.gapId)
+      if (gap) {
+        gap.evidenceIds = [...new Set([...gap.evidenceIds, action.payload.evidenceId])]
+        gap.status = "addressed"
+        newGaps.set(action.payload.gapId, gap)
+        newEvents.push({
+          type: "gap_addressed",
+          gapId: action.payload.gapId,
+          evidenceId: action.payload.evidenceId,
+          timestamp: Date.now()
+        })
       }
-    
-    case "REMOVE_FILE":
-      return {
-        ...state,
-        files: state.files.filter((f) => f.id !== action.payload),
-        lastActivity: Date.now(),
+      break
+    }
+      
+    case "GAP_CLOSED": {
+      const gap = newGaps.get(action.payload)
+      if (gap) {
+        gap.status = "closed"
+        gap.closedAt = Date.now()
+        newGaps.set(action.payload, gap)
+        newEvents.push({
+          type: "gap_closed",
+          gapId: action.payload,
+          timestamp: Date.now()
+        })
       }
-    
-    case "ADD_EVIDENCE":
-      return {
-        ...state,
-        evidence: [...state.evidence, action.payload],
-        lastActivity: Date.now(),
-      }
-    
-    case "UPDATE_EVIDENCE":
-      return {
-        ...state,
-        evidence: state.evidence.map((e) =>
-          e.id === action.payload.id ? { ...e, ...action.payload.updates } : e
-        ),
-        lastActivity: Date.now(),
-      }
-    
-    case "ADD_GAP":
-      return {
-        ...state,
-        gaps: [...state.gaps, action.payload],
-        lastActivity: Date.now(),
-      }
-    
-    case "UPDATE_GAP":
-      return {
-        ...state,
-        gaps: state.gaps.map((g) =>
-          g.id === action.payload.id ? { ...g, ...action.payload.updates } : g
-        ),
-        lastActivity: Date.now(),
-      }
-    
-    case "ADD_INSIGHT":
-      return {
-        ...state,
-        insights: [action.payload, ...state.insights].slice(0, 50), // Keep last 50
-        lastActivity: Date.now(),
-      }
-    
-    case "ADD_RECOMMENDATION":
-      return {
-        ...state,
-        recommendations: [action.payload, ...state.recommendations].slice(0, 20),
-        lastActivity: Date.now(),
-      }
-    
-    case "MARK_RECOMMENDATION_DONE":
-      return {
-        ...state,
-        recommendations: state.recommendations.filter((r) => r.id !== action.payload),
-        lastActivity: Date.now(),
-      }
-    
-    case "UPDATE_METRICS":
-      return {
-        ...state,
-        metrics: { ...state.metrics, ...action.payload },
-        lastActivity: Date.now(),
-      }
-    
-    case "SET_ACTIVE_CONTEXT":
-      return {
-        ...state,
-        activeContext: action.payload,
-        lastActivity: Date.now(),
-      }
-    
-    case "CLEAR_INSIGHTS":
-      return { ...state, insights: [], lastActivity: Date.now() }
-    
-    default:
-      return state
+      break
+    }
+      
+    case "METRIC_UPDATED":
+      newMetrics.set(action.payload.id, action.payload)
+      newEvents.push({
+        type: "metric_updated",
+        metricId: action.payload.id,
+        value: action.payload.value,
+        timestamp: Date.now()
+      })
+      break
+  }
+  
+  return {
+    files: newFiles,
+    evidence: newEvidence,
+    gaps: newGaps,
+    metrics: newMetrics,
+    events: newEvents.slice(-1000), // Keep last 1000 events
+    lastActivity: Date.now(),
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONTEXT
+// HORUS CONTEXT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface HorusContextType {
-  state: HorusState
-  dispatch: React.Dispatch<HorusAction>
+  state: PlatformState
   
-  // Module Operations
-  registerModule: (module: PlatformModule) => void
-  unregisterModule: (moduleId: string) => void
-  getModule: (moduleId: string) => PlatformModule | undefined
+  // Write operations (Modules use these)
+  dispatch: React.Dispatch<StateAction>
   
-  // File Operations
-  addFile: (file: Omit<AnalyzedFile, "id" | "uploadedAt">) => string
-  analyzeFile: (fileId: string, analysis: AnalyzedFile["analysis"]) => void
-  removeFile: (fileId: string) => void
-  getFile: (fileId: string) => AnalyzedFile | undefined
+  // Read operations (Horus uses these)
+  getFile: (id: string) => PlatformFile | undefined
+  getEvidence: (id: string) => EvidenceItem | undefined
+  getGap: (id: string) => GapItem | undefined
+  getMetric: (id: string) => DashboardMetric | undefined
   
-  // Cross-Module Intelligence
-  findRelatedFiles: (criteria: string[]) => AnalyzedFile[]
-  findFilesForGap: (gapId: string) => AnalyzedFile[]
-  suggestEvidenceFromFiles: (fileIds: string[]) => EvidenceItem[]
+  // Cross-module queries
+  getUnlinkedFiles: () => PlatformFile[]
+  getOrphanedEvidence: () => EvidenceItem[]
+  getAddressableGaps: () => GapItem[]
+  getStaleMetrics: () => DashboardMetric[]
   
-  // Insights & Recommendations
-  addInsight: (insight: Omit<HorusInsight, "id" | "createdAt">) => void
-  addRecommendation: (rec: Omit<HorusRecommendation, "id">) => void
-  completeRecommendation: (recId: string) => void
-  
-  // Metrics
-  updateMetrics: (metrics: Partial<ComplianceMetrics>) => void
-  calculateCompleteness: () => number
-  
-  // Context
-  setActiveContext: (context: string) => void
-  getContextSummary: () => string
+  // State snapshots
+  getStateSummary: () => StateSummary
+  getRecentEvents: (count: number) => PlatformEvent[]
+}
+
+export interface StateSummary {
+  fileCount: number
+  processedFileCount: number
+  unlinkedFileCount: number
+  evidenceCount: number
+  linkedEvidenceCount: number
+  gapCount: number
+  addressedGapCount: number
+  closedGapCount: number
+  metricCount: number
+  lastEventType?: string
+  lastEventTime?: number
 }
 
 const HorusBrainContext = createContext<HorusContextType | null>(null)
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PROVIDER
-// ═══════════════════════════════════════════════════════════════════════════════
-
 export function HorusBrainProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(horusReducer, initialState)
-
-  // Module Operations
-  const registerModule = useCallback((module: PlatformModule) => {
-    dispatch({ type: "REGISTER_MODULE", payload: module })
-  }, [])
-
-  const unregisterModule = useCallback((moduleId: string) => {
-    dispatch({ type: "UNREGISTER_MODULE", payload: moduleId })
-  }, [])
-
-  const getModule = useCallback((moduleId: string) => {
-    return state.modules.get(moduleId)
-  }, [state.modules])
-
-  // File Operations
-  const addFile = useCallback((file: Omit<AnalyzedFile, "id" | "uploadedAt">) => {
-    const id = crypto.randomUUID()
-    const newFile: AnalyzedFile = {
-      ...file,
-      id,
-      uploadedAt: Date.now(),
-    }
-    dispatch({ type: "ADD_FILE", payload: newFile })
-    
-    // Notify all modules about new file
-    state.modules.forEach((module) => {
-      module.onFileAnalyzed?.(newFile)
-    })
-    
-    return id
-  }, [state.modules])
-
-  const analyzeFile = useCallback((fileId: string, analysis: AnalyzedFile["analysis"]) => {
-    dispatch({
-      type: "UPDATE_FILE",
-      payload: { id: fileId, updates: { analysis } },
-    })
-    
-    // Cross-module intelligence: check if this file addresses any gaps
-    const file = state.files.find((f) => f.id === fileId)
-    if (file && analysis?.clauses) {
-      state.gaps.forEach((gap) => {
-        if (analysis.clauses?.some((c) => gap.clause.includes(c))) {
-          dispatch({
-            type: "UPDATE_GAP",
-            payload: {
-              id: gap.id,
-              updates: { suggestedFiles: [...(gap.suggestedFiles || []), fileId] },
-            },
-          })
-        }
-      })
-    }
-  }, [state.files, state.gaps])
-
-  const removeFile = useCallback((fileId: string) => {
-    dispatch({ type: "REMOVE_FILE", payload: fileId })
-  }, [])
-
-  const getFile = useCallback((fileId: string) => {
-    return state.files.find((f) => f.id === fileId)
-  }, [state.files])
-
-  // Cross-Module Intelligence
-  const findRelatedFiles = useCallback((criteria: string[]) => {
-    return state.files.filter((file) =>
-      file.analysis?.clauses?.some((clause) =>
-        criteria.some((c) => clause.includes(c))
-      )
+  const [state, dispatch] = useReducer(stateReducer, initialState)
+  
+  // Read operations
+  const getFile = useCallback((id: string) => state.files.get(id), [state.files])
+  const getEvidence = useCallback((id: string) => state.evidence.get(id), [state.evidence])
+  const getGap = useCallback((id: string) => state.gaps.get(id), [state.gaps])
+  const getMetric = useCallback((id: string) => state.metrics.get(id), [state.metrics])
+  
+  // Cross-module queries
+  const getUnlinkedFiles = useCallback(() => {
+    return Array.from(state.files.values()).filter(f => 
+      !f.linkedToEvidence || f.linkedToEvidence.length === 0
     )
   }, [state.files])
-
-  const findFilesForGap = useCallback((gapId: string) => {
-    const gap = state.gaps.find((g) => g.id === gapId)
-    if (!gap?.suggestedFiles) return []
-    return state.files.filter((f) => gap.suggestedFiles?.includes(f.id))
-  }, [state.files, state.gaps])
-
-  const suggestEvidenceFromFiles = useCallback((fileIds: string[]) => {
-    return fileIds
-      .map((id) => state.files.find((f) => f.id === id))
-      .filter(Boolean)
-      .map((file) => ({
-        id: crypto.randomUUID(),
-        title: file!.name,
-        type: file!.analysis?.documentType || "other",
-        status: "pending" as const,
-        linkedCriteria: file!.analysis?.clauses || [],
-        files: [file!.id],
-        aiSummary: file!.analysis?.summary,
-        aiTags: file!.analysis?.keywords,
-      }))
-  }, [state.files])
-
-  // Insights & Recommendations
-  const addInsight = useCallback((insight: Omit<HorusInsight, "id" | "createdAt">) => {
-    const newInsight: HorusInsight = {
-      ...insight,
-      id: crypto.randomUUID(),
-      createdAt: Date.now(),
-    }
-    dispatch({ type: "ADD_INSIGHT", payload: newInsight })
-    
-    // Notify relevant modules
-    insight.relatedModules.forEach((moduleId) => {
-      const module = state.modules.get(moduleId)
-      module?.onInsight?.(newInsight)
-    })
-  }, [state.modules])
-
-  const addRecommendation = useCallback((rec: Omit<HorusRecommendation, "id">) => {
-    const newRec: HorusRecommendation = {
-      ...rec,
-      id: crypto.randomUUID(),
-    }
-    dispatch({ type: "ADD_RECOMMENDATION", payload: newRec })
-    
-    const module = state.modules.get(rec.targetModule)
-    module?.onRecommendation?.(newRec)
-  }, [state.modules])
-
-  const completeRecommendation = useCallback((recId: string) => {
-    dispatch({ type: "MARK_RECOMMENDATION_DONE", payload: recId })
-  }, [])
-
-  // Metrics
-  const updateMetrics = useCallback((metrics: Partial<ComplianceMetrics>) => {
-    dispatch({ type: "UPDATE_METRICS", payload: metrics })
-  }, [])
-
-  const calculateCompleteness = useCallback(() => {
-    if (state.evidence.length === 0) return 0
-    const complete = state.evidence.filter((e) => e.status === "complete").length
-    return Math.round((complete / state.evidence.length) * 100)
+  
+  const getOrphanedEvidence = useCallback(() => {
+    return Array.from(state.state.evidence.values()).filter(e => 
+      e.sourceFiles.length === 0 && e.status === "defined"
+    )
   }, [state.evidence])
-
-  // Context
-  const setActiveContext = useCallback((context: string) => {
-    dispatch({ type: "SET_ACTIVE_CONTEXT", payload: context })
-  }, [])
-
-  const getContextSummary = useCallback(() => {
-    return `
-Platform Context:
-- Files analyzed: ${state.files.length}
-- Evidence items: ${state.evidence.length} (${state.evidence.filter(e => e.status === "complete").length} complete)
-- Open gaps: ${state.gaps.filter(g => g.status === "open").length}
-- Active modules: ${state.modules.size}
-- Pending insights: ${state.insights.length}
-- Recommendations: ${state.recommendations.length}
-    `.trim()
+  
+  const getAddressableGaps = useCallback(() => {
+    return Array.from(state.gaps.values()).filter(g => 
+      g.status === "defined" && g.relatedFileIds.length > 0
+    )
+  }, [state.gaps])
+  
+  const getStaleMetrics = useCallback(() => {
+    const threshold = Date.now() - 24 * 60 * 60 * 1000 // 24 hours
+    return Array.from(state.metrics.values()).filter(m => 
+      m.lastUpdated < threshold
+    )
+  }, [state.metrics])
+  
+  // State snapshots
+  const getStateSummary = useCallback((): StateSummary => {
+    const files = Array.from(state.files.values())
+    const evidence = Array.from(state.evidence.values())
+    const gaps = Array.from(state.gaps.values())
+    
+    return {
+      fileCount: files.length,
+      processedFileCount: files.filter(f => f.isProcessed).length,
+      unlinkedFileCount: files.filter(f => !f.linkedToEvidence || f.linkedToEvidence.length === 0).length,
+      evidenceCount: evidence.length,
+      linkedEvidenceCount: evidence.filter(e => e.sourceFiles.length > 0).length,
+      gapCount: gaps.length,
+      addressedGapCount: gaps.filter(g => g.status === "addressed").length,
+      closedGapCount: gaps.filter(g => g.status === "closed").length,
+      metricCount: state.metrics.size,
+      lastEventType: state.events[state.events.length - 1]?.type,
+      lastEventTime: state.events[state.events.length - 1]?.timestamp,
+    }
   }, [state])
-
+  
+  const getRecentEvents = useCallback((count: number) => {
+    return state.events.slice(-count)
+  }, [state.events])
+  
   const value: HorusContextType = {
     state,
     dispatch,
-    registerModule,
-    unregisterModule,
-    getModule,
-    addFile,
-    analyzeFile,
-    removeFile,
     getFile,
-    findRelatedFiles,
-    findFilesForGap,
-    suggestEvidenceFromFiles,
-    addInsight,
-    addRecommendation,
-    completeRecommendation,
-    updateMetrics,
-    calculateCompleteness,
-    setActiveContext,
-    getContextSummary,
+    getEvidence,
+    getGap,
+    getMetric,
+    getUnlinkedFiles,
+    getOrphanedEvidence,
+    getAddressableGaps,
+    getStaleMetrics,
+    getStateSummary,
+    getRecentEvents,
   }
-
+  
   return (
     <HorusBrainContext.Provider value={value}>
       {children}
@@ -512,27 +371,10 @@ Platform Context:
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HOOK
-// ═══════════════════════════════════════════════════════════════════════════════
-
 export function useHorusBrain() {
   const context = useContext(HorusBrainContext)
   if (!context) {
     throw new Error("useHorusBrain must be used within HorusBrainProvider")
   }
   return context
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODULE REGISTRATION HOOK
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function useModuleRegistration(module: PlatformModule) {
-  const { registerModule, unregisterModule } = useHorusBrain()
-  
-  React.useEffect(() => {
-    registerModule(module)
-    return () => unregisterModule(module.id)
-  }, [module, registerModule, unregisterModule])
 }

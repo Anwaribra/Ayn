@@ -1,700 +1,185 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+/**
+ * HORUS AI INTERFACE
+ * 
+ * NOT a chat interface.
+ * State observation display.
+ */
+
+import { useState, useRef, useCallback, useEffect } from "react"
+import { motion } from "framer-motion"
 import { 
-  Send, 
   Paperclip, 
-  Sparkles, 
   History,
   Plus,
   X,
-  Copy,
-  Check,
-  Pause,
-  Play,
-  ArrowUp,
-  FileText,
-  Target,
-  Lightbulb,
   File,
   Image as ImageIcon,
   FileSpreadsheet,
   FileText as FileTextIcon,
-  Trash2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-
-import { api } from "@/lib/api"
-import { toast } from "sonner"
-import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { MarkdownContent } from "./markdown-content"
-import { useHorusBrain, useHorusChat, type AnalyzedFile } from "@/lib/horus"
+import { useHorusBrain, useHorusObserver, useFileUploadHandler } from "@/lib/horus"
 
-// ─── Types ──────────────────────────────────────────────────────────────────────
-interface Message {
-  id: string
-  role: "user" | "assistant" | "system"
-  content: string
-  timestamp?: number
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 
-interface ChatSession {
-  id: string
-  title: string
-  messages: Message[]
-  createdAt: number
-  updatedAt: number
-}
-
-// ─── Storage Keys ───────────────────────────────────────────────────────────────
-const CHAT_STORAGE_KEY = "horus-ai-chat-history"
-const SESSIONS_STORAGE_KEY = "horus-ai-sessions"
-
-// ─── Quick Actions ──────────────────────────────────────────────────────────────
-// These cover ALL educational ISO standards, not just one
-const QUICK_ACTIONS = [
-  {
-    icon: FileText,
-    label: "Compare All Standards",
-    description: "ISO 21001, 9001, NAQAAE",
-    prompt: "Compare ISO 21001 (Educational Management), ISO 9001 (Quality Management), and NAQAAE standards. Show me how they overlap and which documents can satisfy multiple standards.",
-    color: "bg-blue-500/10 text-blue-600 border-blue-200",
-  },
-  {
-    icon: Target,
-    label: "Multi-Standard Gap Analysis",
-    description: "Check compliance across all standards",
-    prompt: "Help me identify compliance gaps across ISO 21001, ISO 9001, and NAQAAE. Which gaps are common across standards and which are unique to each?",
-    color: "bg-emerald-500/10 text-emerald-600 border-emerald-200",
-  },
-  {
-    icon: Lightbulb,
-    label: "Universal Evidence Guide",
-    description: "Documents that cover multiple standards",
-    prompt: "What types of evidence documents can satisfy requirements across ISO 21001, ISO 9001, and NAQAAE simultaneously? Give me a comprehensive list with explanations.",
-    color: "bg-amber-500/10 text-amber-600 border-blue-200",
-  },
-]
-
-// ─── Helper Functions ───────────────────────────────────────────────────────────
-function loadChatHistory(): Message[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(CHAT_STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-function saveChatHistory(messages: Message[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
-}
-
-function loadSessions(): ChatSession[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(SESSIONS_STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-function saveSessions(sessions: ChatSession[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions))
-}
-
-// ─── Copy Button ────────────────────────────────────────────────────────────────
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-  return (
-    <button
-      onClick={handleCopy}
-      className="rounded-md p-1.5 text-muted-foreground/60 transition-all hover:bg-primary/10 hover:text-primary"
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  )
-}
-
-// ─── Streaming Message ──────────────────────────────────────────────────────────
-function StreamingMessage({ content, isStreaming, onStop }: { content: string; isStreaming: boolean; onStop?: () => void }) {
-  const [isPaused, setIsPaused] = useState(false)
-  const { displayedText, isComplete, stopStreaming } = useStreamingText({
-    text: content,
-    speed: 400,
-    enabled: isStreaming && !isPaused,
-  })
-  const cursorVisible = useCursorBlink(isStreaming && !isComplete && !isPaused)
-
-  const handleStop = useCallback(() => {
-    stopStreaming()
-    onStop?.()
-  }, [stopStreaming, onStop])
-
-  const displayContent = isStreaming ? displayedText : content
-
-  return (
-    <div className="flex max-w-[90%] flex-col gap-2">
-      <div className="prose prose-sm max-w-none text-foreground">
-        <MarkdownContent content={displayContent} />
-        {isStreaming && !isComplete && (
-          <span className={cn("inline-block w-[2px] h-[1.2em] bg-primary ml-0.5 align-middle", cursorVisible ? "opacity-100" : "opacity-0")} />
-        )}
-      </div>
-      {isStreaming && (
-        <div className="flex items-center gap-2">
-          <button onClick={() => setIsPaused((p) => !p)} className="rounded p-1 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary">
-            {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-          </button>
-          <button onClick={handleStop} className="rounded p-1 text-muted-foreground/60 hover:bg-primary/10 hover:text-primary">
-            <div className="h-3 w-3 bg-current rounded-sm" />
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Chat History Drawer ────────────────────────────────────────────────────────
-function ChatHistoryDrawer({ open, onClose, sessions, onLoadSession, onDeleteSession }: {
-  open: boolean
-  onClose: () => void
-  sessions: ChatSession[]
-  onLoadSession: (session: ChatSession) => void
-  onDeleteSession: (id: string) => void
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 z-50 h-full w-80 border-l border-border bg-background/95 shadow-2xl backdrop-blur-xl"
-          >
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <History className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold">Chat History</h3>
-                  <p className="text-[10px] text-muted-foreground">{sessions.length} conversation{sessions.length !== 1 ? "s" : ""}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <ScrollArea className="flex-1 h-[calc(100vh-64px)]">
-              <div className="p-3">
-                {sessions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50">
-                      <History className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">No conversations yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="group cursor-pointer rounded-xl border border-border/50 bg-card/50 p-3 transition-all hover:border-primary/30 hover:bg-primary/5"
-                        onClick={() => onLoadSession(session)}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm font-medium">{session.title}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(session.updatedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
-                            className="rounded p-1 text-muted-foreground/60 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// ─── Main Component ─────────────────────────────────────────────────────────────
 export default function AynAIChatRedesigned() {
-  const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  // ─── HORUS BRAIN INTEGRATION ────────────────────────────────────────────────────
-  const horus = useHorusBrain()
-  const horusChat = useHorusChat()
-  
-  // Local state for file selection (before adding to Horus)
+  const [observations, setObservations] = useState<Array<{id: string; content: string; timestamp: number}>>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [uploadedFileIds, setUploadedFileIds] = useState<string[]>([])
-
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  
+  // Horus integration
+  const brain = useHorusBrain()
+  const { observe } = useHorusObserver()
+  const { handleUpload } = useFileUploadHandler()
+  
+  // Get initial observation
   useEffect(() => {
-    const history = loadChatHistory()
-    if (history.length > 0) setMessages(history)
-    setSessions(loadSessions())
-
-    const initialPrompt = localStorage.getItem("horus-ai-initial-prompt")
-    if (initialPrompt) {
-      localStorage.removeItem("horus-ai-initial-prompt")
-      setTimeout(() => sendMessage(initialPrompt), 100)
-    }
+    const obs = observe()
+    setObservations([{ id: obs.id, content: obs.content, timestamp: obs.timestamp }])
   }, [])
-
+  
+  // Auto-scroll
   useEffect(() => {
-    if (messages.length > 0) saveChatHistory(messages)
-  }, [messages])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isLoading])
-
-  const saveCurrentSession = useCallback(() => {
-    if (messages.length === 0) return
-    const firstUserMsg = messages.find((m) => m.role === "user")
-    const title = firstUserMsg ? firstUserMsg.content.slice(0, 60) + (firstUserMsg.content.length > 60 ? "..." : "") : "New Conversation"
-    const session: ChatSession = {
-      id: crypto.randomUUID(),
-      title,
-      messages,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    }
-    const updated = [session, ...sessions].slice(0, 20)
-    setSessions(updated)
-    saveSessions(updated)
-  }, [messages, sessions])
-
-  const clearChat = useCallback(() => {
-    if (messages.length > 0) saveCurrentSession()
-    setMessages([])
-    setPendingFiles([])
-    setUploadedFileIds([])
-    localStorage.removeItem(CHAT_STORAGE_KEY)
-  }, [messages, saveCurrentSession])
-
-  // ─── File Handling (Integrated with Horus Brain) ─────────────────────────────────
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [observations])
+  
+  // File upload
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     
-    // Add to local pending state first
-    setPendingFiles((prev) => [...prev, ...files].slice(0, 5))
+    setPendingFiles(prev => [...prev, ...files].slice(0, 5))
     
-    // Upload each file to Horus Brain (shared context)
     for (const file of files.slice(0, 5)) {
-      const fileId = horus.addFile({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        source: "chat",
-      })
-      setUploadedFileIds((prev) => [...prev, fileId])
-      
-      // Analyze the file
-      await horusChat.analyzeFile(fileId)
+      const fileId = await handleUpload(file)
+      setUploadedFileIds(prev => [...prev, fileId])
     }
     
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = ""
-  }, [horus, horusChat])
-
-  const removeFile = useCallback((index: number) => {
-    const fileToRemove = pendingFiles[index]
-    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
     
-    // Also remove from Horus context
-    const fileId = uploadedFileIds[index]
-    if (fileId) {
-      horus.removeFile(fileId)
-      setUploadedFileIds((prev) => prev.filter((_, i) => i !== index))
-    }
-  }, [pendingFiles, uploadedFileIds, horus])
-
+    // Generate new observation after upload
+    setTimeout(() => {
+      const obs = observe("files uploaded")
+      setObservations(prev => [...prev, { id: obs.id, content: obs.content, timestamp: obs.timestamp }])
+    }, 200)
+  }, [handleUpload, observe])
+  
+  const removeFile = useCallback((index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index))
+    setUploadedFileIds(prev => prev.filter((_, i) => i !== index))
+  }, [])
+  
+  const refreshObservation = useCallback(() => {
+    const obs = observe("refresh")
+    setObservations(prev => [...prev, { id: obs.id, content: obs.content, timestamp: obs.timestamp }])
+  }, [observe])
+  
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />
     if (file.type.includes("pdf")) return <FileTextIcon className="h-4 w-4" />
     if (file.type.includes("excel") || file.type.includes("sheet")) return <FileSpreadsheet className="h-4 w-4" />
     return <File className="h-4 w-4" />
   }
-
-  const sendMessage = useCallback(async (text: string) => {
-    const trimmed = text.trim()
-    const hasFiles = pendingFiles.length > 0
-    if ((!trimmed && !hasFiles) || isLoading) return
-
-    // Build message content with file info
-    let content = trimmed
-    if (hasFiles) {
-      const fileList = pendingFiles.map(f => `[${f.name}]`).join(" ")
-      content = trimmed ? `${trimmed}\n\nAttached: ${fileList}` : `Attached: ${fileList}`
-    }
-
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content, timestamp: Date.now() }
-    const updatedMessages = [...messages, userMsg]
-    setMessages(updatedMessages)
-    setMessage("")
-    setPendingFiles([])
-    setIsLoading(true)
-
-    try {
-      // Use Horus Chat Service with full platform context
-      const response = await horusChat.sendMessage(text, uploadedFileIds)
-      
-      const assistantMsg: Message = {
-        id: response.id,
-        role: response.role,
-        content: response.content,
-        timestamp: response.timestamp,
-      }
-      setMessages((prev) => [...prev, assistantMsg])
-      setStreamingMessageId(assistantMsg.id)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to get response")
-      const errMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "Sorry, I couldn't process that request. Please try again.", timestamp: Date.now() }
-      setMessages((prev) => [...prev, errMsg])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isLoading, messages, pendingFiles, uploadedFileIds, horusChat])
-
-  const handleQuickAction = (prompt: string) => sendMessage(prompt)
-  const hasMessages = messages.length > 0 || isLoading
   
-  // Get dynamic quick actions from Horus based on platform state
-  const dynamicQuickActions = horusChat.getQuickActions()
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage(message)
-    }
-  }
-
+  const summary = brain.getStateSummary()
+  const hasState = summary.fileCount > 0 || summary.evidenceCount > 0 || summary.gapCount > 0
+  
   return (
-    <div className="relative flex h-[calc(100vh-56px)] w-full flex-col overflow-hidden bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Subtle Grid Background */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
-      
-      {/* Top Gradient Orb */}
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl" />
-
-      {/* Floating Actions */}
-      <div className="absolute right-6 top-4 z-20 flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/50 backdrop-blur-sm" onClick={() => setHistoryOpen(true)}>
-          <History className="h-4 w-4" />
-        </Button>
-        {messages.length > 0 && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/50 backdrop-blur-sm" onClick={clearChat}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Empty State - Hero Design */}
-      {!hasMessages && (
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex flex-col items-center text-center w-full max-w-3xl"
-          >
-            {/* Greeting */}
-            <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-              Hey! <span className="text-primary">Anwar</span>
-            </h1>
-            <h2 className="mt-2 text-3xl font-medium tracking-tight text-foreground/60 sm:text-4xl">
-              What can I help with?
-            </h2>
-
-            {/* Quick Action Chips */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 w-full"
-            >
-              {QUICK_ACTIONS.map((action, index) => (
-                <motion.button
-                  key={action.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                  onClick={() => handleQuickAction(action.prompt)}
-                  className={cn(
-                    "group flex flex-col gap-2 rounded-2xl border bg-card/50 p-4 text-left transition-all",
-                    "hover:bg-card hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 hover:-translate-y-0.5",
-                    action.color
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-sm">
-                      <action.icon className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{action.description}</p>
-                </motion.button>
-              ))}
-            </motion.div>
-
-            {/* Input Area */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="mt-8 w-full"
-            >
-              <div className="relative rounded-2xl border border-border/50 bg-card/80 shadow-xl shadow-primary/5 backdrop-blur-xl">
-                {/* File Preview */}
-                {pendingFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 border-b border-border/30 p-3">
-                    {pendingFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm"
-                      >
-                        <span className="text-primary">{getFileIcon(file)}</span>
-                        <span className="max-w-[150px] truncate text-foreground">{file.name}</span>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-start gap-3 p-4">
-                  <Sparkles className="mt-1 h-5 w-5 text-primary" />
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything......"
-                    className="flex-1 resize-none bg-transparent text-base outline-none placeholder:text-muted-foreground/60 min-h-[24px] max-h-[200px] py-0.5"
-                    rows={1}
-                  />
-                </div>
-                <div className="flex items-center justify-between border-t border-border/30 px-4 py-3">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
-                    className="hidden"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    Attach file
-                    {pendingFiles.length > 0 && (
-                      <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                        {pendingFiles.length}
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="h-9 w-9 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50"
-                    onClick={() => sendMessage(message)}
-                    disabled={(!message.trim() && pendingFiles.length === 0) || isLoading}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+    <div className="relative flex h-[calc(100vh-56px)] w-full flex-col overflow-hidden bg-background">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border/50 px-6 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Horus</span>
+          <span className="text-xs text-muted-foreground/60">state observer</span>
         </div>
-      )}
-
-      {/* Messages Area */}
-      {hasMessages && (
-        <>
-          <div className="relative z-10 flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-3xl space-y-8 px-6 py-8">
-              <AnimatePresence initial={false}>
-                {messages.map((msg) => {
-                  const isLatestAssistant = msg.role === "assistant" && msg.id === streamingMessageId
-                  const isStreaming = isLatestAssistant && !isLoading
-
-                  return (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={cn("flex w-full", msg.role === "user" ? "justify-end" : "justify-start")}
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={refreshObservation}>
+            Refresh
+          </Button>
+        </div>
+      </div>
+      
+      {/* Observations */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl space-y-6 p-6">
+          {observations.map((obs, i) => (
+            <motion.div
+              key={obs.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="font-mono text-sm"
+            >
+              <div className="mb-1 text-xs text-muted-foreground/60">
+                {new Date(obs.timestamp).toLocaleTimeString()}
+              </div>
+              <pre className="whitespace-pre-wrap text-foreground/90">{obs.content}</pre>
+            </motion.div>
+          ))}
+          <div ref={scrollRef} />
+        </div>
+      </div>
+      
+      {/* Input */}
+      <div className="border-t border-border/50 px-6 py-4">
+        <div className="mx-auto max-w-3xl">
+          <div className="rounded-xl border border-border/50 bg-card p-3">
+            {/* File preview */}
+            {pendingFiles.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2 border-b border-border/30 pb-3">
+                {pendingFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-xs"
+                  >
+                    {getFileIcon(file)}
+                    <span className="max-w-[120px] truncate">{file.name}</span>
+                    <button
+                      onClick={() => removeFile(index)}
+                      className="text-muted-foreground hover:text-foreground"
                     >
-                      {msg.role === "assistant" ? (
-                        isLatestAssistant ? (
-                          <StreamingMessage content={msg.content} isStreaming={isStreaming} onStop={() => setStreamingMessageId(null)} />
-                        ) : (
-                          <div className="flex max-w-[90%] flex-col gap-2">
-                            <div className="prose prose-sm max-w-none text-foreground">
-                              <MarkdownContent content={msg.content} />
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 transition-opacity hover:opacity-100">
-                              <CopyButton text={msg.content} />
-                            </div>
-                          </div>
-                        )
-                      ) : (
-                        <div className="max-w-[80%]">
-                          <div className="rounded-2xl bg-[#1a1a2e] px-5 py-3.5 text-white">
-                            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
-
-              {/* Loading */}
-              {isLoading && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <div className="flex gap-1">
-                      {[0, 0.15, 0.3].map((delay, i) => (
-                        <motion.span
-                          key={i}
-                          animate={{ scale: [1, 1.3, 1] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay }}
-                          className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
-                        />
-                      ))}
-                    </div>
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
-                </motion.div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-
-          {/* Input Bar (when messages exist) */}
-          <div className="relative z-10 border-t border-border/50 bg-background/80 px-6 py-4 backdrop-blur-xl">
-            <div className="mx-auto max-w-3xl">
-              <div className="rounded-2xl border border-border/50 bg-card/80 shadow-lg shadow-primary/5">
-                {/* File Preview */}
-                {pendingFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 border-b border-border/30 px-3 py-2">
-                    {pendingFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 rounded-lg bg-primary/5 px-2.5 py-1 text-xs"
-                      >
-                        <span className="text-primary">{getFileIcon(file)}</span>
-                        <span className="max-w-[120px] truncate text-foreground">{file.name}</span>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-end gap-3 p-3">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
-                    className="hidden"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="relative h-9 w-9 shrink-0 rounded-xl"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    {pendingFiles.length > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                        {pendingFiles.length}
-                      </span>
-                    )}
-                  </Button>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything..."
-                    className="flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground/60 min-h-[36px] max-h-[120px]"
-                    rows={1}
-                  />
-                  <Button
-                    size="icon"
-                    className="h-9 w-9 shrink-0 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    onClick={() => sendMessage(message)}
-                    disabled={(!message.trim() && pendingFiles.length === 0) || isLoading}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                multiple
+                className="hidden"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4" />
+                Attach
+              </Button>
+              
+              <div className="flex-1 text-xs text-muted-foreground">
+                {hasState ? 
+                  `${summary.fileCount} files, ${summary.evidenceCount} evidence, ${summary.gapCount} gaps` :
+                  "No state recorded"
+                }
               </div>
             </div>
           </div>
-        </>
-      )}
-
-      {/* Chat History Drawer */}
-      <ChatHistoryDrawer
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        sessions={sessions}
-        onLoadSession={(session) => { setMessages(session.messages); setHistoryOpen(false); }}
-        onDeleteSession={(id) => setSessions((prev) => prev.filter((s) => s.id !== id))}
-      />
+        </div>
+      </div>
     </div>
   )
 }

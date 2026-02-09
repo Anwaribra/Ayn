@@ -380,7 +380,7 @@ If referencing specific items, be precise:
     analyzeFile(fileId, analysis)
     
     // Generate insights based on analysis
-    if (analysis.standard) {
+    if (analysis?.standard) {
       addInsight({
         type: "completion",
         title: `File identified as ${analysis.standard} ${analysis.documentType}`,

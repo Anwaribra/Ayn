@@ -6,12 +6,6 @@ import {
   Send, 
   Paperclip, 
   Sparkles, 
-  BookOpen, 
-  FileCheck, 
-  HelpCircle, 
-  Search, 
-  MessageSquare, 
-  ClipboardList,
   History,
   Plus,
   X,
@@ -19,12 +13,10 @@ import {
   Check,
   Pause,
   Play,
-  Shield,
   ArrowUp,
   FileText,
   Target,
-  Lightbulb,
-  BarChart3
+  Lightbulb
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -77,27 +69,6 @@ const QUICK_ACTIONS = [
     description: "Self-assessment help",
     prompt: "Guide me through the NAQAAE self-assessment process. What are the main domains and required evidence?",
     color: "bg-amber-500/10 text-amber-600 border-amber-200",
-  },
-  {
-    icon: BarChart3,
-    label: "Quality Metrics",
-    description: "Track compliance KPIs",
-    prompt: "What are the key quality metrics and KPIs I should track for ISO 21001 compliance?",
-    color: "bg-purple-500/10 text-purple-600 border-purple-200",
-  },
-  {
-    icon: FileCheck,
-    label: "Evidence Review",
-    description: "Evaluate documents",
-    prompt: "What types of evidence should I collect for compliance criteria and how should they be organized?",
-    color: "bg-rose-500/10 text-rose-600 border-rose-200",
-  },
-  {
-    icon: Shield,
-    label: "Audit Prep",
-    description: "Get assessment ready",
-    prompt: "Help me prepare for a compliance assessment. What should I have ready and what are common pitfalls?",
-    color: "bg-cyan-500/10 text-cyan-600 border-cyan-200",
   },
 ]
 

@@ -54,6 +54,7 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
 } from "recharts"
+import { Timeline } from "@/components/ui/timeline"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -200,9 +201,6 @@ function exportToPDF(report: GapAnalysis) {
 }
 
 // ─── Compliance Journey Tracker ──────────────────────────────────────────────
-
-import { Timeline } from "@/components/ui/timeline"
-import { FileSearch, ClipboardCheck, Target, Search, Award } from "lucide-react"
 
 function ComplianceJourney({
   reportCount,

@@ -393,8 +393,8 @@ export default function AynAIChatRedesigned() {
             className="flex flex-col items-center text-center w-full max-w-3xl"
           >
             {/* Logo */}
-            <div className="mb-6">
-              <HorusLogo size={72} animate />
+            <div className="relative mb-8">
+              <HorusLogo size={80} animate />
             </div>
 
             {/* Greeting */}

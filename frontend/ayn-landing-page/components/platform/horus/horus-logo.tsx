@@ -8,83 +8,20 @@ interface HorusLogoProps {
   className?: string
 }
 
-export function HorusLogo({ size = 48, animate = false, className = "" }: HorusLogoProps) {
-  const LogoSvg = (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 120 120"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <defs>
-        {/* Main gradient - purple to cyan */}
-        <linearGradient id="horusGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#22d3ee" />
-          <stop offset="50%" stopColor="#8b5cf6" />
-          <stop offset="100%" stopColor="#a855f7" />
-        </linearGradient>
-        
-        {/* Glow gradient */}
-        <linearGradient id="glowGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.4" />
-        </linearGradient>
-        
-        {/* Shadow */}
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#8b5cf6" floodOpacity="0.3" />
-        </filter>
-      </defs>
-      
-      {/* Background circle (optional, for contrast on light theme) */}
-      <circle cx="60" cy="60" r="56" fill="white" stroke="url(#horusGradient)" strokeWidth="2" />
-      
-      {/* The H with arrow */}
-      <g transform="translate(20, 20)" filter="url(#shadow)">
-        {/* Left vertical bar of H */}
-        <rect x="8" y="10" width="16" height="60" rx="4" fill="url(#horusGradient)" />
-        
-        {/* Right vertical bar of H (shorter) */}
-        <rect x="56" y="30" width="16" height="40" rx="4" fill="url(#horusGradient)" />
-        
-        {/* The arrow curve connecting them */}
-        <path
-          d="M24 38 C24 38, 32 20, 56 20 L72 20 L72 36 L56 36 C40 36, 40 54, 56 54 L72 54"
-          stroke="url(#horusGradient)"
-          strokeWidth="16"
-          strokeLinecap="round"
-          fill="none"
-        />
-        
-        {/* Arrow head */}
-        <path
-          d="M56 42 L80 24 L80 60 Z"
-          fill="url(#horusGradient)"
-        />
-      </g>
-    </svg>
-  )
-
+export function HorusLogo({ size = 80, animate = false, className = "" }: HorusLogoProps) {
   if (animate) {
     return (
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        whileHover={{ scale: 1.05 }}
-        className="relative"
-      >
-        {/* Glow effect */}
+      <div className={`relative ${className}`} style={{ width: size, height: size }}>
+        {/* Animated glow background */}
         <motion.div
-          className="absolute inset-0 rounded-full blur-xl"
+          className="absolute inset-0 rounded-3xl"
           style={{ 
-            background: "linear-gradient(135deg, rgba(139,92,246,0.4) 0%, rgba(34,211,238,0.4) 100%)" 
+            background: "linear-gradient(135deg, rgba(139,92,246,0.4) 0%, rgba(6,182,212,0.4) 100%)",
+            filter: "blur(20px)"
           }}
           animate={{
-            opacity: [0.3, 0.6, 0.3],
-            scale: [1, 1.1, 1],
+            opacity: [0.5, 1, 0.5],
+            scale: [0.9, 1.1, 0.9],
           }}
           transition={{
             duration: 3,
@@ -92,44 +29,71 @@ export function HorusLogo({ size = 48, animate = false, className = "" }: HorusL
             ease: "easeInOut",
           }}
         />
-        <div className="relative">{LogoSvg}</div>
-      </motion.div>
+        
+        {/* Logo container */}
+        <motion.div 
+          className="relative flex h-full w-full items-center justify-center rounded-2xl bg-white shadow-xl"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <svg
+            width={size * 0.6}
+            height={size * 0.6}
+            viewBox="0 0 100 100"
+            fill="none"
+          >
+            <defs>
+              <linearGradient id="horusGrad" x1="0" y1="100" x2="100" y2="0">
+                <stop offset="0%" stopColor="#06b6d4" />
+                <stop offset="50%" stopColor="#7c3aed" />
+                <stop offset="100%" stopColor="#a855f7" />
+              </linearGradient>
+            </defs>
+            
+            {/* H with arrow - simplified path */}
+            <path
+              d="M12 18 h16 v26 h28 v-26 h16 v64 h-16 v-26 h-28 v26 h-16 z"
+              fill="url(#horusGrad)"
+            />
+            <path
+              d="M56 32 l28 -14 v28 l-10 -5 v18 l-18 -10 z"
+              fill="url(#horusGrad)"
+            />
+          </svg>
+        </motion.div>
+      </div>
     )
   }
 
-  return LogoSvg
-}
-
-// Smaller version for inline use
-export function HorusLogoSmall({ size = 24, className = "" }: { size?: number; className?: string }) {
+  // Non-animated version
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 120 120"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
+    <div 
+      className={`flex items-center justify-center rounded-2xl bg-white shadow-lg ${className}`}
+      style={{ width: size, height: size }}
     >
-      <defs>
-        <linearGradient id="horusGradientSmall" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#22d3ee" />
-          <stop offset="50%" stopColor="#8b5cf6" />
-          <stop offset="100%" stopColor="#a855f7" />
-        </linearGradient>
-      </defs>
-      <g transform="translate(20, 20)">
-        <rect x="8" y="10" width="16" height="60" rx="4" fill="url(#horusGradientSmall)" />
-        <rect x="56" y="30" width="16" height="40" rx="4" fill="url(#horusGradientSmall)" />
+      <svg
+        width={size * 0.6}
+        height={size * 0.6}
+        viewBox="0 0 100 100"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id="horusGradStatic" x1="0" y1="100" x2="100" y2="0">
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#7c3aed" />
+            <stop offset="100%" stopColor="#a855f7" />
+          </linearGradient>
+        </defs>
         <path
-          d="M24 38 C24 38, 32 20, 56 20 L72 20 L72 36 L56 36 C40 36, 40 54, 56 54 L72 54"
-          stroke="url(#horusGradientSmall)"
-          strokeWidth="16"
-          strokeLinecap="round"
-          fill="none"
+          d="M12 18 h16 v26 h28 v-26 h16 v64 h-16 v-26 h-28 v26 h-16 z"
+          fill="url(#horusGradStatic)"
         />
-        <path d="M56 42 L80 24 L80 60 Z" fill="url(#horusGradientSmall)" />
-      </g>
-    </svg>
+        <path
+          d="M56 32 l28 -14 v28 l-10 -5 v18 l-18 -10 z"
+          fill="url(#horusGradStatic)"
+        />
+      </svg>
+    </div>
   )
 }

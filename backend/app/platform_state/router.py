@@ -41,8 +41,9 @@ async def record_file_upload(
 ):
     """Record a file upload. Called by file upload handlers."""
     service = StateService(db)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_file_upload(
-        user_id=current_user.id,
+        user_id=user_id,
         file_id=file_id,
         name=name,
         file_type=file_type,
@@ -82,8 +83,9 @@ async def record_evidence_created(
 ):
     """Record evidence scope creation."""
     service = StateService(db)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_evidence_created(
-        user_id=current_user.id,
+        user_id=user_id,
         evidence_id=evidence_id,
         title=title,
         ev_type=ev_type,
@@ -116,8 +118,9 @@ async def record_gap_defined(
 ):
     """Record gap definition."""
     service = StateService(db)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_gap_defined(
-        user_id=current_user.id,
+        user_id=user_id,
         gap_id=gap_id,
         standard=standard,
         clause=clause,
@@ -162,8 +165,9 @@ async def record_metric_update(
 ):
     """Record metric update."""
     service = StateService(db)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await service.record_metric_update(
-        user_id=current_user.id,
+        user_id=user_id,
         metric_id=metric_id,
         name=name,
         value=value,
@@ -182,7 +186,8 @@ async def get_state_summary(
 ):
     """Get current platform state summary."""
     service = StateService(db)
-    return await service.get_current_state(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await service.get_current_state(user_id)
 
 
 @router.get("/files", response_model=List[PlatformFile])
@@ -192,7 +197,8 @@ async def list_files(
 ):
     """List all files for user."""
     manager = StateService(db).manager
-    return await manager.get_files_by_user(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await manager.get_files_by_user(user_id)
 
 
 @router.get("/evidence", response_model=List[PlatformEvidence])
@@ -202,7 +208,8 @@ async def list_evidence(
 ):
     """List all evidence for user."""
     manager = StateService(db).manager
-    return await manager.get_evidence_by_user(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await manager.get_evidence_by_user(user_id)
 
 
 @router.get("/gaps", response_model=List[PlatformGap])
@@ -212,7 +219,8 @@ async def list_gaps(
 ):
     """List all gaps for user."""
     manager = StateService(db).manager
-    return await manager.get_gaps_by_user(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await manager.get_gaps_by_user(user_id)
 
 
 @router.get("/metrics", response_model=List[PlatformMetric])
@@ -222,7 +230,8 @@ async def list_metrics(
 ):
     """List all metrics for user."""
     manager = StateService(db).manager
-    return await manager.get_metrics_by_user(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await manager.get_metrics_by_user(user_id)
 
 
 @router.get("/events")
@@ -233,4 +242,5 @@ async def get_events(
 ):
     """Get recent events."""
     manager = StateService(db).manager
-    return await manager.get_recent_events(current_user.id, limit)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await manager.get_recent_events(user_id, limit)

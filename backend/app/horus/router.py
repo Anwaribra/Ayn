@@ -30,8 +30,9 @@ async def observe_state(
     state_manager = PlatformStateManager(db)
     horus = HorusService(state_manager)
     
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     return await horus.observe(
-        user_id=current_user.id,
+        user_id=user_id,
         query=query
     )
 
@@ -45,7 +46,8 @@ async def get_files_detailed_state(
     state_manager = PlatformStateManager(db)
     horus = HorusService(state_manager)
     
-    return await horus.get_files_state(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await horus.get_files_state(user_id)
 
 
 @router.get("/state/gaps")
@@ -57,7 +59,8 @@ async def get_gaps_detailed_state(
     state_manager = PlatformStateManager(db)
     horus = HorusService(state_manager)
     
-    return await horus.get_gaps_state(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await horus.get_gaps_state(user_id)
 
 
 @router.get("/state/evidence")
@@ -69,4 +72,5 @@ async def get_evidence_detailed_state(
     state_manager = PlatformStateManager(db)
     horus = HorusService(state_manager)
     
-    return await horus.get_evidence_state(current_user.id)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    return await horus.get_evidence_state(user_id)

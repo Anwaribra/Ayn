@@ -391,23 +391,6 @@ export default function AynAIChatRedesigned() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="flex flex-col items-center text-center w-full max-w-3xl"
           >
-            {/* Logo */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-              className="mb-6"
-            >
-              <div className="relative">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/30 blur-xl" />
-                <img 
-                  src="/horus-logo.svg" 
-                  alt="Horus AI" 
-                  className="relative h-16 w-16 rounded-xl bg-white shadow-lg"
-                />
-              </div>
-            </motion.div>
-
             {/* Greeting */}
             <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
               Hey! <span className="text-primary">Anwar</span>

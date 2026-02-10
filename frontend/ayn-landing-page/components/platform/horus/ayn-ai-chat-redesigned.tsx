@@ -4,8 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
   Send,
@@ -21,7 +20,6 @@ import {
   Loader2,
   MessageSquare,
   Trash2,
-  Menu,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -137,7 +135,6 @@ export default function HorusAIChat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
-  const [historyOpen, setHistoryOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -313,51 +310,11 @@ export default function HorusAIChat() {
         </ScrollArea>
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-        <SheetContent side="left" className="w-64 p-0">
-          <div className="p-4 border-b">
-            <Button onClick={newChat} className="w-full" size="sm">
-              <Sparkles className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          </div>
-          <ScrollArea className="flex-1 p-2">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="group flex items-center gap-2 rounded-lg p-2 hover:bg-accent cursor-pointer"
-                onClick={() => loadSession(session)}
-              >
-                <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate text-sm">{session.title}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    deleteSession(session.id)
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
-
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-3">
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" onClick={() => setHistoryOpen(true)}>
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
@@ -502,7 +459,7 @@ export default function HorusAIChat() {
                 <Paperclip className="h-4 w-4" />
               </Button>
 
-              <textarea
+              <Textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -513,9 +470,8 @@ export default function HorusAIChat() {
                   }
                 }}
                 placeholder="Message Horus..."
-                className="flex-1 resize-none bg-transparent text-sm outline-none min-h-[44px] max-h-[200px] py-3"
+                className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[44px] max-h-[200px]"
                 disabled={isLoading}
-                rows={1}
               />
 
               <Button size="icon" onClick={sendMessage} disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}>

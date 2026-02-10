@@ -163,41 +163,6 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
   )
 }
 
-// Floating Try Horus AI Button
-function FloatingTryButton() {
-  return (
-    <motion.div
-      className="fixed bottom-6 right-6 z-40"
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 1.5, duration: 0.4 }}
-    >
-      <Link href="/platform/horus-ai">
-        <motion.div
-          className="group flex items-center gap-2 px-4 py-3 rounded-full bg-[var(--brand)] text-[var(--brand-foreground)] shadow-lg shadow-[var(--brand)]/20 hover:shadow-xl hover:shadow-[var(--brand)]/30 transition-all"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <motion.div
-            animate={{ rotate: [0, 15, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >
-            <Sparkles className="w-4 h-4" />
-          </motion.div>
-          <span className="text-sm font-medium">Try Horus AI</span>
-          <motion.span
-            className="text-xs opacity-70 hidden sm:inline"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: "auto", opacity: 0.7 }}
-            transition={{ delay: 2, duration: 0.3 }}
-          >
-            — Ask anything
-          </motion.span>
-        </motion.div>
-      </Link>
-    </motion.div>
-  )
-}
 
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
@@ -221,16 +186,17 @@ export function Hero() {
         <Banner
           show={showBanner}
           onHide={() => setShowBanner(false)}
-          variant="gradient"
-          title="Meet Horus AI"
-          description="Your intelligent platform assistant"
+          variant="info"
+          title="AI Dashboard is here!"
+          description="Experience the future of analytics"
           showShade={true}
           closable={true}
-          icon={<Sparkles className="h-4 w-4 text-primary" />}
+          icon={<Sparkles className="h-5 w-5" />}
           action={
             <Link href="/platform/horus-ai">
               <Button
                 size="sm"
+                variant="default"
                 className="gap-1"
               >
                 Try now
@@ -375,9 +341,6 @@ export function Hero() {
           </button>
         </div>
       </section>
-
-      {/* Floating Try Horus AI Button */}
-      <FloatingTryButton />
 
       {/* Demo Modal */}
       <DemoModal isOpen={demoOpen} onClose={() => setDemoOpen(false)} />

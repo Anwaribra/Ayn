@@ -726,8 +726,8 @@ export default function AynAIChat() {
   )
 
   const sendMessage = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim()
+    async (text?: string) => {
+      const trimmed = (text || message).trim()
       if (!trimmed || isLoading) return
 
       const userMsg: Message = {
@@ -774,7 +774,7 @@ export default function AynAIChat() {
         setIsLoading(false)
       }
     },
-    [isLoading, adjustHeight, messages],
+    [isLoading, adjustHeight, messages, message],
   )
 
   const handleQuickAction = (prompt: string) => {
@@ -821,13 +821,14 @@ export default function AynAIChat() {
     setAttachedFiles((prev) => prev.filter((f) => f.id !== id))
   }, [])
 
-  const handleSendWithFiles = useCallback(async () => {
-    if ((!message.trim() && attachedFiles.length === 0) || isLoading) return
+  const handleSendWithFiles = useCallback(async (text?: string) => {
+    const messageText = (text || message).trim()
+    if ((!messageText && attachedFiles.length === 0) || isLoading) return
 
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: "user",
-      content: message.trim() || "📎 Uploaded files",
+      content: messageText || "📎 Uploaded files",
       timestamp: Date.now(),
       attachments: attachedFiles,
     }
@@ -840,7 +841,7 @@ export default function AynAIChat() {
 
     try {
       const response = await api.chatWithFiles(
-        message.trim() || "Analyze these files for compliance with ISO 21001, ISO 9001, and NAQAAE standards.",
+        messageText || "Analyze these files for compliance with ISO 21001, ISO 9001, and NAQAAE standards.",
         attachedFiles.map((f) => f.file)
       )
       

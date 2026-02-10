@@ -219,17 +219,14 @@ export default function HorusAIChat() {
       {/* Header */}
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold">Horus AI</h1>
-            <p className="text-sm text-muted-foreground">Your Quality Assurance Expert</p>
-          </div>
+          <h1 className="text-lg font-semibold">Horus</h1>
         </div>
         {!isEmpty && (
           <Button variant="ghost" size="sm" onClick={clearChat}>
-            Clear Chat
+            New Chat
           </Button>
         )}
       </div>
@@ -238,25 +235,15 @@ export default function HorusAIChat() {
       <ScrollArea className="flex-1 px-4">
         <div className="mx-auto max-w-3xl py-6">
           {isEmpty ? (
-            <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500">
-                <Sparkles className="h-8 w-8 text-white" />
+            <div className="flex h-[60vh] flex-col items-center justify-center space-y-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+                <Sparkles className="h-10 w-10 text-white" />
               </div>
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold">Welcome to Horus AI</h2>
-                <p className="mt-2 text-muted-foreground">
-                  Ask about ISO 21001, ISO 9001, NAQAAE standards, or upload documents for analysis.
+              <div className="text-center space-y-2">
+                <h1 className="text-3xl font-bold">Horus AI</h1>
+                <p className="text-lg text-muted-foreground max-w-2xl">
+                  I'm the brain of your platform. I see everything, remember everything, and can help with anything across Evidence, Gaps, Dashboard, and Standards.
                 </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Card className="cursor-pointer p-4 transition-colors hover:bg-accent">
-                  <h3 className="font-medium">ISO Standards</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Learn about quality management systems</p>
-                </Card>
-                <Card className="cursor-pointer p-4 transition-colors hover:bg-accent">
-                  <h3 className="font-medium">Document Analysis</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Upload files for compliance review</p>
-                </Card>
               </div>
             </div>
           ) : (
@@ -383,7 +370,7 @@ export default function HorusAIChat() {
                     sendMessage()
                   }
                 }}
-                placeholder="Ask about ISO standards, compliance, or upload documents..."
+                placeholder="Message Horus..."
                 className="min-h-[44px] max-h-[200px] resize-none border-0 shadow-none focus-visible:ring-0"
                 disabled={isLoading}
               />
@@ -399,7 +386,7 @@ export default function HorusAIChat() {
           </Card>
 
           <p className="text-center text-xs text-muted-foreground">
-            Horus AI can make mistakes. Verify responses against official standards.
+            Horus has full platform access. Ask about evidence, gaps, standards, or upload files.
           </p>
         </div>
       </div>

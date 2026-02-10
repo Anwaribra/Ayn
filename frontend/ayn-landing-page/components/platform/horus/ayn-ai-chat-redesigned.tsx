@@ -326,17 +326,13 @@ export default function HorusAIChat() {
       <ScrollArea className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-8">
           {isEmpty ? (
-            <div className="flex h-[calc(100vh-300px)] flex-col items-center justify-center space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full blur-2xl opacity-20 animate-pulse" />
-                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-                  <Sparkles className="h-10 w-10 text-white" />
-                </div>
-              </div>
-              <div className="text-center space-y-3 max-w-md">
-                <h1 className="text-3xl font-bold tracking-tight">Horus AI</h1>
-                <p className="text-muted-foreground text-lg leading-relaxed">
-                  Your intelligent platform assistant. Ask anything or upload files to get started.
+            <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center">
+              <div className="text-center space-y-8 max-w-2xl px-4">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  What do you want to know?
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Ask about standards, evidence, gaps, or anything across your platform
                 </p>
               </div>
             </div>
@@ -466,7 +462,7 @@ export default function HorusAIChat() {
                   sendMessage()
                 }
               }}
-              placeholder="Message Horus..."
+              placeholder="Ask anything..."
               className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[44px] max-h-[200px]"
               disabled={isLoading}
             />
@@ -482,7 +478,7 @@ export default function HorusAIChat() {
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
-            Horus has full platform access. Always verify critical information.
+            Platform intelligence • Always verify important information
           </p>
         </div>
       </div>

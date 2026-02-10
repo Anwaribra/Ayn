@@ -104,10 +104,16 @@ class PlatformStateManager:
         
         try:
             # Try to query one of the tables
-            await self.db.platform_files.find_first(take=1)
-            self._tables_exist = True
-        except Exception:
-            # Tables don't exist yet
+            if hasattr(self.db, 'platform_files'):
+                await self.db.platform_files.find_first(take=1)
+                self._tables_exist = True
+            else:
+                # Prisma client doesn't have the table attribute
+                print("Platform state tables not found in Prisma client")
+                self._tables_exist = False
+        except Exception as e:
+            # Tables don't exist yet or other error
+            print(f"Platform state tables check failed: {e}")
             self._tables_exist = False
         
         return self._tables_exist

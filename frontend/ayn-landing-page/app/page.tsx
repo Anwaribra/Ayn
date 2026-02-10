@@ -8,7 +8,6 @@ import { CursorGlow, SectionDivider } from "@/components/landing/landing-utils"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { Hero } from "@/components/landing/Hero"
 import { HorusIntelligenceSection } from "@/components/landing/HorusIntelligenceSection"
-import { HowItWorksSection } from "@/components/landing/HowItWorksSection"
 import { AboutSection } from "@/components/landing/AboutSection"
 import { FinalCtaSection } from "@/components/landing/FinalCtaSection"
 import { FeatureShowcase } from "@/components/landing/feature-showcase"
@@ -54,8 +53,6 @@ export default function Home() {
       <HorusIntelligenceSection />
       <SectionDivider />
       <FeatureShowcase />
-      <SectionDivider />
-      <HowItWorksSection />
       <SectionDivider />
       <AboutSection />
       <SectionDivider />

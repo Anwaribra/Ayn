@@ -117,7 +117,6 @@ export function LandingNavbar() {
 
         <div className="hidden md:flex items-center gap-6">
           <NavLink href="#features">Features</NavLink>
-          <NavLink href="#how-it-works">How it works</NavLink>
           <NavLink href="#about">About</NavLink>
         </div>
 
@@ -227,9 +226,6 @@ export function LandingNavbar() {
             <div className="flex flex-col gap-0">
               <NavLink href="#features" onClick={closeMobile}>
                 Features
-              </NavLink>
-              <NavLink href="#how-it-works" onClick={closeMobile}>
-                How it works
               </NavLink>
               <NavLink href="#about" onClick={closeMobile}>
                 About

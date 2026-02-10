@@ -168,9 +168,9 @@ export function Hero() {
   
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
-      "Streamline ISO 21001 compliance",
-      "Achieve NAQAAE compliance",
-      "AI-powered quality assurance",
+      "Unified quality management",
+      "AI-powered compliance insights",
+      "Evidence to accreditation, simplified",
     ],
     typingSpeed: 60,
     deletingSpeed: 40,
@@ -205,7 +205,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Your Education Quality & Compliance Platform
+                Education Quality, Powered by Intelligence
               </motion.h2>
               
               {/* Animated typewriter subtitle */}
@@ -227,7 +227,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                Streamline ISO 21001 & NAQAAE compliance with AI analysis, evidence management, and automated workflows.
+                Ayn brings AI-powered clarity to educational quality management. From evidence organization to accreditation readiness, your institution gets one intelligent system that understands it all.
               </motion.p>
               
               <motion.div 
@@ -261,7 +261,7 @@ export function Hero() {
               >
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-primary" />
-                  <span>ISO 21001</span>
+                  <span>Quality Standards</span>
                 </div>
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">

@@ -249,7 +249,6 @@ export default function HorusAIChat() {
   // Load session
   const loadSession = (session: ChatSession) => {
     setMessages(session.messages)
-    setHistoryOpen(false)
   }
 
   // Delete session

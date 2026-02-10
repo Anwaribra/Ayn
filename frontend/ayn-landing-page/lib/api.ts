@@ -434,6 +434,32 @@ class ApiClient {
     })
   }
 
+  async chatWithFiles(message: string, files: File[]) {
+    const token = this.getToken()
+    const formData = new FormData()
+    formData.append("message", message)
+    
+    // Append all files
+    files.forEach((file) => {
+      formData.append("files", file)
+    })
+
+    const response = await fetch(`${API_BASE_URL}/ai/chat-with-files`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "Failed to process files" }))
+      throw new Error(error.detail || "Failed to process files")
+    }
+
+    return response.json()
+  }
+
   async generateAnswer(prompt: string, context?: string) {
     return this.request<import("./types").AIResponse>("/ai/generate-answer", {
       method: "POST",

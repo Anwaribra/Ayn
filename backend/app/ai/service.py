@@ -183,6 +183,64 @@ class OpenRouterClient:
         criteria_part = f" related to: {criteria}" if criteria else ""
         prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
         return self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
+    
+    def chat_with_files(self, message: str, files: List[Dict]) -> str:
+        """
+        Multimodal chat with files.
+        OpenRouter supports vision models - we can send images via URL or base64.
+        """
+        # Build message content with images
+        content_parts = []
+        
+        # OpenAI-compatible vision format
+        text_content = message
+        image_urls = []
+        
+        for file_item in files:
+            if file_item["type"] == "image":
+                # Encode as data URL
+                data_url = f"data:{file_item['mime_type']};base64,{file_item['data']}"
+                image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
+            elif file_item["type"] == "text":
+                text_content += f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"
+        
+        # Build message with text + images
+        if image_urls:
+            # Vision model format
+            user_message = {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": text_content},
+                    *image_urls
+                ]
+            }
+        else:
+            user_message = {"role": "user", "content": text_content}
+        
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                user_message,
+            ],
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ayn.vercel.app",
+            "X-Title": "Ayn Platform - Horus AI",
+        }
+        
+        response = httpx.post(
+            self.BASE_URL,
+            json=payload,
+            headers=headers,
+            timeout=120.0,  # Longer timeout for vision
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        return data["choices"][0]["message"]["content"]
 
 
 # ─── Gemini Client ────────────────────────────────────────────────────────────
@@ -321,6 +379,60 @@ class GeminiClient:
         else:
             response = self.model.generate_content(prompt)
             return response.text
+    
+    def chat_with_files(self, message: str, files: List[Dict]) -> str:
+        """
+        Multimodal chat with files (images, documents).
+        files = [{"type": "image", "mime_type": "image/jpeg", "data": "base64...", "filename": "..."}, ...]
+        """
+        if USE_NEW_API:
+            # Build multimodal content
+            parts = []
+            
+            # Add text message
+            parts.append(genai_types.Part.from_text(text=message))
+            
+            # Add files
+            for file_item in files:
+                if file_item["type"] == "image":
+                    # Inline image data (base64)
+                    import base64
+                    img_bytes = base64.b64decode(file_item["data"])
+                    parts.append(
+                        genai_types.Part.from_bytes(
+                            data=img_bytes,
+                            mime_type=file_item["mime_type"]
+                        )
+                    )
+                elif file_item["type"] == "text":
+                    # Text file content
+                    parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"))
+            
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                ),
+                contents=genai_types.Content(
+                    role="user",
+                    parts=parts
+                ),
+            )
+            return response.text
+        else:
+            # Old API - limited multimodal support
+            # For now, just process text files and describe images
+            file_descriptions = []
+            for file_item in files:
+                if file_item["type"] == "image":
+                    file_descriptions.append(f"[Image: {file_item['filename']}]")
+                elif file_item["type"] == "text":
+                    file_descriptions.append(f"File {file_item['filename']}:\n{file_item['data']}")
+            
+            full_prompt = f"{message}\n\n" + "\n\n".join(file_descriptions)
+            full_prompt_with_system = f"{SYSTEM_PROMPT}\n\n---\n\n{full_prompt}"
+            response = self.model.generate_content(full_prompt_with_system)
+            return response.text
 
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────
@@ -410,6 +522,9 @@ class HorusAIClient:
     
     def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
         return self._call_with_fallback("extract_evidence", text=text, criteria=criteria)
+    
+    def chat_with_files(self, message: str, files: List[Dict]) -> str:
+        return self._call_with_fallback("chat_with_files", message=message, files=files)
     
     @property
     def provider(self) -> str:

@@ -1,6 +1,7 @@
 """AI router."""
 import asyncio
-from fastapi import APIRouter, HTTPException, status, Depends, Request
+from fastapi import APIRouter, HTTPException, status, Depends, Request, File, UploadFile, Form
+from typing import List, Optional
 from app.core.middlewares import get_current_user
 from app.core.rate_limit import limiter
 from app.auth.dependencies import require_roles
@@ -15,6 +16,7 @@ from app.ai.models import (
 )
 from app.ai.service import get_gemini_client
 import logging
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,78 @@ async def chat(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate chat response: {str(e)}"
+        )
+
+
+@router.post("/chat-with-files", response_model=AIResponse)
+@limiter.limit("20/minute")
+async def chat_with_files(
+    request: Request,
+    message: str = Form(..., description="User message text"),
+    files: List[UploadFile] = File(..., description="Attached files (images, PDFs, etc.)"),
+    current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
+):
+    """
+    Multi-modal chat with Horus AI - supports text + images/documents.
+    
+    **Teacher, Auditor, and Admin only** - Requires TEACHER, AUDITOR, or ADMIN role.
+    
+    Analyzes uploaded files (images, documents) along with text message.
+    
+    - **message**: User's text message/question
+    - **files**: Attached files (images for now, PDF support coming)
+    """
+    try:
+        client = get_gemini_client()
+        
+        # Read files and prepare them
+        file_contents = []
+        for file in files:
+            content = await file.read()
+            # For images, encode as base64
+            if file.content_type and file.content_type.startswith("image/"):
+                b64_content = base64.b64encode(content).decode("utf-8")
+                file_contents.append({
+                    "type": "image",
+                    "mime_type": file.content_type,
+                    "data": b64_content,
+                    "filename": file.filename
+                })
+            else:
+                # For other files, try to extract text (basic support for now)
+                try:
+                    text_content = content.decode("utf-8")
+                    file_contents.append({
+                        "type": "text",
+                        "data": text_content,
+                        "filename": file.filename
+                    })
+                except:
+                    logger.warning(f"Could not decode file: {file.filename}")
+        
+        # Call AI with multimodal input
+        result = await asyncio.to_thread(
+            client.chat_with_files,
+            message=message,
+            files=file_contents
+        )
+        
+        logger.info(f"User {current_user['email']} used Horus AI with {len(files)} file(s)")
+        
+        return AIResponse(
+            result=result,
+            model="gemini-2.0-flash-multimodal"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error in chat with files: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process files: {str(e)}"
         )
 
 

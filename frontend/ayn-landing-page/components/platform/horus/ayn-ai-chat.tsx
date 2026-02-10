@@ -38,11 +38,19 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
+interface AttachedFile {
+  id: string
+  file: File
+  preview?: string // for images
+  type: "image" | "document" | "other"
+}
+
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
   timestamp?: number
+  attachments?: AttachedFile[]
 }
 
 interface AutoResizeProps {
@@ -633,8 +641,10 @@ export default function AynAIChat() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 48,
     maxHeight: 164,
@@ -770,6 +780,94 @@ export default function AynAIChat() {
   const handleQuickAction = (prompt: string) => {
     sendMessage(prompt)
   }
+
+  // File handling
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    if (files.length === 0) return
+
+    // Limit to 5 files
+    const filesToAdd = files.slice(0, 5 - attachedFiles.length)
+    
+    const newFiles: AttachedFile[] = filesToAdd.map((file) => {
+      const id = crypto.randomUUID()
+      const fileType = file.type.startsWith("image/") 
+        ? "image" 
+        : file.type.includes("pdf") || file.type.includes("document")
+        ? "document"
+        : "other"
+      
+      // Create preview for images
+      if (fileType === "image") {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setAttachedFiles((prev) =>
+            prev.map((f) => (f.id === id ? { ...f, preview: e.target?.result as string } : f))
+          )
+        }
+        reader.readAsDataURL(file)
+      }
+      
+      return { id, file, type: fileType }
+    })
+    
+    setAttachedFiles((prev) => [...prev, ...newFiles])
+    
+    // Reset input
+    if (event.target) event.target.value = ""
+  }, [attachedFiles])
+
+  const removeFile = useCallback((id: string) => {
+    setAttachedFiles((prev) => prev.filter((f) => f.id !== id))
+  }, [])
+
+  const handleSendWithFiles = useCallback(async () => {
+    if ((!message.trim() && attachedFiles.length === 0) || isLoading) return
+
+    const userMsg: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: message.trim() || "📎 Uploaded files",
+      timestamp: Date.now(),
+      attachments: attachedFiles,
+    }
+    
+    setMessages((prev) => [...prev, userMsg])
+    setMessage("")
+    setAttachedFiles([])
+    adjustHeight(true)
+    setIsLoading(true)
+
+    try {
+      const response = await api.chatWithFiles(
+        message.trim() || "Analyze these files for compliance with ISO 21001, ISO 9001, and NAQAAE standards.",
+        attachedFiles.map((f) => f.file)
+      )
+      
+      const assistantMsg: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.result || "No response.",
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, assistantMsg])
+      setStreamingMessageId(assistantMsg.id)
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to process files",
+      )
+      const errMsg: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content:
+          "Sorry, I couldn't process the files. Please try again.",
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, errMsg])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [message, attachedFiles, isLoading, adjustHeight, messages])
 
   const hasMessages = messages.length > 0 || isLoading
 
@@ -945,14 +1043,50 @@ export default function AynAIChat() {
           </motion.div>
 
           {/* Input area at bottom */}
-          <div className="mt-auto w-full max-w-3xl pb-6 pt-8">
+          <div className="mt-auto w-full max-w-3xl pb-6 pt-8 space-y-3">
+            {/* File previews */}
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-2">
+                {attachedFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="relative group flex items-center gap-2 rounded-lg border border-white/10 bg-card/80 px-3 py-2 backdrop-blur-sm"
+                  >
+                    {file.type === "image" && file.preview ? (
+                      <img src={file.preview} alt={file.file.name} className="h-12 w-12 rounded object-cover" />
+                    ) : (
+                      <FileCheck className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-medium truncate max-w-[150px]">
+                        {file.file.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {(file.file.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeFile(file.id)}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <ChatInput
               message={message}
               setMessage={setMessage}
               textareaRef={textareaRef}
               adjustHeight={adjustHeight}
-              sendMessage={sendMessage}
+              sendMessage={attachedFiles.length > 0 ? handleSendWithFiles : sendMessage}
               isLoading={isLoading}
+              fileInputRef={fileInputRef}
+              onFileSelect={handleFileSelect}
+              attachedFiles={attachedFiles}
+              removeFile={removeFile}
             />
           </div>
         </div>
@@ -1079,14 +1213,50 @@ export default function AynAIChat() {
 
           {/* Input area when messages exist */}
           <div className="relative z-10 border-t border-white/[0.06] bg-background/80 px-4 pb-4 pt-3 backdrop-blur-xl">
-            <div className="mx-auto w-full max-w-3xl">
+            <div className="mx-auto w-full max-w-3xl space-y-3">
+              {/* File previews */}
+              {attachedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachedFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="relative group flex items-center gap-2 rounded-lg border border-white/10 bg-card/80 px-3 py-2 backdrop-blur-sm"
+                    >
+                      {file.type === "image" && file.preview ? (
+                        <img src={file.preview} alt={file.file.name} className="h-12 w-12 rounded object-cover" />
+                      ) : (
+                        <FileCheck className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-medium truncate max-w-[150px]">
+                          {file.file.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {(file.file.size / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => removeFile(file.id)}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <ChatInput
                 message={message}
                 setMessage={setMessage}
                 textareaRef={textareaRef}
                 adjustHeight={adjustHeight}
-                sendMessage={sendMessage}
+                sendMessage={attachedFiles.length > 0 ? handleSendWithFiles : sendMessage}
                 isLoading={isLoading}
+                fileInputRef={fileInputRef}
+                onFileSelect={handleFileSelect}
+                attachedFiles={attachedFiles}
+                removeFile={removeFile}
               />
             </div>
           </div>
@@ -1113,13 +1283,21 @@ function ChatInput({
   adjustHeight,
   sendMessage,
   isLoading,
+  fileInputRef,
+  onFileSelect,
+  attachedFiles,
+  removeFile,
 }: {
   message: string
   setMessage: (v: string) => void
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
   adjustHeight: (reset?: boolean) => void
-  sendMessage: (text: string) => void
+  sendMessage: (text?: string) => void
   isLoading: boolean
+  fileInputRef?: React.RefObject<HTMLInputElement | null>
+  onFileSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  attachedFiles?: AttachedFile[]
+  removeFile?: (id: string) => void
 }) {
   const [showSlashCommands, setShowSlashCommands] = useState(false)
   const slashCommands = [
@@ -1202,36 +1380,53 @@ function ChatInput({
 
         <div className="flex items-center justify-between px-3 pb-3">
           <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-lg text-muted-foreground/30 cursor-not-allowed"
-                  aria-label="Attach file"
-                  disabled
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>File attachment coming soon</TooltipContent>
-            </Tooltip>
+            {fileInputRef && onFileSelect && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  onChange={onFileSelect}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg text-muted-foreground/50 hover:text-foreground"
+                      aria-label="Attach file"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={(attachedFiles?.length || 0) >= 5}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {(attachedFiles?.length || 0) >= 5 ? "Max 5 files" : "Attach files (images, PDFs, docs)"}
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2.5">
             <span className="text-[10px] text-muted-foreground/50">
-              {message.length > 0
+              {attachedFiles && attachedFiles.length > 0
+                ? `${attachedFiles.length} file(s) attached`
+                : message.length > 0
                 ? `${message.length} chars`
                 : "Shift+Enter for new line"}
             </span>
             <Button
               type="button"
-              onClick={() => sendMessage(message)}
-              disabled={!message.trim() || isLoading}
+              onClick={() => sendMessage()}
+              disabled={(!message.trim() && (!attachedFiles || attachedFiles.length === 0)) || isLoading}
               size="icon"
               className={cn(
                 "h-8 w-8 rounded-xl transition-all duration-300",
-                message.trim() && !isLoading
+                (message.trim() || (attachedFiles && attachedFiles.length > 0)) && !isLoading
                   ? "bg-[var(--brand)] text-[var(--brand-foreground)] shadow-md shadow-[var(--brand)]/20 hover:bg-[var(--brand)]/90 hover:shadow-lg hover:shadow-[var(--brand)]/30"
                   : "bg-muted/50 text-muted-foreground/50",
               )}

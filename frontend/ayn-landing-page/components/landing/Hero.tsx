@@ -227,7 +227,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                Talk to Horus AI like ChatGPT, but with full control over your quality system. Upload evidence, ask compliance questions, generate reports — Horus understands your institution and guides every step.
+                Talk to Horus AI in natural language, with full control over your quality system. Upload evidence, ask compliance questions, generate reports — Horus understands your institution and guides every step.
               </motion.p>
               
               <motion.div 

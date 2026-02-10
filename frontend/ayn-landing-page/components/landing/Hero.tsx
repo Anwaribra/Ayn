@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Brain, ChevronDown, FileCheck, Lock, Shield, Sparkles, Play, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Banner } from "@/components/ui/banner"
 import { ShinyButton } from "./landing-utils"
 import { useRotatingTypewriter } from "@/hooks/use-typewriter"
 import { useState } from "react"
@@ -200,6 +201,7 @@ function FloatingTryButton() {
 
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
+  const [showBanner, setShowBanner] = useState(true)
   
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
@@ -214,6 +216,31 @@ export function Hero() {
 
   return (
     <>
+      {/* Top Banner */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4">
+        <Banner
+          show={showBanner}
+          onHide={() => setShowBanner(false)}
+          variant="gradient"
+          title="Meet Horus AI"
+          description="Your intelligent platform assistant"
+          showShade={true}
+          closable={true}
+          icon={<Sparkles className="h-4 w-4 text-primary" />}
+          action={
+            <Link href="/platform/horus-ai">
+              <Button
+                size="sm"
+                className="gap-1"
+              >
+                Try now
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            </Link>
+          }
+        />
+      </div>
+
       <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />

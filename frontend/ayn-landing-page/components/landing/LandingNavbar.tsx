@@ -116,6 +116,7 @@ export function LandingNavbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
+          <NavLink href="#horus-intelligence">Horus</NavLink>
           <NavLink href="#features">Features</NavLink>
           <NavLink href="#about">About</NavLink>
         </div>
@@ -200,7 +201,7 @@ export function LandingNavbar() {
                 asChild
                 className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-2 h-9 rounded-full hidden md:inline-flex font-medium"
               >
-                <Link href="/login">Talk to Horus AI</Link>
+                <Link href="/signup">Get Started</Link>
               </MagneticButton>
             </>
           )}
@@ -224,6 +225,9 @@ export function LandingNavbar() {
             className="fixed left-4 right-4 top-[72px] z-50 md:hidden rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-xl py-4 px-4"
           >
             <div className="flex flex-col gap-0">
+              <NavLink href="#horus-intelligence" onClick={closeMobile}>
+                Horus
+              </NavLink>
               <NavLink href="#features" onClick={closeMobile}>
                 Features
               </NavLink>
@@ -267,11 +271,11 @@ export function LandingNavbar() {
                     Log in
                   </Link>
                   <Link
-                    href="/login"
+                    href="/signup"
                     className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-3 px-4 rounded-lg text-center block mt-1"
                     onClick={closeMobile}
                   >
-                    Talk to Horus AI
+                    Get Started
                   </Link>
                 </>
               )}

@@ -98,7 +98,10 @@ export function HorusIntelligenceSection() {
   const rightBottom = useRef<HTMLDivElement>(null)
 
   return (
-    <section className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden">
+    <section
+      id="horus-intelligence"
+      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden"
+    >
       {/* Calm, subtle background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_30%_at_50%_50%,hsl(var(--muted))_0%,transparent_70%)] pointer-events-none" />

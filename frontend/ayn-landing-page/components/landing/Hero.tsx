@@ -168,7 +168,7 @@ export function Hero() {
   
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
-      "Ask me about ISO 21001 compliance",
+      "Ask me about quality compliance",
       "Upload evidence, I'll organize it",
       "Generate reports on demand",
     ],
@@ -266,12 +266,12 @@ export function Hero() {
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
                   <FileCheck className="w-3.5 h-3.5 text-primary" />
-                  <span>ISO & NAQAAE Ready</span>
+                  <span>Quality Standards Support</span>
                 </div>
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-primary" />
-                  <span>Enterprise Control</span>
+                  <span>Accreditation Ready</span>
                 </div>
               </motion.div>
             </div>

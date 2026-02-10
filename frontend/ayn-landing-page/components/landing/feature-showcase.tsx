@@ -46,10 +46,10 @@ const features: Feature[] = [
           </div>
           <div className="flex-1 space-y-2">
             <div className="bg-muted/50 rounded-lg p-2.5 text-xs text-foreground/80">
-              How do I prepare for ISO 21001 clause 7.4?
+              What evidence do I need for our quality review?
             </div>
             <div className="bg-[var(--brand)]/10 rounded-lg p-2.5 text-xs text-foreground/80">
-              Clause 7.4 focuses on Communication. You need to establish processes for internal and external communications relevant to your EOMS...
+              Based on your institution's profile, you'll need policies, procedures, and records for leadership, planning, and stakeholder communication...
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ const features: Feature[] = [
     id: "evidence",
     icon: FileText,
     title: "Evidence Management",
-    description: "Upload documents and let Horus AI organize them. Ask questions like 'What evidence do I need for ISO clause 7.4?' and get instant guidance.",
+    description: "Upload documents and let Horus AI organize them. Ask questions like 'What evidence do I need for communication policies?' and get instant guidance.",
     benefits: [
       "AI-powered document analysis and categorization",
       "Automatic evidence-to-criteria mapping",
@@ -137,19 +137,19 @@ const features: Feature[] = [
     id: "standards",
     icon: Shield,
     title: "Standards Hub",
-    description: "Ask Horus AI to explain any ISO 21001, ISO 9001, or NAQAAE requirement. Get clause-by-clause guidance and implementation steps in plain language.",
+    description: "Ask Horus AI about any quality standard or accreditation requirement. Get guidance and implementation steps in plain language — no technical jargon.",
     benefits: [
       "Natural language standard queries",
-      "AI-explained compliance requirements",
+      "AI-explained compliance in plain language",
       "Implementation roadmaps on demand",
-      "Multi-standard support",
+      "Multi-framework support",
     ],
     color: "from-blue-500 to-cyan-600",
     preview: (
       <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2 mb-3">
           <Shield className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-medium">ISO 21001:2018</span>
+          <span className="text-sm font-medium">Quality Standards</span>
         </div>
         <div className="space-y-2">
           {["4. Context of the organization", "5. Leadership", "6. Planning", "7. Support"].map((clause, i) => (

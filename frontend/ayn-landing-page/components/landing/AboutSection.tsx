@@ -23,8 +23,8 @@ const audiences = [
 ]
 
 const values = [
-  { title: "ISO 21001 Aligned", icon: Award },
-  { title: "NAQAAE Compatible", icon: ShieldCheck },
+  { title: "Quality Standards Ready", icon: Award },
+  { title: "Accreditation Compatible", icon: ShieldCheck },
   { title: "Built for Teams", icon: Users },
 ]
 

@@ -200,7 +200,7 @@ export function LandingNavbar() {
                 asChild
                 className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-2 h-9 rounded-full hidden md:inline-flex font-medium"
               >
-                <Link href="/signup">Get Started</Link>
+                <Link href="/login">Talk to Horus AI</Link>
               </MagneticButton>
             </>
           )}
@@ -267,11 +267,11 @@ export function LandingNavbar() {
                     Log in
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/login"
                     className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-3 px-4 rounded-lg text-center block mt-1"
                     onClick={closeMobile}
                   >
-                    Get Started
+                    Talk to Horus AI
                   </Link>
                 </>
               )}

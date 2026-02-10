@@ -85,23 +85,24 @@ function CopyButton({ text }: { text: string }) {
 // ─── Markdown Content ───────────────────────────────────────────────────────────
 export function MarkdownContent({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      className="prose prose-sm dark:prose-invert max-w-none"
-      components={{
-        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-        ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
-        ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
-        li: ({ children }) => <li className="mb-1">{children}</li>,
-        code: ({ inline, children }: any) =>
-          inline ? (
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
-          ) : (
-            <code className="block rounded-lg bg-muted p-3 font-mono text-sm overflow-x-auto">{children}</code>
-          ),
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+    <div className="prose prose-sm dark:prose-invert max-w-none">
+      <ReactMarkdown
+        components={{
+          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+          ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
+          ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
+          li: ({ children }) => <li className="mb-1">{children}</li>,
+          code: ({ inline, children }: any) =>
+            inline ? (
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
+            ) : (
+              <code className="block rounded-lg bg-muted p-3 font-mono text-sm overflow-x-auto">{children}</code>
+            ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   )
 }
 

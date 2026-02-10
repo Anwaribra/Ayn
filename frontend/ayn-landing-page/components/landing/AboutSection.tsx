@@ -8,17 +8,17 @@ const audiences = [
   {
     title: "Schools",
     icon: School,
-    description: "Streamline compliance preparation with organized evidence and AI guidance.",
+    description: "Horus AI guides your compliance journey — from evidence uploads to gap identification and report generation.",
   },
   {
     title: "Universities",
     icon: GraduationCap,
-    description: "Manage program reviews and quality standards across multiple faculties.",
+    description: "Ask Horus AI about program standards, accreditation criteria, and institutional quality metrics across faculties.",
   },
   {
     title: "Training Centers",
     icon: Library,
-    description: "Document competencies and certifications for professional bodies.",
+    description: "Horus AI tracks competencies, manages certifications, and prepares documentation for professional accreditation.",
   },
 ]
 
@@ -40,10 +40,10 @@ export function AboutSection() {
           className="text-center mb-16"
         >
           <motion.h2 variants={fadeInUp} className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-            Built for Educational Excellence
+            Horus AI Works for Every Institution
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-muted-foreground max-w-2xl mx-auto">
-            Quality assurance tools designed for every type of educational institution.
+            One intelligent assistant that adapts to your institution's needs and compliance requirements.
           </motion.p>
         </motion.div>
 

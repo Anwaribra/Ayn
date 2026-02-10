@@ -28,30 +28,30 @@ export function FinalCtaSection() {
           className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
         >
           <span className="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Ready to Streamline Quality Compliance?
+            Start a Conversation with Horus AI
           </span>
         </motion.h2>
         <motion.p
           variants={fadeInUp}
           className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto"
         >
-          Join institutions using Ayn to streamline compliance with AI assistance.
+          Your AI assistant for educational quality is ready. Ask questions, upload evidence, generate reports — Horus handles it all.
         </motion.p>
         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
           <ShinyButton
-            href="/signup"
+            href="/login"
             className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-medium shadow-xl shadow-primary/20"
           >
-            Get Started
+            Talk to Horus AI
             <ArrowRight className="ml-2 h-5 w-5" />
           </ShinyButton>
-          <Link href="/platform/horus-ai">
+          <Link href="#features">
             <Button
               variant="outline"
               size="lg"
               className="px-8 py-6 text-base font-medium h-auto"
             >
-              Try Horus AI
+              Learn More
             </Button>
           </Link>
         </motion.div>

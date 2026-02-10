@@ -168,9 +168,9 @@ export function Hero() {
   
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
-      "Unified quality management",
-      "AI-powered compliance insights",
-      "Evidence to accreditation, simplified",
+      "Ask me about ISO 21001 compliance",
+      "Upload evidence, I'll organize it",
+      "Generate reports on demand",
     ],
     typingSpeed: 60,
     deletingSpeed: 40,
@@ -205,7 +205,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Education Quality, Powered by Intelligence
+                Meet Horus AI — Your Quality Intelligence Assistant
               </motion.h2>
               
               {/* Animated typewriter subtitle */}
@@ -227,7 +227,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                Ayn brings AI-powered clarity to educational quality management. From evidence organization to accreditation readiness, your institution gets one intelligent system that understands it all.
+                Talk to Horus AI like ChatGPT, but with full control over your quality system. Upload evidence, ask compliance questions, generate reports — Horus understands your institution and guides every step.
               </motion.p>
               
               <motion.div 
@@ -240,7 +240,7 @@ export function Hero() {
                   href="/login"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-6 py-5 text-sm font-medium w-full sm:w-auto"
                 >
-                  Get Started
+                  Talk to Horus AI
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </ShinyButton>
                 <Button
@@ -249,7 +249,7 @@ export function Hero() {
                   onClick={scrollToFeatures}
                   className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-6 py-5 text-sm bg-transparent w-full sm:w-auto"
                 >
-                  See Features
+                  See How It Works
                 </Button>
               </motion.div>
               
@@ -260,18 +260,18 @@ export function Hero() {
                 className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-muted-foreground/70"
               >
                 <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-primary" />
-                  <span>Quality Standards</span>
+                  <Brain className="w-3.5 h-3.5 text-primary" />
+                  <span>Conversational AI</span>
                 </div>
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
                   <FileCheck className="w-3.5 h-3.5 text-primary" />
-                  <span>NAQAAE</span>
+                  <span>ISO & NAQAAE Ready</span>
                 </div>
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-primary" />
-                  <span>AI Analysis</span>
+                  <Shield className="w-3.5 h-3.5 text-primary" />
+                  <span>Enterprise Control</span>
                 </div>
               </motion.div>
             </div>

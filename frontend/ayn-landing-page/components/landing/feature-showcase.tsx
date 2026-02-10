@@ -66,12 +66,12 @@ const features: Feature[] = [
     id: "evidence",
     icon: FileText,
     title: "Evidence Management",
-    description: "Centralized document repository with smart mapping to standards. Organize, track, and link your evidence to specific criteria effortlessly.",
+    description: "Upload documents and let Horus AI organize them. Ask questions like 'What evidence do I need for ISO clause 7.4?' and get instant guidance.",
     benefits: [
-      "Smart document categorization",
-      "Automatic evidence mapping",
+      "AI-powered document analysis and categorization",
+      "Automatic evidence-to-criteria mapping",
       "Version control and audit trails",
-      "Secure cloud storage",
+      "Conversational evidence search",
     ],
     color: "from-emerald-500 to-teal-600",
     preview: (
@@ -99,12 +99,12 @@ const features: Feature[] = [
     id: "gap",
     icon: BarChart3,
     title: "Gap Analysis",
-    description: "AI-powered compliance analysis that identifies gaps in your quality management system and provides actionable remediation steps.",
+    description: "Ask Horus AI 'Where are my compliance gaps?' and get detailed analysis with prioritized recommendations for every standard.",
     benefits: [
-      "Automated gap identification",
-      "Risk assessment scoring",
-      "Prioritized action plans",
-      "Progress tracking dashboard",
+      "Conversational gap discovery",
+      "AI-generated risk scoring",
+      "Actionable remediation steps",
+      "Real-time progress tracking",
     ],
     color: "from-amber-500 to-orange-600",
     preview: (
@@ -137,12 +137,12 @@ const features: Feature[] = [
     id: "standards",
     icon: Shield,
     title: "Standards Hub",
-    description: "Comprehensive library of quality standards including ISO 21001, ISO 9001, and NAQAAE. Access requirements, interpretations, and implementation guidance.",
+    description: "Ask Horus AI to explain any ISO 21001, ISO 9001, or NAQAAE requirement. Get clause-by-clause guidance and implementation steps in plain language.",
     benefits: [
-      "Complete standards library",
-      "Clause-by-clause breakdown",
-      "Implementation guides",
-      "Regular updates",
+      "Natural language standard queries",
+      "AI-explained compliance requirements",
+      "Implementation roadmaps on demand",
+      "Multi-standard support",
     ],
     color: "from-blue-500 to-cyan-600",
     preview: (
@@ -185,11 +185,11 @@ export function FeatureShowcase() {
             Platform Features
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-3">
-            Everything you need for
-            <span className="text-[var(--brand)]"> compliance</span>
+            Horus AI Powers
+            <span className="text-[var(--brand)]"> Every Module</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Powerful tools designed specifically for educational quality assurance teams
+            One conversational interface controls evidence, standards, reporting, and compliance analysis
           </p>
         </motion.div>
 

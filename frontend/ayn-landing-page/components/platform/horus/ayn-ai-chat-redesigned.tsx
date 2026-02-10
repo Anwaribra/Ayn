@@ -257,77 +257,69 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-6 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <h1 className="font-semibold text-lg">Horus</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isEmpty && (
-            <Button variant="ghost" size="sm" onClick={newChat}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New
+      {/* Header - Minimal */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {!isEmpty && (
+          <Button variant="ghost" size="sm" onClick={newChat}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New
+          </Button>
+        )}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <History className="h-4 w-4 mr-2" />
+              History
             </Button>
-          )}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <History className="h-4 w-4 mr-2" />
-                History
+          </SheetTrigger>
+          <SheetContent side="right" className="w-80">
+            <SheetHeader>
+              <SheetTitle>Chat History</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <Button onClick={newChat} className="w-full mb-4" size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                New Chat
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <SheetHeader>
-                <SheetTitle>Chat History</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <Button onClick={newChat} className="w-full mb-4" size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  New Chat
-                </Button>
-                <ScrollArea className="h-[calc(100vh-180px)]">
-                  {sessions.length === 0 ? (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      No chat history yet
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {sessions.map((session) => (
-                        <div
-                          key={session.id}
-                          className="group flex items-start gap-2 rounded-lg p-3 hover:bg-accent cursor-pointer transition-colors"
-                          onClick={() => loadSession(session)}
-                        >
-                          <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{session.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(session.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteSession(session.id)
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+              <ScrollArea className="h-[calc(100vh-180px)]">
+                {sessions.length === 0 ? (
+                  <div className="text-center text-sm text-muted-foreground py-8">
+                    No chat history yet
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="group flex items-start gap-2 rounded-lg p-3 hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => loadSession(session)}
+                      >
+                        <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{session.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(session.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteSession(session.id)
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Messages Area */}

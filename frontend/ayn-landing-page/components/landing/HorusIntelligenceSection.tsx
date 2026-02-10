@@ -29,88 +29,87 @@ const NodeCard = ({
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
       className={cn(
-        "relative group",
+        "relative",
         isCenter && "col-span-2 row-span-2 flex items-center justify-center"
       )}
     >
-      <div
-        className={cn(
-          "relative rounded-2xl border transition-all duration-500",
-          isCenter
-            ? "border-[var(--brand)]/30 bg-gradient-to-br from-[var(--brand)]/10 via-[var(--brand)]/5 to-transparent p-8 shadow-2xl shadow-[var(--brand)]/10 hover:shadow-[var(--brand)]/20"
-            : "border-border bg-card/50 backdrop-blur-sm p-6 hover:border-[var(--brand)]/20 hover:shadow-lg hover:-translate-y-1"
-        )}
-      >
-        {/* Glow effect for center */}
-        {isCenter && (
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[var(--brand)]/20 via-transparent to-purple-500/10 opacity-50 blur-xl" />
-        )}
-
-        {/* Icon */}
+      {/* Horus AI - The Brain */}
+      {isCenter ? (
         <motion.div
-          whileHover={{ scale: 1.05, rotate: isCenter ? 0 : 5 }}
-          transition={{ type: "spring", stiffness: 400 }}
-          className={cn(
-            "relative rounded-xl flex items-center justify-center mb-4",
-            isCenter
-              ? "w-20 h-20 bg-[var(--brand)]/20 border-2 border-[var(--brand)]/30 shadow-lg"
-              : "w-12 h-12 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20"
-          )}
+          animate={{
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="relative"
         >
-          <Icon
-            className={cn(
-              isCenter ? "w-10 h-10 text-[var(--brand)]" : "w-6 h-6 text-primary"
-            )}
-          />
-          {isCenter && (
+          {/* Multiple glow layers for depth */}
+          <div className="absolute -inset-8 bg-gradient-to-r from-[#00D9FF]/30 via-[#7B68EE]/20 to-[#00D9FF]/30 rounded-3xl blur-3xl opacity-60" />
+          <div className="absolute -inset-4 bg-gradient-to-br from-[#00D9FF]/20 to-[#7B68EE]/20 rounded-3xl blur-2xl opacity-80" />
+
+          <div className="relative rounded-3xl border-2 border-[#00D9FF]/30 bg-gradient-to-br from-[#00D9FF]/10 via-[#7B68EE]/5 to-background/95 p-12 shadow-2xl backdrop-blur-sm">
+            {/* Icon with idle pulse */}
             <motion.div
               animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 0.8, 0.5],
+                scale: [1, 1.05, 1],
+                opacity: [0.9, 1, 0.9],
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="absolute inset-0 rounded-xl bg-[var(--brand)]/20 blur-md"
-            />
-          )}
+              className="relative w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-[#00D9FF]/20 to-[#7B68EE]/20 border-2 border-[#00D9FF]/40 flex items-center justify-center mb-6 shadow-lg shadow-[#00D9FF]/20"
+            >
+              <Brain className="w-14 h-14 text-[#00D9FF]" />
+              {/* Inner glow */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#00D9FF]/40 to-[#7B68EE]/40 blur-lg"
+              />
+            </motion.div>
+
+            {/* Content */}
+            <div className="relative z-10 text-center">
+              <h3 className="text-3xl font-bold mb-3 bg-gradient-to-r from-[#00D9FF] to-[#7B68EE] bg-clip-text text-transparent">
+                Horus AI
+              </h3>
+              <p className="text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
+                The central operating intelligence
+              </p>
+            </div>
+          </div>
         </motion.div>
+      ) : (
+        /* Side nodes - minimal, neutral, secondary */
+        <div className="relative rounded-xl border border-border/50 bg-card/30 p-5">
+          {/* Simple icon */}
+          <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center mb-3">
+            <Icon className="w-5 h-5 text-muted-foreground" />
+          </div>
 
-        {/* Content */}
-        <div className="relative z-10">
-          <h3
-            className={cn(
-              "font-bold mb-2",
-              isCenter
-                ? "text-2xl text-foreground"
-                : "text-base text-foreground group-hover:text-[var(--brand)] transition-colors"
-            )}
-          >
-            {title}
-          </h3>
-          <p
-            className={cn(
-              "text-muted-foreground leading-relaxed",
-              isCenter ? "text-base" : "text-sm"
-            )}
-          >
-            {description}
-          </p>
+          {/* Content */}
+          <div>
+            <h4 className="text-sm font-semibold text-foreground/80 mb-1">
+              {title}
+            </h4>
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
+              {description}
+            </p>
+          </div>
         </div>
-
-        {/* Sparkle indicator for center */}
-        {isCenter && (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-2 -right-2"
-          >
-            <Sparkles className="w-6 h-6 text-[var(--brand)]" />
-          </motion.div>
-        )}
-      </div>
+      )}
     </motion.div>
   )
 }
@@ -125,9 +124,10 @@ export function HorusIntelligenceSection() {
 
   return (
     <section className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-[var(--brand)]/5 to-background pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_50%,var(--brand)_0.05,transparent_60%)] pointer-events-none" />
+      {/* Darker background for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00D9FF]/5 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,#00D9FF_0.03,transparent_70%)] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Section header */}
@@ -166,58 +166,57 @@ export function HorusIntelligenceSection() {
             transition={{ delay: 0.3 }}
             className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
           >
-            Horus AI doesn't just answer questions—it understands your entire
-            quality ecosystem. Evidence, compliance, insights, and documentation
-            work together through unified intelligence, not isolated tools.
+            Horus AI understands the full quality ecosystem. Evidence, standards,
+            analysis, and insights operate as one connected system — not isolated tools.
           </motion.p>
         </motion.div>
 
         {/* Animated connection diagram - Desktop */}
         <div ref={containerRef} className="hidden lg:block relative">
-          {/* Animated Beams */}
+          {/* Animated Beams - ALL flow TOWARDS Horus AI */}
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={leftTop}
             toRef={centerRef}
             curvature={30}
-            duration={3}
+            duration={4}
             delay={0}
-            gradientStartColor="#3b82f6"
-            gradientStopColor="#8b5cf6"
-            pathWidth={2}
+            gradientStartColor="#00D9FF"
+            gradientStopColor="#7B68EE"
+            pathWidth={2.5}
           />
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={leftBottom}
             toRef={centerRef}
             curvature={-30}
-            duration={3}
-            delay={0.3}
-            gradientStartColor="#3b82f6"
-            gradientStopColor="#8b5cf6"
-            pathWidth={2}
+            duration={4}
+            delay={0.4}
+            gradientStartColor="#00D9FF"
+            gradientStopColor="#7B68EE"
+            pathWidth={2.5}
           />
           <AnimatedBeam
             containerRef={containerRef}
-            fromRef={centerRef}
-            toRef={rightTop}
-            curvature={30}
-            duration={3}
-            delay={0.6}
-            gradientStartColor="#8b5cf6"
-            gradientStopColor="#ec4899"
-            pathWidth={2}
-          />
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={centerRef}
-            toRef={rightBottom}
+            fromRef={rightTop}
+            toRef={centerRef}
             curvature={-30}
-            duration={3}
-            delay={0.9}
-            gradientStartColor="#8b5cf6"
-            gradientStopColor="#ec4899"
-            pathWidth={2}
+            duration={4}
+            delay={0.8}
+            gradientStartColor="#00D9FF"
+            gradientStopColor="#7B68EE"
+            pathWidth={2.5}
+          />
+          <AnimatedBeam
+            containerRef={containerRef}
+            fromRef={rightBottom}
+            toRef={centerRef}
+            curvature={30}
+            duration={4}
+            delay={1.2}
+            gradientStartColor="#00D9FF"
+            gradientStopColor="#7B68EE"
+            pathWidth={2.5}
           />
 
           {/* Grid layout */}
@@ -248,7 +247,7 @@ export function HorusIntelligenceSection() {
                 ref={centerRef}
                 icon={Brain}
                 title="Horus AI"
-                description="Your unified quality intelligence that connects, analyzes, and guides across every module"
+                description=""
                 position="center"
               />
             </div>
@@ -277,36 +276,44 @@ export function HorusIntelligenceSection() {
 
         {/* Mobile/Tablet fallback - No beams */}
         <div className="lg:hidden space-y-6">
-          {/* Center card first on mobile */}
+          {/* Center card first on mobile - Horus AI dominates */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="rounded-2xl border border-[var(--brand)]/30 bg-gradient-to-br from-[var(--brand)]/10 via-[var(--brand)]/5 to-transparent p-6 shadow-xl">
+            {/* Glow for mobile */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#00D9FF]/20 to-[#7B68EE]/20 rounded-3xl blur-2xl opacity-60" />
+            
+            <div className="relative rounded-2xl border-2 border-[#00D9FF]/30 bg-gradient-to-br from-[#00D9FF]/10 via-[#7B68EE]/5 to-background/95 p-6 shadow-xl">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-xl bg-[var(--brand)]/20 border-2 border-[var(--brand)]/30 flex items-center justify-center">
-                  <Brain className="w-7 h-7 text-[var(--brand)]" />
-                </div>
+                <motion.div
+                  animate={{
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00D9FF]/20 to-[#7B68EE]/20 border-2 border-[#00D9FF]/40 flex items-center justify-center shadow-lg shadow-[#00D9FF]/20"
+                >
+                  <Brain className="w-8 h-8 text-[#00D9FF]" />
+                </motion.div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-foreground mb-1">
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-[#00D9FF] to-[#7B68EE] bg-clip-text text-transparent mb-1">
                     Horus AI
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Central Intelligence
                   </p>
                 </div>
-                <Sparkles className="w-5 h-5 text-[var(--brand)]" />
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Your unified quality intelligence that connects, analyzes, and
-                guides across every module
-              </p>
             </div>
           </motion.div>
 
-          {/* Other cards in grid */}
+          {/* Other cards in grid - minimal and secondary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -314,12 +321,12 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/50 p-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-3">
-                  <FileText className="w-5 h-5 text-primary" />
+              <div className="h-full rounded-xl border border-border/50 bg-card/30 p-4">
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center mb-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-1">Evidence</h4>
-                <p className="text-xs text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-1">Evidence</h4>
+                <p className="text-xs text-muted-foreground/70">
                   Documents, policies, and records
                 </p>
               </div>
@@ -331,14 +338,14 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/50 p-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-3">
-                  <Shield className="w-5 h-5 text-primary" />
+              <div className="h-full rounded-xl border border-border/50 bg-card/30 p-4">
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center mb-2">
+                  <Shield className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-1">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-1">
                   Standards
                 </h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground/70">
                   Compliance frameworks and criteria
                 </p>
               </div>
@@ -350,14 +357,14 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/50 p-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-3">
-                  <BarChart3 className="w-5 h-5 text-primary" />
+              <div className="h-full rounded-xl border border-border/50 bg-card/30 p-4">
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center mb-2">
+                  <BarChart3 className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-1">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-1">
                   Gap Analysis
                 </h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground/70">
                   Identify compliance gaps and risks
                 </p>
               </div>
@@ -369,12 +376,12 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/50 p-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-3">
-                  <Sparkles className="w-5 h-5 text-primary" />
+              <div className="h-full rounded-xl border border-border/50 bg-card/30 p-4">
+                <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center mb-2">
+                  <Sparkles className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <h4 className="font-semibold text-foreground mb-1">Insights</h4>
-                <p className="text-xs text-muted-foreground">
+                <h4 className="text-sm font-semibold text-foreground/80 mb-1">Insights</h4>
+                <p className="text-xs text-muted-foreground/70">
                   Actionable recommendations and reports
                 </p>
               </div>

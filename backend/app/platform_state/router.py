@@ -195,11 +195,6 @@ async def record_metric_update(
         value=request.value,
         source_module=request.source_module
     )
-        metric_id=metric_id,
-        name=name,
-        value=value,
-        source_module=source_module
-    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

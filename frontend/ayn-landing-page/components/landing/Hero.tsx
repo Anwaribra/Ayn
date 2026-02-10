@@ -181,32 +181,6 @@ export function Hero() {
 
   return (
     <>
-      {/* Top Banner */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4">
-        <Banner
-          show={showBanner}
-          onHide={() => setShowBanner(false)}
-          variant="info"
-          title="AI Dashboard is here!"
-          description="Experience the future of analytics"
-          showShade={true}
-          closable={true}
-          icon={<Sparkles className="h-5 w-5" />}
-          action={
-            <Link href="/platform/horus-ai">
-              <Button
-                size="sm"
-                variant="default"
-                className="gap-1"
-              >
-                Try now
-                <ArrowRight className="h-3 w-3" />
-              </Button>
-            </Link>
-          }
-        />
-      </div>
-
       <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />
@@ -304,12 +278,38 @@ export function Hero() {
               </motion.div>
             </div>
 
-            {/* Interactive Demo Preview */}
+            {/* Right Side Content */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col gap-6"
             >
+              {/* AI Banner */}
+              <Banner
+                show={showBanner}
+                onHide={() => setShowBanner(false)}
+                variant="info"
+                title="AI Dashboard is here!"
+                description="Experience the future of analytics"
+                showShade={true}
+                closable={true}
+                icon={<Sparkles className="h-5 w-5" />}
+                action={
+                  <Link href="/platform/horus-ai">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="gap-1"
+                    >
+                      Try now
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                }
+              />
+              
+              {/* Interactive Demo Preview */}
               <InteractiveDemoPreview onClick={() => setDemoOpen(true)} />
             </motion.div>
 

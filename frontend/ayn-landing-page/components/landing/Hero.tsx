@@ -4,7 +4,6 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Brain, ChevronDown, FileCheck, Lock, Shield, Sparkles, Play, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Banner } from "@/components/ui/banner"
 import { ShinyButton } from "./landing-utils"
 import { useRotatingTypewriter } from "@/hooks/use-typewriter"
 import { useState } from "react"
@@ -166,7 +165,6 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
 
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
-  const [showBanner, setShowBanner] = useState(true)
   
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
@@ -278,38 +276,12 @@ export function Hero() {
               </motion.div>
             </div>
 
-            {/* Right Side Content */}
+            {/* Interactive Demo Preview */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col gap-6"
             >
-              {/* AI Banner */}
-              <Banner
-                show={showBanner}
-                onHide={() => setShowBanner(false)}
-                variant="info"
-                title="AI Dashboard is here!"
-                description="Experience the future of analytics"
-                showShade={true}
-                closable={true}
-                icon={<Sparkles className="h-5 w-5" />}
-                action={
-                  <Link href="/platform/horus-ai">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="gap-1"
-                    >
-                      Try now
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
-                  </Link>
-                }
-              />
-              
-              {/* Interactive Demo Preview */}
               <InteractiveDemoPreview onClick={() => setDemoOpen(true)} />
             </motion.div>
 

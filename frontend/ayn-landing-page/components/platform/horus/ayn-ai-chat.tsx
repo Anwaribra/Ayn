@@ -84,7 +84,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ─── Markdown Content ───────────────────────────────────────────────────────────
-function MarkdownContent({ content }: { content: string }) {
+export function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}

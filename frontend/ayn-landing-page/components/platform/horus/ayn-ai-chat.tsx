@@ -24,7 +24,6 @@ import {
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -87,7 +86,6 @@ function CopyButton({ text }: { text: string }) {
 export function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
       className="prose prose-sm dark:prose-invert max-w-none"
       components={{
         p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,

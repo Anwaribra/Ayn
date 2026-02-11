@@ -460,82 +460,82 @@ export default function HorusAIChat() {
           {/* Input Area */}
           <div className="border-t border-white/5 p-4 shrink-0">
             <div className="mx-auto max-w-2xl space-y-3">
-          {/* File Previews */}
-          {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-1">
-              {attachedFiles.map((file) => (
-                <div key={file.id} className="relative flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-sm">
-                  {file.type === "image" && file.preview ? (
-                    <img src={file.preview} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                  ) : file.type === "image" ? (
-                    <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                      <ImageIcon className="h-5 w-5 text-blue-500" />
+              {/* File Previews */}
+              {attachedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 px-1">
+                  {attachedFiles.map((file) => (
+                    <div key={file.id} className="relative flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-sm">
+                      {file.type === "image" && file.preview ? (
+                        <img src={file.preview} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                      ) : file.type === "image" ? (
+                        <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-blue-500" />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-purple-500" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium max-w-[150px]">{file.file.name}</p>
+                        <p className="text-xs text-muted-foreground">{(file.file.size / 1024).toFixed(0)} KB</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-purple-500" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium max-w-[150px]">{file.file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.file.size / 1024).toFixed(0)} KB</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Input */}
-          <div className="relative flex items-end gap-3 rounded-2xl glass-panel border-white/5 p-3 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.txt"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={attachedFiles.length >= 5}
-              className="shrink-0 h-9 w-9"
-            >
-              <Paperclip className="h-4 w-4 text-muted-foreground" />
-            </Button>
+              {/* Input */}
+              <div className="relative flex items-end gap-3 rounded-2xl glass-panel border-white/5 p-3 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={attachedFiles.length >= 5}
+                  className="shrink-0 h-9 w-9"
+                >
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                </Button>
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      sendMessage()
+                    }
+                  }}
+                  placeholder="> Initiate a neural dialogue..."
+                  className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[40px] max-h-[200px] text-sm"
+                  disabled={isLoading}
+                />
 
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  sendMessage()
-                }
-              }}
-              placeholder="> Initiate a neural dialogue..."
-              className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[40px] max-h-[200px] text-sm"
-              disabled={isLoading}
-            />
-
-            <Button
-              size="icon"
-              onClick={sendMessage}
-              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
-              className="shrink-0 h-9 w-9 rounded-full bg-primary hover:bg-primary/90"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+                <Button
+                  size="icon"
+                  onClick={sendMessage}
+                  disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
+                  className="shrink-0 h-9 w-9 rounded-full bg-primary hover:bg-primary/90"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

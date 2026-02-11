@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    AYN V3 — PLATFORM DARK THEME
    Scoped to [data-section="platform"] so the landing page stays light.
+   Exact replica of V3 design system.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 [data-section="platform"] {
@@ -17,7 +18,7 @@
   --accent-red: #EF4444;
 
   /* Text hierarchy */
-  --text-primary: #E8ECF4;
+  --text-primary: #F1F5F9;
   --text-secondary: #6B7A99;
   --text-tertiary: #3A4661;
 
@@ -27,11 +28,11 @@
 
   /* Override shadcn/ui variables for dark mode */
   --background: #07090E;
-  --foreground: #E8ECF4;
+  --foreground: #F1F5F9;
   --card: rgba(255, 255, 255, 0.02);
-  --card-foreground: #E8ECF4;
+  --card-foreground: #F1F5F9;
   --popover: #0C0F16;
-  --popover-foreground: #E8ECF4;
+  --popover-foreground: #F1F5F9;
   --primary: #2563EB;
   --primary-foreground: #ffffff;
   --secondary: rgba(255, 255, 255, 0.05);
@@ -39,18 +40,18 @@
   --muted: rgba(255, 255, 255, 0.04);
   --muted-foreground: #6B7A99;
   --accent: rgba(255, 255, 255, 0.06);
-  --accent-foreground: #E8ECF4;
+  --accent-foreground: #F1F5F9;
   --destructive: #EF4444;
   --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.05);
   --ring: rgba(37, 99, 235, 0.4);
   --sidebar: #05070A;
-  --sidebar-foreground: #E8ECF4;
+  --sidebar-foreground: #F1F5F9;
   --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.04);
-  --sidebar-accent-foreground: #E8ECF4;
+  --sidebar-accent-foreground: #F1F5F9;
   --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: rgba(37, 99, 235, 0.4);
 
@@ -62,16 +63,41 @@
   color-scheme: dark;
 }
 
-/* ─── Glass Panel ─────────────────────────────────────────────────────────── */
-[data-section="platform"] .glass-panel {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+/* ─── Cinematic Background Atmosphere ─────────────────────────────────────── */
+[data-section="platform"] .cinematic-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(circle at 70% 30%, #1e293b44 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, #3b2f1e44 0%, transparent 50%),
+    #07090E;
+  filter: blur(80px);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
-[data-section="platform"] .glass-panel:hover {
+[data-section="platform"] .cinematic-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  filter: contrast(120%) brightness(100%);
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* ─── Glass Panel ─────────────────────────────────────────────────────────── */
+[data-section="platform"] .glass-panel {
   background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Sidebar Active Pill ─────────────────────────────────────────────────── */
+[data-section="platform"] .sidebar-active-pill {
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
 }
 
 /* ─── Mono text (JetBrains Mono / fallback) ───────────────────────────────── */
@@ -79,27 +105,49 @@
   font-family: 'JetBrains Mono', 'Geist Mono', ui-monospace, monospace;
 }
 
-/* ─── Custom scrollbar ───────────────────────────────────────────────────── */
-[data-section="platform"] .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+/* ─── Custom scrollbar — Apple style ──────────────────────────────────────── */
+[data-section="platform"] ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
+
+[data-section="platform"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-section="platform"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+[data-section="platform"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-section="platform"] .custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 9999px;
+  border-radius: 10px;
 }
+
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* ─── Fade-in-up animation ───────────────────────────────────────────────── */
-@keyframes v3-fade-in-up {
+/* ─── Fade-in-up animation — exact V3 ───────────────────────────────────── */
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(14px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -107,51 +155,23 @@
 }
 
 [data-section="platform"] .animate-fade-in-up {
-  animation: v3-fade-in-up 0.6s ease-out both;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Pulse glow (blue) ──────────────────────────────────────────────────── */
-@keyframes v3-pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(37, 99, 235, 0.3);
-  }
-}
-
+/* ─── Active glow ────────────────────────────────────────────────────────── */
 [data-section="platform"] .active-glow {
-  animation: v3-pulse-glow 3s ease-in-out infinite;
-}
-
-/* ─── Animated gradient border ───────────────────────────────────────────── */
-@keyframes v3-border-rotate {
-  0% { --angle: 0deg; }
-  100% { --angle: 360deg; }
-}
-
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-[data-section="platform"] .animated-border {
-  background: conic-gradient(from var(--angle), #2563EB, #8B5CF6, #10B981, #2563EB) border-box;
-  animation: v3-border-rotate 6s linear infinite;
-}
-
-/* ─── Platform-specific card hover ───────────────────────────────────────── */
-[data-section="platform"] .platform-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
-}
-
-[data-section="platform"] .platform-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 40px rgba(37, 99, 235, 0.35);
 }
 
 /* ─── Score color utilities ──────────────────────────────────────────────── */
-[data-section="platform"] .score-high { color: #10B981; }
-[data-section="platform"] .score-medium { color: #F59E0B; }
-[data-section="platform"] .score-low { color: #EF4444; }
+[data-section="platform"] .score-high {
+  color: #10B981;
+}
+
+[data-section="platform"] .score-medium {
+  color: #F59E0B;
+}
+
+[data-section="platform"] .score-low {
+  color: #EF4444;
+}

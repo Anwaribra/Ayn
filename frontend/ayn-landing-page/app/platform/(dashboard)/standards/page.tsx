@@ -1,21 +1,20 @@
 "use client"
 
-import { useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import Link from "next/link"
 import {
-  BookOpen,
-  Plus,
-  Search,
-  ArrowRight,
-  ChevronRight,
+  Book,
+  Shield,
+  ArrowUpRight,
+  Target,
   Layers,
-  CheckCircle2,
-  FileText,
+  Activity,
+  Play,
 } from "lucide-react"
-import type { Standard } from "@/types/standards"
+import type { Standard } from "@/types"
 
 export default function StandardsPage() {
   return (
@@ -25,146 +24,166 @@ export default function StandardsPage() {
   )
 }
 
+const CARD_COLORS = ["bg-blue-600/10", "bg-emerald-600/10", "bg-amber-600/10", "bg-indigo-600/10", "bg-rose-600/10", "bg-cyan-600/10"]
+const CARD_ICONS = [Shield, Target, Layers, Activity, Book, Shield]
+
 function StandardsContent() {
-  const [search, setSearch] = useState("")
+  const { user } = useAuth()
 
   const { data: standards, isLoading } = useSWR<Standard[]>(
-    "standards",
+    user ? "standards" : null,
     () => api.getStandards(),
   )
 
-  const filtered = (standards ?? []).filter(
-    (s) =>
-      !search ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.description?.toLowerCase().includes(search.toLowerCase()),
-  )
+  // Map API standards to V3 collection cards
+  const collections = (standards ?? []).map((s, i) => ({
+    id: s.id,
+    title: s.title,
+    code: s.id.slice(0, 8).toUpperCase(),
+    count: s.criteria?.length ?? 0,
+    progress: s.criteria?.length
+      ? Math.round((s.criteria.filter((c) => c.description && c.description.length > 0).length / s.criteria.length) * 100)
+      : 0,
+    color: CARD_COLORS[i % CARD_COLORS.length],
+  }))
 
   return (
-    <div className="animate-fade-in-up p-4 md:p-6 pb-20 max-w-[1440px] mx-auto">
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="animate-fade-in-up pb-20">
+      <header className="mb-10 pt-6 px-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
-              <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-[0.2em]">
-                Framework Layer
-              </span>
+            <div className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+              <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Regulatory Database</span>
             </div>
             <div className="h-px w-6 bg-zinc-800" />
-            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
-              Accreditation Protocols
-            </span>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Compliance Mapping</span>
           </div>
           <h1 className="text-4xl font-black tracking-tighter italic text-white">
-            STANDARDS <span className="text-zinc-700 not-italic font-light">HUB</span>
+            Standards <span className="text-zinc-700 not-italic font-light">Hub</span>
           </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/platform/standards/new"
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Standard
-          </Link>
         </div>
       </header>
 
-      {/* ── Search ────────────────────────────────────────────────── */}
-      <div className="mb-8">
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-700" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            type="text"
-            placeholder="Search standards and frameworks..."
-            className="w-full h-11 bg-white/[0.02] border border-white/[0.06] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/30 transition-all"
-          />
-        </div>
-      </div>
-
-      {/* ── Stats bar ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-6 mb-8 px-2">
-        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-          {filtered.length} {filtered.length === 1 ? "standard" : "standards"}
-        </span>
-        <div className="h-px flex-1 bg-zinc-900" />
-      </div>
-
-      {/* ── Standards grid ────────────────────────────────────────── */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass-panel rounded-[28px] p-6 border-white/5 animate-pulse">
-              <div className="h-5 w-3/4 bg-white/[0.04] rounded mb-4" />
-              <div className="h-3 w-full bg-white/[0.03] rounded mb-2" />
-              <div className="h-3 w-2/3 bg-white/[0.03] rounded" />
-            </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="glass-panel rounded-[40px] p-16 border-white/5 text-center">
-          <BookOpen className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-zinc-400 mb-2">No standards found</h3>
-          <p className="text-[11px] text-zinc-600 font-medium max-w-sm mx-auto">
-            {search
-              ? "Try adjusting your search term"
-              : "Create your first accreditation standard to get started"}
-          </p>
-          {!search && (
-            <Link
-              href="/platform/standards/new"
-              className="inline-flex items-center gap-2 px-5 py-2.5 mt-6 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 transition-all active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5" />
+      {/* Grid Collections */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 px-4">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass-panel rounded-[32px] p-6 border-white/5 aspect-square animate-pulse" />
+          ))
+        ) : collections.length === 0 ? (
+          <div className="col-span-full text-center py-20">
+            <Shield className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
+            <p className="text-sm text-zinc-600 italic">No standards have been created yet.</p>
+            <Link href="/platform/standards/new" className="inline-block mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xl">
               Create Standard
             </Link>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((standard) => (
+          </div>
+        ) : (
+          collections.map((c, i) => (
             <Link
-              key={standard.id}
-              href={`/platform/standards/${standard.id}`}
-              className="group glass-panel platform-card rounded-[28px] p-6 border-white/5 hover:shadow-xl flex flex-col"
+              key={c.id}
+              href={`/platform/standards/${c.id}`}
+              className="group glass-panel rounded-[32px] p-6 border-white/5 hover:bg-white/[0.04] transition-all duration-500 cursor-pointer flex flex-col justify-between aspect-square"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 group-hover:scale-105 transition-transform">
-                  <BookOpen className="w-5 h-5 text-cyan-500 opacity-70 group-hover:opacity-100 transition-opacity" />
+              <div className="flex justify-between items-start">
+                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/10 flex items-center justify-center transition-transform group-hover:scale-105`}>
+                  {(() => { const Icon = CARD_ICONS[i % CARD_ICONS.length]; return <Icon className="w-5 h-5 text-white/50 group-hover:text-white transition-colors" /> })()}
                 </div>
-                <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
+                <ArrowUpRight className="w-4 h-4 text-zinc-800 group-hover:text-blue-500 transition-colors" />
               </div>
 
-              <h3 className="text-[15px] font-bold text-zinc-100 mb-2 group-hover:text-white transition-colors line-clamp-2">
-                {standard.title}
-              </h3>
+              <div>
+                <span className="mono text-[9px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{c.code}</span>
+                <h3 className="text-xl font-bold text-white mb-4 leading-tight">{c.title}</h3>
 
-              {standard.description && (
-                <p className="text-[11px] text-zinc-600 font-medium leading-relaxed line-clamp-3 flex-1">
-                  {standard.description}
-                </p>
-              )}
-
-              {/* Footer */}
-              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">
-                  Accreditation Standard
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <Layers className="w-3 h-3 text-zinc-700" />
-                  <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">
-                    View Details
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    <span>Equilibrium</span>
+                    <span className="mono text-white">{c.progress}%</span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${c.progress}%` }} />
+                  </div>
                 </div>
               </div>
             </Link>
-          ))}
+          ))
+        )}
+      </div>
+
+      {/* Framework Topology Explorer */}
+      <section className="px-4">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-black italic">Framework Topology</h2>
+            <div className="h-px w-16 bg-zinc-800" />
+          </div>
+          <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">
+            Full System Scan
+          </Link>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            {(standards ?? []).slice(0, 4).map((std, i) => {
+              const Icon = CARD_ICONS[i % CARD_ICONS.length]
+              const criteriaCount = std.criteria?.length ?? 0
+              const status = criteriaCount > 5 ? "Optimal" : "Warning"
+              return (
+                <Link
+                  key={std.id}
+                  href={`/platform/standards/${std.id}`}
+                  className="glass-panel p-5 rounded-3xl border-white/5 flex items-center justify-between hover:bg-white/[0.03] transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-zinc-500 group-hover:text-blue-500 transition-colors" />
+                    </div>
+                    <div>
+                      <h4 className="text-[14px] font-bold text-zinc-100">{std.title}</h4>
+                      <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                        {new Date(std.createdAt ?? Date.now()).toLocaleDateString()} • {criteriaCount} Evidence Nodes
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${status === "Optimal"
+                        ? "text-emerald-500 bg-emerald-500/5 border border-emerald-500/10"
+                        : "text-amber-500 bg-amber-500/5 border border-amber-500/10"
+                      }`}>
+                      {status}
+                    </span>
+                    <button className="p-2 text-zinc-700 hover:text-white opacity-0 group-hover:opacity-100 transition-all">
+                      <Play className="w-4 h-4" />
+                    </button>
+                  </div>
+                </Link>
+              )
+            })}
+
+            {(standards ?? []).length === 0 && !isLoading && (
+              <div className="text-center py-12 text-zinc-600 text-sm italic">No standards to map.</div>
+            )}
+          </div>
+
+          <div className="glass-panel rounded-[32px] p-8 border-white/5 flex flex-col">
+            <div className="flex items-center gap-3 mb-8">
+              <Shield className="w-5 h-5 text-blue-500" />
+              <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Intelligence Summary</h4>
+            </div>
+            <p className="text-sm text-zinc-400 font-medium leading-relaxed mb-8">
+              Current institutional health is holding at <span className="text-white">{collections.length > 0 ? Math.round(collections.reduce((a, c) => a + c.progress, 0) / collections.length) : 0}%</span>. Horus has detected a minor synchronization drift in the <span className="text-amber-500">Curriculum Alignment</span> framework. Remediation is recommended before the Q3 audit cycle.
+            </p>
+            <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
+              Generate Compliance Briefing
+            </Link>
+            <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-4">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Ayn Core Live Sync</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

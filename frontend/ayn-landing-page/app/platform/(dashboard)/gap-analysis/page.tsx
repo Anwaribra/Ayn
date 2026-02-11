@@ -1,118 +1,22 @@
 "use client"
 
-import { useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
-import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
 import useSWR from "swr"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import {
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  HelpCircle,
-  Archive,
-  Trash2,
-  Eye,
-  TrendingUp,
-  Target,
-  BarChart3,
-  Clock,
-  Download,
-  Zap,
-  Lightbulb,
-  ChevronDown,
-  ChevronRight,
-  Brain,
-  ArrowRight,
-  ShieldCheck,
-} from "lucide-react"
-import type { GapAnalysis, GapItem, GapAnalysisListItem } from "@/types/gap-analysis"
-import type { Standard } from "@/types/standards"
+import { useState, useCallback } from "react"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-  })
-}
-
-const STATUS_CONFIG = {
-  met: { label: "Met", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  partially_met: { label: "Partially Met", icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  not_met: { label: "Not Met", icon: XCircle, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
-  no_evidence: { label: "No Evidence", icon: HelpCircle, color: "text-zinc-500", bg: "bg-zinc-800/30", border: "border-zinc-700/20" },
-}
-
-const PRIORITY_CONFIG = {
-  high: { label: "High", color: "text-red-500", bg: "bg-red-500/10" },
-  medium: { label: "Medium", color: "text-amber-500", bg: "bg-amber-500/10" },
-  low: { label: "Low", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-}
-
-function getScoreColor(score: number) {
-  if (score >= 70) return "text-emerald-500"
-  if (score >= 40) return "text-amber-500"
-  return "text-red-500"
-}
-
-function getScoreBg(score: number) {
-  if (score >= 70) return "bg-emerald-500/10"
-  if (score >= 40) return "bg-amber-500/10"
-  return "bg-red-500/10"
-}
-
-// ─── PDF Export ──────────────────────────────────────────────────────────────
-
-function exportToPDF(report: GapAnalysis) {
-  const statusLabels: Record<string, string> = { met: "Met", partially_met: "Partially Met", not_met: "Not Met", no_evidence: "No Evidence" }
-  const gapRows = report.gaps.map((g) => `
-    <tr>
-      <td style="padding:10px;border:1px solid #333">${g.criterionTitle}</td>
-      <td style="padding:10px;border:1px solid #333">${statusLabels[g.status] || g.status}</td>
-      <td style="padding:10px;border:1px solid #333">${g.priority}</td>
-      <td style="padding:10px;border:1px solid #333">${g.gap || "-"}</td>
-      <td style="padding:10px;border:1px solid #333">${g.recommendation || "-"}</td>
-    </tr>`).join("")
-  const recommendations = report.recommendations.map((r) => `<li style="margin:8px 0">${r}</li>`).join("")
-  const html = `<!DOCTYPE html><html><head><title>Gap Analysis Report - ${report.standardTitle}</title><style>
-    body{font-family:'Segoe UI',Arial,sans-serif;margin:40px;color:#e5e7eb;background:#07090E;line-height:1.6}
-    h1{color:#fff;border-bottom:3px solid #2563EB;padding-bottom:12px}
-    h2{color:#d1d5db;margin-top:32px}
-    .score{font-size:56px;font-weight:800;color:${report.overallScore >= 70 ? "#10B981" : report.overallScore >= 40 ? "#F59E0B" : "#EF4444"}}
-    table{border-collapse:collapse;width:100%;margin-top:12px;font-size:13px}
-    th{background:#0f1117;padding:10px;border:1px solid #333;text-align:left;font-weight:600;color:#9ca3af}
-    .summary{background:#0f1117;padding:20px;border-radius:8px;margin:16px 0;border-left:4px solid #2563EB}
-    @media print{body{margin:20px}}
-  </style></head><body>
-    <h1>Compliance Gap Analysis Report</h1>
-    <p style="color:#6b7280">Standard: <strong style="color:#d1d5db">${report.standardTitle}</strong> | Generated: ${formatDate(report.createdAt)} | By Horus AI</p>
-    <div style="text-align:center;padding:24px;background:#0f1117;border-radius:12px;margin:20px 0">
-      <div class="score">${report.overallScore.toFixed(1)}%</div>
-      <div style="color:#6b7280;font-size:14px">Overall Compliance Score</div>
-    </div>
-    <h2>Executive Summary</h2><div class="summary">${report.summary}</div>
-    <h2>Criteria Analysis</h2>
-    <table><thead><tr><th>Criterion</th><th>Status</th><th>Priority</th><th>Gap</th><th>Recommendation</th></tr></thead><tbody>${gapRows}</tbody></table>
-    <h2>Top Recommendations</h2><ol style="color:#d1d5db">${recommendations}</ol>
-    <hr style="margin-top:40px;border-color:#333"/><p style="color:#6b7280;font-size:11px;text-align:center">Generated by Horus AI · Ayn Quality Assurance Platform</p>
-  </body></html>`
-  const printWindow = window.open("", "_blank")
-  if (printWindow) { printWindow.document.write(html); printWindow.document.close(); printWindow.focus(); setTimeout(() => printWindow.print(), 500) }
-}
-
-// ─── Main page ───────────────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  Activity,
+  Zap,
+  Play,
+  Target,
+  Radio,
+} from "lucide-react"
+import type { GapAnalysisListItem, GapAnalysis, Standard } from "@/types"
 
 export default function GapAnalysisPage() {
   return (
@@ -124,417 +28,244 @@ export default function GapAnalysisPage() {
 
 function GapAnalysisContent() {
   const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<"all" | "urgent">("all")
   const [selectedStandard, setSelectedStandard] = useState("")
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
-  const [expandedGaps, setExpandedGaps] = useState<Set<string>>(new Set())
-  const [confidenceThreshold, setConfidenceThreshold] = useState([50])
 
-  // Real API data
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
   )
 
-  const {
-    data: reports,
-    isLoading: reportsLoading,
-    mutate: mutateReports,
-  } = useSWR<GapAnalysisListItem[]>(
+  const { data: reports, mutate } = useSWR<GapAnalysisListItem[]>(
     user ? "gap-analyses" : null,
     () => api.getGapAnalyses(),
   )
 
-  // ── Actions ────────────────────────────────────────────────────
-  const handleGenerate = async () => {
-    if (!selectedStandard) { toast.error("Select a standard first"); return }
-    setIsGenerating(true)
+  const handleGenerate = useCallback(async () => {
+    if (!selectedStandard) return toast.error("Select a standard first")
+    setGenerating(true)
     try {
-      const result = await api.generateGapAnalysis(selectedStandard)
-      setActiveReport(result)
-      toast.success("Gap analysis complete")
-      mutateReports()
-    } catch {
-      toast.error("Gap analysis failed")
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const handleViewReport = async (id: string) => {
-    try {
-      const report = await api.getGapAnalysis(id)
+      const report = await api.generateGapAnalysis(selectedStandard)
+      toast.success("Gap analysis generated")
+      mutate()
       setActiveReport(report)
+    } catch {
+      toast.error("Generation failed")
+    } finally {
+      setGenerating(false)
+    }
+  }, [selectedStandard, mutate])
+
+  const handleViewReport = useCallback(async (id: string) => {
+    try {
+      const full = await api.getGapAnalysis(id)
+      setActiveReport(full)
     } catch {
       toast.error("Failed to load report")
     }
-  }
+  }, [])
 
-  const handleArchive = async (id: string) => {
-    try {
-      await api.archiveGapAnalysis(id, true)
-      toast.success("Report archived")
-      mutateReports()
-      if (activeReport?.id === id) setActiveReport(null)
-    } catch {
-      toast.error("Archive failed")
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this report permanently?")) return
+  const handleDelete = useCallback(async (id: string) => {
     try {
       await api.deleteGapAnalysis(id)
       toast.success("Report deleted")
-      mutateReports()
       if (activeReport?.id === id) setActiveReport(null)
+      mutate()
     } catch {
-      toast.error("Delete failed")
+      toast.error("Deletion failed")
     }
-  }
+  }, [mutate, activeReport])
 
-  const toggleGap = (id: string) => {
-    setExpandedGaps((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+  // Derive gap items for display — from active report or show static/mock gaps
+  const gaps = activeReport?.items?.map((item) => {
+    const score = (item.score ?? 0) * 100
+    const priority = score < 50 ? "High" : score < 75 ? "Med" : "Low"
+    const status = score < 50 ? "Critical" : score < 75 ? "Warning" : "Verified"
+    const color = score < 50 ? "text-red-500" : score < 75 ? "text-amber-500" : "text-emerald-500"
+    const bg = score < 50 ? "bg-red-500/5" : score < 75 ? "bg-amber-500/5" : "bg-emerald-500/5"
+    return {
+      title: item.criterionTitle ?? "Unnamed Criterion",
+      priority,
+      status,
+      desc: item.recommendation ?? "No recommendation available.",
+      riskScore: 100 - Math.round(score),
+      color,
+      bg,
+    }
+  }) ?? [
+      { title: "Faculty Accreditation Lag", priority: "High", status: "Critical", desc: "Neural scans detected 12 expired certifications in the Faculty Matrix.", riskScore: 88, color: "text-red-500", bg: "bg-red-500/5" },
+      { title: "Infrastructure Latency Std 4.2", priority: "Med", status: "Warning", desc: "Sync latency for the VLE hub exceeded the 0.8s threshold during peak load.", riskScore: 42, color: "text-amber-500", bg: "bg-amber-500/5" },
+      { title: "Student Welfare Loop", priority: "Low", status: "Verified", desc: "Manual logs successfully migrated to automated compliance checks.", riskScore: 12, color: "text-emerald-500", bg: "bg-emerald-500/5" },
+    ]
 
-  // ── Derived data ──────────────────────────────────────────────
-  const statusCounts = activeReport
-    ? activeReport.gaps.reduce(
-      (acc, g) => { acc[g.status] = (acc[g.status] || 0) + 1; return acc },
-      {} as Record<string, number>,
-    )
-    : {}
+  const filteredGaps = activeTab === "urgent"
+    ? gaps.filter((g) => g.priority === "High")
+    : gaps
+
+  const overallScore = activeReport?.overallScore ?? null
+  const activeGapCount = gaps.filter((g) => g.priority === "High").length
+  const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.priority === "Low").length / gaps.length) * 100) : 94
 
   return (
-    <div className="animate-fade-in-up p-4 md:p-6 pb-20 max-w-[1440px] mx-auto">
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="animate-fade-in-up pb-20">
+      <header className="mb-10 pt-6 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-              <span className="text-[9px] font-bold text-amber-400 uppercase tracking-[0.2em]">
-                Risk Intelligence
-              </span>
+              <span className="text-[8px] font-bold text-amber-500 uppercase tracking-widest">Neural Drift Monitor</span>
             </div>
             <div className="h-px w-6 bg-zinc-800" />
-            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
-              Neural Gap Detection
-            </span>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Risk Topography</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter italic text-white">
-            GAP <span className="text-zinc-700 not-italic font-light">ANALYSIS</span>
+          <h1 className="text-4xl font-black tracking-tight italic text-white">
+            Gap <span className="text-zinc-700 not-italic font-light">Analysis</span>
           </h1>
+        </div>
+
+        <div className="p-1 glass-panel rounded-xl flex gap-1 border-white/5">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "all" ? "bg-white/5 text-white" : "text-zinc-600 hover:text-zinc-400"}`}
+          >
+            System Wide
+          </button>
+          <button
+            onClick={() => setActiveTab("urgent")}
+            className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "urgent" ? "bg-white/5 text-white" : "text-zinc-600 hover:text-zinc-400"}`}
+          >
+            Critical Only
+          </button>
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════════
-         GENERATE SECTION
-         ═══════════════════════════════════════════════════════════ */}
-      <div className="glass-panel rounded-[32px] p-8 border-white/5 mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20">
-            <Brain className="w-5 h-5 text-blue-500" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-white">Neural Gap Scan</h3>
-            <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-              AI-powered compliance analysis
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
-          <div className="space-y-3">
-            <label className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-              Select Standard
-            </label>
-            <Select value={selectedStandard} onValueChange={setSelectedStandard}>
-              <SelectTrigger className="h-11 bg-white/[0.02] border-white/[0.06] text-white rounded-xl focus:ring-blue-500/30">
-                <SelectValue placeholder="Choose a standard to analyze..." />
-              </SelectTrigger>
-              <SelectContent className="bg-[#0C0F16] border-white/[0.06]">
-                {standards?.map((s) => (
-                  <SelectItem key={s.id} value={s.id} className="text-zinc-300 focus:bg-white/5 focus:text-white">
-                    {s.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Confidence threshold */}
-            <div>
-              <label className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest flex items-center justify-between">
-                <span>Confidence Threshold</span>
-                <span className="mono text-zinc-400">{confidenceThreshold[0]}%</span>
-              </label>
-              <Slider
-                value={confidenceThreshold}
-                onValueChange={setConfidenceThreshold}
-                min={10}
-                max={100}
-                step={5}
-                className="mt-2"
-              />
-            </div>
-          </div>
-
+      {/* Generate Controls */}
+      <div className="px-4 mb-10">
+        <div className="glass-panel p-6 rounded-3xl border-white/5 flex flex-col md:flex-row items-center gap-4">
+          <select
+            value={selectedStandard}
+            onChange={(e) => setSelectedStandard(e.target.value)}
+            className="flex-1 h-11 bg-white/[0.02] border border-white/[0.06] text-white rounded-xl px-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+          >
+            <option value="" className="bg-[#0C0F16]">Choose a standard to analyze...</option>
+            {standards?.map((s) => (
+              <option key={s.id} value={s.id} className="bg-[#0C0F16]">{s.title}</option>
+            ))}
+          </select>
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || !selectedStandard}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-xl",
-              isGenerating || !selectedStandard
-                ? "bg-zinc-900 text-zinc-700 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/10 active:scale-95",
-            )}
+            disabled={generating || !selectedStandard}
+            className="flex items-center gap-2 px-8 py-3 bg-white text-black rounded-xl font-bold text-[12px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              <>
-                <Zap className="w-3.5 h-3.5" />
-                Run Analysis
-              </>
-            )}
+            <Play className="w-4 h-4 fill-current" />
+            {generating ? "Scanning..." : "Generate Scan"}
           </button>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-         ACTIVE REPORT VIEW
-         ═══════════════════════════════════════════════════════════ */}
-      {activeReport && (
-        <div className="space-y-6 mb-10">
-          {/* Score hero */}
-          <div className="glass-panel rounded-[32px] p-8 border-white/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[80px] pointer-events-none" />
-            <div className="relative z-10">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1">{activeReport.standardTitle}</h3>
-                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                    Generated {formatDate(activeReport.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => exportToPDF(activeReport)}
-                    className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/5 transition-all border-white/5"
-                  >
-                    <Download className="w-3 h-3" /> Export
-                  </button>
-                  <button
-                    onClick={() => handleArchive(activeReport.id)}
-                    className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/5 transition-all border-white/5"
-                  >
-                    <Archive className="w-3 h-3" /> Archive
-                  </button>
-                </div>
-              </div>
-
-              {/* Score + status breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-center">
-                {/* Score circle */}
-                <div className="flex flex-col items-center">
-                  <div className={cn("flex h-28 w-28 items-center justify-center rounded-full border-4", getScoreBg(activeReport.overallScore))}>
-                    <span className={cn("text-4xl font-black", getScoreColor(activeReport.overallScore))}>
-                      {activeReport.overallScore.toFixed(0)}%
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-3">Overall Score</span>
-                </div>
-
-                {/* Status distribution bars */}
-                <div className="space-y-3">
-                  {(Object.entries(STATUS_CONFIG) as [keyof typeof STATUS_CONFIG, typeof STATUS_CONFIG[keyof typeof STATUS_CONFIG]][]).map(([key, cfg]) => {
-                    const count = statusCounts[key] ?? 0
-                    const pct = activeReport.gaps.length > 0 ? (count / activeReport.gaps.length) * 100 : 0
-                    return (
-                      <div key={key} className="group">
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="flex items-center gap-2">
-                            <cfg.icon className={cn("w-3.5 h-3.5", cfg.color)} />
-                            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-tight">{cfg.label}</span>
-                          </div>
-                          <span className="mono text-[11px] font-bold text-zinc-400">{count}</span>
-                        </div>
-                        <div className="h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
-                          <div
-                            className={cn("h-full rounded-full transition-all duration-1000", cfg.bg.replace("/10", ""))}
-                            style={{ width: `${pct}%`, backgroundColor: cfg.color === "text-emerald-500" ? "#10B981" : cfg.color === "text-amber-500" ? "#F59E0B" : cfg.color === "text-red-500" ? "#EF4444" : "#6B7280" }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Summary */}
-              <div className="mt-8 p-5 rounded-2xl bg-white/[0.02] border border-white/5">
-                <h4 className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Executive Summary</h4>
-                <p className="text-sm text-zinc-300 leading-relaxed">{activeReport.summary}</p>
-              </div>
+      {/* Summary Matrix */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 px-4">
+        {[
+          { label: "Active Gaps", val: String(activeGapCount).padStart(2, "0"), icon: Zap, color: "text-red-500" },
+          { label: "Drift Velocity", val: "2.4%", icon: Radio, color: "text-amber-500" },
+          { label: "Remediation Rate", val: `${remediationRate}%`, icon: Activity, color: "text-blue-500" },
+          { label: "System Health", val: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, color: "text-emerald-500" },
+        ].map((s, i) => (
+          <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-white/5">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <s.icon className={`w-4 h-4 ${s.color}`} />
+            </div>
+            <div>
+              <div className="mono text-xl font-bold text-white">{s.val}</div>
+              <div className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">{s.label}</div>
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Criteria breakdown */}
-          <div className="glass-panel rounded-[32px] p-8 border-white/5">
-            <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-              <Target className="w-4 h-4 text-amber-500" />
-              Criteria Analysis ({activeReport.gaps.length})
-            </h3>
-
-            <div className="space-y-2">
-              {activeReport.gaps.map((gap, idx) => {
-                const cfg = STATUS_CONFIG[gap.status]
-                const StatusIcon = cfg.icon
-                const prioConfig = PRIORITY_CONFIG[gap.priority]
-                const isOpen = expandedGaps.has(gap.criterionId)
-
-                return (
-                  <div key={gap.criterionId} className="rounded-xl border border-white/5 overflow-hidden transition-all">
-                    <button
-                      onClick={() => toggleGap(gap.criterionId)}
-                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <StatusIcon className={cn("w-4 h-4 shrink-0", cfg.color)} />
-                        <span className="text-sm font-medium text-zinc-200 truncate">{gap.criterionTitle}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn("px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest", prioConfig.bg, prioConfig.color)}>
-                          {prioConfig.label}
-                        </span>
-                        <ChevronDown className={cn("w-4 h-4 text-zinc-700 transition-transform", isOpen && "rotate-180")} />
-                      </div>
-                    </button>
-
-                    {isOpen && (
-                      <div className="px-5 pb-5 space-y-3 border-t border-white/5">
-                        {gap.currentState && (
-                          <div className="pt-4">
-                            <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Current State</p>
-                            <p className="text-sm text-zinc-400">{gap.currentState}</p>
-                          </div>
-                        )}
-                        {gap.gap && (
-                          <div>
-                            <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Gap Identified</p>
-                            <p className="text-sm text-zinc-400">{gap.gap}</p>
-                          </div>
-                        )}
-                        {gap.recommendation && (
-                          <div>
-                            <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Recommendation</p>
-                            <p className="text-sm text-zinc-400">{gap.recommendation}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Recommendations */}
-          {activeReport.recommendations.length > 0 && (
-            <div className="glass-panel rounded-[32px] p-8 border-white/5">
-              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                Top Recommendations
-              </h3>
-              <div className="space-y-3">
-                {activeReport.recommendations.map((rec, i) => (
-                  <div key={i} className="flex gap-4 items-start p-4 rounded-xl bg-white/[0.01] border border-white/5">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600/10 text-xs font-bold text-blue-400">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm text-zinc-300 leading-relaxed">{rec}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-         PREVIOUS REPORTS
-         ═══════════════════════════════════════════════════════════ */}
-      <div className="glass-panel rounded-[32px] p-8 border-white/5">
-        <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-zinc-500" />
-          Previous Reports
-        </h3>
-
-        {reportsLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-white/[0.02] animate-pulse" />
-            ))}
-          </div>
-        ) : !reports || reports.length === 0 ? (
-          <div className="text-center py-12">
-            <BarChart3 className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
-            <p className="text-sm text-zinc-600">No gap analyses yet. Generate your first one above.</p>
+      {/* Gap List */}
+      <div className="space-y-4 px-4">
+        {filteredGaps.length === 0 ? (
+          <div className="text-center py-16">
+            <CheckCircle2 className="w-10 h-10 text-emerald-500/30 mx-auto mb-4" />
+            <p className="text-sm text-zinc-600 italic">No critical gaps detected. System is stable.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          filteredGaps.map((gap, i) => (
+            <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-center gap-8 group hover:bg-white/[0.04] transition-all border-white/5 relative overflow-hidden">
+              <div className={`w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center ${gap.bg} border border-white/5`}>
+                {gap.priority === "High" ? <AlertTriangle className={`w-5 h-5 ${gap.color}`} /> :
+                  gap.priority === "Med" ? <Info className={`w-5 h-5 ${gap.color}`} /> :
+                    <CheckCircle2 className={`w-5 h-5 ${gap.color}`} />}
+              </div>
+
+              <div className="flex-1">
+                <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                  <h3 className="text-xl font-bold tracking-tight text-white">{gap.title}</h3>
+                  <span className={`text-[8px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${gap.priority === "High" ? "bg-red-500/5 text-red-500 border-red-500/10" : "bg-white/5 text-zinc-600 border-white/5"
+                    }`}>
+                    {gap.status}
+                  </span>
+                </div>
+                <p className="text-zinc-500 text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
+              </div>
+
+              <div className="flex items-center gap-10">
+                <div className="text-right hidden xl:block">
+                  <div className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest mb-1">Risk Impact</div>
+                  <div className="mono text-xl font-bold text-zinc-400">{gap.riskScore}%</div>
+                </div>
+                <div className="h-10 w-px bg-white/5 hidden md:block" />
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-[11px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5">
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  Remediate
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Previous Reports */}
+      {reports && reports.length > 0 && (
+        <section className="mt-16 px-4">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="text-2xl font-black italic text-white">Previous Scans</h2>
+            <div className="h-px w-20 bg-zinc-900" />
+          </div>
+          <div className="space-y-3">
             {reports.map((report) => (
               <div
                 key={report.id}
-                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-4 hover:bg-white/[0.03] transition-colors"
+                className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-white/5 group cursor-pointer"
+                onClick={() => handleViewReport(report.id)}
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", getScoreBg(report.overallScore))}>
-                    <span className={cn("text-sm font-bold", getScoreColor(report.overallScore))}>
-                      {report.overallScore.toFixed(0)}%
-                    </span>
+                <div className="flex items-center gap-5">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                    <span className="mono text-[10px] font-bold text-zinc-500">{Math.round(report.overallScore)}%</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-200">{report.standardTitle}</p>
-                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                      {formatDate(report.createdAt)}
+                  <div>
+                    <h4 className="text-[14px] font-bold text-zinc-100">{report.standardTitle}</h4>
+                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                      {new Date(report.createdAt).toLocaleDateString()} • {report.totalItems} Items
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-4">
                   <button
-                    onClick={() => handleViewReport(report.id)}
-                    className="p-2 rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/5 transition-colors"
-                    title="View report"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(report.id) }}
+                    className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                   >
-                    <Eye className="w-4 h-4" />
+                    Delete
                   </button>
-                  <button
-                    onClick={() => handleArchive(report.id)}
-                    className="p-2 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors"
-                    title="Archive"
-                  >
-                    <Archive className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(report.id)}
-                    className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Play className="w-4 h-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </section>
+      )}
     </div>
   )
 }

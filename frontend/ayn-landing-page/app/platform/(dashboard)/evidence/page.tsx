@@ -1,49 +1,25 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
-import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
 import useSWR from "swr"
+import { useState, useCallback } from "react"
+import { toast } from "sonner"
 import {
-  Upload,
   FileText,
-  Image as ImageIcon,
-  File,
-  Grid3x3,
+  Grid2X2,
   List,
   Search,
-  Brain,
-  Trash2,
-  ArrowRight,
-  Link2,
-  Filter,
-  Eye,
-  Download,
+  Plus,
+  Archive,
+  ChevronRight,
+  HardDrive,
+  Clock,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react"
-import { toast } from "sonner"
 import type { Evidence } from "@/types"
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getFileIcon(evidence: Evidence) {
-  const type = evidence.fileType ?? evidence.fileName ?? ""
-  if (type.includes("image") || type.match(/\.(png|jpg|jpeg|gif|webp|svg)/i))
-    return <ImageIcon className="w-4 h-4 text-violet-400" />
-  if (type.includes("pdf") || type.match(/\.pdf/i))
-    return <FileText className="w-4 h-4 text-red-400" />
-  return <File className="w-4 h-4 text-zinc-500" />
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EvidencePage() {
   return (
@@ -53,300 +29,298 @@ export default function EvidencePage() {
   )
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  verified: "bg-blue-600/10",
+  pending: "bg-amber-600/10",
+  flagged: "bg-red-600/10",
+}
+
+const CAT_COLORS = [
+  "bg-blue-600/10",
+  "bg-indigo-600/10",
+  "bg-purple-600/10",
+  "bg-amber-600/10",
+  "bg-emerald-600/10",
+  "bg-rose-600/10",
+  "bg-cyan-600/10",
+  "bg-zinc-600/10",
+]
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
 function EvidenceContent() {
   const { user } = useAuth()
-  const [search, setSearch] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [dragActive, setDragActive] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
-  const { data: evidence, isLoading, mutate } = useSWR<Evidence[]>(
+  const { data: evidence, mutate } = useSWR<Evidence[]>(
     user ? "evidence" : null,
     () => api.getEvidence(),
   )
 
-  // ── Upload handler ────────────────────────────────────────────────
+  const filteredEvidence = (evidence ?? []).filter((e) =>
+    e.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
+
   const handleUpload = useCallback(
     async (files: FileList | null) => {
       if (!files || files.length === 0) return
+      setUploading(true)
       try {
         for (const file of Array.from(files)) {
           await api.uploadEvidence(file)
         }
-        toast.success(`${files.length} file(s) uploaded`)
+        toast.success("Evidence uploaded successfully")
         mutate()
+        setIsUploading(false)
       } catch {
         toast.error("Upload failed")
+      } finally {
+        setUploading(false)
       }
     },
     [mutate],
   )
 
-  const handleDeleteEvidence = async (id: string) => {
-    if (!confirm("Delete this evidence?")) return
-    try {
-      await api.deleteEvidence(id)
-      toast.success("Evidence deleted")
-      mutate()
-    } catch {
-      toast.error("Delete failed")
-    }
-  }
-
-  // ── Drag & drop ───────────────────────────────────────────────────
-  const handleDrag = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (e.type === "dragenter" || e.type === "dragover") setDragActive(true)
-      else if (e.type === "dragleave") setDragActive(false)
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await api.deleteEvidence(id)
+        toast.success("Evidence removed")
+        mutate()
+      } catch {
+        toast.error("Failed to delete evidence")
+      }
     },
-    [],
+    [mutate],
   )
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setDragActive(false)
-      handleUpload(e.dataTransfer.files)
-    },
-    [handleUpload],
-  )
-
-  // ── Filter ────────────────────────────────────────────────────────
-  const filtered = (evidence ?? []).filter((e) => {
-    const term = search.toLowerCase()
-    return (
-      !term ||
-      e.fileName?.toLowerCase().includes(term) ||
-      e.criterion?.title.toLowerCase().includes(term) ||
-      e.fileType?.toLowerCase().includes(term)
-    )
-  })
 
   return (
-    <div className="animate-fade-in-up p-4 md:p-6 pb-20 max-w-[1440px] mx-auto">
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="animate-fade-in-up pb-20">
+      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
-              <span className="text-[9px] font-bold text-violet-400 uppercase tracking-[0.2em]">
-                Asset Vault
-              </span>
+            <div className="px-2 py-0.5 rounded bg-zinc-800 border border-white/5">
+              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Asset Manager</span>
             </div>
-            <div className="h-px w-6 bg-zinc-800" />
-            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
-              Compliance Evidence Hub
-            </span>
+            <div className="h-px w-6 bg-zinc-900" />
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Institutional Vault</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter italic text-white">
-            EVIDENCE <span className="text-zinc-700 not-italic font-light">LIBRARY</span>
+          <h1 className="text-4xl font-black tracking-tight italic text-white">
+            Evidence <span className="text-zinc-700 not-italic font-light">Library</span>
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
-          <div className="flex glass-panel rounded-xl overflow-hidden border-white/5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-white/5 mr-2">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2.5 transition-all ${viewMode === "grid"
-                  ? "bg-blue-600/10 text-blue-400"
-                  : "text-zinc-600 hover:text-white"
-                }`}
+              className={`p-2 rounded-lg ${viewMode === "grid" ? "text-blue-500 bg-white/5 shadow-inner" : "text-zinc-600 hover:text-zinc-400"}`}
             >
-              <Grid3x3 className="w-4 h-4" />
+              <Grid2X2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2.5 transition-all ${viewMode === "list"
-                  ? "bg-blue-600/10 text-blue-400"
-                  : "text-zinc-600 hover:text-white"
-                }`}
+              className={`p-2 rounded-lg ${viewMode === "list" ? "text-blue-500 bg-white/5 shadow-inner" : "text-zinc-600 hover:text-zinc-400"}`}
             >
               <List className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Upload button */}
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all"
+            onClick={() => setIsUploading(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-[12px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
           >
-            <Upload className="w-3.5 h-3.5" />
-            Upload Evidence
+            <Plus className="w-4 h-4" />
+            Upload Asset
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={(e) => handleUpload(e.target.files)}
-            className="hidden"
-          />
         </div>
       </header>
 
-      {/* ── Search bar ────────────────────────────────────────────── */}
-      <div className="mb-8">
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-700" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            type="text"
-            placeholder="Search evidence by name, type, or criterion..."
-            className="w-full h-11 bg-white/[0.02] border border-white/[0.06] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/30 transition-all"
-          />
-        </div>
-      </div>
-
-      {/* ── Drop zone ─────────────────────────────────────────────── */}
-      <div
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        className={`mb-8 glass-panel rounded-[32px] p-10 border-dashed border-2 transition-all text-center ${dragActive
-            ? "border-blue-500/40 bg-blue-600/5"
-            : "border-white/[0.08] hover:border-white/10"
-          }`}
-      >
-        <Upload className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
-        <p className="text-sm text-zinc-500 font-medium">
-          Drop files here or{" "}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            browse
-          </button>
-        </p>
-        <p className="text-[10px] text-zinc-700 mt-1 uppercase tracking-widest font-bold">
-          PDF, DOCX, Images supported
-        </p>
-      </div>
-
-      {/* ── Asset stats ───────────────────────────────────────────── */}
-      <div className="flex items-center gap-6 mb-8 px-2">
-        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-          {filtered.length} {filtered.length === 1 ? "asset" : "assets"}
-        </span>
-        <div className="h-px flex-1 bg-zinc-900" />
-        <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">
-          {evidence?.filter((e) => e.criterion).length ?? 0} linked to criteria
-        </span>
-      </div>
-
-      {/* ── Evidence grid / list ──────────────────────────────────── */}
-      {isLoading ? (
-        <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="glass-panel rounded-2xl p-6 border-white/5 animate-pulse">
-              <div className="h-4 w-2/3 bg-white/[0.04] rounded mb-3" />
-              <div className="h-3 w-1/2 bg-white/[0.03] rounded" />
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-4">
+        {[
+          { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
+          { label: "Neural Indexed", value: "98%", icon: ShieldCheck },
+          { label: "Pending Audit", value: String(evidence?.filter((e) => !e.criterionId).length ?? 0), icon: Clock },
+          { label: "Storage Usage", value: evidence ? formatFileSize(evidence.reduce((sum, e) => sum + (e.fileSize ?? 0), 0)) : "0B", icon: Archive },
+        ].map((stat, i) => (
+          <div key={i} className="glass-panel p-4 rounded-2xl flex items-center gap-4 border-white/5">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center">
+              <stat.icon className="w-4 h-4 text-zinc-500" />
             </div>
-          ))}
+            <div>
+              <div className="mono text-lg font-bold text-white">{stat.value}</div>
+              <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
+      {filteredEvidence.length > 0 && (
+        <div className="px-4 mb-6">
+          <div className="relative max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search assets..."
+              className="w-full h-9 bg-white/5 border border-white/5 rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-white"
+            />
+          </div>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="glass-panel rounded-[40px] p-16 border-white/5 text-center">
-          <File className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-zinc-400 mb-2">No evidence found</h3>
-          <p className="text-[11px] text-zinc-600 font-medium">
-            {search ? "Try a different search term" : "Upload your first evidence file to get started"}
-          </p>
-        </div>
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              className="group glass-panel platform-card rounded-2xl p-5 border-white/5 hover:shadow-xl cursor-pointer"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5">
-                  {getFileIcon(item)}
+      )}
+
+      {/* Library Grid */}
+      <div className={
+        viewMode === "grid"
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4"
+          : "space-y-3 px-4"
+      }>
+        {filteredEvidence.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+            <Archive className="w-10 h-10 text-zinc-800 mb-4" />
+            <p className="text-sm text-zinc-600 italic">No evidence assets found.</p>
+          </div>
+        ) : (
+          filteredEvidence.map((item, i) => {
+            const color = CAT_COLORS[i % CAT_COLORS.length]
+            const hasLink = !!item.criterionId
+            const year = new Date(item.createdAt).getFullYear()
+            const size = formatFileSize(item.fileSize ?? 0)
+
+            return viewMode === "grid" ? (
+              <div
+                key={item.id}
+                className="group glass-panel rounded-3xl p-5 border-white/5 hover:border-blue-500/30 hover:bg-white/[0.04] transition-all cursor-pointer relative overflow-hidden"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110`}>
+                    <FileText className="w-6 h-6 text-zinc-300 group-hover:text-white" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {hasLink && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
+                    {!hasLink && <Clock className="w-4 h-4 text-amber-500" />}
+                  </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {item.fileUrl && (
-                    <a
-                      href={item.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/5 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-[14px] font-bold text-white truncate group-hover:text-blue-400 transition-colors">
+                      {item.fileName}
+                    </h3>
+                    <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
+                      {item.criterionId ? "Linked" : "Unlinked"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                    <div className="flex items-center gap-2">
+                      <span className="mono text-[10px] text-zinc-500">{size}</span>
+                      <div className="w-1 h-1 rounded-full bg-zinc-800" />
+                      <span className="mono text-[10px] text-zinc-500">{year}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                  </div>
+                </div>
+
+                {/* Subtle glow on hover */}
+                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            ) : (
+              <div
+                key={item.id}
+                className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5 hover:bg-white/[0.03] transition-all group cursor-pointer"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center border border-white/5`}>
+                    <FileText className="w-4 h-4 text-zinc-400 group-hover:text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] font-bold text-zinc-100 group-hover:text-white">{item.fileName}</h4>
+                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                      {size} • {year}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {hasLink ? <ShieldCheck className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-amber-500" />}
                   <button
-                    onClick={() => handleDeleteEvidence(item.id)}
-                    className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    onClick={() => handleDelete(item.id)}
+                    className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    Remove
                   </button>
                 </div>
               </div>
+            )
+          })
+        )}
+      </div>
 
-              <h4 className="text-[13px] font-bold text-zinc-200 truncate group-hover:text-white transition-colors">
-                {item.fileName ?? "Unnamed File"}
-              </h4>
-              <p className="text-[10px] text-zinc-600 mt-1 font-bold uppercase tracking-widest">
-                {formatDate(item.createdAt)}
-              </p>
-
-              {item.criterion && (
-                <div className="mt-3 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/5 border border-emerald-500/10 w-fit">
-                  <Link2 className="w-2.5 h-2.5 text-emerald-500" />
-                  <span className="text-[9px] font-bold text-emerald-500 truncate max-w-[120px]">
-                    {item.criterion.title}
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* list view */
-        <div className="space-y-2">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              className="group glass-panel rounded-xl px-5 py-3 border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all"
+      {/* Upload Overlay */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6">
+          <div className="w-full max-w-xl glass-panel rounded-[40px] p-10 relative overflow-hidden text-center border-white/5">
+            <button
+              onClick={() => setIsUploading(false)}
+              className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"
             >
-              <div className="flex items-center gap-4 min-w-0">
-                {getFileIcon(item)}
-                <div className="min-w-0">
-                  <h4 className="text-[13px] font-bold text-zinc-200 truncate group-hover:text-white transition-colors">
-                    {item.fileName ?? "Unnamed File"}
-                  </h4>
-                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                    {formatDate(item.createdAt)}
-                    {item.criterion && (
-                      <> · <span className="text-emerald-500">{item.criterion.title}</span></>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {item.fileUrl && (
-                  <a
-                    href={item.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/5 transition-colors"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                <button
-                  onClick={() => handleDeleteEvidence(item.id)}
-                  className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <Plus className="w-6 h-6 rotate-45" />
+            </button>
+            <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+              <Archive className="w-8 h-8 text-blue-500" />
             </div>
-          ))}
+            <h2 className="text-3xl font-bold mb-4 italic text-white">Deposit Evidence</h2>
+            <p className="text-zinc-500 text-sm mb-10 max-w-sm mx-auto">
+              Assets are automatically mapped to the National Framework via the Horus Engine.
+            </p>
+
+            <label className="border-2 border-dashed border-white/10 rounded-[32px] p-12 mb-8 hover:border-blue-500/30 hover:bg-white/[0.02] transition-all cursor-pointer group block">
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => handleUpload(e.target.files)}
+                disabled={uploading}
+              />
+              <div className="flex flex-col items-center gap-3">
+                <Plus className="w-6 h-6 text-zinc-700 group-hover:text-blue-500 transition-colors" />
+                <span className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">
+                  {uploading ? "Indexing payload..." : "Release payload here"}
+                </span>
+              </div>
+            </label>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setIsUploading(false)}
+                className="px-8 py-3 rounded-xl text-xs font-bold text-zinc-500 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const input = document.createElement("input")
+                  input.type = "file"
+                  input.multiple = true
+                  input.onchange = (e) => handleUpload((e.target as HTMLInputElement).files)
+                  input.click()
+                }}
+                disabled={uploading}
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-2xl shadow-blue-600/20 active:scale-95 transition-all"
+              >
+                Start Neural Indexing
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

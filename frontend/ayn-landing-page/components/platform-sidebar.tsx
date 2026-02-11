@@ -7,203 +7,105 @@ import {
   Brain,
   Archive,
   BookOpen,
-  TriangleAlert,
+  AlertTriangle,
   BarChart3,
   Settings,
   UserCircle2,
   PanelLeft,
-  Sparkles,
 } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 
-// ─── Navigation structure ─────────────────────────────────────────────────────
-
-interface NavItem {
-  href: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  badge?: string
-}
-
-const navItems: NavItem[] = [
-  { href: "/platform/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/platform/horus-ai", label: "Horus AI", icon: Brain, badge: "Active" },
-  { href: "/platform/evidence", label: "Evidence", icon: Archive },
-  { href: "/platform/standards", label: "Standards", icon: BookOpen },
-  { href: "/platform/gap-analysis", label: "Gap Analysis", icon: TriangleAlert },
-  { href: "/platform/archive", label: "Reports", icon: BarChart3 },
-  { href: "/platform/settings", label: "Settings", icon: Settings },
-]
-
-// ─── Sidebar component ───────────────────────────────────────────────────────
-
-interface PlatformSidebarProps {
+interface SidebarProps {
   open: boolean
   onToggle: () => void
   notificationCount?: number
 }
 
-export default function PlatformSidebar({
-  open,
-  onToggle,
-  notificationCount = 0,
-}: PlatformSidebarProps) {
+const menuItems = [
+  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
+  { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
+  { id: "evidence", icon: Archive, label: "Evidence Library", href: "/platform/evidence" },
+  { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
+  { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
+  { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/archive" },
+]
+
+export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
 
   return (
     <aside
-      className={cn(
-        "group/sidebar sticky top-0 flex h-screen flex-col transition-all duration-300 ease-in-out",
-        "bg-[#05070A] border-r border-white/[0.06]",
-        open ? "w-[260px]" : "w-[68px]",
-      )}
+      className={`
+        fixed md:relative inset-y-0 left-0 bg-[#05070A] h-full flex flex-col z-30 select-none
+        transition-all duration-300 ease-in-out border-r border-white/5
+        ${open ? "w-[240px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"}
+      `}
     >
-      {/* ── Brand ────────────────────────────────────────────────────────── */}
-      <div
-        className={cn(
-          "flex h-14 shrink-0 items-center border-b border-white/[0.06] px-4",
-          open ? "justify-between" : "justify-center",
-        )}
-      >
-        <Link href="/platform/dashboard" className="flex items-center gap-2.5">
-          {/* Logo mark */}
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/20">
-            <span className="text-sm font-black text-white italic">عين</span>
+      {/* Branding & Toggle */}
+      <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <span className="font-bold text-[10px] tracking-tighter text-white">A</span>
           </div>
-          <div
-            className={cn(
-              "overflow-hidden transition-all duration-300",
-              open ? "w-auto opacity-100" : "w-0 opacity-0",
-            )}
-          >
-            <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white">
-              Ayn Intelligence
-            </p>
-            <p className="whitespace-nowrap text-[9px] leading-tight text-zinc-600 font-bold uppercase tracking-[0.2em]">
-              Quality Hub
-            </p>
-          </div>
-        </Link>
+          <span className="text-xl font-bold tracking-tight text-zinc-100">Ayn</span>
+        </div>
 
-        {open && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-white/5 hover:text-white"
-            aria-label="Collapse sidebar"
-          >
-            <PanelLeft className="h-4 w-4" />
-          </button>
-        )}
+        <button
+          onClick={onToggle}
+          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[#0A0C10] rounded-xl border border-white/5 hover:border-white/10 active:scale-90 shadow-inner"
+          title="Close Sidebar"
+        >
+          <PanelLeft className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* ── Navigation ───────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
-        <div className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const active =
-              pathname === item.href ||
-              pathname.startsWith(`${item.href}/`)
-
-            const linkElement = (
-              <Link
-                href={item.href}
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
-                  active
-                    ? "bg-blue-600/10 text-blue-400"
-                    : "text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200",
-                )}
-              >
-                {/* Active indicator bar */}
-                {active && (
-                  <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-blue-500" />
-                )}
-
-                {/* Icon */}
-                <span className="relative shrink-0">
-                  <Icon
-                    className={cn(
-                      "h-4 w-4 transition-colors",
-                      active && "text-blue-400",
-                    )}
-                  />
-                </span>
-
-                {/* Label */}
-                <span
-                  className={cn(
-                    "flex-1 overflow-hidden whitespace-nowrap transition-all duration-300 font-medium",
-                    open
-                      ? "max-w-[160px] opacity-100"
-                      : "max-w-0 opacity-0",
-                  )}
-                >
-                  {item.label}
-                </span>
-
-                {/* Badge */}
-                {open && item.badge && (
-                  <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-500 uppercase tracking-wider">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            )
-
-            // In collapsed state, wrap each item with a tooltip
-            if (!open) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    {linkElement}
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    sideOffset={8}
-                    className="text-xs font-medium"
-                  >
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              )
-            }
-
-            return (
-              <div key={item.href}>{linkElement}</div>
-            )
-          })}
-        </div>
+      {/* Navigation */}
+      <nav className="flex-1 px-4 pt-4 overflow-hidden">
+        {menuItems.map((item) => {
+          const isActive = pathname.includes(item.id) ||
+            (item.id === "reports" && pathname.includes("archive"))
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group mb-1 whitespace-nowrap ${isActive
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"
+                }`}
+            >
+              <item.icon
+                className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-blue-500" : "text-zinc-500 group-hover:text-zinc-300"
+                  }`}
+              />
+              <span className="text-[13px] font-medium tracking-wide">{item.label}</span>
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* ── User Panel ──────────────────────────────────────────────── */}
-      <div className="border-t border-white/[0.06] p-3">
-        <div
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all",
-            open ? "" : "justify-center",
-          )}
+      {/* Bottom Actions */}
+      <div className="px-4 pb-10 mt-auto space-y-4 overflow-hidden">
+        <Link
+          href="/platform/settings"
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-200 transition-all whitespace-nowrap ${pathname.includes("settings") ? "bg-zinc-800 text-white" : ""
+            }`}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-white/5">
-            <UserCircle2 className="h-4 w-4 text-zinc-400" />
+          <Settings className="w-4 h-4 flex-shrink-0" />
+          <span className="text-[13px] font-medium">Settings</span>
+        </Link>
+
+        <div className="pt-6 border-t border-zinc-900 flex items-center gap-3 px-4 whitespace-nowrap">
+          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-white/5">
+            <UserCircle2 className="w-5 h-5 text-zinc-500" />
           </div>
-          <div
-            className={cn(
-              "overflow-hidden transition-all duration-300",
-              open ? "w-auto opacity-100" : "w-0 opacity-0",
-            )}
-          >
-            <p className="whitespace-nowrap text-[13px] font-semibold text-zinc-200">
-              {user?.name ?? "User"}
-            </p>
-            <p className="whitespace-nowrap text-[9px] text-zinc-600 font-bold uppercase tracking-[0.15em]">
-              Quality Director
-            </p>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-[12px] font-semibold text-zinc-300 truncate w-24">
+              {user?.name ?? "QA Director"}
+            </span>
+            <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+              Ayn OS
+            </span>
           </div>
         </div>
       </div>

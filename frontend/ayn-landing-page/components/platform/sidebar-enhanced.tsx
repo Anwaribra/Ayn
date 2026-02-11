@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
+import { AynLogo } from "@/components/platform/ayn-logo"
 
 interface SidebarProps {
   open: boolean
@@ -31,40 +32,6 @@ const menuItems = [
   { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
   { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/analytics" },
 ]
-
-// AYN Logo - matches landing page style
-function AynLogo() {
-  return (
-    <Link 
-      href="https://ayn.vercel.app/" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="group flex items-center justify-center hover:opacity-70 transition-opacity"
-    >
-      <div className="relative flex items-center justify-center w-14 h-8">
-        {/* Arc around text - white color */}
-        <svg 
-          className="absolute w-full h-full" 
-          viewBox="0 0 100 60" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path 
-            d="M15 45 C 5 10, 85 5, 95 35" 
-            stroke="white" 
-            strokeWidth="4" 
-            strokeLinecap="round"
-            className="opacity-90"
-          />
-        </svg>
-        {/* Text - white bold for dark sidebar */}
-        <span className="relative font-black text-[13px] tracking-tighter text-white antialiased">
-          AYN
-        </span>
-      </div>
-    </Link>
-  )
-}
 
 export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
   const pathname = usePathname()

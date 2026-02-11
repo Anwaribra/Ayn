@@ -184,10 +184,8 @@ function DashboardContent() {
             { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
           ].map((m, i) => (
             <div key={i} className="group cursor-pointer">
-              <div className={`
-                glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between transition-all duration-500
-                group-hover:-translate-y-3 group-hover:bg-white/[0.04] border-white/5 ${m.glow} group-hover:shadow-2xl
-              `}>
+              <div className={["glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between transition-all duration-500",
+                "group-hover:-translate-y-3 group-hover:bg-white/[0.04] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
                 <div className="flex justify-between items-start">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center">
                     <m.icon className={`w-6 h-6 ${m.color}`} />

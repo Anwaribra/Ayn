@@ -92,7 +92,7 @@ function SettingsContent() {
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)]">
-          <div className="bg-[#151E29] rounded-2xl p-10 max-w-[520px] w-full border border-[rgba(255,255,255,0.08)] relative shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
+          <div className="bg-[#161F2A] rounded-2xl p-10 max-w-[520px] w-full border border-[rgba(255,255,255,0.08)] relative shadow-none">
             <button 
               onClick={() => setShowPurgeModal(false)}
               className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"

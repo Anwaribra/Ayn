@@ -8,6 +8,7 @@ from app.auth.models import (
     LoginRequest,
     GoogleLoginRequest,
     SupabaseLoginRequest,
+    UpdateUserRequest,
     AuthResponse,
     UserResponse,
     LogoutResponse,
@@ -321,4 +322,50 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         role=user.role,
         institutionId=user.institutionId,
         createdAt=user.createdAt
+    )
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_current_user(
+    body: UpdateUserRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update current user profile (name).
+    """
+    db = get_db()
+    user = await db.user.find_unique(where={"id": current_user["id"]})
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    update_data = {}
+    if body.name is not None:
+        update_data["name"] = body.name
+
+    if not update_data:
+        return UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            institutionId=user.institutionId,
+            createdAt=user.createdAt,
+        )
+
+    updated = await db.user.update(
+        where={"id": current_user["id"]},
+        data=update_data,
+    )
+
+    return UserResponse(
+        id=updated.id,
+        name=updated.name,
+        email=updated.email,
+        role=updated.role,
+        institutionId=updated.institutionId,
+        createdAt=updated.createdAt,
     )

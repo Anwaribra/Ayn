@@ -27,7 +27,7 @@ const menuItems = [
   { id: "evidence", icon: Archive, label: "Evidence Library", href: "/platform/evidence" },
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
   { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
-  { id: "archive", icon: BarChart3, label: "Archive", href: "/platform/archive" },
+  { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/analytics" },
 ]
 
 export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
@@ -63,7 +63,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
       <nav className="flex-1 px-4 pt-4 overflow-hidden">
         {menuItems.map((item) => {
           const isActive = pathname.includes(item.id) ||
-            (item.id === "archive" && pathname.includes("archive"))
+            (item.id === "reports" && pathname.includes("analytics"))
           return (
             <Link
               key={item.id}

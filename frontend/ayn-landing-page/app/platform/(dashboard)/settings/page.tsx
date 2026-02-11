@@ -71,18 +71,18 @@ function SettingsContent() {
         ))}
       </div>
 
-      <div className="mt-16 p-8 rounded-[32px] border border-[#A83B42]/15 bg-[#A83B42]/[0.03] relative overflow-hidden group hover:bg-[#A83B42]/[0.05] transition-colors">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity">
-          <Shield className="w-32 h-32 text-[#A83B42]" />
+      <div className="mt-16 p-8 rounded-[32px] border border-[#B94A4A]/20 bg-[#111923] relative overflow-hidden group transition-colors">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.06] group-hover:opacity-[0.10] transition-opacity">
+          <Shield className="w-32 h-32 text-[#B94A4A]" />
         </div>
         <div className="relative z-10 max-w-xl">
-          <h3 className="text-xl font-semibold text-[#C45A61] mb-2">Vault Clearance Protocol</h3>
+          <h3 className="text-xl font-semibold text-[#B94A4A] mb-2">Vault Clearance Protocol</h3>
           <p className="text-sm text-zinc-500/90 mb-8 font-medium leading-relaxed">
             Wiping institutional data will permanently remove all evidence assets, compliance mappings, and Horus neural history. This action requires administrative consensus.
           </p>
           <button 
             onClick={() => setShowPurgeModal(true)}
-            className="px-6 py-2.5 bg-[#9C3A40]/15 text-[#C45A61] border border-[#A83B42]/25 rounded-lg text-[11px] font-medium uppercase tracking-widest hover:bg-[#A83B42]/25 hover:text-white/90 transition-all"
+            className="px-6 py-2.5 bg-[#B94A4A]/10 text-[#B94A4A] border border-[#B94A4A]/25 rounded-lg text-[11px] font-medium uppercase tracking-widest hover:bg-[#B94A4A] hover:text-white transition-all"
           >
             Initiate Purge Protocol
           </button>
@@ -91,8 +91,8 @@ function SettingsContent() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/35 backdrop-blur-[2px]">
-          <div className="bg-[#141820] rounded-2xl p-10 max-w-[520px] w-full border border-white/[0.06] relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] backdrop-blur-[5px]">
+          <div className="bg-[#151E29] rounded-2xl p-10 max-w-[520px] w-full border border-[rgba(255,255,255,0.06)] relative shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <button 
               onClick={() => setShowPurgeModal(false)}
               className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
@@ -100,8 +100,8 @@ function SettingsContent() {
               <X className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-[#A83B42]/8 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-[#C45A61]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#B94A4A]/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-[#B94A4A]" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-zinc-100">Confirm Vault Purge</h3>
@@ -123,7 +123,7 @@ function SettingsContent() {
                   toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
                   setShowPurgeModal(false)
                 }}
-                className="flex-1 py-2.5 rounded-lg bg-[#9C3A40]/90 text-white/95 text-[11px] font-medium uppercase tracking-widest hover:bg-[#A83B42] transition-all"
+                className="flex-1 py-2.5 rounded-lg bg-[#B94A4A] text-white text-[11px] font-medium uppercase tracking-widest hover:bg-[#C25656] transition-all"
               >
                 Confirm Purge
               </button>

@@ -84,9 +84,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[#080A0F] text-[#E8EAED] overflow-hidden selection:bg-blue-500/30 relative">
-      {/* Cinematic background - lighter, more breathable */}
-      <div className="cinematic-bg opacity-70" />
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.015] via-transparent to-transparent pointer-events-none" />
+      {/* Cinematic background */}
+      <div className="cinematic-bg" />
 
       {/* Sidebar */}
       <PlatformSidebar
@@ -249,8 +248,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Main content area - breathable surface */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0B0D12]/60">
+        {/* Main content area */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0E141B]">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

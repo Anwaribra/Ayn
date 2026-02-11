@@ -5,13 +5,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 [data-section="platform"] {
-  /* Core surfaces - breathable Linear-inspired depth */
-  --bg-deep: #090B11;
+  /* Core surfaces - precise tonal hierarchy */
+  --bg-deep: #080A0F;
   --sidebar-bg: #070910;
-  --surface: rgba(255, 255, 255, 0.025);
-  --surface-elevated: rgba(255, 255, 255, 0.04);
-  --surface-card: rgba(255, 255, 255, 0.035);
-  --surface-modal: #141820;
+  --surface: #0E141B;
+  --surface-card: #111923;
+  --surface-modal: #151E29;
 
   /* Accent palette - desaturated for premium feel */
   --accent-blue: #3B6FD9;
@@ -86,15 +85,11 @@
   pointer-events: none;
 }
 
-/* ─── Glass Panel ─────────────────────────────────────────────────────────── */
+/* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.015) inset,
-    var(--shadow-md);
+  background: #111923;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-md);
 }
 
 /* ─── Elevation Levels ────────────────────────────────────────────────────── */

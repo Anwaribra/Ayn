@@ -15,6 +15,10 @@ import {
   Cpu,
 } from "lucide-react"
 import type { DashboardMetrics } from "@/types"
+import { EmptyState } from "@/components/platform/empty-state"
+import { DashboardMetricsSkeleton, SuggestionsGridSkeleton } from "@/components/platform/skeleton-loader"
+import { SystemLog } from "@/components/platform/system-log"
+import { HorusAIWidget, SystemStatusWidget } from "@/components/platform/horus-ai-enhanced"
 
 export default function DashboardPage() {
   return (
@@ -151,28 +155,10 @@ function DashboardContent() {
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             </div>
 
-            <div className="flex-1 space-y-6 overflow-hidden">
-              {recentNotifs.length === 0 ? (
-                <div className="text-sm text-zinc-600 italic py-4">No recent activity.</div>
-              ) : (
-                recentNotifs.map((notif, i) => (
-                  <div key={notif.id} className="flex gap-4 group">
-                    <span className="mono text-[10px] text-zinc-700 font-bold mt-0.5">
-                      {new Date(notif.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <div>
-                      <p className={`text-[12px] font-bold ${!notif.read ? "text-amber-500" : "text-zinc-400"} group-hover:text-white transition-colors cursor-default`}>
-                        {notif.title}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
+            {/* System Log Component */}
+            <div className="flex-1 overflow-hidden">
+              <SystemLog showHeader={false} maxEntries={5} />
             </div>
-
-            <Link href="/platform/archive" className="mt-8 py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center block">
-              View Audit History
-            </Link>
           </div>
         </div>
       </section>
@@ -187,12 +173,15 @@ function DashboardContent() {
           <button className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">Download Report</button>
         </div>
 
+        {isLoading ? (
+          <DashboardMetricsSkeleton />
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { label: "Verified Standards", value: isLoading ? "—" : String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
-            { label: "Evidence Matrix", value: isLoading ? "—" : String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
-            { label: "Critical Gaps", value: isLoading ? "—" : String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
-            { label: "Sync Latency", value: isLoading ? "—" : "—", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
+            { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
+            { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
+            { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
+            { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
           ].map((m, i) => (
             <div key={i} className="group cursor-pointer">
               <div className={`
@@ -224,11 +213,10 @@ function DashboardContent() {
           <h2 className="text-2xl font-bold tracking-tight">Intelligence Suggestions</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {suggestionsFromData.length === 0 ? (
-            <div className="col-span-full glass-panel p-8 rounded-[36px] border-white/5 text-center">
-              <p className="text-sm text-zinc-600 italic">No intelligence suggestions. Standards and gap analyses will drive recommendations.</p>
-              <Link href="/platform/standards" className="inline-block mt-4 text-blue-500 text-xs font-bold hover:underline">Create Standards</Link>
-            </div>
+          {isLoading ? (
+            <SuggestionsGridSkeleton count={3} />
+          ) : suggestionsFromData.length === 0 ? (
+            <EmptyState type="dashboard" />
           ) : (
           suggestionsFromData.map((item, i) => (
             <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
@@ -250,6 +238,9 @@ function DashboardContent() {
           )}
         </div>
       </section>
+
+      {/* Horus AI Widget */}
+      <HorusAIWidget />
     </div>
   )
 }

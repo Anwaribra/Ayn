@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import {
   Book,
   Shield,
@@ -14,8 +15,13 @@ import {
   Layers,
   Activity,
   Play,
+  Plus,
+  Sparkles,
 } from "lucide-react"
 import type { Standard, GapAnalysisListItem } from "@/types"
+import { EmptyState } from "@/components/platform/empty-state"
+import { StandardsGridSkeleton } from "@/components/platform/skeleton-loader"
+import { StandardsTemplatesButton, Template } from "@/components/platform/standards-templates"
 
 export default function StandardsPage() {
   return (
@@ -107,16 +113,22 @@ function StandardsContent() {
       {/* Grid Collections */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 px-4">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i: number) => (
-            <div key={i} className="glass-panel rounded-[32px] p-6 border-white/5 aspect-square animate-pulse" />
-          ))
+          <StandardsGridSkeleton count={4} />
         ) : collections.length === 0 ? (
-          <div className="col-span-full text-center py-20">
-            <Shield className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
-            <p className="text-sm text-zinc-600 italic">No standards have been created yet.</p>
-            <Link href="/platform/standards/new" className="inline-block mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xl">
-              Create Standard
-            </Link>
+          <div className="col-span-full">
+            <EmptyState type="standards" />
+            <div className="flex justify-center gap-4 mt-8">
+              <StandardsTemplatesButton onSelect={(template: Template) => {
+                // Handle template selection - redirect to create page with template data
+                window.location.href = `/platform/standards/new?template=${template.id}`
+              }} />
+              <Link href="/platform/standards/new">
+                <Button className="bg-blue-600 hover:bg-blue-500 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Custom
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           collections.map((c, i) => (
@@ -201,8 +213,16 @@ function StandardsContent() {
             })}
 
             {(standards ?? []).length === 0 && !isLoading && (
-              <div className="text-center py-12 text-zinc-600 text-sm italic">No standards to map.</div>
-            )}
+            <div className="col-span-full">
+              <div className="glass-panel rounded-2xl p-8 text-center border-white/5">
+                <Target className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+                <p className="text-sm text-zinc-500 mb-4">No standards available for topology mapping.</p>
+                <StandardsTemplatesButton onSelect={(template: Template) => {
+                  window.location.href = `/platform/standards/new?template=${template.id}`
+                }} />
+              </div>
+            </div>
+          )}
           </div>
 
           <div className="glass-panel rounded-[32px] p-8 border-white/5 flex flex-col">

@@ -222,6 +222,58 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
 
+/* ─── Micro-interactions & Animations ─────────────────────────────────────── */
+[data-section="platform"] .animate-swing {
+  animation: swing 2s ease-in-out infinite;
+}
+
+@keyframes swing {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-10deg); }
+  30% { transform: rotate(5deg); }
+  40% { transform: rotate(-5deg); }
+  50% { transform: rotate(0deg); }
+}
+
+[data-section="platform"] .hover-lift {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-section="platform"] .hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+[data-section="platform"] .hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+[data-section="platform"] .hover-glow:hover {
+  box-shadow: 0 0 20px rgba(59, 111, 217, 0.3);
+}
+
+/* Pulse animation for live indicators */
+[data-section="platform"] .animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer effect for loading states */
+[data-section="platform"] .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 [data-section="platform"] .btn-destructive:hover {
   background: #C9424A;
 }

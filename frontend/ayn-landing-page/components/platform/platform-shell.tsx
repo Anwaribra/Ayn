@@ -14,7 +14,7 @@ import {
   HelpCircle,
   X,
 } from "lucide-react"
-import PlatformSidebar from "@/components/platform-sidebar"
+import PlatformSidebar from "@/components/platform/sidebar-enhanced"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
 import { CommandPalette } from "./command-palette"
 import { useAuth } from "@/lib/auth-context"
@@ -166,16 +166,19 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
-            <button className="hidden md:block text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="History">
+            <button 
+              className="hidden md:block text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95" 
+              title="History"
+            >
               <History className="w-4 h-4" />
             </button>
             <div className="relative notification-dropdown-container">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="text-zinc-500 hover:text-white transition-colors relative p-2 hover:bg-white/5 rounded-lg"
+                className="text-zinc-500 hover:text-white transition-all duration-300 relative p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95 group"
                 title="Notifications"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-4 h-4 group-hover:animate-swing" />
                 {notificationCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#080A0F] shadow-sm">
                     {notificationCount}
@@ -237,12 +240,15 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 </div>
               )}
             </div>
-            <button className="text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="Help">
+            <button 
+              className="text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95" 
+              title="Help"
+            >
               <HelpCircle className="w-4 h-4" />
             </button>
             <div className="w-px h-4 bg-white/10" />
-            <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors border-none">
-              <span className="hidden sm:inline">{user?.name ?? "Institution Alpha"}</span>
+            <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group">
+              <span className="hidden sm:inline group-hover:text-white transition-colors">{user?.name ?? "Institution Alpha"}</span>
               <span className="sm:hidden font-mono">I-A</span>
             </button>
           </div>

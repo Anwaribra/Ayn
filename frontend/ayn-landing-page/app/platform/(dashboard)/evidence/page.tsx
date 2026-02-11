@@ -19,6 +19,8 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import type { Evidence } from "@/types"
+import { EmptyState } from "@/components/platform/empty-state"
+import { EvidenceGridSkeleton, StatsGridSkeleton } from "@/components/platform/skeleton-loader"
 
 export default function EvidencePage() {
   return (
@@ -137,6 +139,11 @@ function EvidenceContent() {
       </header>
 
       {/* Stats Summary */}
+      {isLoading ? (
+        <div className="px-4 mb-10">
+          <StatsGridSkeleton />
+        </div>
+      ) : (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-4">
         {[
           { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
@@ -155,6 +162,7 @@ function EvidenceContent() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Search */}
       {filteredEvidence.length > 0 && (
@@ -178,11 +186,10 @@ function EvidenceContent() {
           ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4"
           : "space-y-3 px-4"
       }>
-        {filteredEvidence.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-            <Archive className="w-10 h-10 text-zinc-800 mb-4" />
-            <p className="text-sm text-zinc-600 italic">No evidence assets found.</p>
-          </div>
+        {isLoading ? (
+          <EvidenceGridSkeleton viewMode={viewMode} />
+        ) : filteredEvidence.length === 0 ? (
+          <EmptyState type="evidence" />
         ) : (
           filteredEvidence.map((item, i) => {
             const color = CAT_COLORS[i % CAT_COLORS.length]

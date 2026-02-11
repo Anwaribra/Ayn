@@ -1,0 +1,157 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   AYN V3 — PLATFORM DARK THEME
+   Scoped to [data-section="platform"] so the landing page stays light.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-section="platform"] {
+  /* Core surfaces */
+  --bg-deep: #07090E;
+  --sidebar-bg: #05070A;
+  --surface: rgba(255, 255, 255, 0.03);
+
+  /* Accent palette */
+  --accent-blue: #2563EB;
+  --accent-emerald: #10B981;
+  --accent-violet: #8B5CF6;
+  --accent-amber: #F59E0B;
+  --accent-red: #EF4444;
+
+  /* Text hierarchy */
+  --text-primary: #E8ECF4;
+  --text-secondary: #6B7A99;
+  --text-tertiary: #3A4661;
+
+  /* Glow */
+  --glow-blue: rgba(37, 99, 235, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Override shadcn/ui variables for dark mode */
+  --background: #07090E;
+  --foreground: #E8ECF4;
+  --card: rgba(255, 255, 255, 0.02);
+  --card-foreground: #E8ECF4;
+  --popover: #0C0F16;
+  --popover-foreground: #E8ECF4;
+  --primary: #2563EB;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.05);
+  --secondary-foreground: #9CA3AF;
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: #6B7A99;
+  --accent: rgba(255, 255, 255, 0.06);
+  --accent-foreground: #E8ECF4;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.05);
+  --ring: rgba(37, 99, 235, 0.4);
+  --sidebar: #05070A;
+  --sidebar-foreground: #E8ECF4;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.04);
+  --sidebar-accent-foreground: #E8ECF4;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(37, 99, 235, 0.4);
+
+  /* Brand overrides */
+  --brand: #2563EB;
+  --brand-foreground: #ffffff;
+  --brand-muted: #3B82F6;
+
+  color-scheme: dark;
+}
+
+/* ─── Glass Panel ─────────────────────────────────────────────────────────── */
+[data-section="platform"] .glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+[data-section="platform"] .glass-panel:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Mono text (JetBrains Mono / fallback) ───────────────────────────────── */
+[data-section="platform"] .mono {
+  font-family: 'JetBrains Mono', 'Geist Mono', ui-monospace, monospace;
+}
+
+/* ─── Custom scrollbar ───────────────────────────────────────────────────── */
+[data-section="platform"] .custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+[data-section="platform"] .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+[data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ─── Fade-in-up animation ───────────────────────────────────────────────── */
+@keyframes v3-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-section="platform"] .animate-fade-in-up {
+  animation: v3-fade-in-up 0.6s ease-out both;
+}
+
+/* ─── Pulse glow (blue) ──────────────────────────────────────────────────── */
+@keyframes v3-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(37, 99, 235, 0.3);
+  }
+}
+
+[data-section="platform"] .active-glow {
+  animation: v3-pulse-glow 3s ease-in-out infinite;
+}
+
+/* ─── Animated gradient border ───────────────────────────────────────────── */
+@keyframes v3-border-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+[data-section="platform"] .animated-border {
+  background: conic-gradient(from var(--angle), #2563EB, #8B5CF6, #10B981, #2563EB) border-box;
+  animation: v3-border-rotate 6s linear infinite;
+}
+
+/* ─── Platform-specific card hover ───────────────────────────────────────── */
+[data-section="platform"] .platform-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+}
+
+[data-section="platform"] .platform-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Score color utilities ──────────────────────────────────────────────── */
+[data-section="platform"] .score-high { color: #10B981; }
+[data-section="platform"] .score-medium { color: #F59E0B; }
+[data-section="platform"] .score-low { color: #EF4444; }

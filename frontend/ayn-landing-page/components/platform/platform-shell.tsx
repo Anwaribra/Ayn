@@ -15,6 +15,12 @@ import {
   ChevronRight,
   LogOut,
   Settings,
+  Search,
+  History,
+  ArrowLeft,
+  ArrowRight,
+  Command,
+  PanelLeft,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform-sidebar"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
@@ -35,14 +41,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -57,7 +55,7 @@ const ROUTE_LABELS: Record<string, string> = {
   evidence: "Evidence",
   "gap-analysis": "Gap Analysis",
   assessments: "Assessments",
-  archive: "Compliance Archive",
+  archive: "Reports",
   standards: "Standards",
   notifications: "Notifications",
   settings: "Settings",
@@ -79,21 +77,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuth()
 
-  // ── Auto-breadcrumbs from current pathname ──────────────────────────────
-  const breadcrumbs = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean)
-    // Skip the leading "platform" segment, build crumbs from the rest
-    return segments.slice(1).map((segment, index) => ({
-      label:
-        ROUTE_LABELS[segment] ??
-        segment.charAt(0).toUpperCase() +
-          segment.slice(1).replace(/-/g, " "),
-      href: "/" + segments.slice(0, index + 2).join("/"),
-      isLast: index === segments.length - 2,
-    }))
-  }, [pathname])
-
-  // ── Notification count via SWR (shared cache with notifications page) ───
+  // ── Notification count via SWR ──────────────────────────────────────────
   const { data: notifications } = useSWR<Notification[]>(
     isAuthenticated ? "notifications" : null,
     () => api.getNotifications(),
@@ -109,19 +93,19 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-[#07090E] text-[#E8ECF4]">
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
-        <PlatformSidebar
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen((prev) => !prev)}
-          notificationCount={notificationCount}
-        />
+      <PlatformSidebar
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((prev) => !prev)}
+        notificationCount={notificationCount}
+      />
 
       {/* ── Main content area ──────────────────────────────────────────── */}
       <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
-        {/* ── Top header bar ───────────────────────────────────────────── */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border/50 bg-background/80 px-4 backdrop-blur-md">
-          {/* Left side: sidebar toggle + breadcrumbs */}
+        {/* ── Top header bar (V3 TopBar) ─────────────────────────────── */}
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-[#07090E]/80 px-4 backdrop-blur-xl">
+          {/* Left side: sidebar toggle + nav buttons */}
           <div className="flex min-w-0 items-center gap-2">
             {!sidebarOpen && (
               <Tooltip>
@@ -129,7 +113,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 text-muted-foreground"
+                    className="h-8 w-8 shrink-0 text-zinc-600 hover:text-white hover:bg-white/5"
                     onClick={() => setSidebarOpen(true)}
                   >
                     <PanelLeftOpen className="h-4 w-4" />
@@ -141,75 +125,73 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               </Tooltip>
             )}
 
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link
-                      href="/platform/dashboard"
-                      className="text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      Platform
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                {breadcrumbs.map((crumb) => (
-                  <Fragment key={crumb.href}>
-                    <BreadcrumbSeparator>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </BreadcrumbSeparator>
-                    <BreadcrumbItem>
-                      {crumb.isLast ? (
-                        <BreadcrumbPage className="font-medium">
-                          {crumb.label}
-                        </BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink asChild>
-                          <Link href={crumb.href}>
-                            {crumb.label}
-                          </Link>
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                  </Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
+            {/* Browser-style nav buttons */}
+            <div className="hidden md:flex items-center gap-1">
+              <button
+                onClick={() => router.back()}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-700 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => router.forward()}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-700 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Right side: search + notifications + user menu */}
-          <div className="flex items-center gap-2">
-            {/* Command Palette Trigger */}
+          {/* Center: Search bar */}
+          <div className="flex-1 flex justify-center max-w-lg">
             <CommandPaletteTrigger />
+          </div>
+
+          {/* Right side: activity + notifications + menu */}
+          <div className="flex items-center gap-2">
+            {/* Activity */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors">
+                  <History className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Activity</TooltipContent>
+            </Tooltip>
 
             {/* Notification bell */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "relative h-8 w-8 text-muted-foreground hover:text-foreground",
-                  )}
-                  onClick={() =>
-                    router.push("/platform/notifications")
-                  }
+                <button
+                  className="relative flex h-8 w-8 items-center justify-center rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+                  onClick={() => router.push("/platform/notifications")}
                 >
                   <Bell className="h-4 w-4" />
                   {notificationCount > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-[var(--brand-foreground)] ring-2 ring-background">
-                      {notificationCount > 9
-                        ? "9+"
-                        : notificationCount}
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white ring-2 ring-[#07090E]">
+                      {notificationCount > 9 ? "9+" : notificationCount}
                     </span>
                   )}
-                </Button>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
                 {notificationCount > 0
-                  ? `${notificationCount} unread notification${notificationCount !== 1 ? "s" : ""}`
+                  ? `${notificationCount} unread`
                   : "Notifications"}
               </TooltipContent>
+            </Tooltip>
+
+            {/* Sidebar toggle for mobile */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSidebarOpen((prev) => !prev)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/5 transition-colors md:hidden"
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Toggle sidebar</TooltipContent>
             </Tooltip>
 
             {/* User avatar dropdown */}
@@ -217,11 +199,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative ml-0.5 h-8 w-8 rounded-full"
+                  className="relative ml-0.5 h-8 w-8 rounded-full hover:bg-white/5"
                   size="icon"
                 >
                   <Avatar className="h-7 w-7">
-                    <AvatarFallback className="bg-[var(--brand)]/10 text-xs font-semibold text-[var(--brand)]">
+                    <AvatarFallback className="bg-gradient-to-br from-violet-600/20 to-blue-600/20 text-xs font-semibold text-blue-400 border border-white/5">
                       {user?.name
                         ?.charAt(0)
                         ?.toUpperCase() ?? "U"}
@@ -229,52 +211,44 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-[#0C0F16] border-white/[0.06]">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium leading-none">
-                      {isAuthenticated
-                        ? user?.name
-                        : "Guest"}
+                    <p className="text-sm font-medium leading-none text-zinc-200">
+                      {isAuthenticated ? user?.name : "Guest"}
                     </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {isAuthenticated
-                        ? user?.email
-                        : "Not signed in"}
+                    <p className="text-xs leading-none text-zinc-500">
+                      {isAuthenticated ? user?.email : "Not signed in"}
                     </p>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
-                    onClick={() =>
-                      router.push("/platform/settings")
-                    }
+                    className="text-zinc-400 hover:text-white focus:text-white hover:bg-white/5 focus:bg-white/5"
+                    onClick={() => router.push("/platform/settings")}
                   >
                     <Settings />
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
-                      router.push(
-                        "/platform/notifications",
-                      )
-                    }
+                    className="text-zinc-400 hover:text-white focus:text-white hover:bg-white/5 focus:bg-white/5"
+                    onClick={() => router.push("/platform/notifications")}
                   >
                     <Bell />
                     Notifications
                     {notificationCount > 0 && (
-                      <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--brand)]/10 px-1.5 text-[10px] font-bold text-[var(--brand)]">
+                      <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600/10 px-1.5 text-[10px] font-bold text-blue-400">
                         {notificationCount}
                       </span>
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/[0.06]" />
                 {isAuthenticated && (
                   <DropdownMenuItem
                     onClick={() => logout()}
-                    variant="destructive"
+                    className="text-red-400 hover:text-red-300 focus:text-red-300 hover:bg-red-500/10 focus:bg-red-500/10"
                   >
                     <LogOut />
                     Log out

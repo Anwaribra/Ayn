@@ -1,138 +1,49 @@
 "use client"
 
 import { useState, useCallback, useRef } from "react"
-import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Upload,
   FileText,
-  Link2,
-  Trash2,
-  ExternalLink,
-  Plus,
-  FileCheck,
-  AlertCircle,
-  LayoutGrid,
-  LayoutList,
-  Search,
-  Filter,
-  FileImage,
-  FileSpreadsheet,
+  Image as ImageIcon,
   File,
-  CloudUpload,
-  X,
-  CheckCircle2,
-  Loader2,
+  Grid3x3,
+  List,
+  Search,
+  Brain,
+  Trash2,
+  ArrowRight,
+  Link2,
+  Filter,
+  Eye,
+  Download,
 } from "lucide-react"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import Link from "next/link"
-import type { Evidence } from "@/types/evidence"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import type { Evidence } from "@/types"
 
-function getFileName(url: string): string {
-  try {
-    const parts = url.split("/")
-    const last = parts[parts.length - 1]
-    return decodeURIComponent(last.split("?")[0]) || "Unknown file"
-  } catch {
-    return "Unknown file"
-  }
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getFileIcon(evidence: Evidence) {
+  const type = evidence.fileType ?? evidence.fileName ?? ""
+  if (type.includes("image") || type.match(/\.(png|jpg|jpeg|gif|webp|svg)/i))
+    return <ImageIcon className="w-4 h-4 text-violet-400" />
+  if (type.includes("pdf") || type.match(/\.pdf/i))
+    return <FileText className="w-4 h-4 text-red-400" />
+  return <File className="w-4 h-4 text-zinc-500" />
 }
 
-function getFileType(url: string): string {
-  const ext = url.split(".").pop()?.split("?")[0]?.toLowerCase()
-  const typeMap: Record<string, string> = {
-    pdf: "PDF",
-    doc: "Word",
-    docx: "Word",
-    xls: "Excel",
-    xlsx: "Excel",
-    jpg: "Image",
-    jpeg: "Image",
-    png: "Image",
-    gif: "Image",
-    txt: "Text",
-  }
-  return typeMap[ext || ""] || "File"
-}
-
-function getFileIcon(url: string) {
-  const type = getFileType(url)
-  switch (type) {
-    case "PDF":
-      return <FileText className="h-5 w-5 text-red-500" />
-    case "Word":
-      return <FileText className="h-5 w-5 text-blue-500" />
-    case "Excel":
-      return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />
-    case "Image":
-      return <FileImage className="h-5 w-5 text-purple-500" />
-    default:
-      return <File className="h-5 w-5 text-muted-foreground" />
-  }
-}
-
-function getFileColor(url: string) {
-  const type = getFileType(url)
-  switch (type) {
-    case "PDF":
-      return "bg-red-500/10"
-    case "Word":
-      return "bg-blue-500/10"
-    case "Excel":
-      return "bg-emerald-500/10"
-    case "Image":
-      return "bg-purple-500/10"
-    default:
-      return "bg-muted"
-  }
-}
-
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
     month: "short",
     day: "numeric",
+    year: "numeric",
   })
 }
+
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EvidencePage() {
   return (
@@ -144,514 +55,300 @@ export default function EvidencePage() {
 
 function EvidenceContent() {
   const { user } = useAuth()
+  const [search, setSearch] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState<"all" | "linked" | "unlinked">("all")
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
-  const [selectedStandardId, setSelectedStandardId] = useState<string>("")
-  const [selectedCriterionId, setSelectedCriterionId] = useState<string>("")
-  const [isLinking, setIsLinking] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: evidence, isLoading, mutate: mutateEvidence } = useSWR(
-    user ? "evidence-list" : null,
-    () => api.getEvidence()
+  const { data: evidence, isLoading, mutate } = useSWR<Evidence[]>(
+    user ? "evidence" : null,
+    () => api.getEvidence(),
   )
 
-  const { data: standards } = useSWR(
-    user ? "standards-list" : null,
-    () => api.getStandards()
-  )
-
-  const { data: criteria } = useSWR(
-    selectedStandardId ? `criteria-${selectedStandardId}` : null,
-    () => api.getCriteria(selectedStandardId)
-  )
-
-  const filteredEvidence = (evidence ?? []).filter((ev) => {
-    const matchesSearch =
-      !searchQuery ||
-      getFileName(ev.fileUrl).toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter =
-      filterStatus === "all" ||
-      (filterStatus === "linked" && ev.criterionId) ||
-      (filterStatus === "unlinked" && !ev.criterionId)
-    return matchesSearch && matchesFilter
-  })
-
-  const handleFilesSelected = async (files: File[]) => {
-    setIsUploading(true)
-    let successCount = 0
-    let failCount = 0
-
-    await Promise.allSettled(
-      files.map(async (file) => {
-        try {
+  // ── Upload handler ────────────────────────────────────────────────
+  const handleUpload = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return
+      try {
+        for (const file of Array.from(files)) {
           await api.uploadEvidence(file)
-          successCount++
-        } catch {
-          failCount++
         }
-      })
-    )
+        toast.success(`${files.length} file(s) uploaded`)
+        mutate()
+      } catch {
+        toast.error("Upload failed")
+      }
+    },
+    [mutate],
+  )
 
-    setIsUploading(false)
-    mutateEvidence()
-
-    if (successCount > 0) {
-      toast.success(`${successCount} file${successCount > 1 ? "s" : ""} uploaded successfully`)
-    }
-    if (failCount > 0) {
-      toast.error(`${failCount} file${failCount > 1 ? "s" : ""} failed to upload`)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this evidence?")) return
-    setIsDeleting(id)
+  const handleDeleteEvidence = async (id: string) => {
+    if (!confirm("Delete this evidence?")) return
     try {
       await api.deleteEvidence(id)
-      toast.success("Evidence deleted successfully")
-      mutateEvidence()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete evidence")
-    } finally {
-      setIsDeleting(null)
+      toast.success("Evidence deleted")
+      mutate()
+    } catch {
+      toast.error("Delete failed")
     }
   }
 
-  const handleLink = async () => {
-    if (!selectedEvidence || !selectedCriterionId) return
-    setIsLinking(true)
-    try {
-      await api.attachEvidence(selectedEvidence.id, selectedCriterionId)
-      toast.success("Evidence linked to criterion successfully")
-      mutateEvidence()
-      setLinkDialogOpen(false)
-      setSelectedEvidence(null)
-      setSelectedStandardId("")
-      setSelectedCriterionId("")
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to link evidence")
-    } finally {
-      setIsLinking(false)
-    }
-  }
+  // ── Drag & drop ───────────────────────────────────────────────────
+  const handleDrag = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.type === "dragenter" || e.type === "dragover") setDragActive(true)
+      else if (e.type === "dragleave") setDragActive(false)
+    },
+    [],
+  )
 
-  const openLinkDialog = (ev: Evidence) => {
-    setSelectedEvidence(ev)
-    setSelectedStandardId("")
-    setSelectedCriterionId("")
-    setLinkDialogOpen(true)
-  }
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
+      handleUpload(e.dataTransfer.files)
+    },
+    [handleUpload],
+  )
 
-  const linkedCount = evidence?.filter((e) => e.criterionId).length ?? 0
-  const unlinkedCount = evidence?.filter((e) => !e.criterionId).length ?? 0
-  const totalCount = evidence?.length ?? 0
-  const completeness = totalCount > 0 ? Math.round((linkedCount / totalCount) * 100) : 0
+  // ── Filter ────────────────────────────────────────────────────────
+  const filtered = (evidence ?? []).filter((e) => {
+    const term = search.toLowerCase()
+    return (
+      !term ||
+      e.fileName?.toLowerCase().includes(term) ||
+      e.criterion?.title.toLowerCase().includes(term) ||
+      e.fileType?.toLowerCase().includes(term)
+    )
+  })
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        title="Evidence Management"
-        description="Upload, organize, and link evidence files to compliance criteria"
-        breadcrumbs={[
-          { label: "Dashboard", href: "/platform/dashboard" },
-          { label: "Evidence" },
-        ]}
-      />
-
-      <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-        <DropZone onFilesSelected={handleFilesSelected} isUploading={isUploading} />
-
-        <div className="grid gap-4 md:grid-cols-4">
-          <StatCard title="Total Evidence" value={totalCount} icon={<FileText className="h-4 w-4" />} isLoading={isLoading} />
-          <StatCard title="Linked" value={linkedCount} valueClass="text-emerald-500" icon={<FileCheck className="h-4 w-4 text-emerald-500" />} isLoading={isLoading} />
-          <StatCard title="Unlinked" value={unlinkedCount} valueClass="text-amber-500" icon={<AlertCircle className="h-4 w-4 text-amber-500" />} isLoading={isLoading} />
-          <CompletenessCard completeness={completeness} isLoading={isLoading} />
+    <div className="animate-fade-in-up p-4 md:p-6 pb-20 max-w-[1440px] mx-auto">
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
+              <span className="text-[9px] font-bold text-violet-400 uppercase tracking-[0.2em]">
+                Asset Vault
+              </span>
+            </div>
+            <div className="h-px w-6 bg-zinc-800" />
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
+              Compliance Evidence Hub
+            </span>
+          </div>
+          <h1 className="text-4xl font-black tracking-tighter italic text-white">
+            EVIDENCE <span className="text-zinc-700 not-italic font-light">LIBRARY</span>
+          </h1>
         </div>
 
-        <Card className="border-border bg-card shadow-sm">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-1 items-center gap-2">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search files..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-                {searchQuery && (
-                  <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2" onClick={() => setSearchQuery("")}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as "all" | "linked" | "unlinked")}>
-                <SelectTrigger className="w-[140px]">
-                  <Filter className="mr-2 h-3.5 w-3.5" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Files</SelectItem>
-                  <SelectItem value="linked">Linked</SelectItem>
-                  <SelectItem value="unlinked">Unlinked</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "grid" | "list")}>
-                <ToggleGroupItem value="grid" aria-label="Grid view">
-                  <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="list" aria-label="List view">
-                  <LayoutList className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <Link href="/platform/evidence/upload">
-                <Button size="sm" className="gap-2">
-                  <Upload className="h-3.5 w-3.5" />
-                  Upload
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="flex glass-panel rounded-xl overflow-hidden border-white/5">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2.5 transition-all ${viewMode === "grid"
+                  ? "bg-blue-600/10 text-blue-400"
+                  : "text-zinc-600 hover:text-white"
+                }`}
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2.5 transition-all ${viewMode === "list"
+                  ? "bg-blue-600/10 text-blue-400"
+                  : "text-zinc-600 hover:text-white"
+                }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
 
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="border-border bg-card">
-                <CardContent className="p-4">
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredEvidence.length === 0 ? (
-          <EmptyState searchQuery={searchQuery} filterStatus={filterStatus} />
-        ) : viewMode === "grid" ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvidence.map((ev) => (
-              <EvidenceGridCard
-                key={ev.id}
-                ev={ev}
-                onLink={() => openLinkDialog(ev)}
-                onDelete={() => handleDelete(ev.id)}
-                isDeleting={isDeleting === ev.id}
-              />
-            ))}
-          </div>
-        ) : (
-          <EvidenceListTable
-            evidence={filteredEvidence}
-            onLink={openLinkDialog}
-            onDelete={handleDelete}
-            isDeleting={isDeleting}
+          {/* Upload button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Upload Evidence
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={(e) => handleUpload(e.target.files)}
+            className="hidden"
           />
-        )}
+        </div>
+      </header>
+
+      {/* ── Search bar ────────────────────────────────────────────── */}
+      <div className="mb-8">
+        <div className="relative max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-700" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            type="text"
+            placeholder="Search evidence by name, type, or criterion..."
+            className="w-full h-11 bg-white/[0.02] border border-white/[0.06] rounded-xl pl-11 pr-4 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/30 transition-all"
+          />
+        </div>
       </div>
 
-      <LinkDialog
-        open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
-        standards={standards}
-        criteria={criteria}
-        selectedStandardId={selectedStandardId}
-        setSelectedStandardId={setSelectedStandardId}
-        selectedCriterionId={selectedCriterionId}
-        setSelectedCriterionId={setSelectedCriterionId}
-        isLinking={isLinking}
-        onLink={handleLink}
-      />
-    </div>
-  )
-}
+      {/* ── Drop zone ─────────────────────────────────────────────── */}
+      <div
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        className={`mb-8 glass-panel rounded-[32px] p-10 border-dashed border-2 transition-all text-center ${dragActive
+            ? "border-blue-500/40 bg-blue-600/5"
+            : "border-white/[0.08] hover:border-white/10"
+          }`}
+      >
+        <Upload className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+        <p className="text-sm text-zinc-500 font-medium">
+          Drop files here or{" "}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            browse
+          </button>
+        </p>
+        <p className="text-[10px] text-zinc-700 mt-1 uppercase tracking-widest font-bold">
+          PDF, DOCX, Images supported
+        </p>
+      </div>
 
-function StatCard({ title, value, valueClass, icon, isLoading }: { title: string; value: number; valueClass?: string; icon: React.ReactNode; isLoading: boolean }) {
-  return (
-    <Card className="border-border bg-card shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        {isLoading ? <Skeleton className="h-8 w-16" /> : <div className={cn("text-2xl font-bold", valueClass)}>{value}</div>}
-      </CardContent>
-    </Card>
-  )
-}
+      {/* ── Asset stats ───────────────────────────────────────────── */}
+      <div className="flex items-center gap-6 mb-8 px-2">
+        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
+          {filtered.length} {filtered.length === 1 ? "asset" : "assets"}
+        </span>
+        <div className="h-px flex-1 bg-zinc-900" />
+        <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">
+          {evidence?.filter((e) => e.criterion).length ?? 0} linked to criteria
+        </span>
+      </div>
 
-function CompletenessCard({ completeness, isLoading }: { completeness: number; isLoading: boolean }) {
-  return (
-    <Card className="border-border bg-card shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">Completeness</CardTitle>
-        <CheckCircle2 className="h-4 w-4 text-primary" />
-      </CardHeader>
-      <CardContent>
-        {isLoading ? <Skeleton className="h-8 w-16" /> : (
-          <>
-            <div className="text-2xl font-bold text-primary">{completeness}%</div>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${completeness}%` }} />
+      {/* ── Evidence grid / list ──────────────────────────────────── */}
+      {isLoading ? (
+        <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="glass-panel rounded-2xl p-6 border-white/5 animate-pulse">
+              <div className="h-4 w-2/3 bg-white/[0.04] rounded mb-3" />
+              <div className="h-3 w-1/2 bg-white/[0.03] rounded" />
             </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function EmptyState({ searchQuery, filterStatus }: { searchQuery: string; filterStatus: string }) {
-  return (
-    <Card className="border-border bg-card shadow-sm">
-      <CardContent className="pt-6">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-            <FileText className="h-8 w-8" />
-          </div>
-          <h3 className="mb-2 text-lg font-semibold">
-            {searchQuery || filterStatus !== "all" ? "No matching files" : "No evidence uploaded"}
-          </h3>
-          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-            {searchQuery || filterStatus !== "all"
-              ? "Try adjusting your search or filter criteria."
-              : "Upload evidence files to start linking them to your compliance criteria."}
-          </p>
-          {!searchQuery && filterStatus === "all" && (
-            <Link href="/platform/evidence/upload">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Upload Evidence
-              </Button>
-            </Link>
-          )}
+          ))}
         </div>
-      </CardContent>
-    </Card>
-  )
-}
+      ) : filtered.length === 0 ? (
+        <div className="glass-panel rounded-[40px] p-16 border-white/5 text-center">
+          <File className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-zinc-400 mb-2">No evidence found</h3>
+          <p className="text-[11px] text-zinc-600 font-medium">
+            {search ? "Try a different search term" : "Upload your first evidence file to get started"}
+          </p>
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map((item) => (
+            <div
+              key={item.id}
+              className="group glass-panel platform-card rounded-2xl p-5 border-white/5 hover:shadow-xl cursor-pointer"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                  {getFileIcon(item)}
+                </div>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {item.fileUrl && (
+                    <a
+                      href={item.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/5 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleDeleteEvidence(item.id)}
+                    className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
 
-function EvidenceGridCard({ ev, onLink, onDelete, isDeleting }: { ev: Evidence; onLink: () => void; onDelete: () => void; isDeleting: boolean }) {
-  return (
-    <Card className="group border-border bg-card shadow-sm transition-all hover:shadow-md">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", getFileColor(ev.fileUrl))}>
-            {getFileIcon(ev.fileUrl)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{getFileName(ev.fileUrl)}</p>
-            <div className="mt-1 flex items-center gap-2">
-              <Badge variant="secondary" className="text-[10px]">{getFileType(ev.fileUrl)}</Badge>
-              {ev.criterionId ? (
-                <Badge variant="default" className="border border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-500">
-                  <CheckCircle2 className="mr-0.5 h-3 w-3" />
-                  Linked
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="border-amber-500/20 text-[10px] text-amber-500">Unlinked</Badge>
+              <h4 className="text-[13px] font-bold text-zinc-200 truncate group-hover:text-white transition-colors">
+                {item.fileName ?? "Unnamed File"}
+              </h4>
+              <p className="text-[10px] text-zinc-600 mt-1 font-bold uppercase tracking-widest">
+                {formatDate(item.createdAt)}
+              </p>
+
+              {item.criterion && (
+                <div className="mt-3 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/5 border border-emerald-500/10 w-fit">
+                  <Link2 className="w-2.5 h-2.5 text-emerald-500" />
+                  <span className="text-[9px] font-bold text-emerald-500 truncate max-w-[120px]">
+                    {item.criterion.title}
+                  </span>
+                </div>
               )}
             </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">{formatDate(ev.createdAt)}</p>
-          </div>
+          ))}
         </div>
-        <div className="mt-3 flex items-center gap-1 border-t border-border/50 pt-3">
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => window.open(ev.fileUrl, "_blank")}>
-            <ExternalLink className="h-3 w-3" />
-            Open
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onLink}>
-            <Link2 className="h-3 w-3" />
-            Link
-          </Button>
-          <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs text-destructive hover:text-destructive" onClick={onDelete} disabled={isDeleting}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function EvidenceListTable({ evidence, onLink, onDelete, isDeleting }: { evidence: Evidence[]; onLink: (ev: Evidence) => void; onDelete: (id: string) => void; isDeleting: string | null }) {
-  return (
-    <Card className="border-border bg-card shadow-sm">
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>File Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Upload Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {evidence.map((ev) => (
-                <TableRow key={ev.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", getFileColor(ev.fileUrl))}>
-                        {getFileIcon(ev.fileUrl)}
-                      </div>
-                      <span className="max-w-[200px] truncate font-medium">{getFileName(ev.fileUrl)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="text-xs">{getFileType(ev.fileUrl)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {ev.criterionId ? (
-                      <Badge variant="default" className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
-                        Linked
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-amber-500/20 text-amber-500">Not linked</Badge>
+      ) : (
+        /* list view */
+        <div className="space-y-2">
+          {filtered.map((item) => (
+            <div
+              key={item.id}
+              className="group glass-panel rounded-xl px-5 py-3 border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all"
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                {getFileIcon(item)}
+                <div className="min-w-0">
+                  <h4 className="text-[13px] font-bold text-zinc-200 truncate group-hover:text-white transition-colors">
+                    {item.fileName ?? "Unnamed File"}
+                  </h4>
+                  <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                    {formatDate(item.createdAt)}
+                    {item.criterion && (
+                      <> · <span className="text-emerald-500">{item.criterion.title}</span></>
                     )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDate(ev.createdAt)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.open(ev.fileUrl, "_blank")} title="Open file">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onLink(ev)} title="Link to criterion">
-                        <Link2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(ev.id)} disabled={isDeleting === ev.id} title="Delete">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function DropZone({ onFilesSelected, isUploading }: { onFilesSelected: (files: File[]) => void; isUploading: boolean }) {
-  const [isDragOver, setIsDragOver] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) onFilesSelected(files)
-  }, [onFilesSelected])
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : []
-    if (files.length > 0) onFilesSelected(files)
-    e.target.value = ""
-  }
-
-  return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
-      className={cn(
-        "group cursor-pointer rounded-xl border-2 border-dashed p-8 transition-colors",
-        isDragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-      )}
-    >
-      <input ref={inputRef} type="file" multiple onChange={handleFileSelect} className="hidden" />
-      <div className="flex flex-col items-center gap-3">
-        <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl transition-colors", isDragOver ? "bg-primary/10" : "bg-muted group-hover:bg-primary/10")}>
-          {isUploading ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <CloudUpload className={cn("h-7 w-7 transition-colors", isDragOver ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />}
-        </div>
-        <div>
-          <p className="text-sm font-medium text-foreground">{isUploading ? "Uploading files..." : "Drop files here or click to browse"}</p>
-          <p className="mt-1 text-xs text-muted-foreground">PDF, Word, Excel, Images up to 10MB each</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function LinkDialog({
-  open,
-  onOpenChange,
-  standards,
-  criteria,
-  selectedStandardId,
-  setSelectedStandardId,
-  selectedCriterionId,
-  setSelectedCriterionId,
-  isLinking,
-  onLink,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  standards: any[] | undefined
-  criteria: any[] | undefined
-  selectedStandardId: string
-  setSelectedStandardId: (v: string) => void
-  selectedCriterionId: string
-  setSelectedCriterionId: (v: string) => void
-  isLinking: boolean
-  onLink: () => void
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Link Evidence to Criterion</DialogTitle>
-          <DialogDescription>Select a standard and criterion to link this evidence file to.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Standard</label>
-            <Select value={selectedStandardId} onValueChange={(v) => { setSelectedStandardId(v); setSelectedCriterionId("") }}>
-              <SelectTrigger><SelectValue placeholder="Select a standard" /></SelectTrigger>
-              <SelectContent>
-                {standards?.map((s) => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {selectedStandardId && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Criterion</label>
-              <Select value={selectedCriterionId} onValueChange={setSelectedCriterionId}>
-                <SelectTrigger><SelectValue placeholder="Select a criterion" /></SelectTrigger>
-                <SelectContent>
-                  {criteria?.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
-                </SelectContent>
-              </Select>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {item.fileUrl && (
+                  <a
+                    href={item.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/5 transition-colors"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                <button
+                  onClick={() => handleDeleteEvidence(item.id)}
+                  className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          )}
+          ))}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={onLink} disabled={!selectedCriterionId || isLinking}>
-            {isLinking ? "Linking..." : "Link Evidence"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   )
 }

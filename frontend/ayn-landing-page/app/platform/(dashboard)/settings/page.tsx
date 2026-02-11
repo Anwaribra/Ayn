@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -25,12 +26,12 @@ function SettingsContent() {
   const { user } = useAuth()
 
   const sections = [
-    { icon: User, label: "Account Profile", desc: "Manage institutional identifiers and contact details", color: "text-blue-500" },
-    { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-amber-500" },
-    { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-emerald-500" },
-    { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-indigo-500" },
-    { icon: Cloud, label: "Module Integrations", desc: "Connect external LMS, HRIS, and core databases", color: "text-purple-500" },
-    { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-rose-500" },
+    { icon: User, label: "Account Profile", desc: "Manage institutional identifiers and contact details", color: "text-blue-500", href: "/platform/settings/account" },
+    { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-amber-500", href: "/platform/settings/alerts" },
+    { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-emerald-500", href: "/platform/settings/security" },
+    { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-indigo-500", href: "/platform/settings/data" },
+    { icon: Cloud, label: "Module Integrations", desc: "Connect external LMS, HRIS, and core databases", color: "text-purple-500", href: "/platform/settings/integrations" },
+    { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-rose-500", href: "/platform/settings/subscription" },
   ]
 
   return (
@@ -52,7 +53,7 @@ function SettingsContent() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sections.map((item, i) => (
-          <div key={i} className="glass-panel p-6 rounded-[32px] group cursor-pointer hover:bg-white/[0.04] transition-all flex items-center gap-6 border-white/5">
+          <Link key={i} href={item.href} className="glass-panel p-6 rounded-[32px] group cursor-pointer hover:bg-white/[0.04] transition-all flex items-center gap-6 border-white/5">
             <div className={`w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center ${item.color} group-hover:scale-105 transition-transform`}>
               <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -61,7 +62,7 @@ function SettingsContent() {
               <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-tight">{item.desc}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
-          </div>
+          </Link>
         ))}
       </div>
 

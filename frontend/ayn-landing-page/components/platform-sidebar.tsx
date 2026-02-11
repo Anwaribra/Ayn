@@ -15,6 +15,21 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 
+// AYN Logo with orbital ring - links to landing page
+function AynLogo() {
+  return (
+    <Link href="https://ayn.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+      <svg width="48" height="32" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Orbital ring */}
+        <ellipse cx="24" cy="16" rx="22" ry="14" stroke="white" strokeWidth="1.5" strokeLinecap="round" transform="rotate(-15 24 16)" opacity="0.9"/>
+        <ellipse cx="24" cy="16" rx="18" ry="11" stroke="white" strokeWidth="0.8" strokeLinecap="round" transform="rotate(-15 24 16)" opacity="0.6"/>
+        {/* AYN Text */}
+        <text x="24" y="20" textAnchor="middle" fill="white" fontSize="14" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="0.5">AYN</text>
+      </svg>
+    </Link>
+  )
+}
+
 interface SidebarProps {
   open: boolean
   onToggle: () => void
@@ -42,13 +57,9 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
         ${open ? "w-[240px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"}
       `}
     >
-      {/* Branding & Toggle — V3 oval AYN logo */}
+      {/* Branding & Toggle — AYN Logo */}
       <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
-        <div className="flex items-center justify-center">
-          <div className="w-14 h-9 rounded-full border-2 border-white/90 flex items-center justify-center px-2">
-            <span className="font-bold text-xs tracking-tighter text-white">AYN</span>
-          </div>
-        </div>
+        <AynLogo />
 
         <button
           onClick={onToggle}

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -12,7 +13,10 @@ import {
   CreditCard,
   ChevronRight,
   Shield,
+  AlertTriangle,
+  X,
 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function SettingsPage() {
   return (
@@ -24,6 +28,7 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const { user } = useAuth()
+  const [showPurgeModal, setShowPurgeModal] = useState(false)
 
   const sections = [
     { icon: User, label: "Account Profile", desc: "Manage institutional identifiers and contact details", color: "text-blue-500", href: "/platform/settings/account" },
@@ -75,11 +80,57 @@ function SettingsContent() {
           <p className="text-sm text-zinc-500 mb-8 font-medium leading-relaxed">
             Wiping institutional data will permanently remove all evidence assets, compliance mappings, and Horus neural history. This action requires administrative consensus.
           </p>
-          <button className="px-8 py-3 bg-red-600/10 text-red-500 border border-red-600/20 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
+          <button 
+            onClick={() => setShowPurgeModal(true)}
+            className="px-8 py-3 bg-red-600/10 text-red-500 border border-red-600/20 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+          >
             Initiate Purge Protocol
           </button>
         </div>
       </div>
+
+      {/* Purge Confirmation Modal */}
+      {showPurgeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel rounded-[32px] p-8 max-w-md w-full border-red-500/20 relative">
+            <button 
+              onClick={() => setShowPurgeModal(false)}
+              className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Confirm Vault Purge</h3>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">This action cannot be undone</p>
+              </div>
+            </div>
+            <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
+              You are about to permanently delete all institutional data including evidence assets, compliance mappings, and Horus neural history. This requires administrative consensus.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowPurgeModal(false)}
+                className="flex-1 py-3 rounded-xl border border-white/10 text-zinc-400 text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
+                  setShowPurgeModal(false)
+                }}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white text-[11px] font-bold uppercase tracking-widest hover:bg-red-700 transition-all"
+              >
+                Confirm Purge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-12 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">

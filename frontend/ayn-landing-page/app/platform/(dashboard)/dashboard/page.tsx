@@ -188,7 +188,7 @@ function DashboardContent() {
                 "group-hover:-translate-y-3 group-hover:bg-white/[0.04] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
                 <div className="flex justify-between items-start">
                   <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center">
-                    <m.icon className={`w-6 h-6 ${m.color}`} />
+                    <m.icon className={["w-6 h-6", m.color].join(" ")} />
                   </div>
                   <ChevronRight className="w-5 h-5 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
                 </div>
@@ -203,6 +203,7 @@ function DashboardContent() {
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* Suggested Strategy Section */}

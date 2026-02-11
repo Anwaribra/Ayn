@@ -55,7 +55,7 @@ function EvidenceContent() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [uploading, setUploading] = useState(false)
 
-  const { data: evidence, mutate } = useSWR<Evidence[]>(
+  const { data: evidence, mutate, isLoading } = useSWR<Evidence[]>(
     user ? "evidence" : null,
     () => api.getEvidence(),
   )

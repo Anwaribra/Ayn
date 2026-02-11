@@ -289,7 +289,7 @@ export const preferenceCommands: Command[] = [
     description: "View and edit your profile",
     icon: User,
     category: "Preferences",
-    href: "/platform/settings/profile",
+    href: "/platform/settings",
     keywords: ["profile", "account", "user", "personal"],
   },
   {

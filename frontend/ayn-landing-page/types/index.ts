@@ -16,3 +16,11 @@ export type {
 export type { Notification } from "./notification"
 export type { DashboardMetrics } from "./dashboard"
 export type { AIResponse } from "./ai"
+export type {
+  PlatformFile,
+  PlatformEvidence,
+  PlatformGap,
+  PlatformMetric,
+  PlatformEvent,
+  StateSummary,
+} from "../lib/types"

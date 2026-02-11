@@ -40,7 +40,7 @@ const signals = [
 export default function AnalyticsPage() {
   return (
     <ProtectedRoute>
-    <div className="min-h-screen">
+      <div className="min-h-screen">
       <Header
         title="Quality Insights"
         description="Measure compliance readiness and spotlight gaps before the next review."
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
     </ProtectedRoute>
   )
 }

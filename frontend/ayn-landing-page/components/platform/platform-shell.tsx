@@ -17,12 +17,18 @@ import FloatingAIBar from "@/components/platform/floating-ai-bar"
 import { CommandPalette } from "./command-palette"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
+import { useCommandPaletteContext } from "@/components/platform/command-palette-provider"
+import { useCommandPalette } from "@/hooks/use-command-palette"
 import type { Notification } from "@/types"
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
+  const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext()
+  
+  // Enable global keyboard shortcuts (⌘K to open command palette)
+  useCommandPalette()
 
   // Auto-close sidebar on small screens  
   useEffect(() => {
@@ -37,7 +43,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
   // Notification count via SWR
   const { data: notifications } = useSWR<Notification[]>(
-    isAuthenticated ? "notifications" : null,
+    isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
     { refreshInterval: 60_000, revalidateOnFocus: false, dedupingInterval: 30_000 },
   )
@@ -85,12 +91,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <button
                 onClick={() => router.back()}
                 className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/5"
+                title="Go back"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => router.forward()}
-                className="p-1.5 text-zinc-800 cursor-not-allowed bg-white/5 rounded-lg border border-white/5 opacity-50"
+                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/5"
+                title="Go forward"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -101,11 +109,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <input
                 type="text"
                 readOnly
-                onClick={() => {
-                  /* trigger command palette */
-                  const event = new KeyboardEvent("keydown", { key: "k", metaKey: true })
-                  document.dispatchEvent(event)
-                }}
+                onClick={() => setCommandPaletteOpen(true)}
                 placeholder="Search hub..."
                 className="w-full h-9 bg-white/5 border border-white/5 rounded-lg pl-11 pr-12 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 cursor-pointer text-white"
               />

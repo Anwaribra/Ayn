@@ -3,6 +3,7 @@
 import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { toast } from "sonner"
 import { Bell, Check, CheckCheck } from "lucide-react"
@@ -20,7 +21,11 @@ export default function NotificationsPage() {
 }
 
 function NotificationsPageContent() {
-  const { data: notifications, isLoading, mutate } = useSWR("notifications", () => api.getNotifications())
+  const { user } = useAuth()
+  const { data: notifications, isLoading, mutate } = useSWR(
+    user ? [`notifications`, user.id] : null,
+    () => api.getNotifications()
+  )
 
   const handleMarkAsRead = async (id: string) => {
     try {

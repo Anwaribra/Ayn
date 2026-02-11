@@ -28,17 +28,17 @@ function DashboardContent() {
   const { user } = useAuth()
 
   const { data: metrics, isLoading } = useSWR<DashboardMetrics>(
-    user ? "dashboard-metrics" : null,
+    user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
   )
 
   const { data: notifications } = useSWR(
-    user ? "notifications" : null,
+    user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
   )
 
   const { data: gapAnalyses } = useSWR(
-    user ? "gap-analyses" : null,
+    user ? [`gap-analyses`, user.id] : null,
     () => api.getGapAnalyses(),
   )
 

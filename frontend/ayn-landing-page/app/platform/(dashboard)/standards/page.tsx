@@ -15,7 +15,7 @@ import {
   Activity,
   Play,
 } from "lucide-react"
-import type { Standard } from "@/types"
+import type { Standard, GapAnalysisListItem } from "@/types"
 
 export default function StandardsPage() {
   return (
@@ -36,7 +36,7 @@ function StandardsContent() {
     user ? "standards" : null,
     () => api.getStandards(),
   )
-  const { data: gapAnalyses } = useSWR(
+  const { data: gapAnalyses } = useSWR<GapAnalysisListItem[]>(
     user ? "gap-analyses" : null,
     () => api.getGapAnalyses(),
   )
@@ -46,8 +46,8 @@ function StandardsContent() {
   )
 
   const collections = (standards ?? []).map((s: Standard, i: number) => {
-    const report = (gapAnalyses ?? []).find((g: { standardId: string }) => g.standardId === s.id)
-    const equilibrium = report ? Math.round((report as { overallScore: number }).overallScore) : 0
+    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === s.title)
+    const equilibrium = report ? Math.round(report.overallScore) : 0
     return {
       id: s.id,
       title: s.title,
@@ -59,10 +59,11 @@ function StandardsContent() {
 
 
   const getStandardStatus = (stdId: string) => {
-    const report = (gapAnalyses ?? []).find((g: { standardId: string }) => g.standardId === stdId)
+    const std = (standards ?? []).find((s) => s.id === stdId)
+    if (!std) return null
+    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
     if (!report) return null
-    const score = (report as { overallScore: number }).overallScore
-    return score >= 80 ? "OPTIMAL" : "WARNING"
+    return report.overallScore >= 80 ? "OPTIMAL" : "WARNING"
   }
 
   const evidenceCountByStandard = useMemo(() => {
@@ -165,7 +166,7 @@ function StandardsContent() {
           <div className="lg:col-span-2 space-y-4">
             {(standards ?? []).slice(0, 4).map((std: Standard, i: number) => {
               const Icon = CARD_ICONS[i % CARD_ICONS.length]
-              const report = (gapAnalyses ?? []).find((g: { standardId: string }) => g.standardId === std.id) as { createdAt: string } | undefined
+              const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
               const status = getStandardStatus(std.id)
               const evidenceNodes = evidenceCountByStandard[std.id] ?? 0
               return (

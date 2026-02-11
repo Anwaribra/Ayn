@@ -261,8 +261,8 @@ function EvidenceContent() {
 
       {/* Upload Overlay */}
       {isUploading && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-[6px] z-[60] flex items-center justify-center p-6">
-          <div className="w-full max-w-xl bg-[#0A0C10] rounded-[40px] p-10 relative overflow-hidden text-center border border-white/10 shadow-xl">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-[4px] z-[60] flex items-center justify-center p-6">
+          <div className="w-full max-w-xl bg-[#0D1118] rounded-2xl p-10 relative overflow-hidden text-center border border-white/[0.1] shadow-xl">
             <button
               onClick={() => setIsUploading(false)}
               className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"

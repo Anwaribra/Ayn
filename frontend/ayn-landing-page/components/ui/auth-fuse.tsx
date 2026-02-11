@@ -184,7 +184,7 @@ function SignInForm(props: {
             </div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-[#A83B42]/40 bg-[#A83B42]/10 p-3 text-sm text-[#C9424A]">
                     {props.err}
                 </div>
             )}
@@ -286,7 +286,7 @@ function SignUpForm(props: {
             </div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-500">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-[#A83B42]/40 bg-[#A83B42]/10 p-3 text-sm text-[#C9424A]">
                     {props.err}
                 </div>
             )}
@@ -360,8 +360,11 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     await api.syncWithSupabase(session.access_token);
                     log('[Auth] Sync successful, clearing Supabase session...');
                     await supabase.auth.signOut();
-                    log('[Auth] Redirecting to dashboard...');
-                    window.location.href = "/platform/dashboard";
+                    // Check for redirect path
+                    const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+                    sessionStorage.removeItem("redirectAfterLogin");
+                    log('[Auth] Redirecting to:', redirectPath || "/platform/dashboard");
+                    window.location.href = redirectPath || "/platform/dashboard";
                 } catch (err) {
                     console.error('[Auth] Sync failed:', err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
@@ -415,8 +418,11 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
+            // Check for redirect path
+            const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+            sessionStorage.removeItem("redirectAfterLogin");
             // Use window.location to force page reload and context update
-            window.location.href = "/platform/dashboard";
+            window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed - Connection Error");
         } finally {
@@ -434,8 +440,11 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
+            // Check for redirect path
+            const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+            sessionStorage.removeItem("redirectAfterLogin");
             // Use window.location to force page reload and context update
-            window.location.href = "/platform/dashboard";
+            window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Signup failed - Connection Error");
         } finally {

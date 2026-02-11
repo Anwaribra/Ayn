@@ -1,64 +1,73 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    AYN V3 — PLATFORM DARK THEME
    Scoped to [data-section="platform"] so the landing page stays light.
-   Exact replica of V3 design system.
+   Refined for premium depth and visual hierarchy.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 [data-section="platform"] {
-  /* Core surfaces */
-  --bg-deep: #07090E;
-  --sidebar-bg: #05070A;
-  --surface: rgba(255, 255, 255, 0.03);
+  /* Core surfaces - refined for better depth separation */
+  --bg-deep: #080A0F;
+  --sidebar-bg: #06080C;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-elevated: rgba(255, 255, 255, 0.06);
 
-  /* Accent palette */
-  --accent-blue: #2563EB;
-  --accent-emerald: #10B981;
-  --accent-violet: #8B5CF6;
-  --accent-amber: #F59E0B;
-  --accent-red: #EF4444;
+  /* Accent palette - desaturated for premium feel */
+  --accent-blue: #3B6FD9;
+  --accent-emerald: #0EA47A;
+  --accent-violet: #7C5CE0;
+  --accent-amber: #D4941E;
+  --accent-red: #C9424A;
+  --accent-red-soft: #A83B42;
 
   /* Text hierarchy */
   --text-primary: #F1F5F9;
-  --text-secondary: #6B7A99;
-  --text-tertiary: #3A4661;
+  --text-secondary: #8B95A8;
+  --text-tertiary: #4A5570;
 
-  /* Glow */
-  --glow-blue: rgba(37, 99, 235, 0.15);
-  --border-subtle: rgba(255, 255, 255, 0.06);
+  /* Borders and depth */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* Glow - reduced for cleaner look */
+  --glow-blue: rgba(59, 111, 217, 0.12);
 
   /* Override shadcn/ui variables for dark mode */
-  --background: #07090E;
+  --background: #080A0F;
   --foreground: #F1F5F9;
-  --card: rgba(255, 255, 255, 0.02);
+  --card: rgba(255, 255, 255, 0.04);
   --card-foreground: #F1F5F9;
-  --popover: #0C0F16;
+  --popover: #0D1118;
   --popover-foreground: #F1F5F9;
-  --primary: #2563EB;
+  --primary: #3B6FD9;
   --primary-foreground: #ffffff;
-  --secondary: rgba(255, 255, 255, 0.05);
+  --secondary: rgba(255, 255, 255, 0.06);
   --secondary-foreground: #9CA3AF;
-  --muted: rgba(255, 255, 255, 0.04);
-  --muted-foreground: #6B7A99;
-  --accent: rgba(255, 255, 255, 0.06);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #6B7280;
+  --accent: rgba(255, 255, 255, 0.08);
   --accent-foreground: #F1F5F9;
-  --destructive: #EF4444;
+  --destructive: #C9424A;
   --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.05);
-  --ring: rgba(37, 99, 235, 0.4);
-  --sidebar: #05070A;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(59, 111, 217, 0.35);
+  --sidebar: #06080C;
   --sidebar-foreground: #F1F5F9;
-  --sidebar-primary: #2563EB;
+  --sidebar-primary: #3B6FD9;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.04);
+  --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #F1F5F9;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: rgba(37, 99, 235, 0.4);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(59, 111, 217, 0.35);
 
   /* Brand overrides */
-  --brand: #2563EB;
+  --brand: #3B6FD9;
   --brand-foreground: #ffffff;
-  --brand-muted: #3B82F6;
+  --brand-muted: #5B8FE8;
 
   color-scheme: dark;
 }
@@ -68,36 +77,46 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: radial-gradient(circle at 70% 30%, #1e293b44 0%, transparent 50%),
-    radial-gradient(circle at 20% 80%, #3b2f1e44 0%, transparent 50%),
-    #07090E;
-  filter: blur(80px);
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-[data-section="platform"] .cinematic-bg::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-  filter: contrast(120%) brightness(100%);
-  opacity: 0.04;
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59, 111, 217, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(124, 92, 224, 0.05) 0%, transparent 40%),
+    #080A0F;
   pointer-events: none;
 }
 
 /* ─── Glass Panel ─────────────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.02) inset,
+    var(--shadow-md);
+}
+
+/* ─── Elevation Levels ────────────────────────────────────────────────────── */
+[data-section="platform"] .elevation-1 {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-section="platform"] .elevation-2 {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-md);
+}
+
+[data-section="platform"] .elevation-3 {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ─── Sidebar Active Pill ─────────────────────────────────────────────────── */
 [data-section="platform"] .sidebar-active-pill {
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 16px rgba(59, 111, 217, 0.2);
 }
 
 /* ─── Mono text (JetBrains Mono / fallback) ───────────────────────────────── */
@@ -107,8 +126,8 @@
 
 /* ─── Custom scrollbar — Apple style ──────────────────────────────────────── */
 [data-section="platform"] ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 [data-section="platform"] ::-webkit-scrollbar-track {
@@ -116,16 +135,16 @@
 }
 
 [data-section="platform"] ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 [data-section="platform"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-track {
@@ -133,19 +152,19 @@
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* ─── Fade-in-up animation — exact V3 ───────────────────────────────────── */
+/* ─── Fade-in-up animation — refined ──────────────────────────────────────── */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(12px);
   }
 
   to {
@@ -155,23 +174,48 @@
 }
 
 [data-section="platform"] .animate-fade-in-up {
-  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Active glow ────────────────────────────────────────────────────────── */
+/* ─── Active glow — reduced ───────────────────────────────────────────────── */
 [data-section="platform"] .active-glow {
-  box-shadow: 0 0 40px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 24px rgba(59, 111, 217, 0.25);
 }
 
-/* ─── Score color utilities ──────────────────────────────────────────────── */
+/* ─── Score color utilities — desaturated ─────────────────────────────────── */
 [data-section="platform"] .score-high {
-  color: #10B981;
+  color: #0EA47A;
 }
 
 [data-section="platform"] .score-medium {
-  color: #F59E0B;
+  color: #D4941E;
 }
 
 [data-section="platform"] .score-low {
-  color: #EF4444;
+  color: #C9424A;
+}
+
+/* ─── Modal & Dialog refinements ──────────────────────────────────────────── */
+[data-section="platform"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+[data-section="platform"] .modal-container {
+  background: #0D1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.02) inset,
+    var(--shadow-xl);
+}
+
+/* ─── Button variants ─────────────────────────────────────────────────────── */
+[data-section="platform"] .btn-destructive {
+  background: #A83B42;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+[data-section="platform"] .btn-destructive:hover {
+  background: #C9424A;
 }

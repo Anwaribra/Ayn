@@ -82,7 +82,7 @@ function SettingsContent() {
           </p>
           <button 
             onClick={() => setShowPurgeModal(true)}
-            className="px-8 py-3 bg-red-600/10 text-red-500 border border-red-600/20 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+            className="px-8 py-3 bg-[#A83B42]/10 text-[#C9424A] border border-[#A83B42]/30 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-[#A83B42] hover:text-white transition-all"
           >
             Initiate Purge Protocol
           </button>
@@ -91,8 +91,8 @@ function SettingsContent() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-[6px]">
-          <div className="bg-[#0A0C10] rounded-[32px] p-8 max-w-md w-full border border-red-500/20 relative shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-[4px]">
+          <div className="bg-[#0D1118] rounded-2xl p-10 max-w-[520px] w-full border border-white/[0.08] relative shadow-xl">
             <button 
               onClick={() => setShowPurgeModal(false)}
               className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
@@ -123,7 +123,7 @@ function SettingsContent() {
                   toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
                   setShowPurgeModal(false)
                 }}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-white text-[11px] font-bold uppercase tracking-widest hover:bg-red-700 transition-all"
+                className="flex-1 py-3.5 rounded-xl bg-[#A83B42] text-white text-[11px] font-bold uppercase tracking-widest hover:bg-[#C9424A] transition-all border border-white/[0.08] shadow-sm"
               >
                 Confirm Purge
               </button>

@@ -84,7 +84,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
+      {/* Cinematic background with depth */}
       <div className="cinematic-bg" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
 
       {/* Sidebar */}
       <PlatformSidebar
@@ -111,14 +113,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 overflow-hidden transition-all duration-300 ease-in-out">
-        {/* App Title — V3 */}
-        <div className="px-6 md:px-10 pt-4 pb-1">
-          <p className="text-[11px] font-bold text-zinc-600 uppercase tracking-[0.15em]">
+        {/* App Title — V3 with depth */}
+        <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#080A0F]/50">
+          <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em]">
             AYN — Education Quality & Compliance
           </p>
         </div>
-        {/* TopBar — V3 */}
-        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none">
+        {/* TopBar — Refined with elevation */}
+        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.08] bg-[#0C0F14]/95 backdrop-blur-xl">
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
             {!sidebarOpen && (
@@ -176,7 +178,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               >
                 <Bell className="w-4 h-4" />
                 {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-red-600 rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#07090E] shadow-sm">
+                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#080A0F] shadow-sm">
                     {notificationCount}
                   </span>
                 )}
@@ -247,7 +249,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-4 pb-20 scroll-smooth">
+        {/* Main content area - lightened for depth balance */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0A0C10]/50">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

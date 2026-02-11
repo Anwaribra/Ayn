@@ -12,6 +12,7 @@ import {
   Command,
   PanelLeft,
   HelpCircle,
+  X,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform-sidebar"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
@@ -24,6 +25,7 @@ import type { Notification } from "@/types"
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [showNotifications, setShowNotifications] = useState(false)
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext()
@@ -42,8 +44,20 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // Notification count via SWR
-  const { data: notifications } = useSWR<Notification[]>(
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (showNotifications && !target.closest('.notification-dropdown-container')) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showNotifications])
+
+  // Notification data via SWR
+  const { data: notifications, mutate: mutateNotifications } = useSWR<Notification[]>(
     isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
     { refreshInterval: 60_000, revalidateOnFocus: false, dedupingInterval: 30_000 },
@@ -52,6 +66,21 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     () => notifications?.filter((n: Notification) => !n.read).length ?? 0,
     [notifications],
   )
+
+  const handleClearNotifications = () => {
+    // In a real app, you'd call an API to mark all as read
+    mutateNotifications(
+      notifications?.map(n => ({ ...n, read: true })) ?? [],
+      { revalidate: false }
+    )
+  }
+
+  const handleDismissNotification = (id: string) => {
+    mutateNotifications(
+      notifications?.filter(n => n.id !== id) ?? [],
+      { revalidate: false }
+    )
+  }
 
   return (
     <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
@@ -69,6 +98,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 md:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Notification backdrop */}
+      {showNotifications && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowNotifications(false)}
         />
       )}
 
@@ -131,18 +168,74 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <button className="hidden md:block text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="History">
               <History className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => router.push("/platform/notifications")}
-              className="text-zinc-500 hover:text-white transition-colors relative p-2 hover:bg-white/5 rounded-lg"
-              title="Notifications"
-            >
-              <Bell className="w-4 h-4" />
-              {notificationCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-red-600 rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#07090E] shadow-sm">
-                  {notificationCount}
-                </span>
+            <div className="relative notification-dropdown-container">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="text-zinc-500 hover:text-white transition-colors relative p-2 hover:bg-white/5 rounded-lg"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {notificationCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-red-600 rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#07090E] shadow-sm">
+                    {notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute top-full right-0 mt-2 w-[320px] glass-panel rounded-3xl p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Activity</h3>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={handleClearNotifications}
+                        className="text-[10px] text-blue-500 font-bold hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                      <button 
+                        onClick={() => setShowNotifications(false)}
+                        className="p-1 text-zinc-600 hover:text-white transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {!notifications || notifications.length === 0 ? (
+                      <p className="text-center py-8 text-zinc-600 italic text-sm">Quiet for now.</p>
+                    ) : (
+                      notifications.slice(0, 8).map((n) => (
+                        <div 
+                          key={n.id} 
+                          className="flex gap-4 group cursor-pointer hover:bg-white/[0.02] p-2 rounded-xl transition-colors"
+                          onClick={() => handleDismissNotification(n.id)}
+                        >
+                          <div className={`w-1 h-10 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-800'}`} />
+                          <div className="flex-1">
+                            <h4 className={`text-sm font-bold ${!n.read ? 'text-zinc-100' : 'text-zinc-500'}`}>{n.title}</h4>
+                            <p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{n.body}</p>
+                            <span className="text-[10px] text-zinc-700 mt-1.5 block font-bold uppercase tracking-tighter">
+                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {!n.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1" />}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {notifications && notifications.length > 0 && (
+                    <button 
+                      onClick={() => { setShowNotifications(false); router.push('/platform/notifications'); }}
+                      className="w-full mt-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center"
+                    >
+                      View All Activity
+                    </button>
+                  )}
+                </div>
               )}
-            </button>
+            </div>
             <button className="text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="Help">
               <HelpCircle className="w-4 h-4" />
             </button>

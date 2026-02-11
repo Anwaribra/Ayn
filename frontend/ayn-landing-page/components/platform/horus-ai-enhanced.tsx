@@ -316,6 +316,7 @@ export function SystemStatusWidget() {
   }
 
   const current = statusConfig[status]
+  const textColorClass = current.color.replace("bg-", "text-")
 
   return (
     <div className="glass-panel rounded-2xl p-4 border-white/5">
@@ -333,7 +334,7 @@ export function SystemStatusWidget() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-white">Horus Neural Link</span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-wider", current.color.replace("bg-", "text-")}>
+            <span className={cn("text-[10px] font-bold uppercase tracking-wider", textColorClass)}>
               {current.text}
             </span>
           </div>
@@ -344,3 +345,4 @@ export function SystemStatusWidget() {
     </div>
   )
 }
+

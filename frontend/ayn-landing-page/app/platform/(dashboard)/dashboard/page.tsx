@@ -42,11 +42,23 @@ function DashboardContent() {
     () => api.getGapAnalyses(),
   )
 
-  const healthScore = metrics?.assessmentProgressPercentage ?? 84
+  const healthScore = metrics?.assessmentProgressPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0
   const completedCriteria = metrics?.completedCriteriaCount ?? 0
   const activeGaps = gapAnalyses?.length ?? 0
   const recentNotifs = notifications?.slice(0, 4) ?? []
+
+  const needsAuditStandard = (gapAnalyses ?? []).find((g: { overallScore: number }) => (g.overallScore ?? 100) < 80)
+  const suggestionsFromData = (gapAnalyses ?? [])
+    .filter((g: { overallScore: number }) => (g.overallScore ?? 100) < 80)
+    .slice(0, 3)
+    .map((g: { id: string; standardTitle: string }) => ({
+      title: `Review ${g.standardTitle}`,
+      cat: "Compliance",
+      desc: "Gap analysis indicates remediation needed.",
+      icon: ShieldCheck,
+      href: "/platform/gap-analysis",
+    }))
 
   // Calculate stroke offset for SVG circle (754 total circumference, 120px radius)
   const strokeOffset = 754 - (754 * healthScore) / 100
@@ -66,7 +78,7 @@ function DashboardContent() {
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ayn Core Live</span>
                   </div>
                   <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                    Sync: {isLoading ? "..." : "99.8%"}
+                    Sync: {isLoading ? "..." : "—"}
                   </span>
                 </div>
 
@@ -76,7 +88,9 @@ function DashboardContent() {
                 </h1>
 
                 <p className="text-lg text-zinc-400 font-medium mb-10 max-w-sm leading-relaxed">
-                  Compliance is holding steady. Horus recommends an audit of the <span className="text-blue-400">Governance Policy</span> to mitigate drift.
+                  {needsAuditStandard
+                    ? <>Compliance drift detected. Horus recommends an audit of <Link href="/platform/gap-analysis" className="text-blue-400 hover:underline">{(needsAuditStandard as { standardTitle: string }).standardTitle}</Link> to mitigate drift.</>
+                    : "Compliance is holding steady. Run a gap analysis to assess framework alignment."}
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -139,23 +153,7 @@ function DashboardContent() {
 
             <div className="flex-1 space-y-6 overflow-hidden">
               {recentNotifs.length === 0 ? (
-                <>
-                  {[
-                    { time: "12:42", msg: "System integrity check passed", status: "sync" },
-                    { time: "11:15", msg: "Neural gap scan initiated", status: "alert" },
-                    { time: "10:02", msg: "Evidence library indexed", status: "done" },
-                    { time: "09:20", msg: "Horus synchronization complete", status: "sync" },
-                  ].map((log, i) => (
-                    <div key={i} className="flex gap-4 group">
-                      <span className="mono text-[10px] text-zinc-700 font-bold mt-0.5">{log.time}</span>
-                      <div>
-                        <p className={`text-[12px] font-bold ${log.status === "alert" ? "text-amber-500" : "text-zinc-400"} group-hover:text-white transition-colors cursor-default`}>
-                          {log.msg}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </>
+                <div className="text-sm text-zinc-600 italic py-4">No recent activity.</div>
               ) : (
                 recentNotifs.map((notif, i) => (
                   <div key={notif.id} className="flex gap-4 group">
@@ -194,7 +192,7 @@ function DashboardContent() {
             { label: "Verified Standards", value: isLoading ? "—" : String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
             { label: "Evidence Matrix", value: isLoading ? "—" : String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
             { label: "Critical Gaps", value: isLoading ? "—" : String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
-            { label: "Sync Latency", value: "0.8s", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
+            { label: "Sync Latency", value: isLoading ? "—" : "—", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
           ].map((m, i) => (
             <div key={i} className="group cursor-pointer">
               <div className={`
@@ -226,12 +224,14 @@ function DashboardContent() {
           <h2 className="text-2xl font-bold tracking-tight">Intelligence Suggestions</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { title: "Faculty Accreditation Check", cat: "Admin", desc: "Sync expired certifications with matrix.", icon: Cpu, href: "/platform/gap-analysis" },
-            { title: "Student Welfare Loop", cat: "QA", desc: "Verify feedback synchronization status.", icon: Activity, href: "/platform/evidence" },
-            { title: "Governance Standard 1.4", cat: "Policy", desc: "Align recent uploads with framework.", icon: ShieldCheck, href: "/platform/standards" },
-          ].map((item, i) => (
-            <Link key={i} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
+          {suggestionsFromData.length === 0 ? (
+            <div className="col-span-full glass-panel p-8 rounded-[36px] border-white/5 text-center">
+              <p className="text-sm text-zinc-600 italic">No intelligence suggestions. Standards and gap analyses will drive recommendations.</p>
+              <Link href="/platform/standards" className="inline-block mt-4 text-blue-500 text-xs font-bold hover:underline">Create Standards</Link>
+            </div>
+          ) : (
+          suggestionsFromData.map((item, i) => (
+            <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
               <div className="flex items-start justify-between mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                   <item.icon className="w-5 h-5 text-blue-400" />
@@ -246,7 +246,8 @@ function DashboardContent() {
                 </span>
               </div>
             </Link>
-          ))}
+          ))
+          )}
         </div>
       </section>
     </div>

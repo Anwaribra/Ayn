@@ -83,8 +83,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#080A0F] text-[#E8EAED] overflow-hidden selection:bg-blue-500/30 relative">
-      {/* Cinematic background */}
+    <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
+      {/* Cinematic background - V3 style */}
       <div className="cinematic-bg" />
 
       {/* Sidebar */}
@@ -118,8 +118,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             AYN — Education Quality & Compliance
           </p>
         </div>
-        {/* TopBar — elevated surface */}
-        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.06] bg-[#0D1016]/90 backdrop-blur-xl">
+        {/* TopBar — V3 style */}
+        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.06] bg-[#080A0F]/90 backdrop-blur-xl">
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
             {!sidebarOpen && (
@@ -248,8 +248,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Main content area */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0E141B]">
+        {/* Main content area - V3 surface */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#07090E]">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

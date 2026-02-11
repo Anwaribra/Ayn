@@ -16,7 +16,7 @@ import {
   Target,
   Radio,
 } from "lucide-react"
-import type { GapAnalysisListItem, GapAnalysis, Standard } from "@/types"
+import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard } from "@/types"
 
 export default function GapAnalysisPage() {
   return (
@@ -79,18 +79,20 @@ function GapAnalysisContent() {
   }, [mutate, activeReport])
 
   // Derive gap items for display — from active report or show static/mock gaps
-  const gaps = activeReport?.items?.map((item) => {
-    const score = (item.score ?? 0) * 100
-    const priority = score < 50 ? "High" : score < 75 ? "Med" : "Low"
-    const status = score < 50 ? "Critical" : score < 75 ? "Warning" : "Verified"
-    const color = score < 50 ? "text-red-500" : score < 75 ? "text-amber-500" : "text-emerald-500"
-    const bg = score < 50 ? "bg-red-500/5" : score < 75 ? "bg-amber-500/5" : "bg-emerald-500/5"
+  const gaps = activeReport?.gaps?.map((item: GapItem) => {
+    const priorityMap: Record<string, string> = { high: "High", medium: "Med", low: "Low" }
+    const statusMap: Record<string, string> = { not_met: "Critical", no_evidence: "Critical", partially_met: "Warning", met: "Verified" }
+    const p = priorityMap[item.priority] ?? "Med"
+    const s = statusMap[item.status] ?? "Warning"
+    const color = p === "High" ? "text-red-500" : p === "Med" ? "text-amber-500" : "text-emerald-500"
+    const bg = p === "High" ? "bg-red-500/5" : p === "Med" ? "bg-amber-500/5" : "bg-emerald-500/5"
+    const riskScore = p === "High" ? 88 : p === "Med" ? 42 : 12
     return {
       title: item.criterionTitle ?? "Unnamed Criterion",
-      priority,
-      status,
+      priority: p,
+      status: s,
       desc: item.recommendation ?? "No recommendation available.",
-      riskScore: 100 - Math.round(score),
+      riskScore,
       color,
       bg,
     }
@@ -248,7 +250,7 @@ function GapAnalysisContent() {
                   <div>
                     <h4 className="text-[14px] font-bold text-zinc-100">{report.standardTitle}</h4>
                     <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                      {new Date(report.createdAt).toLocaleDateString()} • {report.totalItems} Items
+                      {new Date(report.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>

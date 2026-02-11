@@ -4,8 +4,8 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
-import { toast } from "sonner"
-import { useCallback } from "react"
+
+
 import {
   BarChart3,
   Download,
@@ -59,7 +59,7 @@ function ReportsContent() {
     id: report.id,
     title: report.standardTitle,
     date: new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-    pages: report.totalItems,
+    pages: Math.round(report.overallScore / 10),
     cat: "AUDIT",
   }))
 

@@ -6,12 +6,10 @@ import { api } from "@/lib/api"
 import useSWR from "swr"
 import Link from "next/link"
 import {
-  TrendingUp,
   ShieldCheck,
   Zap,
   Play,
   Archive,
-  Sparkles,
   ChevronRight,
   Activity,
   Cpu,

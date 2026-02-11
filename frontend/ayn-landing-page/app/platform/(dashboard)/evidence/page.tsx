@@ -17,7 +17,6 @@ import {
   HardDrive,
   Clock,
   ShieldCheck,
-  AlertCircle,
 } from "lucide-react"
 import type { Evidence } from "@/types"
 
@@ -46,11 +45,6 @@ const CAT_COLORS = [
   "bg-zinc-600/10",
 ]
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
-}
 
 function EvidenceContent() {
   const { user } = useAuth()
@@ -64,8 +58,8 @@ function EvidenceContent() {
     () => api.getEvidence(),
   )
 
-  const filteredEvidence = (evidence ?? []).filter((e) =>
-    e.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredEvidence = (evidence ?? []).filter((e: Evidence) =>
+    (e.fileName ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const handleUpload = useCallback(
@@ -148,7 +142,7 @@ function EvidenceContent() {
           { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
           { label: "Neural Indexed", value: "98%", icon: ShieldCheck },
           { label: "Pending Audit", value: String(evidence?.filter((e) => !e.criterionId).length ?? 0), icon: Clock },
-          { label: "Storage Usage", value: evidence ? formatFileSize(evidence.reduce((sum, e) => sum + (e.fileSize ?? 0), 0)) : "0B", icon: Archive },
+          { label: "Storage Usage", value: evidence ? `${evidence.length} files` : "0 files", icon: Archive },
         ].map((stat, i) => (
           <div key={i} className="glass-panel p-4 rounded-2xl flex items-center gap-4 border-white/5">
             <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center">
@@ -194,7 +188,7 @@ function EvidenceContent() {
             const color = CAT_COLORS[i % CAT_COLORS.length]
             const hasLink = !!item.criterionId
             const year = new Date(item.createdAt).getFullYear()
-            const size = formatFileSize(item.fileSize ?? 0)
+            const size = item.fileType ?? "DOC"
 
             return viewMode === "grid" ? (
               <div

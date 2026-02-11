@@ -36,14 +36,10 @@ function StandardsContent() {
   )
 
   // Map API standards to V3 collection cards
-  const collections = (standards ?? []).map((s, i) => ({
+  const collections = (standards ?? []).map((s: Standard, i: number) => ({
     id: s.id,
     title: s.title,
     code: s.id.slice(0, 8).toUpperCase(),
-    count: s.criteria?.length ?? 0,
-    progress: s.criteria?.length
-      ? Math.round((s.criteria.filter((c) => c.description && c.description.length > 0).length / s.criteria.length) * 100)
-      : 0,
     color: CARD_COLORS[i % CARD_COLORS.length],
   }))
 
@@ -67,7 +63,7 @@ function StandardsContent() {
       {/* Grid Collections */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 px-4">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
+          Array.from({ length: 4 }).map((_, i: number) => (
             <div key={i} className="glass-panel rounded-[32px] p-6 border-white/5 aspect-square animate-pulse" />
           ))
         ) : collections.length === 0 ? (
@@ -79,7 +75,7 @@ function StandardsContent() {
             </Link>
           </div>
         ) : (
-          collections.map((c, i) => (
+          collections.map((c: { id: string; title: string; code: string; color: string }, i: number) => (
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
@@ -99,10 +95,9 @@ function StandardsContent() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                     <span>Equilibrium</span>
-                    <span className="mono text-white">{c.progress}%</span>
                   </div>
                   <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${c.progress}%` }} />
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: "0%" }} />
                   </div>
                 </div>
               </div>
@@ -125,10 +120,8 @@ function StandardsContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            {(standards ?? []).slice(0, 4).map((std, i) => {
+            {(standards ?? []).slice(0, 4).map((std: Standard, i: number) => {
               const Icon = CARD_ICONS[i % CARD_ICONS.length]
-              const criteriaCount = std.criteria?.length ?? 0
-              const status = criteriaCount > 5 ? "Optimal" : "Warning"
               return (
                 <Link
                   key={std.id}
@@ -142,17 +135,11 @@ function StandardsContent() {
                     <div>
                       <h4 className="text-[14px] font-bold text-zinc-100">{std.title}</h4>
                       <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                        {new Date(std.createdAt ?? Date.now()).toLocaleDateString()} • {criteriaCount} Evidence Nodes
+                        {std.description ?? "No description"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${status === "Optimal"
-                        ? "text-emerald-500 bg-emerald-500/5 border border-emerald-500/10"
-                        : "text-amber-500 bg-amber-500/5 border border-amber-500/10"
-                      }`}>
-                      {status}
-                    </span>
                     <button className="p-2 text-zinc-700 hover:text-white opacity-0 group-hover:opacity-100 transition-all">
                       <Play className="w-4 h-4" />
                     </button>
@@ -172,7 +159,7 @@ function StandardsContent() {
               <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Intelligence Summary</h4>
             </div>
             <p className="text-sm text-zinc-400 font-medium leading-relaxed mb-8">
-              Current institutional health is holding at <span className="text-white">{collections.length > 0 ? Math.round(collections.reduce((a, c) => a + c.progress, 0) / collections.length) : 0}%</span>. Horus has detected a minor synchronization drift in the <span className="text-amber-500">Curriculum Alignment</span> framework. Remediation is recommended before the Q3 audit cycle.
+              Current institutional framework contains <span className="text-white">{collections.length}</span> active standards. Horus recommends a compliance review of the <span className="text-amber-500">Curriculum Alignment</span> framework before the Q3 audit cycle.
             </p>
             <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
               Generate Compliance Briefing

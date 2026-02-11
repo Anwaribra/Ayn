@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -151,7 +152,7 @@ function ReportsIllustration() {
   )
 }
 
-const illustrations: Record<string, () => JSX.Element> = {
+const illustrations: Record<string, () => React.ReactElement> = {
   evidence: EvidenceIllustration,
   standards: StandardsIllustration,
   analysis: AnalysisIllustration,

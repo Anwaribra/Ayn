@@ -37,8 +37,8 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
   return (
     <aside
       className={`
-        fixed md:relative inset-y-0 left-0 bg-[#05070A] h-full flex flex-col z-30 select-none
-        transition-all duration-300 ease-in-out border-r border-white/5
+        fixed md:relative inset-y-0 left-0 bg-[#060810] h-full flex flex-col z-30 select-none
+        transition-all duration-300 ease-in-out border-r border-white/[0.04]
         ${open ? "w-[240px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"}
       `}
     >

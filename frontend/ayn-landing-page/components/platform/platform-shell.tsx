@@ -83,10 +83,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
-      {/* Cinematic background with depth */}
-      <div className="cinematic-bg" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+    <div className="flex h-screen bg-[#080A0F] text-[#E8EAED] overflow-hidden selection:bg-blue-500/30 relative">
+      {/* Cinematic background - lighter, more breathable */}
+      <div className="cinematic-bg opacity-70" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.015] via-transparent to-transparent pointer-events-none" />
 
       {/* Sidebar */}
       <PlatformSidebar
@@ -113,14 +113,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 overflow-hidden transition-all duration-300 ease-in-out">
-        {/* App Title — V3 with depth */}
-        <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#080A0F]/50">
-          <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[0.15em]">
+        {/* App Title — subtle depth */}
+        <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#090B11]/40">
+          <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">
             AYN — Education Quality & Compliance
           </p>
         </div>
-        {/* TopBar — Refined with elevation */}
-        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.08] bg-[#0C0F14]/95 backdrop-blur-xl">
+        {/* TopBar — elevated surface */}
+        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.06] bg-[#0D1016]/90 backdrop-blur-xl">
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
             {!sidebarOpen && (
@@ -249,8 +249,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Main content area - lightened for depth balance */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0A0C10]/50">
+        {/* Main content area - breathable surface */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#0B0D12]/60">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

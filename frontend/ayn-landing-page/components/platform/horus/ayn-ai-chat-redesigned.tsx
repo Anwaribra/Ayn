@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -27,10 +28,15 @@ import {
   Trash2,
   History,
   PlusCircle,
+  ChevronRight,
+  Settings2,
+  CheckCircle2,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
+import { useAuth } from "@/lib/auth-context"
+import useSWR from "swr"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -120,6 +126,8 @@ export function MarkdownContent({ content }: { content: string }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
+  const router = useRouter()
+  const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [input, setInput] = useState("")
@@ -128,6 +136,28 @@ export default function HorusAIChat() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const { data: metrics } = useSWR(user ? "dashboard-metrics" : null, () => api.getDashboardMetrics())
+  const { data: gapAnalyses } = useSWR(user ? "gap-analyses" : null, () => api.getGapAnalyses())
+  const { data: evidence } = useSWR(user ? "evidence" : null, () => api.getEvidence())
+
+  const complianceEquilibrium = metrics?.assessmentProgressPercentage ?? 0
+  const activeGaps = (gapAnalyses ?? []).length
+  const indexedAssets = evidence?.length ?? 0
+
+  const recommendedActions = (gapAnalyses ?? [])
+    .filter((g: { overallScore: number }) => (g.overallScore ?? 100) < 80)
+    .slice(0, 5)
+    .map((g: { id: string; standardTitle: string }) => ({
+      id: g.id,
+      label: `Remediate ${g.standardTitle}`,
+    }))
+
+  const actionPills = [
+    { label: "Map Compliance", icon: Sparkles, href: "/platform/standards" },
+    { label: "Verify Evidence", icon: Settings2, href: "/platform/evidence" },
+    { label: "Audit Procedure", icon: CheckCircle2, href: "/platform/gap-analysis" },
+  ]
 
   // Load sessions on mount (but start fresh chat)
   useEffect(() => {
@@ -255,20 +285,38 @@ export default function HorusAIChat() {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col bg-background">
-      {/* Header - Always Visible */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={newChat} className="shadow-sm">
-          <PlusCircle className="h-4 w-4 mr-2" />
-          New Chat
-        </Button>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="shadow-sm">
-              <History className="h-4 w-4 mr-2" />
-              History
+    <div className="flex h-[calc(100vh-56px)] flex-col">
+      {/* V3 Header */}
+      <div className="shrink-0 px-4 pb-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Neural Node</span>
+          <span className="text-zinc-700">•</span>
+          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Horus Intelligence Hub</span>
+        </div>
+        <h1 className="text-2xl font-black tracking-tight text-white">Horus Command</h1>
+        <div className="flex flex-wrap gap-3">
+          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Integrity 100.0% Secure</span>
+          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Linkage Secure</span>
+          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Synchronized AY-294-G Core</span>
+        </div>
+      </div>
+
+      {/* Main Chat + Right Sidebar */}
+      <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top actions - New Chat, History */}
+          <div className="flex justify-end gap-2 px-4 pb-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={newChat} className="glass-panel border-white/5">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Chat
             </Button>
-          </SheetTrigger>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="glass-panel border-white/5">
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+              </SheetTrigger>
             <SheetContent side="right" className="w-80 sm:w-96">
               <SheetHeader>
                 <SheetTitle>Previous Conversations</SheetTitle>
@@ -324,24 +372,34 @@ export default function HorusAIChat() {
               </ScrollArea>
             </div>
           </SheetContent>
-        </Sheet>
-      </div>
+            </Sheet>
+          </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1">
-        <div className="mx-auto max-w-3xl px-4 py-8">
-          {isEmpty ? (
-            <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center">
-              <div className="text-center space-y-6 max-w-2xl px-4">
-                <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
-                  What do you want to know?
-                </h1>
-                <p className="text-muted-foreground text-base md:text-lg">
-                  Ask about ISO standards, analyze evidence, review compliance gaps, or upload documents
-                </p>
-              </div>
-            </div>
-          ) : (
+          {/* Messages Area */}
+          <ScrollArea className="flex-1">
+            <div className="mx-auto max-w-2xl px-4 py-6">
+              {isEmpty ? (
+                <div className="space-y-6">
+                  <div className="glass-panel p-6 rounded-2xl border-white/5">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Horus Neural Link</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
+                      Neural bridge established. I am Horus, your institutional intelligence layer. I have indexed your compliance history and evidence library. How shall we optimize the quality hub today?
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {actionPills.map((pill) => (
+                      <button
+                        key={pill.label}
+                        onClick={() => router.push(pill.href)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-white/5 text-[12px] font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                      >
+                        <pill.icon className="w-3.5 h-3.5" />
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
             <div className="space-y-8">
               {messages.map((msg) => (
                 <div key={msg.id} className="flex gap-4 items-start">
@@ -395,13 +453,13 @@ export default function HorusAIChat() {
 
               <div ref={scrollRef} />
             </div>
-          )}
-        </div>
-      </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
 
-      {/* Input Area */}
-      <div className="border-t bg-background p-4">
-        <div className="mx-auto max-w-3xl space-y-3">
+          {/* Input Area */}
+          <div className="border-t border-white/5 p-4 shrink-0">
+            <div className="mx-auto max-w-2xl space-y-3">
           {/* File Previews */}
           {attachedFiles.length > 0 && (
             <div className="flex flex-wrap gap-2 px-1">
@@ -436,7 +494,7 @@ export default function HorusAIChat() {
           )}
 
           {/* Input */}
-          <div className="relative flex items-end gap-3 rounded-3xl border bg-card p-3 shadow-md focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <div className="relative flex items-end gap-3 rounded-2xl glass-panel border-white/5 p-3 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all">
             <input
               ref={fileInputRef}
               type="file"
@@ -465,7 +523,7 @@ export default function HorusAIChat() {
                   sendMessage()
                 }
               }}
-              placeholder="Ask anything..."
+              placeholder="> Initiate a neural dialogue..."
               className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[40px] max-h-[200px] text-sm"
               disabled={isLoading}
             />
@@ -478,8 +536,52 @@ export default function HorusAIChat() {
             >
               <Send className="h-4 w-4" />
             </Button>
+            </div>
           </div>
         </div>
+
+        {/* Right Sidebar — Live Context + Recommended */}
+        <aside className="hidden lg:flex w-72 flex-col shrink-0 border-l border-white/5 pl-6 py-4">
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">Live Context</h4>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Compliance Equilibrium</p>
+                  <p className="mono text-lg font-bold text-white">{complianceEquilibrium}%</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Active Audit Gaps</p>
+                  <p className="mono text-lg font-bold text-white">{activeGaps}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Neural Indexed Assets</p>
+                  <p className="mono text-lg font-bold text-white">{indexedAssets.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">Recommended</h4>
+              <div className="space-y-2">
+                {recommendedActions.length === 0 ? (
+                  <p className="text-[11px] text-zinc-600 italic">No pending remediations</p>
+                ) : (
+                  recommendedActions.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => router.push("/platform/gap-analysis")}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg glass-panel border-white/5 text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all text-left"
+                    >
+                      {item.label}
+                      <ChevronRight className="w-3 h-3 shrink-0" />
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          <p className="mt-auto pt-6 text-[9px] font-bold text-zinc-700 uppercase tracking-widest">Brain Version AYN-v2.4-LATEST</p>
+        </aside>
       </div>
     </div>
   )

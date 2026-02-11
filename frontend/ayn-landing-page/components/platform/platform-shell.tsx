@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Command,
   PanelLeft,
+  HelpCircle,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform-sidebar"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
@@ -67,8 +68,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 overflow-hidden transition-all duration-300 ease-in-out">
-        {/* TopBar — exact V3 copy */}
-        <header className="h-20 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none">
+        {/* App Title — V3 */}
+        <div className="px-6 md:px-10 pt-4 pb-1">
+          <p className="text-[11px] font-bold text-zinc-600 uppercase tracking-[0.15em]">
+            AYN — Education Quality & Compliance
+          </p>
+        </div>
+        {/* TopBar — V3 */}
+        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none">
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
             {!sidebarOpen && (
@@ -116,13 +123,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
-            <button className="hidden md:block text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">
+          <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
+            <button className="hidden md:block text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="History">
               <History className="w-4 h-4" />
             </button>
             <button
               onClick={() => router.push("/platform/notifications")}
               className="text-zinc-500 hover:text-white transition-colors relative p-2 hover:bg-white/5 rounded-lg"
+              title="Notifications"
             >
               <Bell className="w-4 h-4" />
               {notificationCount > 0 && (
@@ -130,6 +138,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   {notificationCount}
                 </span>
               )}
+            </button>
+            <button className="text-zinc-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" title="Help">
+              <HelpCircle className="w-4 h-4" />
             </button>
             <div className="w-px h-4 bg-white/10" />
             <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors border-none">

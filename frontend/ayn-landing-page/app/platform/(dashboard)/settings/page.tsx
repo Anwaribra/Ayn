@@ -63,8 +63,8 @@ function SettingsContent() {
               <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex-1">
-              <h3 className="text-[15px] font-bold text-zinc-100 mb-0.5">{item.label}</h3>
-              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-tight">{item.desc}</p>
+              <h3 className="text-[15px] font-bold text-[#F1F5F9] mb-0.5">{item.label}</h3>
+              <p className="text-[11px] text-[#A8B3C7] font-medium uppercase tracking-tight">{item.desc}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
           </Link>
@@ -77,7 +77,7 @@ function SettingsContent() {
         </div>
         <div className="relative z-10 max-w-xl">
           <h3 className="text-xl font-semibold text-[#B94A4A] mb-2">Vault Clearance Protocol</h3>
-          <p className="text-sm text-zinc-500/90 mb-8 font-medium leading-relaxed">
+          <p className="text-sm text-[#A8B3C7] mb-8 font-medium leading-relaxed">
             Wiping institutional data will permanently remove all evidence assets, compliance mappings, and Horus neural history. This action requires administrative consensus.
           </p>
           <button 
@@ -91,8 +91,8 @@ function SettingsContent() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] backdrop-blur-[5px]">
-          <div className="bg-[#151E29] rounded-2xl p-10 max-w-[520px] w-full border border-[rgba(255,255,255,0.06)] relative shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)]">
+          <div className="bg-[#151E29] rounded-2xl p-10 max-w-[520px] w-full border border-[rgba(255,255,255,0.08)] relative shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
             <button 
               onClick={() => setShowPurgeModal(false)}
               className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
@@ -104,11 +104,11 @@ function SettingsContent() {
                 <AlertTriangle className="w-6 h-6 text-[#B94A4A]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-zinc-100">Confirm Vault Purge</h3>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">This action cannot be undone</p>
+                <h3 className="text-lg font-semibold text-[#F1F5F9]">Confirm Vault Purge</h3>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest">This action cannot be undone</p>
               </div>
             </div>
-            <p className="text-sm text-zinc-400/90 mb-8 leading-relaxed">
+            <p className="text-sm text-[#A8B3C7] mb-8 leading-relaxed">
               You are about to permanently delete all institutional data including evidence assets, compliance mappings, and Horus neural history. This requires administrative consensus.
             </p>
             <div className="flex gap-3">

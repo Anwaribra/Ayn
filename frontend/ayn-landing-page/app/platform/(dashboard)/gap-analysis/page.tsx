@@ -150,7 +150,7 @@ function GapAnalysisContent() {
     if (!selectedStandard) { toast.error("Select a standard first"); return }
     setIsGenerating(true)
     try {
-      const result = await api.runGapAnalysis(selectedStandard)
+      const result = await api.generateGapAnalysis(selectedStandard)
       setActiveReport(result)
       toast.success("Gap analysis complete")
       mutateReports()

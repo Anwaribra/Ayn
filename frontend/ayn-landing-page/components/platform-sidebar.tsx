@@ -42,13 +42,12 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
         ${open ? "w-[240px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"}
       `}
     >
-      {/* Branding & Toggle */}
+      {/* Branding & Toggle — V3 oval AYN logo */}
       <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <span className="font-bold text-[10px] tracking-tighter text-white">A</span>
+        <div className="flex items-center justify-center">
+          <div className="w-14 h-9 rounded-full border-2 border-white/90 flex items-center justify-center px-2">
+            <span className="font-bold text-xs tracking-tighter text-white">AYN</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-zinc-100">Ayn</span>
         </div>
 
         <button
@@ -69,11 +68,14 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
             <Link
               key={item.id}
               href={item.href}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group mb-1 whitespace-nowrap ${isActive
+              className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group mb-1 whitespace-nowrap ${isActive
                 ? "bg-zinc-800 text-white shadow-sm"
                 : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50"
                 }`}
             >
+              {isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-500 rounded-r" />
+              )}
               <item.icon
                 className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-blue-500" : "text-zinc-500 group-hover:text-zinc-300"
                   }`}
@@ -88,9 +90,12 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
       <div className="px-4 pb-10 mt-auto space-y-4 overflow-hidden">
         <Link
           href="/platform/settings"
-          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-200 transition-all whitespace-nowrap ${pathname.includes("settings") ? "bg-zinc-800 text-white" : ""
+          className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-200 transition-all whitespace-nowrap ${pathname.includes("settings") ? "bg-zinc-800 text-white" : ""
             }`}
         >
+          {pathname.includes("settings") && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-500 rounded-r" />
+          )}
           <Settings className="w-4 h-4 flex-shrink-0" />
           <span className="text-[13px] font-medium">Settings</span>
         </Link>

@@ -78,7 +78,6 @@ function GapAnalysisContent() {
     }
   }, [mutate, activeReport])
 
-  // Derive gap items for display — from active report or show static/mock gaps
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
     const priorityMap: Record<string, string> = { high: "High", medium: "Med", low: "Low" }
     const statusMap: Record<string, string> = { not_met: "Critical", no_evidence: "Critical", partially_met: "Warning", met: "Verified" }
@@ -96,11 +95,7 @@ function GapAnalysisContent() {
       color,
       bg,
     }
-  }) ?? [
-      { title: "Faculty Accreditation Lag", priority: "High", status: "Critical", desc: "Neural scans detected 12 expired certifications in the Faculty Matrix.", riskScore: 88, color: "text-red-500", bg: "bg-red-500/5" },
-      { title: "Infrastructure Latency Std 4.2", priority: "Med", status: "Warning", desc: "Sync latency for the VLE hub exceeded the 0.8s threshold during peak load.", riskScore: 42, color: "text-amber-500", bg: "bg-amber-500/5" },
-      { title: "Student Welfare Loop", priority: "Low", status: "Verified", desc: "Manual logs successfully migrated to automated compliance checks.", riskScore: 12, color: "text-emerald-500", bg: "bg-emerald-500/5" },
-    ]
+  }) ?? []
 
   const filteredGaps = activeTab === "urgent"
     ? gaps.filter((g) => g.priority === "High")

@@ -41,36 +41,26 @@ function ReportsContent() {
 
   const allReports = [...(reports ?? []), ...(archivedReports ?? [])]
 
-  // Generate chart data from reports (recent scores)
   const chartData = allReports.slice(0, 12).map((r) => Math.round(r.overallScore))
-  const fallbackChart = [30, 45, 35, 70, 55, 84, 90, 75, 88, 82, 95, 89]
-  const barData = chartData.length > 0 ? chartData : fallbackChart
 
-  // Performance distribution
-  const performanceAreas = [
-    { label: "Teaching Quality", score: 92, color: "bg-blue-500", icon: Target },
-    { label: "Student Support", score: 78, color: "bg-indigo-500", icon: Globe },
-    { label: "Research Matrix", score: 64, color: "bg-purple-500", icon: Cpu },
-    { label: "Institutional Infra", score: 85, color: "bg-cyan-500", icon: Zap },
-  ]
+  const performanceAreas = allReports.slice(0, 4).map((r, i) => {
+    const icons = [Target, Globe, Cpu, Zap]
+    const colors = ["bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-cyan-500"]
+    return {
+      label: r.standardTitle,
+      score: Math.round(r.overallScore),
+      color: colors[i % colors.length],
+      icon: icons[i % icons.length],
+    }
+  })
 
-  // Briefing documents from real reports
   const briefings = allReports.slice(0, 4).map((report) => ({
     id: report.id,
     title: report.standardTitle,
     date: new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-    pages: Math.round(report.overallScore / 10),
+    pages: Math.max(1, Math.round(report.overallScore / 10)),
     cat: "AUDIT",
   }))
-
-  const fallbackBriefings = [
-    { id: "1", title: "Compliance Cycle Intelligence", date: "Jan 12, 2025", pages: 14, cat: "AUDIT" },
-    { id: "2", title: "Strategic Resource Forecast", date: "Jan 10, 2025", pages: 8, cat: "PLAN" },
-    { id: "3", title: "Faculty Accreditation Deep Dive", date: "Jan 05, 2025", pages: 22, cat: "HR" },
-    { id: "4", title: "Infrastructure Resilience Hub", date: "Dec 28, 2024", pages: 11, cat: "OPS" },
-  ]
-
-  const displayBriefings = briefings.length > 0 ? briefings : fallbackBriefings
 
   return (
     <div className="animate-fade-in-up pb-20">
@@ -118,7 +108,12 @@ function ReportsContent() {
           </div>
 
           <div className="h-56 flex items-end gap-2 relative">
-            {barData.map((h, i) => (
+            {chartData.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-zinc-600 text-sm italic">
+                No compliance trend data yet. Generate gap analysis reports to see trends.
+              </div>
+            ) : (
+            chartData.map((h, i) => (
               <div key={i} className="flex-1 group relative">
                 <div
                   className="w-full bg-blue-600/30 rounded-t-lg transition-all duration-700 group-hover:bg-blue-500 group-hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
@@ -128,15 +123,18 @@ function ReportsContent() {
                   {h}%
                 </div>
               </div>
-            ))}
+            ))
+            )}
             <div className="absolute inset-x-0 top-0 h-px bg-white/5 pointer-events-none" />
             <div className="absolute inset-x-0 top-1/4 h-px bg-white/5 pointer-events-none" />
             <div className="absolute inset-x-0 top-1/2 h-px bg-white/5 pointer-events-none" />
             <div className="absolute inset-x-0 top-3/4 h-px bg-white/5 pointer-events-none" />
           </div>
           <div className="flex justify-between mt-6">
-            {["Q1-24", "Q2-24", "Q3-24", "Q4-24", "Q1-25"].map((m, i) => (
-              <span key={i} className="text-[8px] font-bold text-zinc-700 uppercase tracking-[0.3em]">{m}</span>
+            {chartData.length === 0 ? null : allReports.slice(0, Math.min(chartData.length, 5)).map((r, i) => (
+              <span key={i} className="text-[8px] font-bold text-zinc-700 uppercase tracking-[0.3em]">
+                {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+              </span>
             ))}
           </div>
         </div>
@@ -146,7 +144,10 @@ function ReportsContent() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl pointer-events-none" />
           <h3 className="text-lg font-bold text-white mb-8">Performance Distribution</h3>
           <div className="flex-1 space-y-6 flex flex-col justify-center">
-            {performanceAreas.map((item, i) => (
+            {performanceAreas.length === 0 ? (
+              <p className="text-sm text-zinc-600 italic">No distribution data. Reports will appear here.</p>
+            ) : (
+            performanceAreas.map((item, i) => (
               <div key={i} className="group">
                 <div className="flex justify-between items-end mb-2">
                   <div className="flex items-center gap-3">
@@ -159,7 +160,8 @@ function ReportsContent() {
                   <div className={`h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.2)]`} style={{ width: `${item.score}%` }} />
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
           <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
             <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">Sync Health: 100%</span>
@@ -174,7 +176,13 @@ function ReportsContent() {
           <div className="h-px w-20 bg-zinc-900" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {displayBriefings.map((item, i) => (
+          {briefings.length === 0 ? (
+            <div className="col-span-full text-center py-16">
+              <BarChart3 className="w-10 h-10 text-zinc-800 mx-auto mb-4" />
+              <p className="text-sm text-zinc-600 italic">No neural briefings yet. Generate gap analyses to create reports.</p>
+            </div>
+          ) : (
+          briefings.map((item) => (
             <div key={item.id} className="glass-panel p-5 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-white/[0.04] transition-all border-white/5">
               <div className="flex items-center gap-5">
                 <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
@@ -190,7 +198,8 @@ function ReportsContent() {
                 <button className="p-2 text-zinc-600 hover:text-white transition-colors"><Download className="w-4 h-4" /></button>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </section>
     </div>

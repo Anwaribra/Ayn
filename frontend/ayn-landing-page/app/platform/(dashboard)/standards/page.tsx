@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -14,7 +15,7 @@ import {
   Activity,
   Play,
 } from "lucide-react"
-import type { Standard } from "@/types"
+import type { Standard, GapAnalysisListItem } from "@/types"
 
 export default function StandardsPage() {
   return (
@@ -29,30 +30,73 @@ const CARD_ICONS = [Shield, Target, Layers, Activity, Book, Shield]
 
 function StandardsContent() {
   const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<"database" | "mapping">("database")
 
   const { data: standards, isLoading } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
   )
+  const { data: gapAnalyses } = useSWR<GapAnalysisListItem[]>(
+    user ? "gap-analyses" : null,
+    () => api.getGapAnalyses(),
+  )
+  const { data: evidence } = useSWR(
+    user ? "evidence" : null,
+    () => api.getEvidence(),
+  )
 
-  // Map API standards to V3 collection cards
-  const collections = (standards ?? []).map((s: Standard, i: number) => ({
-    id: s.id,
-    title: s.title,
-    code: s.id.slice(0, 8).toUpperCase(),
-    color: CARD_COLORS[i % CARD_COLORS.length],
-  }))
+  const collections = (standards ?? []).map((s: Standard, i: number) => {
+    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === s.title)
+    const equilibrium = report ? Math.round(report.overallScore) : 0
+    return {
+      id: s.id,
+      title: s.title,
+      code: s.id.slice(0, 8).toUpperCase(),
+      color: CARD_COLORS[i % CARD_COLORS.length],
+      equilibrium,
+    }
+  })
+
+
+  const getStandardStatus = (stdId: string) => {
+    const std = (standards ?? []).find((s) => s.id === stdId)
+    if (!std) return null
+    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
+    if (!report) return null
+    return report.overallScore >= 80 ? "OPTIMAL" : "WARNING"
+  }
+
+  const evidenceCountByStandard = useMemo(() => {
+    const map: Record<string, number> = {}
+    ;(evidence ?? []).forEach((e: { criterionId: string | null; criterion?: { standardId: string } }) => {
+      if (e.criterionId && e.criterion?.standardId) {
+        map[e.criterion.standardId] = (map[e.criterion.standardId] ?? 0) + 1
+      }
+    })
+    return map
+  }, [evidence])
 
   return (
     <div className="animate-fade-in-up pb-20">
       <header className="mb-10 pt-6 px-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
-              <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Regulatory Database</span>
-            </div>
-            <div className="h-px w-6 bg-zinc-800" />
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Compliance Mapping</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("database")}
+              className={`px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest transition-colors ${activeTab === "database"
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                : "text-zinc-600 hover:text-zinc-400"}`}
+            >
+              Regulatory Database
+            </button>
+            <button
+              onClick={() => setActiveTab("mapping")}
+              className={`px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest transition-colors ${activeTab === "mapping"
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                : "text-zinc-600 hover:text-zinc-400"}`}
+            >
+              Compliance Mapping
+            </button>
           </div>
           <h1 className="text-4xl font-black tracking-tighter italic text-white">
             Standards <span className="text-zinc-700 not-italic font-light">Hub</span>
@@ -75,7 +119,7 @@ function StandardsContent() {
             </Link>
           </div>
         ) : (
-          collections.map((c: { id: string; title: string; code: string; color: string }, i: number) => (
+          collections.map((c, i) => (
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
@@ -97,7 +141,7 @@ function StandardsContent() {
                     <span>Equilibrium</span>
                   </div>
                   <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: "0%" }} />
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${c.equilibrium ?? 0}%` }} />
                   </div>
                 </div>
               </div>
@@ -122,6 +166,9 @@ function StandardsContent() {
           <div className="lg:col-span-2 space-y-4">
             {(standards ?? []).slice(0, 4).map((std: Standard, i: number) => {
               const Icon = CARD_ICONS[i % CARD_ICONS.length]
+              const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
+              const status = getStandardStatus(std.id)
+              const evidenceNodes = evidenceCountByStandard[std.id] ?? 0
               return (
                 <Link
                   key={std.id}
@@ -135,11 +182,16 @@ function StandardsContent() {
                     <div>
                       <h4 className="text-[14px] font-bold text-zinc-100">{std.title}</h4>
                       <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                        {std.description ?? "No description"}
+                        {report ? new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }).toUpperCase() : "—"} • {evidenceNodes} EVIDENCE NODES
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
+                    {status && (
+                      <span className={`text-[8px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${status === "OPTIMAL" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"}`}>
+                        {status}
+                      </span>
+                    )}
                     <button className="p-2 text-zinc-700 hover:text-white opacity-0 group-hover:opacity-100 transition-all">
                       <Play className="w-4 h-4" />
                     </button>
@@ -159,7 +211,13 @@ function StandardsContent() {
               <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Intelligence Summary</h4>
             </div>
             <p className="text-sm text-zinc-400 font-medium leading-relaxed mb-8">
-              Current institutional framework contains <span className="text-white">{collections.length}</span> active standards. Horus recommends a compliance review of the <span className="text-amber-500">Curriculum Alignment</span> framework before the Q3 audit cycle.
+              Current institutional framework contains <span className="text-white">{collections.length}</span> active standards.
+              {(() => {
+                const needsReview = (standards ?? []).find((s) => getStandardStatus(s.id) === "WARNING")
+                return needsReview
+                  ? <> Horus recommends a compliance review of the <span className="text-amber-500">{needsReview.title}</span> framework before the Q3 audit cycle.</>
+                  : " All frameworks are within compliance targets."
+              })()}
             </p>
             <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
               Generate Compliance Briefing

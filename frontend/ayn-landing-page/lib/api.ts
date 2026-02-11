@@ -133,6 +133,13 @@ class ApiClient {
     return this.request<import("./types").User>("/auth/me")
   }
 
+  async updateUser(data: { name?: string }) {
+    return this.request<import("./types").User>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
   // Dashboard
   async getDashboardMetrics() {
     return this.request<import("./types").DashboardMetrics>("/dashboard/metrics")

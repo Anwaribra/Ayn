@@ -205,14 +205,14 @@
 [data-section="platform"] .modal-backdrop {
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
+  z-index: 60;
 }
 
 [data-section="platform"] .modal-container {
   background: #0D1118;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.02) inset,
-    var(--shadow-xl);
+  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+  z-index: 70;
 }
 
 /* ─── Button variants ─────────────────────────────────────────────────────── */

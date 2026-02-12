@@ -147,7 +147,7 @@ export function HorusAIWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]"
           >
-            <div className="glass-panel rounded-3xl border-white/10 overflow-hidden shadow-2xl shadow-black/50">
+            <div className="glass-panel rounded-3xl border-white/10 overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.6)] backdrop-blur-[10px]">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.02]">
                 <div className="flex items-center gap-3">

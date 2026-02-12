@@ -83,11 +83,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
+    <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
       {/* Cinematic background - V3 style */}
-      <div className="cinematic-bg col-span-full row-span-full" />
+      <div className="cinematic-bg fixed inset-0 pointer-events-none" />
 
-      {/* Sidebar - Fixed width, no overlap */}
+      {/* Sidebar - Fixed width */}
       <PlatformSidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(false)}
@@ -110,8 +110,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Main Content - Starts after sidebar, no overlap */}
-      <main className="flex flex-col relative z-10 overflow-hidden min-w-0">
+      {/* Main Content - Flexible, centered in remaining space */}
+      <main className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
         {/* App Title — subtle depth */}
         <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#090B11]/40">
           <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">
@@ -254,8 +254,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Main content area - V3 surface */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-20 scroll-smooth bg-[#07090E]">
+        {/* Main content area - V3 surface; pb-32 clears fixed bottom search bar */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth bg-[#07090E]">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

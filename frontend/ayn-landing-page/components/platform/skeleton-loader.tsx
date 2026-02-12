@@ -10,7 +10,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-white/[0.05]",
+        "animate-pulse rounded-md bg-[var(--surface)]",
         className
       )}
     />
@@ -83,7 +83,7 @@ export function EvidenceCardSkeleton({ viewMode = "grid" }: { viewMode?: "grid" 
 }
 
 export function EvidenceGridSkeleton({ viewMode = "grid", count = 8 }: { viewMode?: "grid" | "list"; count?: number }) {
-  const gridClass = viewMode === "grid" 
+  const gridClass = viewMode === "grid"
     ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
     : "space-y-3"
 
@@ -171,12 +171,12 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
   return (
     <div className="flex items-center gap-4 py-4">
       {Array.from({ length: columns }).map((_, i) => (
-        <Skeleton 
-          key={i} 
+        <Skeleton
+          key={i}
           className={cn(
             "h-4",
             i === 0 ? "w-10" : i === columns - 1 ? "w-20" : "flex-1"
-          )} 
+          )}
         />
       ))}
     </div>

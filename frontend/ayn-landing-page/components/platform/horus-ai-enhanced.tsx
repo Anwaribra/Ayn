@@ -104,7 +104,7 @@ export function HorusAIWidget() {
       }
 
       const suggestionId = starterSuggestions.find(s => s.prompt === content)?.id
-      const response = suggestionId && responses[suggestionId] 
+      const response = suggestionId && responses[suggestionId]
         ? responses[suggestionId]
         : "I understand. Let me analyze that for you. Based on your current evidence library and mapped standards, I can provide specific guidance. Would you like me to check your current compliance status first?"
 
@@ -128,7 +128,7 @@ export function HorusAIWidget() {
         className={cn(
           "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center",
           "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-600/30",
-          "hover:scale-110 active:scale-95 transition-all border border-white/10"
+          "hover:scale-110 active:scale-95 transition-all border border-[var(--border-light)]"
         )}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -147,9 +147,9 @@ export function HorusAIWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]"
           >
-            <div className="glass-panel rounded-3xl border-white/10 overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.6)] backdrop-blur-[10px]">
+            <div className="glass-panel rounded-3xl border-[var(--border-light)] overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.6)] backdrop-blur-[10px]">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.02]">
+              <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-white/[0.02]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                     <Brain className="w-5 h-5 text-white" />
@@ -182,8 +182,8 @@ export function HorusAIWidget() {
                   >
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                      msg.role === "assistant" 
-                        ? "bg-gradient-to-br from-blue-600 to-indigo-600" 
+                      msg.role === "assistant"
+                        ? "bg-gradient-to-br from-blue-600 to-indigo-600"
                         : "bg-zinc-700"
                     )}>
                       {msg.role === "assistant" ? (
@@ -195,7 +195,7 @@ export function HorusAIWidget() {
                     <div className={cn(
                       "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed",
                       msg.role === "assistant"
-                        ? "bg-white/[0.05] text-zinc-200 rounded-tl-sm"
+                        ? "bg-[var(--surface)] text-zinc-200 rounded-tl-sm"
                         : "bg-blue-600 text-white rounded-tr-sm"
                     )}>
                       {msg.content}
@@ -208,7 +208,7 @@ export function HorusAIWidget() {
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                       <Brain className="w-4 h-4 text-white" />
                     </div>
-                    <div className="bg-white/[0.05] rounded-2xl rounded-tl-sm p-4 flex items-center gap-1">
+                    <div className="bg-[var(--surface)] rounded-2xl rounded-tl-sm p-4 flex items-center gap-1">
                       <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                       <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                       <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -225,7 +225,7 @@ export function HorusAIWidget() {
                         <button
                           key={suggestion.id}
                           onClick={() => handleSend(suggestion.prompt)}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-blue-500/30 transition-all text-left group"
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all text-left group"
                         >
                           <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                             <suggestion.icon className="w-4 h-4 text-blue-400" />
@@ -240,7 +240,7 @@ export function HorusAIWidget() {
               </div>
 
               {/* Input */}
-              <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+              <div className="p-4 border-t border-[var(--border-subtle)] bg-white/[0.02]">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -248,7 +248,7 @@ export function HorusAIWidget() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
                     placeholder="Ask Horus anything..."
-                    className="flex-1 h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="flex-1 h-10 px-4 rounded-xl bg-white/5 border border-[var(--border-light)] text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   />
                   <Button
                     size="icon"
@@ -264,7 +264,7 @@ export function HorusAIWidget() {
                     <button
                       key={reply}
                       onClick={() => handleSend(reply)}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 text-[10px] text-zinc-400 hover:text-white transition-all"
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-[var(--border-subtle)] text-[10px] text-zinc-400 hover:text-white transition-all"
                     >
                       {reply}
                     </button>
@@ -319,14 +319,14 @@ export function SystemStatusWidget() {
   const textColorClass = current.color.replace("bg-", "text-")
 
   return (
-    <div className="glass-panel rounded-2xl p-4 border-white/5">
+    <div className="glass-panel rounded-2xl p-4 border-[var(--border-subtle)]">
       <div className="flex items-center gap-3">
         <div className="relative">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
             <Cpu className="w-5 h-5 text-white" />
           </div>
           <span className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#05070A]",
+            "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-deep)]",
             current.color,
             current.pulse && "animate-pulse"
           )} />

@@ -66,7 +66,7 @@ function AccountProfileContent() {
       </header>
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="glass-panel p-6 rounded-2xl border-white/5 space-y-4">
+        <div className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] space-y-4">
           <div>
             <Label htmlFor="name" className="text-zinc-400 text-sm font-medium">
               Full Name
@@ -75,7 +75,7 @@ function AccountProfileContent() {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-2 bg-white/5 border-white/10 text-white"
+              className="mt-2 bg-[var(--surface)] border-[var(--border-subtle)] text-[var(--text-primary)]"
               placeholder="Your full name"
             />
           </div>

@@ -74,11 +74,11 @@ function StandardsContent() {
 
   const evidenceCountByStandard = useMemo(() => {
     const map: Record<string, number> = {}
-    ;(evidence ?? []).forEach((e: { criterionId: string | null; criterion?: { standardId: string } }) => {
-      if (e.criterionId && e.criterion?.standardId) {
-        map[e.criterion.standardId] = (map[e.criterion.standardId] ?? 0) + 1
-      }
-    })
+      ; (evidence ?? []).forEach((e: { criterionId: string | null; criterion?: { standardId: string } }) => {
+        if (e.criterionId && e.criterion?.standardId) {
+          map[e.criterion.standardId] = (map[e.criterion.standardId] ?? 0) + 1
+        }
+      })
     return map
   }, [evidence])
 
@@ -135,7 +135,7 @@ function StandardsContent() {
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
-              className="group glass-panel rounded-[32px] p-6 border-white/5 hover:bg-white/[0.04] transition-all duration-500 cursor-pointer flex flex-col justify-between aspect-square"
+              className="group glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] hover:bg-[var(--surface)] transition-all duration-500 cursor-pointer flex flex-col justify-between aspect-square"
             >
               <div className="flex justify-between items-start">
                 <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/10 flex items-center justify-center transition-transform group-hover:scale-105`}>
@@ -185,10 +185,10 @@ function StandardsContent() {
                 <Link
                   key={std.id}
                   href={`/platform/standards/${std.id}`}
-                  className="glass-panel p-5 rounded-3xl border-white/5 flex items-center justify-between hover:bg-white/[0.03] transition-all group cursor-pointer"
+                  className="glass-panel p-5 rounded-3xl border-[var(--border-subtle)] flex items-center justify-between hover:bg-white/[0.02] transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
                       <Icon className="w-4 h-4 text-zinc-500 group-hover:text-blue-500 transition-colors" />
                     </div>
                     <div>
@@ -213,19 +213,19 @@ function StandardsContent() {
             })}
 
             {(standards ?? []).length === 0 && !isLoading && (
-            <div className="col-span-full">
-              <div className="glass-panel rounded-2xl p-8 text-center border-white/5">
-                <Target className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm text-zinc-500 mb-4">No standards available for topology mapping.</p>
-                <StandardsTemplatesButton onSelect={(template: Template) => {
-                  window.location.href = `/platform/standards/new?template=${template.id}`
-                }} />
+              <div className="col-span-full">
+                <div className="glass-panel rounded-2xl p-8 text-center border-[var(--border-subtle)]">
+                  <Target className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+                  <p className="text-sm text-zinc-500 mb-4">No standards available for topology mapping.</p>
+                  <StandardsTemplatesButton onSelect={(template: Template) => {
+                    window.location.href = `/platform/standards/new?template=${template.id}`
+                  }} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
 
-          <div className="glass-panel rounded-[32px] p-8 border-white/5 flex flex-col">
+          <div className="glass-panel rounded-[32px] p-8 border-[var(--border-subtle)] flex flex-col">
             <div className="flex items-center gap-3 mb-8">
               <Shield className="w-5 h-5 text-blue-500" />
               <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Intelligence Summary</h4>
@@ -239,10 +239,10 @@ function StandardsContent() {
                   : " All frameworks are within compliance targets."
               })()}
             </p>
-            <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
+            <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-[var(--border-subtle)] text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
               Generate Compliance Briefing
             </Link>
-            <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-4">
+            <div className="mt-auto pt-6 border-t border-[var(--border-subtle)] flex items-center gap-4">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Ayn Core Live Sync</span>
             </div>

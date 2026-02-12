@@ -176,33 +176,33 @@ function DashboardContent() {
         {isLoading ? (
           <DashboardMetricsSkeleton />
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
-            { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
-            { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
-            { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
-          ].map((m, i) => (
-            <div key={i} className="group cursor-pointer">
-              <div className={["glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between transition-all duration-500",
-                "group-hover:-translate-y-3 group-hover:bg-white/[0.04] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
-                <div className="flex justify-between items-start">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center">
-                    <m.icon className={["w-6 h-6", m.color].join(" ")} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
+              { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
+              { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
+              { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
+            ].map((m, i) => (
+              <div key={i} className="group cursor-pointer">
+                <div className={["glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between transition-all duration-500",
+                  "group-hover:-translate-y-3 group-hover:bg-[var(--surface)] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
+                  <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
+                      <m.icon className={["w-6 h-6", m.color].join(" ")} />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
-                </div>
-                <div>
-                  <div className="mono text-6xl font-black tracking-tighter mb-2 text-white">{m.value}</div>
-                  <div className="space-y-1">
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">{m.label}</div>
-                    <div className="text-[10px] font-bold text-zinc-700 uppercase tracking-tighter italic">{m.sub}</div>
+                  <div>
+                    <div className="mono text-6xl font-black tracking-tighter mb-2 text-white">{m.value}</div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">{m.label}</div>
+                      <div className="text-[10px] font-bold text-zinc-700 uppercase tracking-tighter italic">{m.sub}</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
       </section>
 
@@ -217,23 +217,23 @@ function DashboardContent() {
           ) : suggestionsFromData.length === 0 ? (
             <EmptyState type="dashboard" />
           ) : (
-          suggestionsFromData.map((item, i) => (
-            <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                  <item.icon className="w-5 h-5 text-blue-400" />
+            suggestionsFromData.map((item, i) => (
+              <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                    <item.icon className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-700">{item.cat}</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-700">{item.cat}</span>
-              </div>
-              <div>
-                <h4 className="text-xl font-bold text-zinc-100 mb-2 leading-tight">{item.title}</h4>
-                <p className="text-sm text-zinc-500 mb-6 font-medium">{item.desc}</p>
-                <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-white transition-colors group/btn">
-                  Initiate Neural Procedure <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </Link>
-          ))
+                <div>
+                  <h4 className="text-xl font-bold text-zinc-100 mb-2 leading-tight">{item.title}</h4>
+                  <p className="text-sm text-zinc-500 mb-6 font-medium">{item.desc}</p>
+                  <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-white transition-colors group/btn">
+                    Initiate Neural Procedure <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                  </span>
+                </div>
+              </Link>
+            ))
           )}
         </div>
       </section>

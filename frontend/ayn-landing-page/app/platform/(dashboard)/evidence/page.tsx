@@ -144,24 +144,24 @@ function EvidenceContent() {
           <StatsGridSkeleton />
         </div>
       ) : (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-4">
-        {[
-          { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
-          { label: "Neural Indexed", value: "98%", icon: ShieldCheck },
-          { label: "Pending Audit", value: String(evidence?.filter((e) => !e.criterionId).length ?? 0), icon: Clock },
-          { label: "Storage Usage", value: evidence ? `${evidence.length} files` : "0 files", icon: Archive },
-        ].map((stat, i) => (
-          <div key={i} className="glass-panel p-4 rounded-2xl flex items-center gap-4 border-white/5">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center">
-              <stat.icon className="w-4 h-4 text-zinc-500" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-4">
+          {[
+            { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
+            { label: "Neural Indexed", value: "98%", icon: ShieldCheck },
+            { label: "Pending Audit", value: String(evidence?.filter((e) => !e.criterionId).length ?? 0), icon: Clock },
+            { label: "Storage Usage", value: evidence ? `${evidence.length} files` : "0 files", icon: Archive },
+          ].map((stat, i) => (
+            <div key={i} className="glass-panel p-4 rounded-2xl flex items-center gap-4 border-white/5">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.02] flex items-center justify-center">
+                <stat.icon className="w-4 h-4 text-zinc-500" />
+              </div>
+              <div>
+                <div className="mono text-lg font-bold text-white">{stat.value}</div>
+                <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
+              </div>
             </div>
-            <div>
-              <div className="mono text-lg font-bold text-white">{stat.value}</div>
-              <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       )}
 
       {/* Search */}
@@ -174,7 +174,7 @@ function EvidenceContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search assets..."
-              className="w-full h-9 bg-white/5 border border-white/5 rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-white"
+              className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-white"
             />
           </div>
         </div>
@@ -200,7 +200,7 @@ function EvidenceContent() {
             return viewMode === "grid" ? (
               <div
                 key={item.id}
-                className="group glass-panel rounded-3xl p-5 border-white/5 hover:border-blue-500/30 hover:bg-white/[0.04] transition-all cursor-pointer relative overflow-hidden"
+                className="group glass-panel rounded-3xl p-5 border-white/5 hover:border-blue-500/30 hover:bg-[var(--surface)] transition-all cursor-pointer relative overflow-hidden"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110`}>
@@ -238,7 +238,7 @@ function EvidenceContent() {
             ) : (
               <div
                 key={item.id}
-                className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5 hover:bg-white/[0.03] transition-all group cursor-pointer"
+                className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5 hover:bg-white/[0.02] transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center border border-white/5`}>
@@ -269,7 +269,7 @@ function EvidenceContent() {
       {/* Upload Overlay */}
       {isUploading && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-[4px] z-[60] flex items-center justify-center p-6">
-          <div className="w-full max-w-xl bg-[#0D1118] rounded-2xl p-10 relative overflow-hidden text-center border border-white/[0.1] shadow-xl">
+          <div className="w-full max-w-xl bg-[var(--surface-modal)] rounded-2xl p-10 relative overflow-hidden text-center border border-[var(--border-subtle)] shadow-xl">
             <button
               onClick={() => setIsUploading(false)}
               className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"

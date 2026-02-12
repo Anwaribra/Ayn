@@ -121,7 +121,7 @@ function GapAnalysisContent() {
           </h1>
         </div>
 
-        <div className="p-1 glass-panel rounded-xl flex gap-1 border-white/5">
+        <div className="p-1 glass-panel rounded-xl flex gap-1 border-[var(--border-subtle)]">
           <button
             onClick={() => setActiveTab("all")}
             className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "all" ? "bg-white/5 text-white" : "text-zinc-600 hover:text-zinc-400"}`}
@@ -139,15 +139,15 @@ function GapAnalysisContent() {
 
       {/* Generate Controls */}
       <div className="px-4 mb-10">
-        <div className="glass-panel p-6 rounded-3xl border-white/5 flex flex-col md:flex-row items-center gap-4">
+        <div className="glass-panel p-6 rounded-3xl border-[var(--border-subtle)] flex flex-col md:flex-row items-center gap-4">
           <select
             value={selectedStandard}
             onChange={(e) => setSelectedStandard(e.target.value)}
-            className="flex-1 h-11 bg-white/[0.02] border border-white/[0.06] text-white rounded-xl px-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+            className="flex-1 h-11 bg-white/[0.02] border border-[var(--border-light)] text-white rounded-xl px-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50"
           >
-            <option value="" className="bg-[#0C0F16]">Choose a standard to analyze...</option>
+            <option value="" className="bg-[var(--surface-modal)]">Choose a standard to analyze...</option>
             {standards?.map((s) => (
-              <option key={s.id} value={s.id} className="bg-[#0C0F16]">{s.title}</option>
+              <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
             ))}
           </select>
           <button
@@ -169,8 +169,8 @@ function GapAnalysisContent() {
           { label: "Remediation Rate", val: `${remediationRate}%`, icon: Activity, color: "text-blue-500" },
           { label: "System Health", val: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, color: "text-emerald-500" },
         ].map((s, i) => (
-          <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-white/5">
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+          <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-[var(--border-subtle)]">
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)]">
               <s.icon className={`w-4 h-4 ${s.color}`} />
             </div>
             <div>
@@ -190,8 +190,8 @@ function GapAnalysisContent() {
           </div>
         ) : (
           filteredGaps.map((gap, i) => (
-            <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-center gap-8 group hover:bg-white/[0.04] transition-all border-white/5 relative overflow-hidden">
-              <div className={`w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center ${gap.bg} border border-white/5`}>
+            <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-center gap-8 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] relative overflow-hidden">
+              <div className={`w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center ${gap.bg} border border-[var(--border-subtle)]`}>
                 {gap.priority === "High" ? <AlertTriangle className={`w-5 h-5 ${gap.color}`} /> :
                   gap.priority === "Med" ? <Info className={`w-5 h-5 ${gap.color}`} /> :
                     <CheckCircle2 className={`w-5 h-5 ${gap.color}`} />}
@@ -200,7 +200,7 @@ function GapAnalysisContent() {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
                   <h3 className="text-xl font-bold tracking-tight text-white">{gap.title}</h3>
-                  <span className={`text-[8px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${gap.priority === "High" ? "bg-red-500/5 text-red-500 border-red-500/10" : "bg-white/5 text-zinc-600 border-white/5"
+                  <span className={`text-[8px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${gap.priority === "High" ? "bg-red-500/5 text-red-500 border-red-500/10" : "bg-white/5 text-zinc-600 border-[var(--border-subtle)]"
                     }`}>
                     {gap.status}
                   </span>
@@ -235,11 +235,11 @@ function GapAnalysisContent() {
             {reports.map((report) => (
               <div
                 key={report.id}
-                className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-white/5 group cursor-pointer"
+                className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-[var(--border-subtle)] group cursor-pointer"
                 onClick={() => handleViewReport(report.id)}
               >
                 <div className="flex items-center gap-5">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
                     <span className="mono text-[10px] font-bold text-zinc-500">{Math.round(report.overallScore)}%</span>
                   </div>
                   <div>

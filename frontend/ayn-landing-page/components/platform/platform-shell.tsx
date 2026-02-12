@@ -32,7 +32,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext()
-  
+
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette()
 
@@ -151,7 +151,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <button
                 onClick={() => setSidebarOpen(true)}
                 title="Open sidebar"
-                className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[#0A0C10] rounded-xl border border-white/5 hover:border-white/10 group active:scale-95 shadow-xl"
+                className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[var(--sidebar-bg)] rounded-xl border border-white/5 hover:border-white/10 group active:scale-95 shadow-xl"
               >
                 <PanelLeft className="w-5 h-5 transition-transform duration-300 rotate-180" />
               </button>
@@ -160,14 +160,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <div className="hidden sm:flex items-center gap-2">
               <button
                 onClick={() => router.back()}
-                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/5"
+                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)]"
                 title="Go back"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => router.forward()}
-                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/5"
+                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)]"
                 title="Go forward"
               >
                 <ArrowRight className="w-4 h-4" />
@@ -181,9 +181,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 readOnly
                 onClick={() => setCommandPaletteOpen(true)}
                 placeholder="Search hub..."
-                className="w-full h-9 bg-white/5 border border-white/5 rounded-lg pl-11 pr-12 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 cursor-pointer text-white"
+                className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-11 pr-12 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-[var(--surface-card)] transition-all placeholder:text-zinc-600 cursor-pointer text-[var(--text-primary)]"
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-white/10 bg-white/5 pointer-events-none">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-light)] bg-[var(--surface)] pointer-events-none">
                 <Command className="w-2 h-2 text-zinc-600" />
                 <span className="text-[9px] font-bold text-zinc-600">K</span>
               </div>
@@ -191,8 +191,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
-            <button 
-              className="hidden md:block text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95" 
+            <button
+              className="hidden md:block text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95"
               title="History"
             >
               <History className="w-4 h-4" />
@@ -205,7 +205,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               >
                 <Bell className="w-4 h-4 group-hover:animate-swing" />
                 {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[#080A0F] shadow-sm">
+                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[var(--bg-deep)] shadow-sm">
                     {notificationCount}
                   </span>
                 )}
@@ -217,13 +217,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Activity</h3>
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={handleClearNotifications}
                         className="text-[10px] text-blue-500 font-bold hover:underline"
                       >
                         Mark all read
                       </button>
-                      <button 
+                      <button
                         onClick={() => setShowNotifications(false)}
                         className="p-1 text-zinc-600 hover:text-white transition-colors"
                       >
@@ -236,9 +236,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       <p className="text-center py-8 text-zinc-600 italic text-sm">Quiet for now.</p>
                     ) : (
                       notifications.slice(0, 8).map((n) => (
-                        <div 
-                          key={n.id} 
-                          className="flex gap-4 group cursor-pointer hover:bg-white/[0.02] p-2 rounded-xl transition-colors"
+                        <div
+                          key={n.id}
+                          className="flex gap-4 group cursor-pointer hover:bg-[var(--surface)] p-2 rounded-xl transition-colors"
                           onClick={() => handleDismissNotification(n.id)}
                         >
                           <div className={`w-1 h-10 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-800'}`} />
@@ -255,9 +255,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     )}
                   </div>
                   {notifications && notifications.length > 0 && (
-                    <button 
+                    <button
                       onClick={() => { setShowNotifications(false); router.push('/platform/notifications'); }}
-                      className="w-full mt-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center"
+                      className="w-full mt-4 py-3 rounded-2xl bg-[var(--surface)] hover:bg-[var(--surface-card)] transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center"
                     >
                       View All Activity
                     </button>
@@ -287,7 +287,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <Moon className="w-4 h-4" />
               )}
             </button>
-            <div className="w-px h-4 bg-white/10" />
+            <div className="w-px h-4 bg-[var(--border-light)]" />
             <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group">
               <span className="hidden sm:inline group-hover:text-white transition-colors">{user?.name ?? "Institution Alpha"}</span>
               <span className="sm:hidden font-mono">I-A</span>

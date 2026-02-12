@@ -211,7 +211,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       {/* Pro Tip */}
       <div className="mt-8 flex items-start gap-3 max-w-sm p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
         <Lightbulb className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-200/80 leading-relaxed">
+        <p className="text-xs text-amber-700 dark:text-amber-200/80 leading-relaxed">
           {config.tip}
         </p>
       </div>
@@ -219,20 +219,20 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
   )
 }
 
-export function InlineEmptyState({ 
-  icon: Icon, 
-  title, 
-  description, 
+export function InlineEmptyState({
+  icon: Icon,
+  title,
+  description,
   action,
-}: { 
+}: {
   icon: React.ElementType
   title: string
   description: string
   action?: React.ReactNode
 }) {
   return (
-    <div className="glass-panel rounded-[32px] p-12 border-white/5 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto mb-5">
+    <div className="glass-panel rounded-[32px] p-12 border-[var(--border-subtle)] text-center">
+      <div className="w-14 h-14 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-5">
         <Icon className="w-6 h-6 text-zinc-500" />
       </div>
       <h4 className="text-lg font-bold text-white mb-2">{title}</h4>

@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { 
-  Activity, 
-  CheckCircle2, 
-  AlertCircle, 
-  Info, 
+import {
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+  Info,
   Zap,
   Cpu,
   Database,
@@ -105,7 +105,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
     // Simulate real-time log updates
     intervalRef.current = setInterval(() => {
       if (!isLive) return
-      
+
       setLogs(prev => {
         const now = new Date()
         // Occasionally add a new log entry
@@ -144,7 +144,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
   }
 
   return (
-    <div className={cn("glass-panel rounded-[32px] p-6 border-white/5", className)}>
+    <div className={cn("glass-panel rounded-[32px] p-6 border-[var(--border-subtle)]", className)}>
       {showHeader && (
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -161,9 +161,9 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               onClick={() => setIsLive(!isLive)}
               className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
-                isLive 
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                  : "bg-zinc-800 text-zinc-500 border border-white/5"
+                isLive
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-zinc-800 text-zinc-500 border border-[var(--border-subtle)]"
               )}
             >
               <span className={cn("w-1.5 h-1.5 rounded-full", isLive && "animate-pulse bg-emerald-400")} />
@@ -184,8 +184,8 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               key={log.id}
               className={cn(
                 "group flex items-start gap-3 p-3 rounded-xl transition-all",
-                "hover:bg-white/[0.03] cursor-default",
-                isNew && "bg-white/[0.02]"
+                "hover:bg-[var(--surface)] cursor-default",
+                isNew && "bg-white/[0.01]"
               )}
             >
               <div className={cn(
@@ -215,7 +215,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
       </div>
 
       {/* Status Bar */}
-      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+      <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Cpu className="w-3.5 h-3.5 text-zinc-500" />
           <span className="text-[10px] text-zinc-500">Horus Neural Link</span>

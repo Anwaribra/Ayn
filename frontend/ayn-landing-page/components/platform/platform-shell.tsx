@@ -83,11 +83,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
+    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
       {/* Cinematic background - V3 style */}
-      <div className="cinematic-bg" />
+      <div className="cinematic-bg col-span-full row-span-full" />
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed width, no overlap */}
       <PlatformSidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(false)}
@@ -97,7 +97,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -110,8 +110,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 overflow-hidden transition-all duration-300 ease-in-out">
+      {/* Main Content - Starts after sidebar, no overlap */}
+      <main className="flex flex-col relative z-10 overflow-hidden min-w-0">
         {/* App Title — subtle depth */}
         <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#090B11]/40">
           <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">

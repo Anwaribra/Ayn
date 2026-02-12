@@ -20,10 +20,10 @@
   --accent-red: #C9424A;
   --accent-red-soft: #A83B42;
 
-  /* Text hierarchy */
-  --text-primary: #F1F5F9;
-  --text-secondary: #8B95A8;
-  --text-tertiary: #4A5570;
+  /* Text hierarchy - Improved contrast */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #64748B;
 
   /* Borders and depth */
   --border-subtle: rgba(255, 255, 255, 0.08);
@@ -276,4 +276,72 @@
 
 [data-section="platform"] .btn-destructive:hover {
   background: #C9424A;
+}
+
+/* ─── Improved Hover States & Transitions ─────────────────────────────────── */
+[data-section="platform"] .transition-all-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-section="platform"] .hover-surface:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-section="platform"] .hover-text-primary:hover {
+  color: #F8FAFC;
+}
+
+[data-section="platform"] .hover-text-brand:hover {
+  color: #3B6FD9;
+}
+
+[data-section="platform"] .focus-ring:focus-visible {
+  outline: none;
+  ring: 2px;
+  ring-color: rgba(59, 111, 217, 0.5);
+  ring-offset: 2px;
+  ring-offset-color: #07090E;
+}
+
+/* Interactive element base styles */
+[data-section="platform"] .interactive {
+  transition: all 0.2s ease;
+}
+
+[data-section="platform"] .interactive:hover {
+  transform: translateY(-1px);
+}
+
+[data-section="platform"] .interactive:active {
+  transform: translateY(0);
+}
+
+/* Button hover enhancement */
+[data-section="platform"] button:not(:disabled),
+[data-section="platform"] [role="button"]:not(:disabled) {
+  transition: all 0.2s ease;
+}
+
+[data-section="platform"] button:not(:disabled):hover,
+[data-section="platform"] [role="button"]:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+[data-section="platform"] button:not(:disabled):active,
+[data-section="platform"] [role="button"]:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* Link hover enhancement */
+[data-section="platform"] a {
+  transition: color 0.2s ease;
+}
+
+/* Card hover enhancement */
+[data-section="platform"] .glass-panel {
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+[data-section="platform"] .glass-panel:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }

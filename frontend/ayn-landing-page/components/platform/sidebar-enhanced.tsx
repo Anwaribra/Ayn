@@ -39,11 +39,13 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`
-        fixed md:relative inset-y-0 left-0 bg-[#05070A] h-full flex flex-col z-30 select-none
-        transition-all duration-300 ease-in-out border-r border-white/[0.06]
-        ${open ? "w-[240px] translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 pointer-events-none"}
-      `}
+      className={cn(
+        "fixed md:sticky md:top-0 md:left-0 md:h-screen bg-[#05070A] flex flex-col z-20 select-none",
+        "transition-all duration-300 ease-in-out border-r border-white/[0.06] w-[240px]",
+        open 
+          ? "translate-x-0 opacity-100 pointer-events-auto" 
+          : "-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:pointer-events-none opacity-0 pointer-events-none"
+      )}
     >
       {/* Branding & Toggle — AYN Logo */}
       <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">

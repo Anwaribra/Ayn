@@ -180,7 +180,7 @@ export default function FloatingAIBar() {
   return (
     <div
       ref={barRef}
-      className="fixed bottom-5 left-1/2 z-40 w-full max-w-xl -translate-x-1/2 px-4"
+      className="fixed bottom-5 left-1/2 z-30 w-full max-w-xl -translate-x-1/2 px-4"
     >
       <AnimatePresence>
         {isOpen && answer && (

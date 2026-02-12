@@ -148,19 +148,6 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
           <span className="text-[13px] font-medium">Settings</span>
         </Link>
 
-        {/* System Status Widget */}
-        <div className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Horus Active</span>
-          </div>
-          <div className="flex items-center gap-2 text-[9px] text-zinc-600">
-            <span className="mono">v2.4.1</span>
-            <span>•</span>
-            <span>Synced</span>
-          </div>
-        </div>
-
         <div className="pt-6 border-t border-white/[0.05] flex items-center gap-3 px-4 whitespace-nowrap">
           <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-white/5 group-hover:ring-blue-500/30 transition-all">
             <UserCircle2 className="w-5 h-5 text-zinc-500" />

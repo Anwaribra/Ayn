@@ -11,7 +11,8 @@ import {
   ArrowRight,
   Command,
   PanelLeft,
-  HelpCircle,
+  Sun,
+  Moon,
   X,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform/sidebar-enhanced"
@@ -22,16 +23,33 @@ import { api } from "@/lib/api"
 import { useCommandPaletteContext } from "@/components/platform/command-palette-provider"
 import { useCommandPalette } from "@/hooks/use-command-palette"
 import type { Notification } from "@/types"
+import { cn } from "@/lib/utils"
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [platformTheme, setPlatformTheme] = useState<"dark" | "light">("dark")
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext()
   
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette()
+
+  // Load saved platform theme (light/dark) on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem("platform-theme")
+    if (stored === "light" || stored === "dark") {
+      setPlatformTheme(stored)
+    }
+  }, [])
+
+  // Persist theme choice
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem("platform-theme", platformTheme)
+  }, [platformTheme])
 
   // Auto-close sidebar on small screens  
   useEffect(() => {
@@ -83,7 +101,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#07090E] text-[#F1F5F9] overflow-hidden selection:bg-blue-500/30 relative">
+    <div
+      className={cn(
+        "flex h-screen overflow-hidden selection:bg-blue-500/30 relative transition-colors duration-300",
+        platformTheme === "light"
+          ? "bg-background text-foreground"
+          : "bg-[#07090E] text-[#F1F5F9]",
+      )}
+    >
       {/* Cinematic background - V3 style */}
       <div className="cinematic-bg fixed inset-0 pointer-events-none" />
 
@@ -113,13 +138,27 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       {/* Main Content - Flexible, centered in remaining space */}
       <main className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
         {/* App Title — subtle depth */}
-        <div className="px-6 md:px-10 pt-4 pb-1 border-b border-white/[0.04] bg-[#090B11]/40">
+        <div
+          className={cn(
+            "px-6 md:px-10 pt-4 pb-1 border-b",
+            platformTheme === "light"
+              ? "border-zinc-200/80 bg-white/80"
+              : "border-white/[0.04] bg-[#090B11]/40",
+          )}
+        >
           <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">
             AYN — Education Quality & Compliance
           </p>
         </div>
         {/* TopBar — V3 style */}
-        <header className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-white/[0.06] bg-[#080A0F]/90 backdrop-blur-xl">
+        <header
+          className={cn(
+            "h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b backdrop-blur-xl transition-colors duration-300",
+            platformTheme === "light"
+              ? "border-zinc-200/80 bg-white/80"
+              : "border-white/[0.06] bg-[#080A0F]/90",
+          )}
+        >
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
             {!sidebarOpen && (
@@ -240,11 +279,27 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 </div>
               )}
             </div>
-            <button 
-              className="text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95" 
-              title="Help"
+            <button
+              onClick={() =>
+                setPlatformTheme(prev => (prev === "dark" ? "light" : "dark"))
+              }
+              className={cn(
+                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
+                platformTheme === "light"
+                  ? "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70"
+                  : "text-zinc-500 hover:text-white hover:bg-white/5",
+              )}
+              title={
+                platformTheme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
             >
-              <HelpCircle className="w-4 h-4" />
+              {platformTheme === "dark" ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
             </button>
             <div className="w-px h-4 bg-white/10" />
             <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group">
@@ -255,7 +310,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         </header>
 
         {/* Main content area - V3 surface; pb-32 clears fixed bottom search bar */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth bg-[#07090E]">
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300",
+            platformTheme === "light" ? "bg-background" : "bg-[#07090E]",
+          )}
+        >
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

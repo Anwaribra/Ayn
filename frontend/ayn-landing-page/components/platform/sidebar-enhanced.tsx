@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
-import { AynLogo } from "@/components/platform/ayn-logo"
+import { AynLogo } from "@/components/ayn-logo"
 
 interface SidebarProps {
   open: boolean
@@ -49,7 +49,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
     >
       {/* Branding & Toggle — AYN Logo */}
       <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
-        <AynLogo />
+        <AynLogo size="sm" withGlow={false} heroStyle className="text-white" />
 
         <button
           onClick={onToggle}

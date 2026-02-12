@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
@@ -159,7 +159,7 @@ function ArchiveContent() {
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <div className="px-2 py-0.5 rounded bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
-                <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Vault Layer</span>
+                <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Vault Layer</span>
               </div>
               <div className="h-px w-6 bg-[var(--border-subtle)]" />
               <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em]">Data Retention</span>
@@ -194,7 +194,7 @@ function ArchiveContent() {
         ].map((stat, i) => (
           <div key={i} className="glass-panel p-5 rounded-2xl border-[var(--border-subtle)]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">{stat.label}</span>
+              <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">{stat.label}</span>
               <stat.icon className="w-3.5 h-3.5 text-zinc-600" />
             </div>
             <p className="text-xl font-black italic text-[var(--text-primary)]">{stat.value}</p>
@@ -261,13 +261,13 @@ function ArchiveContent() {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-1.5 opacity-70">
                           <ExternalLink className="w-3 h-3 text-zinc-500" />
-                          <span className="text-[11px] font-medium text-[var(--text-secondary)]">{item.originalLocation}</span>
+                          <span className="text-xs font-medium text-[var(--text-secondary)]">{item.originalLocation}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-[var(--text-secondary)]">{formatDate(item.deletedAt).split(",")[0]}</span>
-                          <span className="text-[9px] text-[var(--text-tertiary)] font-medium uppercase">{formatDate(item.deletedAt).split(",")[1]}</span>
+                          <span className="text-xs font-bold text-[var(--text-secondary)]">{formatDate(item.deletedAt).split(",")[0]}</span>
+                          <span className="text-[10px] text-[var(--text-tertiary)] font-medium uppercase">{formatDate(item.deletedAt).split(",")[1]}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5">
@@ -275,7 +275,7 @@ function ArchiveContent() {
                           <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center border border-white/5">
                             <User className="w-2.5 h-2.5 text-zinc-500" />
                           </div>
-                          <span className="text-[11px] font-medium text-[var(--text-secondary)]">{item.deletedBy}</span>
+                          <span className="text-xs font-medium text-[var(--text-secondary)]">{item.deletedBy}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right">
@@ -424,3 +424,4 @@ function ArchiveContent() {
     </div>
   )
 }
+

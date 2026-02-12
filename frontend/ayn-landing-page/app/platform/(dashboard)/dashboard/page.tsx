@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -47,9 +47,9 @@ function DashboardContent() {
     () => api.getGapAnalyses(),
   )
 
-  const healthScore = metrics?.assessmentProgressPercentage ?? 0
+  const alignmentScore = metrics?.alignmentPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0
-  const completedCriteria = metrics?.completedCriteriaCount ?? 0
+  const alignedCriteria = metrics?.alignedCriteriaCount ?? 0
   const activeGaps = gapAnalyses?.length ?? 0
   const recentNotifs = notifications?.slice(0, 4) ?? []
 
@@ -66,7 +66,7 @@ function DashboardContent() {
     }))
 
   // Calculate stroke offset for SVG circle (754 total circumference, 120px radius)
-  const strokeOffset = 754 - (754 * healthScore) / 100
+  const strokeOffset = 754 - (754 * alignmentScore) / 100
 
   return (
     <div className="animate-fade-in-up space-y-12 pb-20">
@@ -83,7 +83,7 @@ function DashboardContent() {
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ayn Core Live</span>
                   </div>
                   <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">
-                    Sync: {isLoading ? "..." : "—"}
+                    Sync: Real-time
                   </span>
                 </div>
 
@@ -94,8 +94,8 @@ function DashboardContent() {
 
                 <p className="text-lg text-[var(--text-secondary)] font-medium mb-10 max-w-sm leading-relaxed">
                   {needsAuditStandard
-                    ? <>Compliance drift detected. Horus recommends an audit of <Link href="/platform/gap-analysis" className="text-blue-400 hover:underline">{(needsAuditStandard as { standardTitle: string }).standardTitle}</Link> to mitigate drift.</>
-                    : "Compliance is holding steady. Run a gap analysis to assess framework alignment."}
+                    ? <>Alignment drift detected. Horus recommends a self-review of <Link href="/platform/gap-analysis" className="text-blue-400 hover:underline">{(needsAuditStandard as { standardTitle: string }).standardTitle}</Link> to ensure consistency.</>
+                    : "Your compliance workspace is ready. Upload evidence or run an alignment analysis to begin."}
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -104,7 +104,7 @@ function DashboardContent() {
                     className="flex items-center gap-3 px-8 py-4 bg-white text-black rounded-3xl font-bold text-sm hover:scale-105 transition-all active:scale-95 shadow-2xl shadow-white/10"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    Launch Global Audit
+                    Launch Alignment Review
                   </Link>
                   <Link
                     href="/platform/evidence"
@@ -135,11 +135,11 @@ function DashboardContent() {
                     </linearGradient>
                   </defs>
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center" role="img" aria-label={`Health Index: ${Math.round(healthScore)} percent`}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center" role="img" aria-label={`Alignment Index: ${Math.round(alignmentScore)} percent`}>
                   <span className="mono text-7xl font-black tracking-tighter text-[var(--text-primary)]">
-                    {isLoading ? "—" : Math.round(healthScore)}
+                    {isLoading ? "—" : Math.round(alignmentScore)}
                   </span>
-                  <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] mt-2">Health Index</span>
+                  <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] mt-2">Alignment Index</span>
                 </div>
               </div>
 
@@ -171,12 +171,12 @@ function DashboardContent() {
             <h2 className="text-3xl font-black tracking-tight italic">Executive Pulse</h2>
             <div className="h-px w-20 bg-[var(--border-subtle)]" />
           </div>
-          <button
-            onClick={() => toast.info('Report download will be available after your next completed gap analysis.')}
+          <Link
+            href="/platform/analytics"
             className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline"
           >
-            Download Report
-          </button>
+            View Reports
+          </Link>
         </div>
 
         {isLoading ? (
@@ -184,12 +184,12 @@ function DashboardContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
-              { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10", href: "/platform/standards" },
+              { label: "Verified Criteria", value: String(alignedCriteria), sub: "Alignment", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10", href: "/platform/standards" },
               { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10", href: "/platform/evidence" },
               { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10", href: "/platform/gap-analysis" },
-              { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10", href: "/platform/dashboard" },
+              { label: "Horus AI", value: "Online", sub: "Intelligence Layer", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10", href: "/platform/horus-ai" },
             ].map((m, i) => (
-              <Link key={i} href={m.href} className="group">
+              <Link key={i} href={m.href} className="group animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}>
                 <div className={["glass-panel p-6 md:p-8 rounded-[32px] md:rounded-[40px] flex flex-col justify-between min-h-[200px] sm:aspect-square transition-all duration-500",
                   "group-hover:-translate-y-3 group-hover:bg-[var(--surface)] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
                   <div className="flex justify-between items-start">
@@ -201,7 +201,7 @@ function DashboardContent() {
                   <div>
                     <div className="mono text-4xl md:text-6xl font-black tracking-tighter mb-2 text-[var(--text-primary)]">{m.value}</div>
                     <div className="space-y-1">
-                      <div className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">{m.label}</div>
+                      <div className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">{m.label}</div>
                       <div className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-tighter italic">{m.sub}</div>
                     </div>
                   </div>
@@ -228,7 +228,7 @@ function DashboardContent() {
             </div>
           ) : (
             suggestionsFromData.map((item, i) => (
-              <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] flex flex-col justify-between">
+              <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] flex flex-col justify-between animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                     <item.icon className="w-5 h-5 text-blue-400" />
@@ -239,7 +239,7 @@ function DashboardContent() {
                   <h4 className="text-xl font-bold text-[var(--text-primary)] mb-2 leading-tight">{item.title}</h4>
                   <p className="text-sm text-[var(--text-secondary)] mb-6 font-medium">{item.desc}</p>
                   <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-[var(--text-primary)] transition-colors group/btn">
-                    Initiate Neural Procedure <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                    Review Framework <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
                   </span>
                 </div>
               </Link>
@@ -251,3 +251,4 @@ function DashboardContent() {
     </div>
   )
 }
+

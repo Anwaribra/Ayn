@@ -1,6 +1,3 @@
-// AI types
+import { AIResponse as ContractAIResponse } from "./contracts"
 
-export interface AIResponse {
-  result: string
-  model: string
-}
+export type AIResponse = ContractAIResponse

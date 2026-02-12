@@ -5,10 +5,10 @@ from typing import Optional
 
 class DashboardMetricsResponse(BaseModel):
     """Dashboard metrics response."""
-    completedCriteriaCount: int = Field(..., description="Number of criteria with completed answers")
+    alignedCriteriaCount: int = Field(..., description="Number of criteria with linked evidence")
     evidenceCount: int = Field(..., description="Total number of evidence files")
-    assessmentProgressPercentage: float = Field(..., ge=0, le=100, description="Overall assessment progress percentage")
-    totalAssessments: int = Field(..., description="Total number of assessments")
+    alignmentPercentage: float = Field(..., ge=0, le=100, description="Overall alignment coverage percentage")
+    totalGapAnalyses: int = Field(..., description="Total number of alignment analyses performed")
 
     class Config:
         json_schema_extra = {

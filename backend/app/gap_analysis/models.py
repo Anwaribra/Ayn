@@ -9,13 +9,11 @@ from datetime import datetime
 class GapAnalysisRequest(BaseModel):
     """Request model for generating a gap analysis."""
     standardId: str = Field(..., description="Standard ID to analyze against")
-    assessmentId: Optional[str] = Field(None, description="Optional specific assessment to analyze")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "standardId": "standard-uuid",
-                "assessmentId": "assessment-uuid"
+                "standardId": "standard-uuid"
             }
         }
 
@@ -31,7 +29,7 @@ class GapItem(BaseModel):
     """Individual gap item for a criterion."""
     criterionId: str
     criterionTitle: str
-    status: str  # "met", "partially_met", "not_met", "no_evidence"
+    status: str  # "aligned", "partially_aligned", "needs_improvement", "no_evidence"
     currentState: str  # AI summary of what exists
     gap: str  # What's missing
     recommendation: str  # AI recommendation
@@ -44,7 +42,6 @@ class GapAnalysisResponse(BaseModel):
     institutionId: str
     standardId: str
     standardTitle: str
-    assessmentId: Optional[str] = None
     overallScore: float  # 0-100
     summary: str  # AI executive summary
     gaps: List[GapItem]

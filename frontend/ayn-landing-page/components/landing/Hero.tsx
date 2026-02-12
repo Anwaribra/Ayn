@@ -165,7 +165,7 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
 
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
-  
+
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
       "Ask me about quality compliance",
@@ -187,7 +187,7 @@ export function Hero() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               {/* Main headline */}
-              <motion.h1 
+              <motion.h1
                 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -197,9 +197,9 @@ export function Hero() {
                   Ayn
                 </span>
               </motion.h1>
-              
+
               {/* Static subtitle */}
-              <motion.h2 
+              <motion.h2
                 className="text-xl md:text-2xl font-medium mb-2 text-muted-foreground tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -207,7 +207,7 @@ export function Hero() {
               >
                 Meet Horus AI — Your Quality Intelligence Assistant
               </motion.h2>
-              
+
               {/* Animated typewriter subtitle */}
               <motion.div
                 className="h-8 mb-4"
@@ -220,8 +220,8 @@ export function Hero() {
                   <span className="inline-block w-[2px] h-5 bg-[var(--brand)] ml-0.5 animate-pulse" />
                 </span>
               </motion.div>
-              
-              <motion.p 
+
+              <motion.p
                 className="text-sm text-muted-foreground/80 mb-8 max-w-md mx-auto lg:mx-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -229,8 +229,8 @@ export function Hero() {
               >
                 Talk to Horus AI in natural language, with full control over your quality system. Upload evidence, ask compliance questions, generate reports — Horus understands your institution and guides every step.
               </motion.p>
-              
-              <motion.div 
+
+              <motion.div
                 className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -252,7 +252,7 @@ export function Hero() {
                   See How It Works
                 </Button>
               </motion.div>
-              
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -271,7 +271,7 @@ export function Hero() {
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-primary" />
-                  <span>Accreditation Ready</span>
+                  <span>Framework Ready</span>
                 </div>
               </motion.div>
             </div>

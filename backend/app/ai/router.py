@@ -1,10 +1,11 @@
 """AI router - Fast & Simple."""
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Request
 from typing import List
 from app.auth.dependencies import require_roles
 from app.ai.models import ChatRequest, AIResponse
 from app.ai.service import get_gemini_client
+from app.core.rate_limit import limiter
 import base64
 
 router = APIRouter()
@@ -13,7 +14,9 @@ ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
 
 
 @router.post("/chat", response_model=AIResponse)
+@limiter.limit("10/minute")
 async def chat(
+    request: Request,
     body: ChatRequest,
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
 ):
@@ -25,7 +28,9 @@ async def chat(
 
 
 @router.post("/chat-with-files", response_model=AIResponse)
+@limiter.limit("5/minute")
 async def chat_with_files(
+    request: Request,
     message: str = Form(...),
     files: List[UploadFile] = File(...),
     current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))

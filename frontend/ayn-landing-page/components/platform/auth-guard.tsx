@@ -13,7 +13,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Store the current path for redirect after login
-      if (pathname !== "/login" && pathname !== "/platform/login") {
+      if (pathname !== "/login") {
         sessionStorage.setItem("redirectAfterLogin", pathname)
       }
       router.replace("/login")

@@ -4,6 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "scripts": {
+    "generate-contracts": "python3 ../../backend/scripts/generate_contracts.py",
+    "prebuild": "pnpm run generate-contracts",
     "build": "next build",
     "build:landing": "bash build-landing.sh",
     "dev": "next dev",

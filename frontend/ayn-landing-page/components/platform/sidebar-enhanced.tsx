@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -33,8 +33,8 @@ const menuItems = [
   { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
   { id: "evidence", icon: Shield, label: "Evidence Library", href: "/platform/evidence" },
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
-  { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
-  { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/analytics" },
+  { id: "gap-analysis", icon: AlertTriangle, label: "Alignment Analysis", href: "/platform/gap-analysis" },
+  { id: "reports", icon: BarChart3, label: "Insight Hub", href: "/platform/analytics" },
   { id: "archive", icon: Archive, label: "Archive", href: "/platform/archive" },
 ]
 
@@ -129,7 +129,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
 
               {/* Label */}
               <span className={cn(
-                "text-[13px] font-medium tracking-wide truncate transition-colors duration-200",
+                "text-sm font-medium tracking-wide truncate transition-colors duration-200",
                 isActive ? "text-[var(--sidebar-foreground)]" : "group-hover:text-[var(--sidebar-foreground)]"
               )}>
                 {item.label}
@@ -174,7 +174,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
               "w-[18px] h-[18px] flex-shrink-0 transition-all duration-200",
               pathname.includes("settings") ? "text-blue-400" : "text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] group-hover:rotate-45"
             )} />
-            <span className="text-[13px] font-medium">Settings</span>
+            <span className="text-sm font-medium">Settings</span>
           </Link>
         </div>
 
@@ -196,7 +196,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
               <UserCircle2 className="w-6 h-6 text-zinc-500 group-hover/profile:text-blue-500 transition-colors" />
             </div>
             <div className="flex flex-col overflow-hidden min-w-0 flex-1">
-              <span className="text-[13px] font-bold text-[var(--text-primary)] truncate group-hover/profile:text-blue-400 transition-colors leading-tight">
+              <span className="text-sm font-bold text-[var(--text-primary)] truncate group-hover/profile:text-blue-400 transition-colors leading-tight">
                 {user?.name ?? "QA Director"}
               </span>
               {user?.role && (
@@ -220,7 +220,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
             aria-label="Log out"
           >
             <LogOut className="w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 group-hover:text-red-400" />
-            <span className="text-[13px] font-medium transition-colors duration-200 group-hover:text-red-400">
+            <span className="text-sm font-medium transition-colors duration-200 group-hover:text-red-400">
               Log Out
             </span>
           </button>
@@ -229,3 +229,4 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
     </aside>
   )
 }
+

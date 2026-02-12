@@ -1,8 +1,3 @@
-// Dashboard types
+import { DashboardMetricsResponse } from "./contracts"
 
-export interface DashboardMetrics {
-  completedCriteriaCount: number
-  evidenceCount: number
-  assessmentProgressPercentage: number
-  totalAssessments: number
-}
+export type DashboardMetrics = DashboardMetricsResponse

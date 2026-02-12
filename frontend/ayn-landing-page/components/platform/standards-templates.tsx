@@ -19,102 +19,35 @@ import {
   FileCheck,
   Target,
   Clock,
+  Loader2,
 } from "lucide-react"
+import useSWR from "swr"
+import { api } from "@/lib/api"
+import { type Standard } from "@/types/standards"
 
-interface Template {
-  id: string
-  name: string
-  code: string
-  category: string
-  description: string
-  region: string
-  criteriaCount: number
-  icon: React.ElementType
-  color: string
-  features: string[]
-  estimatedSetup: string
+const iconMap: Record<string, React.ElementType> = {
+  GraduationCap,
+  Globe,
+  Building2,
+  Shield,
+  Award,
+  FileCheck,
+  BookOpen,
 }
 
-const templates: Template[] = [
-  {
-    id: "ncaaa",
-    name: "NCAAA Standards",
-    code: "NCAAA-2024",
-    category: "Higher Education",
-    description: "National Commission for Academic Accreditation and Assessment standards for Saudi Arabian universities and colleges.",
-    region: "Saudi Arabia",
-    criteriaCount: 11,
-    icon: GraduationCap,
-    color: "from-emerald-600 to-teal-600",
-    features: ["Institutional Effectiveness", "Learning Resources", "Research Standards", "Community Engagement"],
-    estimatedSetup: "2-3 days",
-  },
-  {
-    id: "iso21001",
-    name: "ISO 21001:2018",
-    code: "ISO-21001",
-    category: "International",
-    description: "Educational organizations management systems. International standard for educational management excellence.",
-    region: "International",
-    criteriaCount: 42,
-    icon: Globe,
-    color: "from-blue-600 to-indigo-600",
-    features: ["Learner-Centered Approach", "Lifelong Learning", "Social Responsibility", "Customized Learning"],
-    estimatedSetup: "5-7 days",
-  },
-  {
-    id: "advanced",
-    name: "AdvancED Standards",
-    code: "ADV-ED",
-    category: "K-12 Education",
-    description: "Comprehensive K-12 accreditation standards used by 40,000+ institutions across 80 countries.",
-    region: "Global",
-    criteriaCount: 31,
-    icon: Building2,
-    color: "from-amber-600 to-orange-600",
-    features: ["Leadership Capacity", "Learning Progress", "Resource Utilization", "Stakeholder Engagement"],
-    estimatedSetup: "3-5 days",
-  },
-  {
-    id: "moe",
-    name: "Ministry of Education UAE",
-    code: "MOE-UAE",
-    category: "Government Framework",
-    description: "United Arab Emirates Ministry of Education standards for institutional licensing and accreditation.",
-    region: "UAE",
-    criteriaCount: 18,
-    icon: Shield,
-    color: "from-rose-600 to-pink-600",
-    features: ["Quality Assurance", "Student Welfare", "Academic Programs", "Faculty Standards"],
-    estimatedSetup: "2-4 days",
-  },
-  {
-    id: "qaa",
-    name: "QAA UK Standards",
-    code: "QAA-UK",
-    category: "Higher Education",
-    description: "Quality Assurance Agency for Higher Education standards used across UK universities.",
-    region: "United Kingdom",
-    criteriaCount: 28,
-    icon: Award,
-    color: "from-purple-600 to-violet-600",
-    features: ["Academic Standards", "Quality Enhancement", "Student Voice", "Research Integrity"],
-    estimatedSetup: "4-6 days",
-  },
-  {
-    id: "naqaa",
-    name: "NAQAAE Egypt",
-    code: "NAQAAE-EG",
-    category: "National Authority",
-    description: "National Authority for Quality Assurance and Accreditation of Education framework for Egyptian institutions.",
-    region: "Egypt",
-    criteriaCount: 15,
-    icon: FileCheck,
-    color: "from-cyan-600 to-blue-600",
-    features: ["Institutional Mission", "Governance Structure", "Educational Programs", "Assessment Systems"],
-    estimatedSetup: "3-4 days",
-  },
-]
+interface Template extends Omit<Standard, "description" | "code" | "category" | "region" | "estimatedSetup"> {
+  name: string
+  description: string
+  code: string
+  category: string
+  region: string
+  estimatedSetup: string
+  criteriaCount: number
+  iconComponent: React.ElementType
+  color: string
+}
+
+// Hardcoded fallback or reference moved to database seed
 
 interface StandardsTemplatesProps {
   isOpen: boolean
@@ -127,12 +60,27 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
+  const { data: rawStandards, isLoading } = useSWR(isOpen ? "standards" : null, () => api.getStandards())
+
+  const templates: Template[] = (rawStandards || []).map(std => ({
+    ...std,
+    name: std.title,
+    code: std.code || "",
+    category: std.category || "Uncategorized",
+    description: std.description || "",
+    region: std.region || "Unknown",
+    features: std.features || [],
+    estimatedSetup: std.estimatedSetup || "Unknown",
+    iconComponent: iconMap[std.icon || ""] || GraduationCap,
+    color: std.color || "from-blue-600 to-indigo-600"
+  }))
+
   const categories = Array.from(new Set(templates.map(t => t.category)))
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.code.toLowerCase().includes(searchQuery.toLowerCase())
+      template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.code.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !selectedCategory || template.category === selectedCategory
     return matchesSearch && matchesCategory
   })
@@ -242,7 +190,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                             "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0",
                             template.color
                           )}>
-                            <Icon className="w-6 h-6 text-white" />
+                            <template.iconComponent className="w-6 h-6 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">

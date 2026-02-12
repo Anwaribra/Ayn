@@ -203,7 +203,7 @@ class OpenRouterClient:
             context_hints = {
                 "evidence_analysis": "\n\nThe user is currently analyzing evidence documents. Focus on evaluating evidence against accreditation criteria.",
                 "gap_analysis": "\n\nThe user is performing a gap analysis. Focus on identifying gaps between current state and standard requirements.",
-                "assessment_help": "\n\nThe user needs help with assessment answers. Guide them to provide comprehensive, evidence-backed responses.",
+                "alignment_help": "\n\nThe user needs help with framework alignment. Guide them to provide comprehensive, evidence-backed responses.",
                 "self_study": "\n\nThe user is preparing a self-study report. Help structure their documentation for accreditation review.",
             }
             system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")
@@ -340,7 +340,7 @@ class GeminiClient:
             context_hints = {
                 "evidence_analysis": "\n\nThe user is currently analyzing evidence documents. Focus on evaluating evidence against accreditation criteria.",
                 "gap_analysis": "\n\nThe user is performing a gap analysis. Focus on identifying gaps between current state and standard requirements.",
-                "assessment_help": "\n\nThe user needs help with assessment answers. Guide them to provide comprehensive, evidence-backed responses.",
+                "alignment_help": "\n\nThe user needs help with framework alignment. Guide them to provide comprehensive, evidence-backed responses.",
                 "self_study": "\n\nThe user is preparing a self-study report. Help structure their documentation for accreditation review.",
             }
             system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")

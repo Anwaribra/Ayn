@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -45,7 +45,7 @@ function SettingsContent() {
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="px-2 py-0.5 rounded bg-zinc-800 border border-[var(--border-subtle)]">
-              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Admin Control</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Admin Control</span>
             </div>
             <div className="h-px w-6 bg-zinc-900" />
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Institutional Command</span>
@@ -63,8 +63,8 @@ function SettingsContent() {
               <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="flex-1">
-              <h3 className="text-[15px] font-bold text-[var(--text-primary)] mb-0.5">{item.label}</h3>
-              <p className="text-[11px] text-[var(--text-secondary)] font-medium uppercase tracking-tight">{item.desc}</p>
+              <h3 className="text-sm font-bold text-[var(--text-primary)] mb-0.5">{item.label}</h3>
+              <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-tight">{item.desc}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
           </Link>
@@ -82,7 +82,7 @@ function SettingsContent() {
           </p>
           <button
             onClick={() => setShowPurgeModal(true)}
-            className="px-6 py-2.5 bg-[#B94A4A]/10 text-[#B94A4A] border border-[#B94A4A]/25 rounded-lg text-[11px] font-medium uppercase tracking-widest hover:bg-[#B94A4A] hover:text-white transition-all"
+            className="px-6 py-2.5 bg-[#B94A4A]/10 text-[#B94A4A] border border-[#B94A4A]/25 rounded-lg text-xs font-medium uppercase tracking-widest hover:bg-[#B94A4A] hover:text-white transition-all"
           >
             Initiate Purge Protocol
           </button>
@@ -102,9 +102,9 @@ function SettingsContent() {
 
       <div className="mt-12 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <span className="text-[9px] font-bold text-zinc-800 uppercase tracking-[0.3em]">Ayn Intelligence Hub</span>
+          <span className="text-[10px] font-bold text-zinc-800 uppercase tracking-[0.3em]">Ayn Intelligence Hub</span>
           <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
-          <span className="text-[9px] font-bold text-zinc-800 uppercase tracking-[0.3em]">Institutional Node 42</span>
+          <span className="text-[10px] font-bold text-zinc-800 uppercase tracking-[0.3em]">Institutional Node 42</span>
         </div>
         <span className="mono text-[10px] text-zinc-800 font-bold">OS_V2.4.12_SYNC_OK</span>
       </div>
@@ -152,13 +152,13 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-zinc-400 text-[11px] font-medium uppercase tracking-widest hover:bg-[var(--surface)] hover:text-zinc-200 transition-all"
+            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-zinc-400 text-xs font-medium uppercase tracking-widest hover:bg-[var(--surface)] hover:text-zinc-200 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-lg bg-[#B94A4A] text-white text-[11px] font-medium uppercase tracking-widest hover:bg-[#C25656] transition-all"
+            className="flex-1 py-2.5 rounded-lg bg-[#B94A4A] text-white text-xs font-medium uppercase tracking-widest hover:bg-[#C25656] transition-all"
           >
             Confirm Purge
           </button>
@@ -167,3 +167,4 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
     </div>
   )
 }
+

@@ -15,13 +15,12 @@ model User {
   name          String
   email         String   @unique
   password      String
-  role          Role     @default(TEACHER)
+  role          Role?
   institutionId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  assessments   Assessment[]
   evidence      Evidence[] @relation("EvidenceUploader")
   notifications Notification[]
 
@@ -40,6 +39,10 @@ enum Role {
   ADMIN
   TEACHER
   AUDITOR
+  STUDENT
+  UNIVERSITY
+  INSTITUTION
+  OTHER
 }
 
 // Institution Model
@@ -51,7 +54,6 @@ model Institution {
   updatedAt   DateTime @updatedAt
 
   users                 User[]
-  assessments           Assessment[]
   institutionStandards  InstitutionStandard[]
   gapAnalyses           GapAnalysis[]
 
@@ -75,12 +77,18 @@ model InstitutionStandard {
 
 // Standard Model
 model Standard {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
+  id             String   @id @default(uuid())
+  title          String
+  code           String?
+  category       String?
+  description    String?
+  region         String?
+  icon           String?  @default("GraduationCap")
+  color          String?  @default("from-blue-600 to-indigo-600")
+  features       String[] @default([])
+  estimatedSetup String?
 
   criteria     Criterion[]
-  assessments  Assessment[]
   institutionStandards InstitutionStandard[]
   gapAnalyses  GapAnalysis[]
 
@@ -95,56 +103,9 @@ model Criterion {
   description String?
 
   standard    Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
-  answers     AssessmentAnswer[]
   evidence    Evidence[]
 
   @@index([standardId])
-}
-
-// Assessment Model
-model Assessment {
-  id              String            @id @default(uuid())
-  institutionId  String
-  userId         String
-  standardId     String?
-  status         AssessmentStatus   @default(DRAFT)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  submittedAt    DateTime?
-  reviewedAt     DateTime?
-  reviewerComment String?
-
-  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  standard      Standard? @relation(fields: [standardId], references: [id], onDelete: SetNull)
-  answers       AssessmentAnswer[]
-
-  @@index([institutionId])
-  @@index([userId])
-  @@index([standardId])
-  @@index([status])
-}
-
-enum AssessmentStatus {
-  DRAFT
-  SUBMITTED
-  REVIEWED
-}
-
-// AssessmentAnswer Model
-model AssessmentAnswer {
-  id              String   @id @default(uuid())
-  assessmentId    String
-  criterionId     String
-  answer          String?
-  reviewerComment String?
-
-  assessment      Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  criterion       Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
-
-  @@unique([assessmentId, criterionId])
-  @@index([assessmentId])
-  @@index([criterionId])
 }
 
 // Evidence Model
@@ -168,7 +129,6 @@ model GapAnalysis {
   id                  String   @id @default(uuid())
   institutionId       String
   standardId          String?
-  assessmentId        String?
   overallScore        Float
   summary             String   @db.Text
   gapsJson            String   @db.Text

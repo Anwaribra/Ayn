@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { type ReactNode, useState, useMemo, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -147,7 +147,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         <div
           className="px-6 md:px-10 pt-4 pb-1 border-b border-[var(--border-subtle)] bg-[var(--bg-deep)]"
         >
-          <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">
+          <p className="text-xs font-medium text-zinc-500 uppercase tracking-[0.15em]">
             AYN — Education Quality & Compliance
           </p>
         </div>
@@ -196,11 +196,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 readOnly
                 onClick={() => setCommandPaletteOpen(true)}
                 placeholder="Search hub..."
-                className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-11 pr-12 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-[var(--surface-card)] transition-all placeholder:text-zinc-600 cursor-pointer text-[var(--text-primary)]"
+                className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-11 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-[var(--surface-card)] transition-all placeholder:text-zinc-600 cursor-pointer text-[var(--text-primary)]"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-light)] bg-[var(--surface)] pointer-events-none">
                 <Command className="w-2 h-2 text-zinc-600" />
-                <span className="text-[9px] font-bold text-zinc-600">K</span>
+                <span className="text-[10px] font-bold text-zinc-600">K</span>
               </div>
             </div>
           </div>
@@ -223,7 +223,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               >
                 <Bell className="w-4 h-4 group-hover:animate-swing" />
                 {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-[var(--bg-deep)] shadow-sm">
+                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-[var(--bg-deep)] shadow-sm">
                     {notificationCount}
                   </span>
                 )}
@@ -329,3 +329,4 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     </div >
   )
 }
+

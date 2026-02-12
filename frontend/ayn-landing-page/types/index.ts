@@ -8,11 +8,6 @@ export type {
   GapAnalysis,
   GapAnalysisListItem,
 } from "./gap-analysis"
-export type {
-  AssessmentStatus,
-  Assessment,
-  AssessmentAnswer,
-} from "./assessment"
 export type { Notification } from "./notification"
 export type { DashboardMetrics } from "./dashboard"
 export type { AIResponse } from "./ai"

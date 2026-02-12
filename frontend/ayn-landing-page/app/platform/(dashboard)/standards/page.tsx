@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
@@ -89,7 +89,7 @@ function StandardsContent() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("database")}
-              className={`px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest transition-colors ${activeTab === "database"
+              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === "database"
                 ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                 : "text-zinc-600 hover:text-zinc-400"}`}
             >
@@ -97,7 +97,7 @@ function StandardsContent() {
             </button>
             <button
               onClick={() => setActiveTab("mapping")}
-              className={`px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest transition-colors ${activeTab === "mapping"
+              className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === "mapping"
                 ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                 : "text-zinc-600 hover:text-zinc-400"}`}
             >
@@ -135,7 +135,8 @@ function StandardsContent() {
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
-              className="group glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] hover:bg-[var(--surface)] transition-all duration-500 cursor-pointer flex flex-col justify-between min-h-[200px] sm:aspect-square"
+              className="group glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] hover:bg-[var(--surface)] transition-all duration-500 cursor-pointer flex flex-col justify-between min-h-[200px] sm:aspect-square animate-fade-in-up opacity-0"
+              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}
             >
               <div className="flex justify-between items-start">
                 <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/10 flex items-center justify-center transition-transform group-hover:scale-105`}>
@@ -145,7 +146,7 @@ function StandardsContent() {
               </div>
 
               <div>
-                <span className="mono text-[9px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{c.code}</span>
+                <span className="mono text-[10px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{c.code}</span>
                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 leading-tight">{c.title}</h3>
 
                 <div className="space-y-2">
@@ -170,7 +171,7 @@ function StandardsContent() {
             <div className="h-px w-16 bg-[var(--border-subtle)]" />
           </div>
           <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">
-            Full System Scan
+            Run Alignment Analysis
           </Link>
         </div>
 
@@ -185,14 +186,15 @@ function StandardsContent() {
                 <Link
                   key={std.id}
                   href={`/platform/standards/${std.id}`}
-                  className="glass-panel p-5 rounded-3xl border-[var(--border-subtle)] flex items-center justify-between hover:bg-white/[0.02] transition-all group cursor-pointer"
+                  className="glass-panel p-5 rounded-3xl border-[var(--border-subtle)] flex items-center justify-between hover:bg-white/[0.02] transition-all group cursor-pointer animate-fade-in-up opacity-0"
+                  style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}
                 >
                   <div className="flex items-center gap-5">
                     <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
                       <Icon className="w-4 h-4 text-zinc-500 group-hover:text-blue-500 transition-colors" />
                     </div>
                     <div>
-                      <h4 className="text-[14px] font-bold text-zinc-100">{std.title}</h4>
+                      <h4 className="text-sm font-bold text-zinc-100">{std.title}</h4>
                       <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
                         {report ? new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }).toUpperCase() : "—"} • {evidenceNodes} EVIDENCE NODES
                       </p>
@@ -200,7 +202,7 @@ function StandardsContent() {
                   </div>
                   <div className="flex items-center gap-4">
                     {status && (
-                      <span className={`text-[8px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${status === "OPTIMAL" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${status === "OPTIMAL" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"}`}>
                         {status}
                       </span>
                     )}
@@ -239,12 +241,12 @@ function StandardsContent() {
                   : " All frameworks are within compliance targets."
               })()}
             </p>
-            <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-[var(--border-subtle)] text-[11px] font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
+            <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white/5 border border-[var(--border-subtle)] text-xs font-bold text-zinc-300 hover:bg-white/10 transition-all text-center block">
               Generate Compliance Briefing
             </Link>
             <div className="mt-auto pt-6 border-t border-[var(--border-subtle)] flex items-center gap-4">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Ayn Core Live Sync</span>
+              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Ayn Core Live Sync</span>
             </div>
           </div>
         </div>
@@ -252,3 +254,4 @@ function StandardsContent() {
     </div>
   )
 }
+

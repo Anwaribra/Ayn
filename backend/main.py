@@ -1,5 +1,5 @@
 """Main FastAPI application entry point."""
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from starlette.types import ASGIApp, Receive, Scope, Send, Message
@@ -16,7 +16,6 @@ from app.core.rate_limit import limiter
 from app.auth.router import router as auth_router
 from app.institutions.router import router as institutions_router
 from app.standards.router import router as standards_router
-from app.assessments.router import router as assessments_router
 from app.evidence.router import router as evidence_router
 from app.dashboard.router import router as dashboard_router
 from app.notifications.router import router as notifications_router
@@ -120,15 +119,20 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# Global exception handler — shows actual error details instead of generic 500
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import traceback
     tb = traceback.format_exc()
     logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{tb}")
+    
+    # In production/default, never leak error details to client
+    detail = "Internal Server Error"
+    if settings.DEBUG:
+        detail = f"Server error: {str(exc)}"
+        
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Server error: {str(exc)}"},
+        content={"detail": detail},
     )
 app.add_middleware(SlowAPIMiddleware)
 
@@ -142,7 +146,6 @@ app.add_middleware(CORSEverythingMiddleware)
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(institutions_router, prefix="/api/institutions", tags=["Institutions"])
 app.include_router(standards_router, prefix="/api/standards", tags=["Standards"])
-app.include_router(assessments_router, prefix="/api/assessments", tags=["Assessments"])
 app.include_router(evidence_router, prefix="/api/evidence", tags=["Evidence"])
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
@@ -176,78 +179,85 @@ async def health_check():
         return {"status": "degraded", "database": "disconnected"}
 
 
-@app.get("/api/debug/ai-status")
-async def ai_status():
-    """Check AI service configuration (no auth required, for debugging)."""
-    import os
-    gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
-    openrouter_key = getattr(settings, 'OPENROUTER_API_KEY', None) or os.getenv('OPENROUTER_API_KEY')
+# Debug endpoints - only enabled when DEBUG is True
+if settings.DEBUG:
+    from app.core.middlewares import get_current_user
     
-    result = {
-        "gemini_key_set": bool(gemini_key),
-        "gemini_key_prefix": (gemini_key[:8] + "...") if gemini_key else None,
-        "openrouter_key_set": bool(openrouter_key),
-        "openrouter_key_prefix": (openrouter_key[:8] + "...") if openrouter_key else None,
-        "openrouter_model": getattr(settings, 'OPENROUTER_MODEL', 'not set'),
-        "gemini_sdk_available": False,
-        "jwt_secret_set": bool(getattr(settings, 'JWT_SECRET', None)),
-        "database_url_set": bool(getattr(settings, 'DATABASE_URL', None)),
-    }
-    
-    try:
-        from app.ai.service import GEMINI_AVAILABLE, get_gemini_client
-        result["gemini_sdk_available"] = GEMINI_AVAILABLE
+    async def require_admin(current_user: dict = Depends(get_current_user)):
+        if current_user["role"] != "ADMIN":
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Admin access required")
+        return current_user
+
+    @app.get("/api/debug/ai-status")
+    async def ai_status(admin: dict = Depends(require_admin)):
+        """Check AI service configuration (ADMIN only, debug only)."""
+        import os
+        gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
+        openrouter_key = getattr(settings, 'OPENROUTER_API_KEY', None) or os.getenv('OPENROUTER_API_KEY')
         
-        # Try to instantiate the AI client
+        result = {
+            "gemini_key_set": bool(gemini_key),
+            "gemini_key_prefix": (gemini_key[:8] + "...") if gemini_key else None,
+            "openrouter_key_set": bool(openrouter_key),
+            "openrouter_key_prefix": (openrouter_key[:8] + "...") if openrouter_key else None,
+            "openrouter_model": getattr(settings, 'OPENROUTER_MODEL', 'not set'),
+            "gemini_sdk_available": False,
+            "jwt_secret_set": bool(getattr(settings, 'JWT_SECRET', None)),
+            "database_url_set": bool(getattr(settings, 'DATABASE_URL', None)),
+        }
+        
+        try:
+            from app.ai.service import GEMINI_AVAILABLE, get_gemini_client
+            result["gemini_sdk_available"] = GEMINI_AVAILABLE
+            
+            try:
+                client = get_gemini_client()
+                result["ai_client"] = "initialized"
+                result["ai_provider"] = client.provider
+            except Exception as e:
+                result["ai_client"] = f"error: {str(e)}"
+        except Exception as e:
+            result["ai_import_error"] = str(e)
+        
         try:
             client = get_gemini_client()
-            result["ai_client"] = "initialized"
-            result["ai_provider"] = client.provider
+            test_result = client.chat(
+                messages=[{"role": "user", "content": "Say hello in one word"}],
+                context=None,
+            )
+            result["ai_test"] = "success"
+            result["ai_test_response"] = test_result[:100]
         except Exception as e:
-            result["ai_client"] = f"error: {str(e)}"
-    except Exception as e:
-        result["ai_import_error"] = str(e)
-    
-    # Also test a quick AI call
-    try:
-        client = get_gemini_client()
-        test_result = client.chat(
-            messages=[{"role": "user", "content": "Say hello in one word"}],
-            context=None,
-        )
-        result["ai_test"] = "success"
-        result["ai_test_response"] = test_result[:100]
-    except Exception as e:
-        result["ai_test"] = "failed"
-        result["ai_test_error"] = str(e)[:500]
-    
-    return result
+            result["ai_test"] = "failed"
+            result["ai_test_error"] = str(e)[:500]
+        
+        return result
 
-
-@app.post("/api/debug/test-chat")
-async def test_chat_no_auth(request: Request):
-    """Test chat endpoint without auth — for debugging only."""
-    try:
-        body = await request.json()
-        messages = body.get("messages", [])
-        
-        if not messages:
-            return {"error": "No messages provided", "body": body}
-        
-        from app.ai.service import get_gemini_client
-        client = get_gemini_client()
-        
-        import asyncio
-        result = await asyncio.to_thread(
-            client.chat,
-            messages=[{"role": m["role"], "content": m["content"]} for m in messages],
-            context=body.get("context"),
-        )
-        
-        return {"result": result[:200], "status": "success"}
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()[-500:]}
+    @app.post("/api/debug/test-chat")
+    async def test_chat_no_auth(request: Request, admin: dict = Depends(require_admin)):
+        """Test chat endpoint (ADMIN only, debug only)."""
+        try:
+            body = await request.json()
+            messages = body.get("messages", [])
+            
+            if not messages:
+                return {"error": "No messages provided", "body": body}
+            
+            from app.ai.service import get_gemini_client
+            client = get_gemini_client()
+            
+            import asyncio
+            result = await asyncio.to_thread(
+                client.chat,
+                messages=[{"role": m["role"], "content": m["content"]} for m in messages],
+                context=body.get("context"),
+            )
+            
+            return {"result": result[:200], "status": "success"}
+        except Exception as e:
+            import traceback
+            return {"error": str(e), "traceback": traceback.format_exc()[-500:]}
 
 
 if __name__ == "__main__":

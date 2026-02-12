@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -117,7 +117,7 @@ function EvidenceContent() {
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="px-2 py-0.5 rounded bg-zinc-800 border border-white/5">
-              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Asset Manager</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Asset Manager</span>
             </div>
             <div className="h-px w-6 bg-zinc-900" />
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Institutional Vault</span>
@@ -144,7 +144,7 @@ function EvidenceContent() {
           </div>
           <button
             onClick={() => setIsUploading(true)}
-            className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-[12px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
+            className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
           >
             <Plus className="w-4 h-4" />
             Upload Asset
@@ -161,7 +161,7 @@ function EvidenceContent() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-4">
           {[
             { label: "Total Volume", value: String(evidence?.length ?? 0), icon: HardDrive },
-            { label: "Neural Indexed", value: "98%", icon: ShieldCheck },
+            { label: "Criteria Linked", value: evidence && evidence.length > 0 ? `${Math.round((evidence.filter((e) => e.criterionId).length / evidence.length) * 100)}%` : "—", icon: ShieldCheck },
             { label: "Pending Audit", value: String(evidence?.filter((e) => !e.criterionId).length ?? 0), icon: Clock },
             { label: "Storage Usage", value: evidence ? `${evidence.length} files` : "0 files", icon: Archive },
           ].map((stat, i) => (
@@ -171,7 +171,7 @@ function EvidenceContent() {
               </div>
               <div>
                 <div className="mono text-lg font-bold text-[var(--text-primary)]">{stat.value}</div>
-                <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
+                <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
               </div>
             </div>
           ))}
@@ -188,7 +188,7 @@ function EvidenceContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search assets..."
-              className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-[var(--text-primary)]"
+              className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-[var(--text-primary)]"
             />
           </div>
         </div>
@@ -214,7 +214,8 @@ function EvidenceContent() {
             return viewMode === "grid" ? (
               <div
                 key={item.id}
-                className="group glass-panel rounded-3xl p-5 border-white/5 hover:border-blue-500/30 hover:bg-[var(--surface)] transition-all cursor-pointer relative overflow-hidden"
+                className="group glass-panel rounded-3xl p-5 border-white/5 hover:border-blue-500/30 hover:bg-[var(--surface)] transition-all cursor-pointer relative overflow-hidden animate-fade-in-up opacity-0"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110`}>
@@ -228,7 +229,7 @@ function EvidenceContent() {
 
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-[14px] font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors">
                       {item.fileName}
                     </h3>
                     <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
@@ -252,14 +253,15 @@ function EvidenceContent() {
             ) : (
               <div
                 key={item.id}
-                className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5 hover:bg-white/[0.02] transition-all group cursor-pointer"
+                className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5 hover:bg-white/[0.02] transition-all group cursor-pointer animate-fade-in-up opacity-0"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center border border-white/5`}>
                     <FileText className="w-4 h-4 text-zinc-400 group-hover:text-white" />
                   </div>
                   <div>
-                    <h4 className="text-[14px] font-bold text-zinc-100 group-hover:text-white">{item.fileName}</h4>
+                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-white">{item.fileName}</h4>
                     <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
                       {size} • {year}
                     </p>
@@ -315,7 +317,7 @@ function EvidenceContent() {
               />
               <div className="flex flex-col items-center gap-3">
                 <Plus className="w-6 h-6 text-zinc-700 group-hover:text-blue-500 transition-colors" />
-                <span className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">
+                <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest">
                   {uploading ? "Uploading..." : "Drag & drop or click to select files"}
                 </span>
               </div>
@@ -365,3 +367,4 @@ function EvidenceContent() {
     </div>
   )
 }
+

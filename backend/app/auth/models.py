@@ -10,7 +10,7 @@ class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="User full name")
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., min_length=8, max_length=100, description="User password (min 8 characters)")
-    role: Optional[str] = Field(None, description="User role: ADMIN, TEACHER, or AUDITOR. Defaults to TEACHER (regular user).")
+    role: Optional[str] = Field(None, description="User role: ADMIN, TEACHER, AUDITOR, STUDENT, UNIVERSITY, INSTITUTION, OTHER. Optional.")
     institutionId: Optional[str] = Field(None, description="Institution ID (optional)")
 
     class Config:
@@ -60,7 +60,7 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: str
-    role: str
+    role: Optional[str] = None
     institutionId: Optional[str] = None
     createdAt: datetime
 

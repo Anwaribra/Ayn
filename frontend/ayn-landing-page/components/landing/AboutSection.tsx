@@ -13,18 +13,18 @@ const audiences = [
   {
     title: "Universities",
     icon: GraduationCap,
-    description: "Ask Horus AI about program standards, accreditation criteria, and institutional quality metrics across faculties.",
+    description: "Ask Horus AI about program standards, framework criteria, and institutional quality metrics across faculties.",
   },
   {
     title: "Training Centers",
     icon: Library,
-    description: "Horus AI tracks competencies, manages certifications, and prepares documentation for professional accreditation.",
+    description: "Horus AI tracks competencies and prepares documentation for professional framework alignment.",
   },
 ]
 
 const values = [
-  { title: "Quality Standards Ready", icon: Award },
-  { title: "Accreditation Compatible", icon: ShieldCheck },
+  { title: "Self-Audit Support", icon: Award },
+  { title: "Framework Alignment", icon: ShieldCheck },
   { title: "Built for Teams", icon: Users },
 ]
 
@@ -70,7 +70,7 @@ export function AboutSection() {
         </div>
 
         {/* Value props */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

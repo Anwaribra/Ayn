@@ -240,24 +240,25 @@ function SignInForm(props: {
     );
 }
 
-// Sign Up Form
 function SignUpForm(props: {
     handleGoogle: () => void;
-    handleEmail: (name: string, email: string, password: string) => void;
+    handleEmail: (name: string, email: string, password: string, role?: string) => void;
     loading: boolean;
     err: string | null;
     toggle: () => void;
 }) {
     const nameId = useId();
     const emailId = useId();
+    const roleId = useId();
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const email = data.get("email") as string;
         const password = data.get("password") as string;
+        const role = data.get("role") as string;
         if (name && email && password) {
-            props.handleEmail(name, email, password);
+            props.handleEmail(name, email, password, role || undefined);
         }
     };
 
@@ -303,6 +304,21 @@ function SignUpForm(props: {
                 <div className="grid gap-2">
                     <Label className="text-xs text-muted-foreground">Password <span className="text-muted-foreground/70 font-normal">(min 8 characters)</span></Label>
                     <PasswordInput name="password" required placeholder="Password" minLength={8} aria-invalid={!!props.err} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor={roleId} className="text-xs text-muted-foreground">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
+                    <select
+                        id={roleId}
+                        name="role"
+                        className="h-11 rounded-lg border border-border bg-card text-foreground px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                    >
+                        <option value="">Select a role...</option>
+                        <option value="STUDENT">Student</option>
+                        <option value="UNIVERSITY">University</option>
+                        <option value="INSTITUTION">Institution</option>
+                        <option value="TEACHER">Teacher</option>
+                        <option value="OTHER">Other</option>
+                    </select>
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (
@@ -430,12 +446,12 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         }
     };
 
-    const onEmailSignUp = async (name: string, email: string, password: string) => {
+    const onEmailSignUp = async (name: string, email: string, password: string, role?: string) => {
         setError(null);
         setIsLoading(true);
         try {
             // Use AuthContext register to update user state
-            const response = await api.register({ name, email, password });
+            const response = await api.register({ name, email, password, role });
             log('[Auth] Email signup successful:', response.user.email);
             // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);

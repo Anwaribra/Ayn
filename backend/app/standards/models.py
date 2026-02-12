@@ -8,7 +8,14 @@ from datetime import datetime
 class StandardCreateRequest(BaseModel):
     """Request model for creating a standard."""
     title: str = Field(..., min_length=2, max_length=200, description="Standard title")
-    description: Optional[str] = Field(None, max_length=1000, description="Standard description")
+    code: Optional[str] = Field(None, max_length=50)
+    category: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = Field(None, max_length=1000)
+    region: Optional[str] = Field(None, max_length=100)
+    icon: Optional[str] = Field("GraduationCap", max_length=100)
+    color: Optional[str] = Field("from-blue-600 to-indigo-600", max_length=100)
+    features: List[str] = Field(default_factory=list)
+    estimatedSetup: Optional[str] = Field(None, max_length=100)
 
     class Config:
         json_schema_extra = {
@@ -21,8 +28,15 @@ class StandardCreateRequest(BaseModel):
 
 class StandardUpdateRequest(BaseModel):
     """Request model for updating a standard."""
-    title: Optional[str] = Field(None, min_length=2, max_length=200, description="Standard title")
-    description: Optional[str] = Field(None, max_length=1000, description="Standard description")
+    title: Optional[str] = Field(None, min_length=2, max_length=200)
+    code: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    region: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    features: Optional[List[str]] = None
+    estimatedSetup: Optional[str] = None
 
     class Config:
         json_schema_extra = {
@@ -38,7 +52,15 @@ class StandardResponse(BaseModel):
     """Standard information response."""
     id: str
     title: str
+    code: Optional[str] = None
+    category: Optional[str] = None
     description: Optional[str] = None
+    region: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    features: List[str] = []
+    estimatedSetup: Optional[str] = None
+    criteriaCount: int = 0
 
     class Config:
         from_attributes = True

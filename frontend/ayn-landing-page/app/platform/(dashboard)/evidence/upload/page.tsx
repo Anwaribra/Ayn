@@ -102,7 +102,7 @@ export default function UploadEvidencePage() {
       <div className="min-h-screen">
         <Header
           title="Upload Evidence"
-          description="Upload evidence files for your assessments"
+          description="Upload evidence files for framework alignment"
           breadcrumbs={[
             { label: "Dashboard", href: "/platform/dashboard" },
             { label: "Evidence", href: "/platform/evidence" },

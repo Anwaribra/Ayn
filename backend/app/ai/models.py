@@ -20,7 +20,7 @@ class ChatRequest(BaseModel):
                 "messages": [
                     {"role": "user", "content": "What are the key requirements for ISO 21001 compliance?"}
                 ],
-                "context": "assessment_help"
+                "context": "alignment_help"
             }
         }
 
@@ -47,7 +47,7 @@ class SummarizeRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "content": "Long assessment text here...",
+                "content": "Long framework analysis text here...",
                 "maxLength": 200
             }
         }
@@ -61,7 +61,7 @@ class CommentRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "text": "Assessment answer text...",
+                "text": "Alignment analysis text...",
                 "focus": "compliance with ISO 21001"
             }
         }

@@ -21,7 +21,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         const hasToken =
           typeof window !== "undefined" && !!localStorage.getItem("access_token")
         if (!hasToken) {
-          router.push("/platform/login")
+          router.push("/login")
         }
       }
 

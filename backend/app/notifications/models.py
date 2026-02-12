@@ -15,8 +15,8 @@ class NotificationCreateRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "userId": "user-uuid",
-                "title": "Assessment Submitted",
-                "body": "Your assessment has been submitted for review."
+                "title": "Alignment Review Generated",
+                "body": "Your framework alignment analysis has been generated."
             }
         }
 

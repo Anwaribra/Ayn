@@ -1,36 +1,43 @@
-"use client"
+﻿"use client"
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Header } from "@/components/platform/header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Zap, Play, Pause, Settings, Plus, Workflow } from "lucide-react"
+import { Zap, Play, Pause, Settings, Plus, Workflow, Clock, CheckCircle2, Activity } from "lucide-react"
+import { toast } from "sonner"
 
 const workflows = [
   {
     id: "wf-001",
-    name: "Assessment Auto-Review",
-    description: "Automatically review submitted assessments and assign reviewers",
+    name: "Evidence Compliance Sync",
+    description: "Sync evidence files to cloud storage and update indices",
     status: "active",
-    trigger: "On Assessment Submit",
+    trigger: "On Upload",
     lastRun: "2 hours ago",
+    icon: Zap,
+    color: "text-amber-500",
+    bg: "bg-amber-500/10"
   },
   {
     id: "wf-002",
-    name: "Evidence Sync",
-    description: "Sync evidence files to cloud storage and update indices",
+    name: "Evidence Sync Pipeline",
+    description: "Daily synchronization of institutional evidence assets",
     status: "active",
     trigger: "Daily at 02:00",
     lastRun: "6 hours ago",
+    icon: Activity,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10"
   },
   {
     id: "wf-003",
-    name: "Gap Analysis Report",
-    description: "Generate weekly gap analysis summary reports",
+    name: "Alignment Report Generator",
+    description: "Generate weekly framework alignment summary reports",
     status: "paused",
     trigger: "Weekly on Monday",
     lastRun: "5 days ago",
+    icon: Workflow,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10"
   },
   {
     id: "wf-004",
@@ -39,116 +46,102 @@ const workflows = [
     status: "draft",
     trigger: "Manual",
     lastRun: "Never",
+    icon: Clock,
+    color: "text-purple-500",
+    bg: "bg-purple-500/10"
   },
 ]
 
 export default function WorkflowsPage() {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen">
-        <Header
-          title="Automation Workflows"
-          description="Manage automated processes and scheduled tasks"
-          actions={
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
+      <div className="animate-fade-in-up pb-20">
+        <div className="px-4 pb-2 pt-6 md:px-6 mb-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="px-2 py-0.5 rounded bg-zinc-800 border border-[var(--border-subtle)]">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Automation Layer</span>
+                </div>
+              </div>
+              <h1 className="text-4xl font-black tracking-tighter italic text-[var(--text-primary)]">
+                Active <span className="text-[var(--text-tertiary)] not-italic font-light">Workflows</span>
+              </h1>
+            </div>
+            <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5">
+              <Plus className="w-3.5 h-3.5" />
               New Workflow
-            </Button>
-          }
-        />
+            </button>
+          </div>
+        </div>
 
-        <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
+        <div className="px-4 md:px-6 space-y-8">
           {/* Stats Overview */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border-border/60 bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-emerald-500/10">
-                    <Play className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-semibold">2</p>
-                    <p className="text-sm text-muted-foreground">Active Workflows</p>
-                  </div>
+            {[
+              { label: "Active Pipelines", value: "2", icon: Play, color: "text-emerald-500" },
+              { label: "Paused Workflows", value: "1", icon: Pause, color: "text-amber-500" },
+              { label: "Total Defined", value: "4", icon: Workflow, color: "text-blue-500" }
+            ].map((stat, i) => (
+              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 border-[var(--border-subtle)]">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/60 bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-amber-500/10">
-                    <Pause className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-semibold">1</p>
-                    <p className="text-sm text-muted-foreground">Paused</p>
-                  </div>
+                <div>
+                  <div className="mono text-2xl font-bold text-[var(--text-primary)]">{stat.value}</div>
+                  <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/60 bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <Workflow className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-semibold">4</p>
-                    <p className="text-sm text-muted-foreground">Total Workflows</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            ))}
           </div>
 
           {/* Workflows List */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Your Workflows</h3>
-            <div className="grid gap-4">
+            <div className="flex items-center gap-4 mb-2">
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">System Pipelines</h3>
+              <div className="h-px flex-1 bg-[var(--border-subtle)]" />
+            </div>
+
+            <div className="grid gap-3">
               {workflows.map((workflow) => (
-                <Card key={workflow.id} className="border-border/60 bg-card">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <Zap className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base">{workflow.name}</CardTitle>
-                          <CardDescription className="mt-1">
-                            {workflow.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Badge
-                        variant={
-                          workflow.status === "active"
-                            ? "default"
-                            : workflow.status === "paused"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
-                        {workflow.status}
-                      </Badge>
+                <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)]">
+                  <div className="flex items-start gap-5">
+                    <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
+                      <workflow.icon className={`h-5 w-5 ${workflow.color}`} />
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-6">
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">Trigger:</span> {workflow.trigger}
-                        </span>
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">Last run:</span> {workflow.lastRun}
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                            workflow.status === 'paused' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                              'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+                          }`}>
+                          {workflow.status}
                         </span>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
+                      <p className="text-sm text-[var(--text-secondary)] font-medium">
+                        {workflow.description}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  <div className="flex items-center gap-8 pl-16 md:pl-0">
+                    <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                      <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Trigger</div>
+                      <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
+                    </div>
+                    <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                      <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Last Run</div>
+                      <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
+                    </div>
+                    <button
+                      onClick={() => toast.info('Workflow configuration is locked by admin policy')}
+                      className="p-2 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -157,3 +150,4 @@ export default function WorkflowsPage() {
     </ProtectedRoute>
   )
 }
+

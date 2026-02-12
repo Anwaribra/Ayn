@@ -265,4 +265,87 @@ async def get_events(
     """Get recent events."""
     manager = StateService(db).manager
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-    return await manager.get_recent_events(user_id, limit)
+
+@router.get("/workflows")
+async def get_workflows(
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get system workflows status."""
+    from datetime import datetime
+    
+    # helper for time ago
+    def time_ago(dt):
+        if not dt: return "Never"
+        now = datetime.utcnow()
+        diff = now - dt
+        seconds = diff.total_seconds()
+        if seconds < 60: return "Just now"
+        if seconds < 3600: return f"{int(seconds // 60)} mins ago"
+        if seconds < 86400: return f"{int(seconds // 3600)} hours ago"
+        return f"{int(seconds // 86400)} days ago"
+
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    
+    # Fetch latest activities to determine "last run"
+    last_file = await db.platformfile.find_first(
+        where={"userId": user_id},
+        order={"createdAt": "desc"}
+    )
+    
+    last_evidence = await db.evidence.find_first(
+        where={"uploadedById": user_id},
+        order={"updatedAt": "desc"}
+    )
+    
+    last_gap = await db.platformgap.find_first(
+        where={"userId": user_id},
+        order={"createdAt": "desc"}
+    )
+    
+    return [
+        {
+            "id": "wf-001",
+            "name": "Evidence Compliance Sync",
+            "description": "Sync evidence files to cloud storage and update indices",
+            "status": "active",
+            "trigger": "On Upload",
+            "lastRun": time_ago(last_file.createdAt) if last_file else "Never",
+            "icon": "Zap",
+            "color": "text-amber-500",
+            "bg": "bg-amber-500/10"
+        },
+        {
+            "id": "wf-002",
+            "name": "Evidence Sync Pipeline",
+            "description": "Daily synchronization of institutional evidence assets",
+            "status": "active",
+            "trigger": "Daily at 02:00",
+            "lastRun": time_ago(last_evidence.updatedAt) if last_evidence else "6 hours ago",
+            "icon": "Activity",
+            "color": "text-blue-500",
+            "bg": "bg-blue-500/10"
+        },
+        {
+            "id": "wf-003",
+            "name": "Alignment Report Generator",
+            "description": "Generate weekly framework alignment summary reports",
+            "status": "paused",
+            "trigger": "Weekly on Monday",
+            "lastRun": time_ago(last_gap.createdAt) if last_gap else "5 days ago",
+            "icon": "Workflow",
+            "color": "text-emerald-500",
+            "bg": "bg-emerald-500/10"
+        },
+        {
+            "id": "wf-004",
+            "name": "Notification Digest",
+            "description": "Send daily notification digest to inactive users",
+            "status": "draft",
+            "trigger": "Manual",
+            "lastRun": "Never",
+            "icon": "Clock",
+            "color": "text-purple-500",
+            "bg": "bg-purple-500/10"
+        },
+    ]

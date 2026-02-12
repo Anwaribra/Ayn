@@ -17,6 +17,7 @@ import {
   History,
   ChevronRight,
   Shield,
+  Workflow,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -34,6 +35,7 @@ const menuItems = [
   { id: "evidence", icon: Shield, label: "Evidence Library", href: "/platform/evidence" },
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
   { id: "gap-analysis", icon: AlertTriangle, label: "Alignment Analysis", href: "/platform/gap-analysis" },
+  { id: "workflows", icon: Workflow, label: "Workflows", href: "/platform/workflows" },
   { id: "reports", icon: BarChart3, label: "Insight Hub", href: "/platform/analytics" },
   { id: "archive", icon: Archive, label: "Archive", href: "/platform/archive" },
 ]

@@ -373,6 +373,10 @@ class ApiClient {
     return this.request<import("./types").PlatformEvent[]>(`/state/events?limit=${limit || 50}`)
   }
 
+  async getWorkflows() {
+    return this.request<any[]>("/state/workflows")
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // HORUS APIs (Read-only observations)
   // ═══════════════════════════════════════════════════════════════════════════

@@ -4,55 +4,44 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Header } from "@/components/platform/header"
 import { Zap, Play, Pause, Settings, Plus, Workflow, Clock, CheckCircle2, Activity } from "lucide-react"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
+import useSWR from "swr"
 
-const workflows = [
-  {
-    id: "wf-001",
-    name: "Evidence Compliance Sync",
-    description: "Sync evidence files to cloud storage and update indices",
-    status: "active",
-    trigger: "On Upload",
-    lastRun: "2 hours ago",
-    icon: Zap,
-    color: "text-amber-500",
-    bg: "bg-amber-500/10"
-  },
-  {
-    id: "wf-002",
-    name: "Evidence Sync Pipeline",
-    description: "Daily synchronization of institutional evidence assets",
-    status: "active",
-    trigger: "Daily at 02:00",
-    lastRun: "6 hours ago",
-    icon: Activity,
-    color: "text-blue-500",
-    bg: "bg-blue-500/10"
-  },
-  {
-    id: "wf-003",
-    name: "Alignment Report Generator",
-    description: "Generate weekly framework alignment summary reports",
-    status: "paused",
-    trigger: "Weekly on Monday",
-    lastRun: "5 days ago",
-    icon: Workflow,
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10"
-  },
-  {
-    id: "wf-004",
-    name: "Notification Digest",
-    description: "Send daily notification digest to inactive users",
-    status: "draft",
-    trigger: "Manual",
-    lastRun: "Never",
-    icon: Clock,
-    color: "text-purple-500",
-    bg: "bg-purple-500/10"
-  },
-]
+const ICON_MAP: Record<string, any> = {
+  Zap,
+  Activity,
+  Workflow,
+  Clock
+}
+
+// Stats icons map
+const STAT_ICONS = {
+  Play,
+  Pause,
+  Workflow
+}
+
+// Define the Workflow interface locally since it matches backend response
+interface WorkflowData {
+  id: string
+  name: string
+  description: string
+  status: "active" | "paused" | "draft"
+  trigger: string
+  lastRun: string
+  icon: string
+  color: string
+  bg: string
+}
 
 export default function WorkflowsPage() {
+  const { data: workflows, isLoading } = useSWR<WorkflowData[]>('workflows', () => api.getWorkflows())
+
+  // Calculate stats
+  const activeCount = workflows?.filter((w: WorkflowData) => w.status === 'active').length ?? 0
+  const pausedCount = workflows?.filter((w: WorkflowData) => w.status === 'paused').length ?? 0
+  const totalCount = workflows?.length ?? 0
+
   return (
     <ProtectedRoute>
       <div className="animate-fade-in-up pb-20">
@@ -79,9 +68,9 @@ export default function WorkflowsPage() {
           {/* Stats Overview */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Active Pipelines", value: "2", icon: Play, color: "text-emerald-500" },
-              { label: "Paused Workflows", value: "1", icon: Pause, color: "text-amber-500" },
-              { label: "Total Defined", value: "4", icon: Workflow, color: "text-blue-500" }
+              { label: "Active Pipelines", value: isLoading ? "..." : String(activeCount), icon: Play, color: "text-emerald-500" },
+              { label: "Paused Workflows", value: isLoading ? "..." : String(pausedCount), icon: Pause, color: "text-amber-500" },
+              { label: "Total Defined", value: isLoading ? "..." : String(totalCount), icon: Workflow, color: "text-blue-500" }
             ].map((stat, i) => (
               <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 border-[var(--border-subtle)]">
                 <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
@@ -103,46 +92,56 @@ export default function WorkflowsPage() {
             </div>
 
             <div className="grid gap-3">
-              {workflows.map((workflow) => (
-                <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)]">
-                  <div className="flex items-start gap-5">
-                    <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
-                      <workflow.icon className={`h-5 w-5 ${workflow.color}`} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                            workflow.status === 'paused' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
-                              'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
-                          }`}>
-                          {workflow.status}
-                        </span>
+              {isLoading ? (
+                // Skeleton
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse border-[var(--border-subtle)]" />
+                ))
+              ) : (
+                workflows?.map((workflow: WorkflowData) => {
+                  const Icon = ICON_MAP[workflow.icon] || Workflow
+                  return (
+                    <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)]">
+                      <div className="flex items-start gap-5">
+                        <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
+                          <Icon className={`h-5 w-5 ${workflow.color}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                              workflow.status === 'paused' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+                              }`}>
+                              {workflow.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[var(--text-secondary)] font-medium">
+                            {workflow.description}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-sm text-[var(--text-secondary)] font-medium">
-                        {workflow.description}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-8 pl-16 md:pl-0">
-                    <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
-                      <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Trigger</div>
-                      <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
+                      <div className="flex items-center gap-8 pl-16 md:pl-0">
+                        <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                          <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Trigger</div>
+                          <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
+                        </div>
+                        <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                          <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Last Run</div>
+                          <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
+                        </div>
+                        <button
+                          onClick={() => toast.info('Workflow configuration is locked by admin policy')}
+                          className="p-2 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-[var(--text-primary)] transition-colors"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
-                      <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Last Run</div>
-                      <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
-                    </div>
-                    <button
-                      onClick={() => toast.info('Workflow configuration is locked by admin policy')}
-                      className="p-2 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-[var(--text-primary)] transition-colors"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  )
+                })
+              )}
             </div>
           </div>
         </div>

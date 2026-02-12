@@ -18,7 +18,7 @@ import type { DashboardMetrics } from "@/types"
 import { EmptyState } from "@/components/platform/empty-state"
 import { DashboardMetricsSkeleton, SuggestionsGridSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
-import { HorusAIWidget, SystemStatusWidget } from "@/components/platform/horus-ai-enhanced"
+import { SystemStatusWidget } from "@/components/platform/horus-ai-enhanced"
 
 export default function DashboardPage() {
   return (
@@ -238,8 +238,6 @@ function DashboardContent() {
         </div>
       </section>
 
-      {/* Horus AI Widget */}
-      <HorusAIWidget />
     </div>
   )
 }

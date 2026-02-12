@@ -49,7 +49,9 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
     >
       {/* Branding & Toggle — AYN Logo */}
       <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
-        <AynLogo size="sm" withGlow={false} heroStyle className="text-[var(--text-primary)]" />
+        <Link href="/" className="hover:opacity-80 transition-opacity" aria-label="Back to homepage">
+          <AynLogo size="sm" withGlow={false} heroStyle />
+        </Link>
 
         <button
           onClick={onToggle}

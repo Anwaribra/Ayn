@@ -76,6 +76,11 @@
 /* Light variant for the platform shell only (does NOT affect landing page) */
 [data-section="platform"] [data-platform-theme="light"] {
   --background: #F1F5F9;
+  --foreground: #0F172A;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover-foreground: #0F172A;
   --bg-deep: #F1F5F9;
 
   --sidebar-bg: #FFFFFF;

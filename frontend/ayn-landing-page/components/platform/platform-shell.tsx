@@ -146,16 +146,21 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-[var(--border-light)] bg-[var(--surface)] transition-colors duration-300"
         >
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
-            {/* Sidebar toggle when closed */}
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                title="Open sidebar"
-                className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[var(--sidebar-bg)] rounded-xl border border-white/5 hover:border-white/10 group active:scale-95 shadow-xl"
-              >
-                <PanelLeft className="w-5 h-5 transition-transform duration-300 rotate-180" />
-              </button>
-            )}
+            {/* Sidebar toggle — always visible on mobile, only when closed on desktop */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+              className={cn(
+                "w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[var(--sidebar-bg)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-light)] active:scale-95 shadow-xl",
+                sidebarOpen && "md:hidden"
+              )}
+            >
+              <PanelLeft className={cn(
+                "w-5 h-5 transition-transform duration-300",
+                !sidebarOpen && "rotate-180"
+              )} />
+            </button>
+
 
             <div className="hidden sm:flex items-center gap-2">
               <button
@@ -307,6 +312,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       <FloatingAIBar />
       <CommandPalette />
-    </div>
+    </div >
   )
 }

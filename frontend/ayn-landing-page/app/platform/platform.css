@@ -211,6 +211,54 @@
   box-shadow: 0 0 16px rgba(59, 111, 217, 0.2);
 }
 
+/* ─── Sidebar Scrollbar ──────────────────────────────────────────────────── */
+[data-section="platform"] .sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+[data-section="platform"] .sidebar-scroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+[data-section="platform"] .sidebar-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+[data-section="platform"] .sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-section="platform"] .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+[data-section="platform"] .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Light mode sidebar scrollbar */
+[data-section="platform"] [data-platform-theme="light"] .sidebar-scroll:hover {
+  scrollbar-color: rgba(15, 23, 42, 0.08) transparent;
+}
+
+[data-section="platform"] [data-platform-theme="light"] .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+/* ─── Mobile Sidebar Optimizations ───────────────────────────────────────── */
+@media (max-width: 767px) {
+  [data-section="platform"] aside {
+    /* safe area for bottom notch / home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Prevent rubber-banding body scroll when sidebar is open */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* ─── Mono text (JetBrains Mono / fallback) ───────────────────────────────── */
 [data-section="platform"] .mono {
   font-family: 'JetBrains Mono', 'Geist Mono', ui-monospace, monospace;

@@ -13,6 +13,7 @@ import {
   Settings,
   UserCircle2,
   PanelLeft,
+  LogOut,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -35,35 +36,50 @@ const menuItems = [
 
 export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = "/"
+  }
 
   return (
     <aside
       className={cn(
-        "fixed md:sticky md:top-0 md:left-0 md:h-screen flex flex-col z-40 select-none flex-shrink-0",
-        "transition-all duration-300 ease-in-out w-[240px] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]",
+        // Base layout
+        "fixed inset-y-0 left-0 flex flex-col z-40 select-none flex-shrink-0",
+        // Width & background
+        "w-[260px] max-w-[85vw] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]",
+        // Use dvh for mobile viewport, fallback to vh
+        "h-[100dvh] h-screen",
+        // Transition
+        "transition-transform duration-300 ease-in-out",
+        // Desktop: sticky positioning instead of fixed
+        "md:sticky md:top-0 md:w-[240px] md:max-w-none",
+        // Open / closed states
         open
-          ? "translate-x-0 opacity-100 pointer-events-auto"
-          : "-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:pointer-events-none opacity-0 pointer-events-none"
+          ? "translate-x-0"
+          : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none"
       )}
     >
-      {/* Branding & Toggle — AYN Logo */}
-      <div className="p-6 pb-6 flex items-center justify-between whitespace-nowrap overflow-hidden">
+      {/* ─── Header: Logo & Close ─── */}
+      <div className="flex items-center justify-between px-4 py-4 md:px-5 md:py-5 flex-shrink-0">
         <Link href="/" className="hover:opacity-80 transition-opacity" aria-label="Back to homepage">
           <AynLogo size="sm" withGlow={false} heroStyle />
         </Link>
 
         <button
           onClick={onToggle}
-          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[var(--surface)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-light)] active:scale-90 shadow-inner"
+          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-[var(--sidebar-foreground)] transition-all bg-[var(--surface)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-light)] active:scale-90"
           title="Close Sidebar"
+          aria-label="Close sidebar"
         >
           <PanelLeft className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 pt-4 overflow-hidden">
+      {/* ─── Navigation: Scrollable ─── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 md:px-4 pt-2 pb-2 sidebar-scroll">
         {menuItems.map((item) => {
           const isActive = pathname.includes(item.id) ||
             (item.id === "reports" && pathname.includes("analytics"))
@@ -72,8 +88,12 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
             <Link
               key={item.id}
               href={item.href}
+              onClick={() => {
+                // Auto-close sidebar on mobile after navigation
+                if (window.innerWidth < 768) onToggle()
+              }}
               className={cn(
-                "relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group mb-1 whitespace-nowrap",
+                "relative w-full flex items-center gap-3 px-3 py-2.5 md:px-4 rounded-xl transition-all duration-200 group mb-0.5",
                 isActive
                   ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)] shadow-sm"
                   : "text-[color:rgba(148,163,184,1)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
@@ -88,37 +108,33 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
                 />
               )}
 
-              {/* Icon with hover animation */}
+              {/* Icon */}
               <div className={cn(
-                "relative w-5 h-5 flex items-center justify-center transition-transform duration-300",
-                !isActive && "group-hover:scale-110 group-hover:-rotate-3"
+                "relative w-5 h-5 flex-shrink-0 flex items-center justify-center transition-transform duration-200",
+                !isActive && "group-hover:scale-110"
               )}>
                 <item.icon
                   className={cn(
-                    "w-[18px] h-[18px] flex-shrink-0 transition-colors duration-300",
+                    "w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200",
                     isActive
                       ? "text-[color:rgba(37,99,235,1)]"
                       : "text-[color:rgba(148,163,184,1)] group-hover:text-[var(--sidebar-foreground)]"
                   )}
                 />
-                {/* Subtle glow on hover */}
-                {!isActive && (
-                  <div className="absolute inset-0 bg-blue-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                )}
               </div>
 
               {/* Label */}
               <span className={cn(
-                "text-[13px] font-medium tracking-wide transition-all duration-300",
+                "text-[13px] font-medium tracking-wide truncate transition-colors duration-200",
                 isActive ? "text-[var(--sidebar-foreground)]" : "group-hover:text-[var(--sidebar-foreground)]"
               )}>
                 {item.label}
               </span>
 
-              {/* Hover arrow indicator */}
+              {/* Hover arrow */}
               <ChevronRight
                 className={cn(
-                  "w-4 h-4 ml-auto opacity-0 -translate-x-2 transition-all duration-300",
+                  "w-4 h-4 ml-auto flex-shrink-0 opacity-0 -translate-x-2 transition-all duration-200 hidden md:block",
                   !isActive && "group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-zinc-400"
                 )}
               />
@@ -127,43 +143,70 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
         })}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="px-4 pb-10 mt-auto space-y-4 overflow-hidden">
-        <Link
-          href="/platform/settings"
-          className={cn(
-            "relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group whitespace-nowrap",
-            pathname.includes("settings")
-              ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)]"
-              : "text-zinc-500 hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
-          )}
-        >
-          {pathname.includes("settings") && (
-            <motion.span
-              layoutId="activePill"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-500 rounded-r"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-          )}
-          <Settings className={cn(
-            "w-[18px] h-[18px] flex-shrink-0 transition-all duration-300",
-            pathname.includes("settings") ? "text-blue-400" : "text-zinc-500 group-hover:text-zinc-300 group-hover:rotate-45"
-          )} />
-          <span className="text-[13px] font-medium">Settings</span>
-        </Link>
+      {/* ─── Bottom Section: Settings + User + Logout ─── */}
+      <div className="flex-shrink-0 mt-auto border-t border-[var(--border-subtle)]">
+        {/* Settings Link */}
+        <div className="px-3 md:px-4 pt-3">
+          <Link
+            href="/platform/settings"
+            onClick={() => {
+              if (window.innerWidth < 768) onToggle()
+            }}
+            className={cn(
+              "relative w-full flex items-center gap-3 px-3 py-2.5 md:px-4 rounded-xl transition-all duration-200 group",
+              pathname.includes("settings")
+                ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)]"
+                : "text-zinc-500 hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+            )}
+          >
+            {pathname.includes("settings") && (
+              <motion.span
+                layoutId="activePill"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-500 rounded-r"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <Settings className={cn(
+              "w-[18px] h-[18px] flex-shrink-0 transition-all duration-200",
+              pathname.includes("settings") ? "text-blue-400" : "text-zinc-500 group-hover:text-zinc-300 group-hover:rotate-45"
+            )} />
+            <span className="text-[13px] font-medium">Settings</span>
+          </Link>
+        </div>
 
-        <div className="pt-6 border-t border-[var(--border-subtle)] flex items-center gap-3 px-4 whitespace-nowrap">
-          <div className="w-8 h-8 rounded-full bg-[var(--surface)] flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-[var(--border-subtle)] group-hover:ring-blue-500/30 transition-all">
-            <UserCircle2 className="w-5 h-5 text-zinc-500" />
+        {/* User Info */}
+        <div className="px-3 md:px-4 pt-3 pb-2">
+          <div className="flex items-center gap-3 px-3 md:px-4 py-2">
+            <div className="w-8 h-8 rounded-full bg-[var(--surface)] flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-[var(--border-subtle)]">
+              <UserCircle2 className="w-5 h-5 text-zinc-500" />
+            </div>
+            <div className="flex flex-col overflow-hidden min-w-0 flex-1">
+              <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">
+                {user?.name ?? "QA Director"}
+              </span>
+              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                Ayn OS
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate w-24">
-              {user?.name ?? "QA Director"}
+        </div>
+
+        {/* ─── Logout Button ─── */}
+        <div className="px-3 md:px-4 pb-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 md:px-4 rounded-xl transition-all duration-200 group",
+              "text-zinc-500 hover:text-red-400 hover:bg-red-500/10",
+              "border border-transparent hover:border-red-500/15"
+            )}
+            aria-label="Log out"
+          >
+            <LogOut className="w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 group-hover:text-red-400" />
+            <span className="text-[13px] font-medium transition-colors duration-200 group-hover:text-red-400">
+              Log Out
             </span>
-            <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-              Ayn OS
-            </span>
-          </div>
+          </button>
         </div>
       </div>
     </aside>

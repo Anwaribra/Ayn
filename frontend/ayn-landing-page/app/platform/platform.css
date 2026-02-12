@@ -75,10 +75,12 @@
 
 /* Light variant for the platform shell only (does NOT affect landing page) */
 [data-section="platform"] [data-platform-theme="light"] {
-  --background: #F6F8FC;
-  --bg-deep: #F6F8FC;
+  --background: #F1F5F9;
+  --bg-deep: #F1F5F9;
 
-  --surface: #F8FAFD;
+  --sidebar-bg: #FFFFFF;
+
+  --surface: #F8FAFC;
   --surface-card: #FFFFFF;
   --surface-modal: #FFFFFF;
 
@@ -90,12 +92,7 @@
   --border-light: rgba(15, 23, 42, 0.10);
   --border: rgba(15, 23, 42, 0.08);
 
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-
-  --muted: #F1F5F9;
+  --muted: #E2E8F0;
   --muted-foreground: #64748B;
 
   --accent: #E8F0FF;
@@ -103,6 +100,13 @@
 
   --input: #FFFFFF;
   --ring: rgba(37, 99, 235, 0.5);
+
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: rgba(15, 23, 42, 0.08);
 
   color-scheme: light;
 }
@@ -134,7 +138,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 /* ─── Elevation Levels ────────────────────────────────────────────────────── */
@@ -160,6 +164,18 @@
   background: #141820;
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-section="platform"] [data-platform-theme="light"] .elevation-1,
+[data-section="platform"] [data-platform-theme="light"] .elevation-2,
+[data-section="platform"] [data-platform-theme="light"] .elevation-3 {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+[data-section="platform"] [data-platform-theme="light"] .elevation-modal {
+  background: #FFFFFF;
+  border-color: rgba(15, 23, 42, 0.10);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 /* ─── Sidebar Active Pill ─────────────────────────────────────────────────── */

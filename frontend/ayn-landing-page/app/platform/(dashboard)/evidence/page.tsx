@@ -62,7 +62,7 @@ function EvidenceContent() {
   )
 
   const filteredEvidence = (evidence ?? []).filter((e: Evidence) =>
-    (e.fileName ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
+    (e.fileUrl?.split('/').pop() ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const handleUpload = useCallback(
@@ -209,7 +209,8 @@ function EvidenceContent() {
             const color = CAT_COLORS[i % CAT_COLORS.length]
             const hasLink = !!item.criterionId
             const year = new Date(item.createdAt).getFullYear()
-            const size = item.fileType ?? "DOC"
+            const fileName = item.fileUrl.split('/').pop() || "Unknown"
+            const size = fileName.split('.').pop()?.toUpperCase() || "DOC"
 
             return viewMode === "grid" ? (
               <div
@@ -230,7 +231,7 @@ function EvidenceContent() {
                 <div className="space-y-3">
                   <div>
                     <h3 className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors">
-                      {item.fileName}
+                      {fileName}
                     </h3>
                     <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
                       {item.criterionId ? "Linked" : "Unlinked"}
@@ -261,7 +262,7 @@ function EvidenceContent() {
                     <FileText className="w-4 h-4 text-zinc-400 group-hover:text-white" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-white">{item.fileName}</h4>
+                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-white">{fileName}</h4>
                     <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
                       {size} • {year}
                     </p>

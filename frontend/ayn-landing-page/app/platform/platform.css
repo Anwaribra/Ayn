@@ -124,6 +124,13 @@
   pointer-events: none;
 }
 
+/* Light mode: remove cinematic blur and heavy dark background */
+[data-section="platform"] [data-platform-theme="light"] .cinematic-bg {
+  background: linear-gradient(to bottom, #F1F5F9, #E5E9F2);
+  filter: none;
+  opacity: 1;
+}
+
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
   background: rgba(255, 255, 255, 0.03);

@@ -73,8 +73,8 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
               className={cn(
                 "relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group mb-1 whitespace-nowrap",
                 isActive
-                  ? "bg-white/[0.08] text-white shadow-lg shadow-black/20"
-                  : "text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.04]"
+                  ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)] shadow-sm"
+                  : "text-[color:rgba(148,163,184,1)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
               )}
             >
               {/* Active indicator pill */}
@@ -94,7 +94,9 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
                 <item.icon
                   className={cn(
                     "w-[18px] h-[18px] flex-shrink-0 transition-colors duration-300",
-                    isActive ? "text-blue-400" : "text-zinc-500 group-hover:text-zinc-300"
+                    isActive
+                      ? "text-[color:rgba(37,99,235,1)]"
+                      : "text-[color:rgba(148,163,184,1)] group-hover:text-[var(--sidebar-foreground)]"
                   )}
                 />
                 {/* Subtle glow on hover */}

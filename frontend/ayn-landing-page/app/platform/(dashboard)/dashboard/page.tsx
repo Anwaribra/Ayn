@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/platform/empty-state"
 import { DashboardMetricsSkeleton, SuggestionsGridSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
 import { SystemStatusWidget } from "@/components/platform/horus-ai-enhanced"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
   return (
@@ -74,7 +75,7 @@ function DashboardContent() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Visualizer */}
           <div className="flex-1 relative group">
-            <div className="w-full h-96 rounded-[48px] overflow-hidden glass-panel flex items-center justify-between px-10 md:px-16 relative border-none">
+            <div className="w-full min-h-[320px] md:h-96 rounded-[32px] md:rounded-[48px] overflow-hidden glass-panel flex items-center justify-between px-6 sm:px-10 md:px-16 relative border-none">
               <div className="relative z-10 max-w-xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
@@ -86,9 +87,9 @@ function DashboardContent() {
                   </span>
                 </div>
 
-                <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 leading-tight italic text-white">
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6 leading-tight italic text-[var(--text-primary)]">
                   Institutional <br />
-                  <span className="text-zinc-600">Equilibrium.</span>
+                  <span className="text-[var(--text-tertiary)]">Equilibrium.</span>
                 </h1>
 
                 <p className="text-lg text-zinc-400 font-medium mb-10 max-w-sm leading-relaxed">
@@ -106,10 +107,10 @@ function DashboardContent() {
                     Launch Global Audit
                   </Link>
                   <Link
-                    href="/platform/gap-analysis"
+                    href="/platform/evidence"
                     className="px-8 py-4 glass-panel rounded-3xl font-bold text-sm hover:bg-white/10 transition-all border-white/5"
                   >
-                    Map Gap Topology
+                    Evidence Library
                   </Link>
                 </div>
               </div>
@@ -121,24 +122,24 @@ function DashboardContent() {
                   <circle cx="144" cy="144" r="120" stroke="rgba(255,255,255,0.03)" strokeWidth="16" fill="transparent" />
                   <circle
                     cx="144" cy="144" r="120"
-                    stroke="url(#blueGradient)" strokeWidth="16"
+                    stroke="url(#dashHealthGrad)" strokeWidth="16"
                     fill="transparent"
                     strokeDasharray="754" strokeDashoffset={strokeOffset}
                     className="transition-all duration-1000"
                     strokeLinecap="round"
                   />
                   <defs>
-                    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient id="dashHealthGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#2563EB" />
                       <stop offset="100%" stopColor="#6366F1" />
                     </linearGradient>
                   </defs>
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="mono text-7xl font-black tracking-tighter text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-center" role="img" aria-label={`Health Index: ${Math.round(healthScore)} percent`}>
+                  <span className="mono text-7xl font-black tracking-tighter text-[var(--text-primary)]">
                     {isLoading ? "—" : Math.round(healthScore)}
                   </span>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] mt-2">Health Index</span>
+                  <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] mt-2">Health Index</span>
                 </div>
               </div>
 
@@ -147,7 +148,7 @@ function DashboardContent() {
           </div>
 
           {/* Neural Activity Feed */}
-          <div className="w-full lg:w-80 glass-panel rounded-[40px] p-8 flex flex-col border-white/5">
+          <div className="w-full lg:w-80 glass-panel rounded-[32px] md:rounded-[40px] p-6 md:p-8 flex flex-col border-white/5">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-3 h-3" /> Live Feed
@@ -168,39 +169,44 @@ function DashboardContent() {
         <div className="flex items-center justify-between mb-10 px-4">
           <div className="flex items-center gap-4">
             <h2 className="text-3xl font-black tracking-tight italic">Executive Pulse</h2>
-            <div className="h-px w-20 bg-zinc-800" />
+            <div className="h-px w-20 bg-[var(--border-subtle)]" />
           </div>
-          <button className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">Download Report</button>
+          <button
+            onClick={() => toast.info('Report download will be available after your next completed gap analysis.')}
+            className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline"
+          >
+            Download Report
+          </button>
         </div>
 
         {isLoading ? (
           <DashboardMetricsSkeleton />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
-              { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10" },
-              { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10" },
-              { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10" },
-              { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10" },
+              { label: "Verified Standards", value: String(completedCriteria), sub: "Compliance", icon: ShieldCheck, color: "text-blue-500", glow: "shadow-blue-500/10", href: "/platform/standards" },
+              { label: "Evidence Matrix", value: String(evidenceCount), sub: "Indexed Assets", icon: Archive, color: "text-indigo-500", glow: "shadow-indigo-500/10", href: "/platform/evidence" },
+              { label: "Critical Gaps", value: String(activeGaps).padStart(2, "0"), sub: "Needs Action", icon: Zap, color: "text-amber-500", glow: "shadow-amber-500/10", href: "/platform/gap-analysis" },
+              { label: "Sync Status", value: "Active", sub: "Neural Bridge", icon: Cpu, color: "text-emerald-500", glow: "shadow-emerald-500/10", href: "/platform/dashboard" },
             ].map((m, i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className={["glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between transition-all duration-500",
+              <Link key={i} href={m.href} className="group">
+                <div className={["glass-panel p-6 md:p-8 rounded-[32px] md:rounded-[40px] flex flex-col justify-between min-h-[200px] sm:aspect-square transition-all duration-500",
                   "group-hover:-translate-y-3 group-hover:bg-[var(--surface)] border-white/5", m.glow, "group-hover:shadow-2xl"].join(" ")}>
                   <div className="flex justify-between items-start">
-                    <div className="w-14 h-14 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
-                      <m.icon className={["w-6 h-6", m.color].join(" ")} />
+                    <div className="w-12 md:w-14 h-12 md:h-14 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
+                      <m.icon className={["w-5 md:w-6 h-5 md:h-6", m.color].join(" ")} />
                     </div>
                     <ChevronRight className="w-5 h-5 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
                   </div>
                   <div>
-                    <div className="mono text-6xl font-black tracking-tighter mb-2 text-white">{m.value}</div>
+                    <div className="mono text-4xl md:text-6xl font-black tracking-tighter mb-2 text-[var(--text-primary)]">{m.value}</div>
                     <div className="space-y-1">
-                      <div className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">{m.label}</div>
-                      <div className="text-[10px] font-bold text-zinc-700 uppercase tracking-tighter italic">{m.sub}</div>
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">{m.label}</div>
+                      <div className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-tighter italic">{m.sub}</div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -226,7 +232,7 @@ function DashboardContent() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-700">{item.cat}</span>
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-zinc-100 mb-2 leading-tight">{item.title}</h4>
+                  <h4 className="text-xl font-bold text-[var(--text-primary)] mb-2 leading-tight">{item.title}</h4>
                   <p className="text-sm text-zinc-500 mb-6 font-medium">{item.desc}</p>
                   <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-white transition-colors group/btn">
                     Initiate Neural Procedure <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />

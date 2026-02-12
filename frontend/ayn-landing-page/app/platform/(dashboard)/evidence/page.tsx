@@ -4,7 +4,7 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { toast } from "sonner"
 import {
   FileText,
@@ -54,6 +54,7 @@ function EvidenceContent() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [uploading, setUploading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const { data: evidence, mutate, isLoading } = useSWR<Evidence[]>(
     user ? "evidence" : null,
@@ -89,6 +90,7 @@ function EvidenceContent() {
       try {
         await api.deleteEvidence(id)
         toast.success("Evidence removed")
+        setDeleteConfirm(null)
         mutate()
       } catch {
         toast.error("Failed to delete evidence")
@@ -96,6 +98,18 @@ function EvidenceContent() {
     },
     [mutate],
   )
+
+  // ESC to close upload modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (deleteConfirm) setDeleteConfirm(null)
+        else if (isUploading && !uploading) setIsUploading(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isUploading, uploading, deleteConfirm])
 
   return (
     <div className="animate-fade-in-up pb-20">
@@ -108,8 +122,8 @@ function EvidenceContent() {
             <div className="h-px w-6 bg-zinc-900" />
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Institutional Vault</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight italic text-white">
-            Evidence <span className="text-zinc-700 not-italic font-light">Library</span>
+          <h1 className="text-4xl font-black tracking-tight italic text-[var(--text-primary)]">
+            Evidence <span className="text-[var(--text-tertiary)] not-italic font-light">Library</span>
           </h1>
         </div>
 
@@ -156,7 +170,7 @@ function EvidenceContent() {
                 <stat.icon className="w-4 h-4 text-zinc-500" />
               </div>
               <div>
-                <div className="mono text-lg font-bold text-white">{stat.value}</div>
+                <div className="mono text-lg font-bold text-[var(--text-primary)]">{stat.value}</div>
                 <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
               </div>
             </div>
@@ -164,8 +178,8 @@ function EvidenceContent() {
         </div>
       )}
 
-      {/* Search */}
-      {filteredEvidence.length > 0 && (
+      {/* Search — always visible when evidence exists */}
+      {(evidence ?? []).length > 0 && (
         <div className="px-4 mb-6">
           <div className="relative max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
@@ -174,7 +188,7 @@ function EvidenceContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search assets..."
-              className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-white"
+              className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-9 pr-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-white/10 transition-all placeholder:text-zinc-600 text-[var(--text-primary)]"
             />
           </div>
         </div>
@@ -214,7 +228,7 @@ function EvidenceContent() {
 
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-[14px] font-bold text-white truncate group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-[14px] font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors">
                       {item.fileName}
                     </h3>
                     <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
@@ -254,8 +268,8 @@ function EvidenceContent() {
                 <div className="flex items-center gap-3">
                   {hasLink ? <ShieldCheck className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-amber-500" />}
                   <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(item.id) }}
+                    className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                   >
                     Remove
                   </button>
@@ -268,18 +282,25 @@ function EvidenceContent() {
 
       {/* Upload Overlay */}
       {isUploading && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-[4px] z-[60] flex items-center justify-center p-6">
-          <div className="w-full max-w-xl bg-[var(--surface-modal)] rounded-2xl p-10 relative overflow-hidden text-center border border-[var(--border-subtle)] shadow-xl">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-[4px] z-[60] flex items-center justify-center p-6" onClick={() => !uploading && setIsUploading(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Upload evidence"
+            className="w-full max-w-xl bg-[var(--surface-modal)] rounded-2xl p-10 relative overflow-hidden text-center border border-[var(--border-subtle)] shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setIsUploading(false)}
               className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"
+              aria-label="Close upload dialog"
             >
               <Plus className="w-6 h-6 rotate-45" />
             </button>
             <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
               <Archive className="w-8 h-8 text-blue-500" />
             </div>
-            <h2 className="text-3xl font-bold mb-4 italic text-white">Deposit Evidence</h2>
+            <h2 className="text-3xl font-bold mb-4 italic text-[var(--text-primary)]">Upload Evidence</h2>
             <p className="text-zinc-500 text-sm mb-10 max-w-sm mx-auto">
               Assets are automatically mapped to the National Framework via the Horus Engine.
             </p>
@@ -295,7 +316,7 @@ function EvidenceContent() {
               <div className="flex flex-col items-center gap-3">
                 <Plus className="w-6 h-6 text-zinc-700 group-hover:text-blue-500 transition-colors" />
                 <span className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">
-                  {uploading ? "Indexing payload..." : "Release payload here"}
+                  {uploading ? "Uploading..." : "Drag & drop or click to select files"}
                 </span>
               </div>
             </label>
@@ -307,18 +328,35 @@ function EvidenceContent() {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm deletion"
+            className="bg-[var(--surface-modal)] rounded-2xl p-8 max-w-sm w-full border border-[var(--border-light)] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Delete Evidence?</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">This action cannot be undone. The file will be permanently removed.</p>
+            <div className="flex gap-3">
               <button
-                onClick={() => {
-                  const input = document.createElement("input")
-                  input.type = "file"
-                  input.multiple = true
-                  input.onchange = (e) => handleUpload((e.target as HTMLInputElement).files)
-                  input.click()
-                }}
-                disabled={uploading}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-2xl shadow-blue-600/20 active:scale-95 transition-all"
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2.5 rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--surface)] transition-all"
               >
-                Start Neural Indexing
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 py-2.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-500 transition-all"
+              >
+                Delete
               </button>
             </div>
           </div>

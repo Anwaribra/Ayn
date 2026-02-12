@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -91,45 +91,13 @@ function SettingsContent() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] modal-backdrop">
-          <div className="modal-container z-[70] bg-[var(--surface-modal)] rounded-2xl p-10 max-w-[520px] w-full border border-[var(--border-light)] relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
-            <button
-              onClick={() => setShowPurgeModal(false)}
-              className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-[#B94A4A]/10 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-[#B94A4A]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Confirm Vault Purge</h3>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest">This action cannot be undone</p>
-              </div>
-            </div>
-            <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
-              You are about to permanently delete all institutional data including evidence assets, compliance mappings, and Horus neural history. This requires administrative consensus.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowPurgeModal(false)}
-                className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-zinc-400 text-[11px] font-medium uppercase tracking-widest hover:bg-[var(--surface)] hover:text-zinc-200 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
-                  setShowPurgeModal(false)
-                }}
-                className="flex-1 py-2.5 rounded-lg bg-[#B94A4A] text-white text-[11px] font-medium uppercase tracking-widest hover:bg-[#C25656] transition-all"
-              >
-                Confirm Purge
-              </button>
-            </div>
-          </div>
-        </div>
+        <PurgeModal
+          onClose={() => setShowPurgeModal(false)}
+          onConfirm={() => {
+            toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
+            setShowPurgeModal(false)
+          }}
+        />
       )}
 
       <div className="mt-12 flex items-center justify-between px-4">
@@ -139,6 +107,62 @@ function SettingsContent() {
           <span className="text-[9px] font-bold text-zinc-800 uppercase tracking-[0.3em]">Institutional Node 42</span>
         </div>
         <span className="mono text-[10px] text-zinc-800 font-bold">OS_V2.4.12_SYNC_OK</span>
+      </div>
+    </div>
+  )
+}
+
+function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] modal-backdrop" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirm vault purge"
+        className="modal-container z-[70] bg-[var(--surface-modal)] rounded-2xl p-10 max-w-[520px] w-full border border-[var(--border-light)] relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
+          aria-label="Close purge dialog"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-[#B94A4A]/10 flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6 text-[#B94A4A]" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Confirm Data Purge</h3>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">This action cannot be undone</p>
+          </div>
+        </div>
+        <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
+          You are about to permanently delete all institutional data including evidence assets, compliance mappings, and Horus neural history. This requires administrative consensus.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-zinc-400 text-[11px] font-medium uppercase tracking-widest hover:bg-[var(--surface)] hover:text-zinc-200 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-lg bg-[#B94A4A] text-white text-[11px] font-medium uppercase tracking-widest hover:bg-[#C25656] transition-all"
+          >
+            Confirm Purge
+          </button>
+        </div>
       </div>
     </div>
   )

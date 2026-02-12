@@ -55,11 +55,13 @@ function CommandItem({
   command,
   isSelected,
   onSelect,
+  onHighlight,
   showShortcut = true,
 }: {
   command: CommandType
   isSelected: boolean
   onSelect: () => void
+  onHighlight?: () => void
   showShortcut?: boolean
 }) {
   const Icon = command.icon
@@ -67,7 +69,7 @@ function CommandItem({
   return (
     <button
       onClick={onSelect}
-      onMouseEnter={onSelect}
+      onMouseEnter={onHighlight}
       className={cn(
         "w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-150",
         "hover:bg-accent/50 focus:bg-accent/50 focus:outline-none",
@@ -81,8 +83,8 @@ function CommandItem({
             ? "bg-[var(--brand)]/10 text-[var(--brand)]"
             : "bg-muted text-muted-foreground",
           isSelected &&
-            command.category === "AI & Assistance" &&
-            "bg-[var(--brand)]/20 text-[var(--brand)]"
+          command.category === "AI & Assistance" &&
+          "bg-[var(--brand)]/20 text-[var(--brand)]"
         )}
       >
         <Icon className="h-4 w-4" />
@@ -202,9 +204,9 @@ export function CommandPalette() {
       query
         ? filteredCommands
         : [
-            ...recentCommands,
-            ...allCommands.filter((cmd) => !recentCommandIds.includes(cmd.id)),
-          ],
+          ...recentCommands,
+          ...allCommands.filter((cmd) => !recentCommandIds.includes(cmd.id)),
+        ],
     [query, filteredCommands, recentCommands, recentCommandIds]
   )
 
@@ -303,6 +305,7 @@ export function CommandPalette() {
                 command={command}
                 isSelected={selectedIndex === index}
                 onSelect={() => executeCommand(command)}
+                onHighlight={() => setSelectedIndex(index)}
               />
             </div>
           ))}
@@ -326,6 +329,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                   />
                 </div>
               )
@@ -344,6 +348,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                   />
                 </div>
               )
@@ -362,6 +367,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                   />
                 </div>
               )
@@ -380,6 +386,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                   />
                 </div>
               )
@@ -398,6 +405,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                   />
                 </div>
               )
@@ -419,6 +427,7 @@ export function CommandPalette() {
                     command={command}
                     isSelected={selectedIndex === index}
                     onSelect={() => executeCommand(command)}
+                    onHighlight={() => setSelectedIndex(index)}
                     showShortcut={false}
                   />
                 </div>

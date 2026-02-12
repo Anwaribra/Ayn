@@ -104,8 +104,8 @@ function StandardsContent() {
               Compliance Mapping
             </button>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter italic text-white">
-            Standards <span className="text-zinc-700 not-italic font-light">Hub</span>
+          <h1 className="text-4xl font-black tracking-tighter italic text-[var(--text-primary)]">
+            Standards <span className="text-[var(--text-tertiary)] not-italic font-light">Hub</span>
           </h1>
         </div>
       </header>
@@ -135,7 +135,7 @@ function StandardsContent() {
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
-              className="group glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] hover:bg-[var(--surface)] transition-all duration-500 cursor-pointer flex flex-col justify-between aspect-square"
+              className="group glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] hover:bg-[var(--surface)] transition-all duration-500 cursor-pointer flex flex-col justify-between min-h-[200px] sm:aspect-square"
             >
               <div className="flex justify-between items-start">
                 <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/10 flex items-center justify-center transition-transform group-hover:scale-105`}>
@@ -146,7 +146,7 @@ function StandardsContent() {
 
               <div>
                 <span className="mono text-[9px] font-bold text-zinc-600 uppercase tracking-widest block mb-1">{c.code}</span>
-                <h3 className="text-xl font-bold text-white mb-4 leading-tight">{c.title}</h3>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 leading-tight">{c.title}</h3>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
@@ -167,7 +167,7 @@ function StandardsContent() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-black italic">Framework Topology</h2>
-            <div className="h-px w-16 bg-zinc-800" />
+            <div className="h-px w-16 bg-[var(--border-subtle)]" />
           </div>
           <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">
             Full System Scan

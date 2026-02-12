@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { BarChart3, Download, Filter, Share2, Target, Zap, Globe, Cpu } from "lucide-react"
+import { toast } from "sonner"
 
 export default function AnalyticsPage() {
   return (
@@ -16,13 +17,19 @@ export default function AnalyticsPage() {
               <div className="h-px w-6 bg-zinc-900" />
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Institutional Intelligence</span>
             </div>
-            <h1 className="text-4xl font-black tracking-tight italic text-white">Reports & <span className="text-zinc-700 not-italic font-light">Insights</span></h1>
+            <h1 className="text-4xl font-black tracking-tight italic text-[var(--text-primary)]">Reports & <span className="text-[var(--text-tertiary)] not-italic font-light">Insights</span></h1>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-5 py-2 glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all border-[var(--border-subtle)]">
+            <button
+              onClick={() => toast.info('Period filtering is coming soon')}
+              className="flex items-center gap-2 px-5 py-2 glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all border-[var(--border-subtle)]"
+            >
               <Filter className="w-3 h-3" /> Filter Period
             </button>
-            <button className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all">
+            <button
+              onClick={() => toast.info('Export will be available after generating reports')}
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all"
+            >
               <Download className="w-3 h-3" /> Export Intelligence
             </button>
           </div>
@@ -33,7 +40,7 @@ export default function AnalyticsPage() {
           <div className="lg:col-span-2 glass-panel p-8 rounded-[40px] relative overflow-hidden border-[var(--border-subtle)]">
             <div className="flex justify-between items-start mb-10">
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">Institutional Pulse</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Institutional Pulse</h3>
                 <p className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">Compliance Equilibrium Trend (6 Months)</p>
               </div>
               <div className="flex gap-4">
@@ -76,7 +83,7 @@ export default function AnalyticsPage() {
           {/* Distribution Ring Card */}
           <div className="glass-panel p-8 rounded-[40px] border-[var(--border-subtle)] flex flex-col relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl pointer-events-none" />
-            <h3 className="text-lg font-bold text-white mb-8">Performance Distribution</h3>
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-8">Performance Distribution</h3>
             <div className="flex-1 space-y-6 flex flex-col justify-center">
               {[
                 { label: 'Teaching Quality', score: 92, color: 'bg-blue-500', icon: Target },
@@ -90,7 +97,7 @@ export default function AnalyticsPage() {
                       <item.icon className="w-3.5 h-3.5 text-zinc-600 group-hover:text-white transition-colors" />
                       <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-tight group-hover:text-zinc-300 transition-colors">{item.label}</span>
                     </div>
-                    <span className="mono text-[11px] font-bold text-white">{item.score}%</span>
+                    <span className="mono text-[11px] font-bold text-[var(--text-primary)]">{item.score}%</span>
                   </div>
                   <div className="h-1 bg-white/[0.02] rounded-full overflow-hidden">
                     <div className={`h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.2)]`} style={{ width: `${item.score}%` }} />
@@ -107,8 +114,8 @@ export default function AnalyticsPage() {
 
         <section className="px-4">
           <div className="flex items-center gap-4 mb-8">
-            <h2 className="text-2xl font-black italic text-white">Neural Briefings</h2>
-            <div className="h-px w-20 bg-zinc-900" />
+            <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Neural Briefings</h2>
+            <div className="h-px w-20 bg-[var(--border-subtle)]" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -127,9 +134,9 @@ export default function AnalyticsPage() {
                     <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">{item.date} • {item.pages} Pages</p>
                   </div>
                 </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0 duration-300">
-                  <button className="p-2 text-zinc-600 hover:text-white transition-colors"><Share2 className="w-4 h-4" /></button>
-                  <button className="p-2 text-zinc-600 hover:text-white transition-colors"><Download className="w-4 h-4" /></button>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0 duration-300">
+                  <button onClick={() => toast.info('Sharing will be enabled soon')} className="p-2 text-zinc-600 hover:text-white transition-colors" aria-label={`Share ${item.title}`}><Share2 className="w-4 h-4" /></button>
+                  <button onClick={() => toast.info('Download will be enabled soon')} className="p-2 text-zinc-600 hover:text-white transition-colors" aria-label={`Download ${item.title}`}><Download className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}

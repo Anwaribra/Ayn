@@ -62,7 +62,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // Close notification dropdown when clicking outside
+  // Close notification dropdown when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -70,8 +70,17 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         setShowNotifications(false)
       }
     }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showNotifications) {
+        setShowNotifications(false)
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [showNotifications])
 
   // Notification data via SWR
@@ -94,8 +103,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }
 
   const handleDismissNotification = (id: string) => {
+    // Mark as read instead of deleting — user can still see it
     mutateNotifications(
-      notifications?.filter(n => n.id !== id) ?? [],
+      notifications?.map(n => n.id === id ? { ...n, read: true } : n) ?? [],
       { revalidate: false }
     )
   }
@@ -179,7 +189,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               </button>
             </div>
 
-            <div className="relative group min-w-[200px] md:min-w-[320px]">
+            <div className="relative group min-w-[140px] sm:min-w-[200px] md:min-w-[320px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-blue-500 transition-colors z-10" />
               <input
                 type="text"
@@ -197,8 +207,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
             <button
+              onClick={() => setCommandPaletteOpen(true)}
               className="hidden md:block text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95"
-              title="History"
+              title="Search history"
+              aria-label="Search history"
             >
               <History className="w-4 h-4" />
             </button>
@@ -207,6 +219,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="text-zinc-500 hover:text-white transition-all duration-300 relative p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95 group"
                 title="Notifications"
+                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
               >
                 <Bell className="w-4 h-4 group-hover:animate-swing" />
                 {notificationCount > 0 && (
@@ -246,7 +259,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                           className="flex gap-4 group cursor-pointer hover:bg-[var(--surface)] p-2 rounded-xl transition-colors"
                           onClick={() => handleDismissNotification(n.id)}
                         >
-                          <div className={`w-1 h-10 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-800'}`} />
+                          <div className={`w-1 h-10 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-[var(--border-subtle)]'}`} />
                           <div className="flex-1">
                             <h4 className={`text-sm font-bold ${!n.read ? 'text-zinc-100' : 'text-zinc-500'}`}>{n.title}</h4>
                             <p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{n.body}</p>
@@ -285,6 +298,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   ? "Switch to light mode"
                   : "Switch to dark mode"
               }
+              aria-label={
+                platformTheme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
             >
               {platformTheme === "dark" ? (
                 <Sun className="w-4 h-4" />
@@ -293,7 +311,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               )}
             </button>
             <div className="w-px h-4 bg-[var(--border-light)]" />
-            <button className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group">
+            <button
+              onClick={() => router.push('/platform/settings/account')}
+              className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group"
+              aria-label="Account settings"
+            >
               <span className="hidden sm:inline group-hover:text-white transition-colors">{user?.name ?? "Institution Alpha"}</span>
               <span className="sm:hidden font-mono">I-A</span>
             </button>

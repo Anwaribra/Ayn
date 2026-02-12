@@ -16,6 +16,7 @@ import {
   LogOut,
   History,
   ChevronRight,
+  Shield,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -30,11 +31,11 @@ interface SidebarProps {
 const menuItems = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
   { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
-  { id: "evidence", icon: Archive, label: "Evidence Library", href: "/platform/evidence" },
+  { id: "evidence", icon: Shield, label: "Evidence Library", href: "/platform/evidence" },
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
   { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
   { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/analytics" },
-  { id: "archive", icon: History, label: "Archive", href: "/platform/archive" },
+  { id: "archive", icon: Archive, label: "Archive", href: "/platform/archive" },
 ]
 
 export default function PlatformSidebar({ open, onToggle }: SidebarProps) {

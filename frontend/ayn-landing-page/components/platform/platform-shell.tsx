@@ -102,6 +102,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
   return (
     <div
+      data-platform-theme={platformTheme}
       className={cn(
         "flex h-screen overflow-hidden selection:bg-blue-500/30 relative transition-colors duration-300",
         platformTheme === "light"

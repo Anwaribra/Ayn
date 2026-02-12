@@ -82,7 +82,7 @@ function DashboardContent() {
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ayn Core Live</span>
                   </div>
-                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">
                     Sync: {isLoading ? "..." : "—"}
                   </span>
                 </div>
@@ -92,7 +92,7 @@ function DashboardContent() {
                   <span className="text-[var(--text-tertiary)]">Equilibrium.</span>
                 </h1>
 
-                <p className="text-lg text-zinc-400 font-medium mb-10 max-w-sm leading-relaxed">
+                <p className="text-lg text-[var(--text-secondary)] font-medium mb-10 max-w-sm leading-relaxed">
                   {needsAuditStandard
                     ? <>Compliance drift detected. Horus recommends an audit of <Link href="/platform/gap-analysis" className="text-blue-400 hover:underline">{(needsAuditStandard as { standardTitle: string }).standardTitle}</Link> to mitigate drift.</>
                     : "Compliance is holding steady. Run a gap analysis to assess framework alignment."}
@@ -218,23 +218,27 @@ function DashboardContent() {
           <h2 className="text-2xl font-bold tracking-tight">Intelligence Suggestions</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
-            <SuggestionsGridSkeleton count={3} />
-          ) : suggestionsFromData.length === 0 ? (
-            <EmptyState type="dashboard" />
+          {suggestionsFromData.length === 0 ? (
+            <div className="col-span-full">
+              <EmptyState
+                title="No compliance alerts"
+                description="Your framework alignment is within optimal parameters. Horus is monitoring for drift."
+                type="dashboard"
+              />
+            </div>
           ) : (
             suggestionsFromData.map((item, i) => (
-              <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-white/5 transition-all border-white/5 flex flex-col justify-between">
+              <Link key={item.title} href={item.href} className="glass-panel p-8 rounded-[36px] group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] flex flex-col justify-between">
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                     <item.icon className="w-5 h-5 text-blue-400" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-700">{item.cat}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">{item.cat}</span>
                 </div>
                 <div>
                   <h4 className="text-xl font-bold text-[var(--text-primary)] mb-2 leading-tight">{item.title}</h4>
-                  <p className="text-sm text-zinc-500 mb-6 font-medium">{item.desc}</p>
-                  <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-white transition-colors group/btn">
+                  <p className="text-sm text-[var(--text-secondary)] mb-6 font-medium">{item.desc}</p>
+                  <span className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-[var(--text-primary)] transition-colors group/btn">
                     Initiate Neural Procedure <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
                   </span>
                 </div>

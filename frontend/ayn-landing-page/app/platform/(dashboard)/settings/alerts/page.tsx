@@ -60,26 +60,26 @@ function NeuralAlertsContent() {
     <div className="animate-fade-in-up pb-20 max-w-2xl px-4">
       <Link
         href="/platform/settings"
-        className="inline-flex items-center gap-2 text-zinc-500 hover:text-white text-sm font-medium mb-8"
+        className="inline-flex items-center gap-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-sm font-medium mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Settings
       </Link>
 
       <header className="mb-10">
-        <h1 className="text-3xl font-black tracking-tight text-white">
-          Neural <span className="text-zinc-600 font-light">Alerts</span>
+        <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
+          Neural <span className="text-[var(--text-tertiary)] font-light">Alerts</span>
         </h1>
-        <p className="text-zinc-500 text-sm mt-1">
+        <p className="text-[var(--text-secondary)] text-sm mt-1">
           Configure compliance notifications and Horus triggers
         </p>
       </header>
 
-      <div className="glass-panel p-6 rounded-2xl border-white/5 space-y-6">
+      <div className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-zinc-300 font-medium">Compliance Notifications</Label>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Receive alerts when compliance status changes</p>
+            <Label className="text-[var(--text-secondary)] font-medium">Compliance Notifications</Label>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Receive alerts when compliance status changes</p>
           </div>
           <Switch
             checked={settings.complianceNotifications}
@@ -88,8 +88,8 @@ function NeuralAlertsContent() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-zinc-300 font-medium">Horus Triggers</Label>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Allow Horus AI to send proactive recommendations</p>
+            <Label className="text-[var(--text-secondary)] font-medium">Horus Triggers</Label>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Allow Horus AI to send proactive recommendations</p>
           </div>
           <Switch
             checked={settings.horusTriggers}
@@ -98,8 +98,8 @@ function NeuralAlertsContent() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-zinc-300 font-medium">Gap Alerts</Label>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Notify when new compliance gaps are detected</p>
+            <Label className="text-[var(--text-secondary)] font-medium">Gap Alerts</Label>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Notify when new compliance gaps are detected</p>
           </div>
           <Switch
             checked={settings.gapAlerts}
@@ -108,8 +108,8 @@ function NeuralAlertsContent() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-zinc-300 font-medium">Evidence Reminders</Label>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Remind to link evidence to criteria</p>
+            <Label className="text-[var(--text-secondary)] font-medium">Evidence Reminders</Label>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Remind to link evidence to criteria</p>
           </div>
           <Switch
             checked={settings.evidenceReminders}

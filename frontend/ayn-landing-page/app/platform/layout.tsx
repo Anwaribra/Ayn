@@ -17,6 +17,9 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       <CommandPaletteProvider>
         <AuthGuard>
           <div data-section="platform">
+            <a href="#main-content" className="skip-to-content">
+              Skip to Content
+            </a>
             <PlatformShell>{children}</PlatformShell>
             <Toaster />
           </div>

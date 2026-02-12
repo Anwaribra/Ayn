@@ -14,6 +14,8 @@ import {
   UserCircle2,
   PanelLeft,
   LogOut,
+  History,
+  ChevronRight,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
@@ -32,6 +34,7 @@ const menuItems = [
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
   { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },
   { id: "reports", icon: BarChart3, label: "Reports", href: "/platform/analytics" },
+  { id: "archive", icon: History, label: "Archive", href: "/platform/archive" },
 ]
 
 export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
@@ -96,7 +99,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
                 "relative w-full flex items-center gap-3 px-3 py-2.5 md:px-4 rounded-xl transition-all duration-200 group mb-0.5",
                 isActive
                   ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)] shadow-sm"
-                  : "text-[color:rgba(148,163,184,1)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
               )}
             >
               {/* Active indicator pill */}
@@ -117,8 +120,8 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
                   className={cn(
                     "w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200",
                     isActive
-                      ? "text-[color:rgba(37,99,235,1)]"
-                      : "text-[color:rgba(148,163,184,1)] group-hover:text-[var(--sidebar-foreground)]"
+                      ? "text-blue-500"
+                      : "text-[var(--text-tertiary)] group-hover:text-[var(--sidebar-foreground)]"
                   )}
                 />
               </div>
@@ -156,7 +159,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
               "relative w-full flex items-center gap-3 px-3 py-2.5 md:px-4 rounded-xl transition-all duration-200 group",
               pathname.includes("settings")
                 ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-foreground)]"
-                : "text-zinc-500 hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
+                : "text-[var(--text-tertiary)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]"
             )}
           >
             {pathname.includes("settings") && (
@@ -168,7 +171,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
             )}
             <Settings className={cn(
               "w-[18px] h-[18px] flex-shrink-0 transition-all duration-200",
-              pathname.includes("settings") ? "text-blue-400" : "text-zinc-500 group-hover:text-zinc-300 group-hover:rotate-45"
+              pathname.includes("settings") ? "text-blue-400" : "text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] group-hover:rotate-45"
             )} />
             <span className="text-[13px] font-medium">Settings</span>
           </Link>
@@ -210,23 +213,5 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
         </div>
       </div>
     </aside>
-  )
-}
-
-// ChevronRight component since it wasn't imported
-function ChevronRight({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
   )
 }

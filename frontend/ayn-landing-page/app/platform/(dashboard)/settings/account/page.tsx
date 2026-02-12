@@ -50,17 +50,17 @@ function AccountProfileContent() {
     <div className="animate-fade-in-up pb-20 max-w-2xl px-4">
       <Link
         href="/platform/settings"
-        className="inline-flex items-center gap-2 text-zinc-500 hover:text-white text-sm font-medium mb-8"
+        className="inline-flex items-center gap-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-sm font-medium mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Settings
       </Link>
 
       <header className="mb-10">
-        <h1 className="text-3xl font-black tracking-tight text-white">
-          Account <span className="text-zinc-600 font-light">Profile</span>
+        <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
+          Account <span className="text-[var(--text-tertiary)] font-light">Profile</span>
         </h1>
-        <p className="text-zinc-500 text-sm mt-1">
+        <p className="text-[var(--text-secondary)] text-sm mt-1">
           Manage your institutional identifiers and contact details
         </p>
       </header>
@@ -68,7 +68,7 @@ function AccountProfileContent() {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] space-y-4">
           <div>
-            <Label htmlFor="name" className="text-zinc-400 text-sm font-medium">
+            <Label htmlFor="name" className="text-[var(--text-secondary)] text-sm font-medium">
               Full Name
             </Label>
             <Input
@@ -80,13 +80,13 @@ function AccountProfileContent() {
             />
           </div>
           <div>
-            <Label className="text-zinc-500 text-sm font-medium">Email</Label>
-            <p className="mt-2 text-zinc-400 text-sm">{user?.email}</p>
-            <p className="text-[11px] text-zinc-600 mt-0.5">Email cannot be changed</p>
+            <Label className="text-[var(--text-tertiary)] text-sm font-medium">Email</Label>
+            <p className="mt-2 text-[var(--text-secondary)] text-sm">{user?.email}</p>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Email cannot be changed</p>
           </div>
           <div>
-            <Label className="text-zinc-500 text-sm font-medium">Role</Label>
-            <p className="mt-2 text-zinc-400 text-sm">{user?.role}</p>
+            <Label className="text-[var(--text-tertiary)] text-sm font-medium">Role</Label>
+            <p className="mt-2 text-[var(--text-secondary)] text-sm">{user?.role}</p>
           </div>
         </div>
 

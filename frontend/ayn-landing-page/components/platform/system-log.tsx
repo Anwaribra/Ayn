@@ -152,8 +152,8 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               <Activity className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">System Log</h3>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Real-time Events</p>
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">System Log</h3>
+              <p className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Real-time Events</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -162,8 +162,8 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                 isLive
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-zinc-800 text-zinc-500 border border-[var(--border-subtle)]"
+                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                  : "bg-[var(--surface-subtle)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]"
               )}
             >
               <span className={cn("w-1.5 h-1.5 rounded-full", isLive && "animate-pulse bg-emerald-400")} />
@@ -196,7 +196,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[11px] font-medium text-zinc-200 truncate">
+                  <span className="text-[11px] font-medium text-[var(--text-secondary)] truncate">
                     {log.message}
                   </span>
                 </div>
@@ -242,10 +242,10 @@ export function CompactSystemLog({ className }: { className?: string }) {
               <Icon className="w-3 h-3" />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-zinc-300 group-hover:text-white transition-colors">
+              <p className="text-[11px] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
                 {log.message}
               </p>
-              <span className="text-[9px] text-zinc-600">
+              <span className="text-[9px] text-[var(--text-tertiary)]">
                 {log.source} • {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>

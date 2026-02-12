@@ -168,7 +168,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center">
       {/* Illustration */}
-      <div className="text-zinc-400">
+      <div className="text-[var(--text-tertiary)]">
         <Illustration />
       </div>
 
@@ -178,12 +178,12 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       </div>
 
       {/* Title */}
-      <h3 className="text-2xl font-bold text-white mb-3">
+      <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">
         {title || config.title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-zinc-400 max-w-md mb-8 leading-relaxed">
+      <p className="text-sm text-[var(--text-secondary)] max-w-md mb-8 leading-relaxed">
         {description || config.description}
       </p>
 
@@ -235,8 +235,8 @@ export function InlineEmptyState({
       <div className="w-14 h-14 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-5">
         <Icon className="w-6 h-6 text-zinc-500" />
       </div>
-      <h4 className="text-lg font-bold text-white mb-2">{title}</h4>
-      <p className="text-sm text-zinc-500 max-w-sm mx-auto mb-6">{description}</p>
+      <h4 className="text-lg font-bold text-[var(--text-primary)] mb-2">{title}</h4>
+      <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-6">{description}</p>
       {action && <div className="flex justify-center">{action}</div>}
     </div>
   )

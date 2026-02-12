@@ -142,7 +142,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Main Content - Flexible, centered in remaining space */}
-      <main className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
+      <main id="main-content" className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
         {/* App Title — subtle depth */}
         <div
           className="px-6 md:px-10 pt-4 pb-1 border-b border-[var(--border-subtle)] bg-[var(--bg-deep)]"

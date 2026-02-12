@@ -6,7 +6,7 @@
   --spacing-section: 5rem;
   --spacing-section-lg: 6rem;
   --spacing-content: 1.5rem;
-  
+
   /* Light theme colors */
   --background: oklch(0.98 0.002 260);
   --foreground: oklch(0.15 0.01 260);
@@ -121,8 +121,15 @@ html {
 
 /* Custom animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-float {
@@ -130,8 +137,17 @@ html {
 }
 
 @keyframes breathe {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.05); }
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
 }
 
 .animate-breathe {
@@ -139,8 +155,13 @@ html {
 }
 
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .animate-marquee {
@@ -148,14 +169,27 @@ html {
 }
 
 @keyframes gradient-rotate {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-spin-slow {
@@ -208,8 +242,15 @@ html {
 
 /* Notification badge pulse */
 @keyframes badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 40%, transparent); }
-  50% { box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand) 0%, transparent); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--brand) 40%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand) 0%, transparent);
+  }
 }
 
 .badge-pulse {
@@ -236,12 +277,14 @@ html {
 
 /* Accessibility: Reduce motion */
 @media (prefers-reduced-motion: reduce) {
+
   .animate-float,
   .animate-breathe,
   .animate-marquee,
   .animate-spin-slow,
   .animate-ping,
-  .animate-pulse {
+  .animate-pulse,
+  .animate-fade-in-up {
     animation: none;
   }
 
@@ -249,4 +292,48 @@ html {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* Accessibility: Global focus-visible ring */
+*:focus-visible {
+  outline: 2px solid var(--ring, oklch(0.35 0.15 250));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Override for buttons/inputs that have their own focus styles */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ring, oklch(0.35 0.15 250));
+  outline-offset: 2px;
+}
+
+/* Skip to content link for screen readers */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.skip-to-content:focus {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  padding: 8px 16px;
+  background: var(--background);
+  color: var(--foreground);
+  border: 2px solid var(--ring);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
 }

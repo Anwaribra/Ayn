@@ -68,7 +68,7 @@ function saveMessages(messages: Message[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
-  } catch {}
+  } catch { }
 }
 
 function loadMessages(): Message[] {
@@ -85,7 +85,7 @@ function saveSessions(sessions: ChatSession[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
-  } catch {}
+  } catch { }
 }
 
 function loadSessions(): ChatSession[] {
@@ -141,7 +141,7 @@ export default function HorusAIChat() {
   const { data: gapAnalyses } = useSWR(user ? "gap-analyses" : null, () => api.getGapAnalyses())
   const { data: evidence } = useSWR(user ? "evidence" : null, () => api.getEvidence())
 
-  const complianceEquilibrium = metrics?.assessmentProgressPercentage ?? 0
+  const complianceEquilibrium = metrics?.alignmentPercentage ?? 0
   const activeGaps = (gapAnalyses ?? []).length
   const indexedAssets = evidence?.length ?? 0
 
@@ -317,61 +317,61 @@ export default function HorusAIChat() {
                   History
                 </Button>
               </SheetTrigger>
-            <SheetContent side="right" className="w-80 sm:w-96">
-              <SheetHeader>
-                <SheetTitle>Previous Conversations</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <Button onClick={newChat} variant="default" className="w-full mb-4">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Start New Chat
-                </Button>
-              <ScrollArea className="h-[calc(100vh-180px)]">
-                {sessions.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground py-12">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                    <p>No saved conversations</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="group relative rounded-lg border bg-card p-3 hover:shadow-sm cursor-pointer transition-all"
-                        onClick={() => loadSession(session)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <MessageSquare className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium line-clamp-2 mb-1">{session.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(session.createdAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteSession(session.id)
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+              <SheetContent side="right" className="w-80 sm:w-96">
+                <SheetHeader>
+                  <SheetTitle>Previous Conversations</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <Button onClick={newChat} variant="default" className="w-full mb-4">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Start New Chat
+                  </Button>
+                  <ScrollArea className="h-[calc(100vh-180px)]">
+                    {sessions.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-12">
+                        <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                        <p>No saved conversations</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          </SheetContent>
+                    ) : (
+                      <div className="space-y-2">
+                        {sessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className="group relative rounded-lg border bg-card p-3 hover:shadow-sm cursor-pointer transition-all"
+                            onClick={() => loadSession(session)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <MessageSquare className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium line-clamp-2 mb-1">{session.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(session.createdAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteSession(session.id)
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              </SheetContent>
             </Sheet>
           </div>
 
@@ -400,59 +400,59 @@ export default function HorusAIChat() {
                   </div>
                 </div>
               ) : (
-            <div className="space-y-8">
-              {messages.map((msg) => (
-                <div key={msg.id} className="flex gap-4 items-start">
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback
-                      className={cn(
-                        msg.role === "assistant"
-                          ? "bg-gradient-to-br from-blue-500 to-cyan-500"
-                          : "bg-muted"
-                      )}
-                    >
-                      {msg.role === "assistant" ? (
-                        <Bot className="h-4 w-4 text-white" />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="space-y-8">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className="flex gap-4 items-start">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarFallback
+                          className={cn(
+                            msg.role === "assistant"
+                              ? "bg-gradient-to-br from-blue-500 to-cyan-500"
+                              : "bg-muted"
+                          )}
+                        >
+                          {msg.role === "assistant" ? (
+                            <Bot className="h-4 w-4 text-white" />
+                          ) : (
+                            <User className="h-4 w-4" />
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
 
-                  <div className="flex-1 space-y-2 min-w-0">
-                    <div className="font-semibold text-sm">
-                      {msg.role === "assistant" ? "Horus" : "You"}
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="font-semibold text-sm">
+                          {msg.role === "assistant" ? "Horus" : "You"}
+                        </div>
+                        <div className="text-sm leading-relaxed">
+                          {msg.role === "assistant" ? (
+                            <MarkdownContent content={msg.content} />
+                          ) : (
+                            <p>{msg.content}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm leading-relaxed">
-                      {msg.role === "assistant" ? (
-                        <MarkdownContent content={msg.content} />
-                      ) : (
-                        <p>{msg.content}</p>
-                      )}
+                  ))}
+
+                  {isLoading && (
+                    <div className="flex gap-4 items-start">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500">
+                          <Bot className="h-4 w-4 text-white" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-2">
+                        <div className="font-semibold text-sm">Horus</div>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          <span className="text-sm text-muted-foreground">Analyzing...</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  <div ref={scrollRef} />
                 </div>
-              ))}
-
-              {isLoading && (
-                <div className="flex gap-4 items-start">
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500">
-                      <Bot className="h-4 w-4 text-white" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-2">
-                    <div className="font-semibold text-sm">Horus</div>
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span className="text-sm text-muted-foreground">Analyzing...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={scrollRef} />
-            </div>
               )}
             </div>
           </ScrollArea>

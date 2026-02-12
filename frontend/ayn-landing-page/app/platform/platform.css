@@ -148,6 +148,22 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
+/* ─── Light mode typography remap (keep structure, fix contrast) ───────────── */
+[data-section="platform"] [data-platform-theme="light"] .text-white {
+  color: var(--text-primary);
+}
+
+[data-section="platform"] [data-platform-theme="light"] .text-zinc-400,
+[data-section="platform"] [data-platform-theme="light"] .text-zinc-500 {
+  color: var(--text-secondary);
+}
+
+[data-section="platform"] [data-platform-theme="light"] .text-zinc-600,
+[data-section="platform"] [data-platform-theme="light"] .text-zinc-700,
+[data-section="platform"] [data-platform-theme="light"] .text-zinc-800 {
+  color: var(--text-tertiary);
+}
+
 /* ─── Elevation Levels ────────────────────────────────────────────────────── */
 [data-section="platform"] .elevation-1 {
   background: rgba(255, 255, 255, 0.02);

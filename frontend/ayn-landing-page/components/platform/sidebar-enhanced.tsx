@@ -40,7 +40,7 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed md:sticky md:top-0 md:left-0 md:h-screen bg-[#05070A] flex flex-col z-20 select-none flex-shrink-0",
+        "fixed md:sticky md:top-0 md:left-0 md:h-screen bg-[#05070A] flex flex-col z-40 select-none flex-shrink-0",
         "transition-all duration-300 ease-in-out border-r border-white/[0.06] w-[240px]",
         open 
           ? "translate-x-0 opacity-100 pointer-events-auto" 

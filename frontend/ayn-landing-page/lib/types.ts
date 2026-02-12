@@ -11,9 +11,7 @@ export type {
   GapItem,
   GapAnalysis,
   GapAnalysisListItem,
-  AssessmentStatus,
-  Assessment,
-  AssessmentAnswer,
+
   Notification,
   DashboardMetrics,
   AIResponse,

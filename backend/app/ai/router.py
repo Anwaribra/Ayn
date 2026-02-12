@@ -8,9 +8,11 @@ from app.ai.service import get_gemini_client
 from app.core.rate_limit import limiter
 import base64
 
+from app.core.middlewares import get_current_user
+
 router = APIRouter()
 
-ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
+# ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]  <-- Removed restriction for demo
 
 
 @router.post("/chat", response_model=AIResponse)
@@ -18,7 +20,7 @@ ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]
 async def chat(
     request: Request,
     body: ChatRequest,
-    current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
+    current_user: dict = Depends(get_current_user)
 ):
     """Multi-turn chat with Horus AI."""
     client = get_gemini_client()
@@ -33,7 +35,7 @@ async def chat_with_files(
     request: Request,
     message: str = Form(...),
     files: List[UploadFile] = File(...),
-    current_user: dict = Depends(require_roles(ALLOWED_AI_ROLES))
+    current_user: dict = Depends(get_current_user)
 ):
     """Multi-modal chat with Horus AI - text + images/documents."""
     client = get_gemini_client()

@@ -103,12 +103,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   return (
     <div
       data-platform-theme={platformTheme}
-      className={cn(
-        "flex h-screen overflow-hidden selection:bg-blue-500/30 relative transition-colors duration-300",
-        platformTheme === "light"
-          ? "bg-background text-foreground"
-          : "bg-[#07090E] text-[#F1F5F9]",
-      )}
+      className="flex h-screen overflow-hidden selection:bg-blue-500/30 relative transition-colors duration-300 bg-[var(--background)] text-[var(--foreground)]"
     >
       {/* Cinematic background - V3 style */}
       <div className="cinematic-bg fixed inset-0 pointer-events-none" />
@@ -140,12 +135,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       <main className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
         {/* App Title — subtle depth */}
         <div
-          className={cn(
-            "px-6 md:px-10 pt-4 pb-1 border-b",
-            platformTheme === "light"
-              ? "border-zinc-200/80 bg-white/80"
-              : "border-white/[0.04] bg-[#090B11]/40",
-          )}
+          className="px-6 md:px-10 pt-4 pb-1 border-b border-[var(--border-subtle)] bg-[var(--bg-deep)]"
         >
           <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.15em]">
             AYN — Education Quality & Compliance
@@ -153,12 +143,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         </div>
         {/* TopBar — V3 style */}
         <header
-          className={cn(
-            "h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b backdrop-blur-xl transition-colors duration-300",
-            platformTheme === "light"
-              ? "border-zinc-200/80 bg-white/80"
-              : "border-white/[0.06] bg-[#080A0F]/90",
-          )}
+          className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-[var(--border-light)] bg-[var(--surface)] transition-colors duration-300"
         >
           <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
             {/* Sidebar toggle when closed */}
@@ -312,10 +297,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
         {/* Main content area - V3 surface; pb-32 clears fixed bottom search bar */}
         <div
-          className={cn(
-            "flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300",
-            platformTheme === "light" ? "bg-background" : "bg-[#07090E]",
-          )}
+          className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300 bg-[var(--bg-deep)]"
         >
           <div className="max-w-[1280px] w-full mx-auto">
             {children}

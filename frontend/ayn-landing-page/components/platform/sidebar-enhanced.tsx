@@ -178,21 +178,34 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
           </Link>
         </div>
 
-        {/* User Info */}
+        {/* User Info & Account Link */}
         <div className="px-3 md:px-4 pt-3 pb-2">
-          <div className="flex items-center gap-3 px-3 md:px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-[var(--surface)] flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-[var(--border-subtle)]">
-              <UserCircle2 className="w-5 h-5 text-zinc-500" />
+          <Link
+            href="/platform/settings/account"
+            onClick={() => {
+              if (window.innerWidth < 768) onToggle()
+            }}
+            className={cn(
+              "flex items-center gap-3 px-3 md:px-4 py-2.5 rounded-xl transition-all duration-300 group/profile cursor-pointer shrink-0",
+              pathname.includes("settings/account")
+                ? "bg-[var(--sidebar-accent)]"
+                : "hover:bg-[var(--sidebar-accent)]"
+            )}
+          >
+            <div className="w-9 h-9 rounded-full bg-[var(--surface)] flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-[var(--border-subtle)] group-hover/profile:ring-blue-500/50 transition-all">
+              <UserCircle2 className="w-6 h-6 text-zinc-500 group-hover/profile:text-blue-500 transition-colors" />
             </div>
             <div className="flex flex-col overflow-hidden min-w-0 flex-1">
-              <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">
+              <span className="text-[13px] font-bold text-[var(--text-primary)] truncate group-hover/profile:text-blue-400 transition-colors leading-tight">
                 {user?.name ?? "QA Director"}
               </span>
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
-                Ayn OS
-              </span>
+              {user?.role && (
+                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                  {user.role}
+                </span>
+              )}
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* ─── Logout Button ─── */}

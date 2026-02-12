@@ -311,14 +311,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               )}
             </button>
             <div className="w-px h-4 bg-[var(--border-light)]" />
-            <button
-              onClick={() => router.push('/platform/settings/account')}
-              className="px-3 md:px-4 py-1.5 glass-panel rounded-lg text-[10px] md:text-[11px] font-bold uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border-none group"
-              aria-label="Account settings"
-            >
-              <span className="hidden sm:inline group-hover:text-white transition-colors">{user?.name ?? "Institution Alpha"}</span>
-              <span className="sm:hidden font-mono">I-A</span>
-            </button>
           </div>
         </header>
 

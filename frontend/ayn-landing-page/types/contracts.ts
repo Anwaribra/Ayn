@@ -4,7 +4,12 @@
  */
 
 export interface AIResponse {
-  result: string;
+  result?: string;
+  raw_text?: string;
+  structured?: any;
+  error?: string;
+  analysis_id?: string;
+  metrics_updated?: boolean;
   model: string;
 }
 

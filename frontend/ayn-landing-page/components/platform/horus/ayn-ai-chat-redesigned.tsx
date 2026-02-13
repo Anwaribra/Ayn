@@ -235,7 +235,11 @@ export default function HorusAIChat() {
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.result || "No response.",
+        content: response.structured
+          ? (response.structured.summary
+            ? `**Analysis Complete**\n\n${response.structured.summary}\n\n**Score:** ${response.structured.score}/100`
+            : response.structured.answer || "```json\n" + JSON.stringify(response.structured, null, 2) + "\n```")
+          : (response.raw_text || response.result || "No response."),
         timestamp: Date.now(),
       }
 

@@ -21,45 +21,46 @@ def get_supabase_client() -> Client:
 
 
 async def upload_file_to_supabase(
-    file: UploadFile,
+    file_content: bytes,
+    filename: str,
+    content_type: str = "application/octet-stream",
     folder: str = "evidence"
 ) -> tuple[str, str]:
     """
     Upload a file to Supabase Storage.
     
     Args:
-        file: FastAPI UploadFile object
-        folder: Folder path in the bucket (default: "evidence")
+        file_content: Raw bytes of the file
+        filename: Original filename
+        content_type: MIME type
+        folder: Folder path in the bucket
     
     Returns:
         tuple: (public_url, file_path)
-    
-    Raises:
-        Exception: If upload fails
     """
+    import asyncio
     client = get_supabase_client()
     
     # Generate unique filename
-    file_extension = file.filename.split(".")[-1] if "." in file.filename else ""
+    file_extension = filename.split(".")[-1] if "." in filename else ""
     unique_filename = f"{uuid.uuid4()}.{file_extension}" if file_extension else str(uuid.uuid4())
     file_path = f"{folder}/{unique_filename}"
     
-    # Read file content
-    file_content = await file.read()
-    
-    # Upload to Supabase Storage
+    # Upload to Supabase Storage (run blocking call in thread)
     try:
-        response = client.storage.from_(settings.SUPABASE_BUCKET).upload(
-            path=file_path,
-            file=file_content,
-            file_options={
-                "content-type": file.content_type or "application/octet-stream",
-                "upsert": "false"
-            }
-        )
+        def _upload():
+            return client.storage.from_(settings.SUPABASE_BUCKET).upload(
+                path=file_path,
+                file=file_content,
+                file_options={
+                    "content-type": content_type,
+                    "upsert": "false"
+                }
+            )
+            
+        await asyncio.to_thread(_upload)
         
         # Construct public URL
-        # Format: https://project.supabase.co/storage/v1/object/public/bucket/path
         public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_BUCKET}/{file_path}"
         
         logger.info(f"File uploaded successfully: {file_path}")

@@ -45,13 +45,15 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to read file")
 
         # Reset stream for upload
-        await file.seek(0)
-        
         db = get_db()
         try:
             # 2. Critical Path: Storage + DB
             # Upload to Supabase
-            public_url, _ = await upload_file_to_supabase(file)
+            public_url, _ = await upload_file_to_supabase(
+                file_content=file_content,
+                filename=file.filename,
+                content_type=file.content_type
+            )
             
             # Create Record
             evidence = await db.evidence.create(

@@ -12,6 +12,7 @@ from app.evidence.models import (
 )
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
+from app.activity.service import ActivityService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class EvidenceService:
             )
             logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
             
-            # 2.5 Trigger Notification
+            # 2.5 Trigger Notification & Activity
             try:
                 await NotificationService.create_notification(NotificationCreateRequest(
                     userId=current_user["id"],
@@ -80,8 +81,16 @@ class EvidenceService:
                     relatedEntityId=evidence.id,
                     relatedEntityType="evidence"
                 ))
-            except Exception as notif_error:
-                logger.error(f"Failed to send notification: {notif_error}")
+                await ActivityService.log_activity(
+                    user_id=current_user["id"],
+                    type="evidence_uploaded",
+                    title="Evidence Uploaded",
+                    description=f"File '{file.filename}' added to vault.",
+                    entity_id=evidence.id,
+                    entity_type="evidence"
+                )
+            except Exception as e:
+                logger.error(f"Failed to record event: {e}")
             
             # 3. Non-Critical Path: Background Analysis
             # We assume text/pdf/image analysis.
@@ -272,6 +281,16 @@ class EvidenceService:
                     )
                     
                     # Log activity
+                    await ActivityService.log_activity(
+                        user_id=user_id,
+                        type="analysis_finished",
+                        title="AI Analysis Complete",
+                        description=f"Evidence '{title}' has been analyzed and mapped.",
+                        entity_id=evidence_id,
+                        entity_type="evidence",
+                        metadata={"confidence": confidence, "docType": doc_type}
+                    )
+                    
                     if mapping_status == "analyzed":
                         logger.info(f"Evidence {evidence_id} mapped to {len(matched_criteria_ids)} criteria.")
                     else:

@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 from app.core.db import get_db
+from prisma import Json
 from prisma.models import Activity
 
 class ActivityService:
@@ -12,18 +13,18 @@ class ActivityService:
         description: Optional[str] = None,
         entity_id: Optional[str] = None,
         entity_type: Optional[str] = None,
-        metadata: Dict[str, Any] = {}
+        metadata: Dict[str, Any] = None
     ) -> Activity:
         db = get_db()
         return await db.activity.create(
             data={
-                "userId": user_id,
+                "user": {"connect": {"id": user_id}},
                 "type": type,
                 "title": title,
                 "description": description,
                 "entityId": entity_id,
                 "entityType": entity_type,
-                "metadata": metadata
+                "metadata": Json(metadata or {})
             }
         )
 

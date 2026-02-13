@@ -9,7 +9,7 @@ class ChatService:
         db = get_db()
         return await db.chat.create(
             data={
-                "userId": user_id,
+                "user": {"connect": {"id": user_id}},
                 "title": title
             }
         )
@@ -36,11 +36,12 @@ class ChatService:
     @staticmethod
     async def save_message(chat_id: str, user_id: str, role: str, content: str) -> Message:
         db = get_db()
-        # Save message
+        # Save message. Note: Message model in schema has userId as String but no relation to User.
+        # It does have a relation to Chat.
         message = await db.message.create(
             data={
-                "chatId": chat_id,
-                "userId": user_id,
+                "chat": {"connect": {"id": chat_id}},
+                "userId": user_id, 
                 "role": role,
                 "content": content
             }

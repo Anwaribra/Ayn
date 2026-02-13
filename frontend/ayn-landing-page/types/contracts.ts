@@ -88,6 +88,7 @@ export interface EvidenceResponse {
   id: string;
   criterionId: string | null;
   fileUrl: string;
+  originalFilename: string | null;
   uploadedById: string;
   createdAt: string;
   updatedAt: string;

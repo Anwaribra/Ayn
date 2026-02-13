@@ -24,7 +24,7 @@ export default function NotificationsPage() {
   const handleMarkAllRead = async () => {
     await api.markAllNotificationsRead()
     mutate(
-      notifications?.map(n => ({ ...n, isRead: true })) ?? [],
+      notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
       { revalidate: false }
     )
   }
@@ -33,7 +33,7 @@ export default function NotificationsPage() {
     e?.stopPropagation()
     await api.markNotificationRead(id)
     mutate(
-      notifications?.map(n => n.id === id ? { ...n, isRead: true } : n) ?? [],
+      notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
       { revalidate: false }
     )
   }
@@ -51,7 +51,7 @@ export default function NotificationsPage() {
     }
   }
 
-  const filteredNotifications = notifications?.filter(n => {
+  const filteredNotifications = notifications?.filter((n: Notification) => {
     if (filter === "unread") return !n.isRead
     return true
   })
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
             </p>
           </div>
         ) : (
-          filteredNotifications.map((n) => (
+          filteredNotifications.map((n: Notification) => (
             <div
               key={n.id}
               className={`glass-panel rounded-2xl p-5 flex gap-4 transition-all hover:bg-white/[0.02] cursor-pointer group relative overflow-hidden ${!n.isRead ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/5'}`}

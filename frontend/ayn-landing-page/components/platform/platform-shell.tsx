@@ -94,7 +94,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const handleClearNotifications = async () => {
     await api.markAllNotificationsRead()
     mutateNotifications(
-      notifications?.map(n => ({ ...n, isRead: true })) ?? [],
+      notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
       { revalidate: false }
     )
   }
@@ -102,11 +102,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const handleDismissNotification = async (id: string) => {
     await api.markNotificationRead(id)
     mutateNotifications(
-      notifications?.map(n => n.id === id ? { ...n, isRead: true } : n) ?? [],
+      notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
       { revalidate: false }
     )
     // Optional: Navigate logic if needed
-    const notification = notifications?.find(n => n.id === id)
+    const notification = notifications?.find((n: Notification) => n.id === id)
     if (notification?.relatedEntityId && notification.relatedEntityType === 'evidence') {
       router.push('/platform/evidence')
     } else if (notification?.relatedEntityId && notification.relatedEntityType === 'report') {
@@ -173,7 +173,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     {!notifications || notifications.length === 0 ? (
                       <p className="text-center py-8 text-zinc-600 italic text-sm">Quiet for now.</p>
                     ) : (
-                      notifications.slice(0, 8).map((n) => (
+                      notifications.slice(0, 8).map((n: Notification) => (
                         <div
                           key={n.id}
                           className={`flex gap-3 group cursor-pointer hover:bg-[var(--surface-hover)] p-3 rounded-xl transition-all ${!n.isRead ? 'bg-[var(--surface)] border border-[var(--border-subtle)]' : 'opacity-70'}`}

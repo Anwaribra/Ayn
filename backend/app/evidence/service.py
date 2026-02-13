@@ -1,5 +1,5 @@
 """Evidence service."""
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, status, UploadFile, BackgroundTasks
 from typing import List
 from app.core.db import get_db
 from app.core.storage import upload_file_to_supabase, delete_file_from_supabase

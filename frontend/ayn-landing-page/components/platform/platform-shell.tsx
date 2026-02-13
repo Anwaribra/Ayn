@@ -10,6 +10,7 @@ import {
   Sun,
   Moon,
   X,
+  History,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform/sidebar-enhanced"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
@@ -147,6 +148,15 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
+            {/* Archive Shortcut */}
+            <button
+              onClick={() => router.push('/platform/archive')}
+              className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-[var(--surface-hover)] transition-all"
+              title="Archive"
+            >
+              <History className="w-5 h-5" />
+            </button>
+
             {/* Notifications */}
             <div className="relative notification-dropdown-container">
               <button

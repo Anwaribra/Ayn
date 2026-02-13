@@ -50,6 +50,20 @@ class DashboardService:
 
             alignment_percentage = round((aligned_criteria_count / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
             
+            # Record in platform state for Horus and other consumers
+            try:
+                from app.platform_state.service import StateService
+                state_service = StateService(db)
+                await state_service.record_metric_update(
+                    user_id=user_id,
+                    metric_id=f"compliance_score_{user_id}",
+                    name="Compliance Alignment Score",
+                    value=alignment_percentage,
+                    source_module="dashboard"
+                )
+            except Exception as se:
+                logger.error(f"Failed to update platform state metric: {se}")
+            
             # --- 2. Live Data Fetches ---
             
             # Recent Evidence

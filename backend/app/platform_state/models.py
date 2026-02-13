@@ -81,6 +81,7 @@ class StateSummary(BaseModel):
     addressed_gaps: int = 0
     closed_gaps: int = 0
     total_metrics: int = 0
+    total_score: float = 0.0
     last_event_type: Optional[str] = None
     last_event_time: Optional[datetime] = None
     orphan_files: List[PlatformFile] = []
@@ -314,6 +315,7 @@ class PlatformStateManager:
             addressed_gaps=len([g for g in gaps if g.status == "addressed"]),
             closed_gaps=len([g for g in gaps if g.status == "closed"]),
             total_metrics=len(metrics),
+            total_score=next((m.value for m in metrics if "score" in m.name.lower() or "alignment" in m.name.lower()), 0.0),
             orphan_files=unlinked[:5],
             addressable_gaps=addressable[:5]
         )

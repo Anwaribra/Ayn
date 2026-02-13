@@ -139,28 +139,16 @@ class HorusService:
         current_user: Any = None
     ) -> AsyncGenerator[str, None]:
         """
-        Streaming chat interface with persistence.
+        Hyper-optimized streaming chat interface.
+        Parallelizes database saves, state fetching, and file processing.
         """
-        # 1. Ensure Chat exists
+        # 1. Start Chat Creation or Fetch in Parallel with State
         if not chat_id:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
         
-        # 2. Save User Message
-        if message:
-            await ChatService.save_message(chat_id, user_id, "user", message)
-            await ActivityService.log_activity(
-                user_id=user_id,
-                type="chat_message",
-                title="Message sent to Horus",
-                entity_id=chat_id,
-                entity_type="chat"
-            )
-
-        # 3 & 4. Get State Summary and Handle Files in Parallel
-        import asyncio
-        
+        # 2. Parallelize ALL initial operations for speed
         async def process_file(f):
             upload_result = await EvidenceService.upload_evidence(
                 file=f,
@@ -179,53 +167,109 @@ class HorusService:
                 }
             return None
 
-        # Fetch summary and process all files concurrently
-        summary_task = self.state_manager.get_state_summary(user_id)
-        file_tasks = [process_file(f) for f in (files or [])]
+        tasks = [
+            self.state_manager.get_state_summary(user_id),
+            ActivityService.get_recent_activities(user_id, limit=5),
+            ChatService.get_chat(chat_id, user_id, message_limit=10)
+        ]
         
-        results = await asyncio.gather(summary_task, *file_tasks)
-        summary = results[0]
-        file_results = [r for r in results[1:] if r is not None]
+        # Add file processing tasks if any
+        if files:
+            tasks.extend([process_file(f) for f in files])
         
-        file_references = []
-        for res in file_results:
-            # Extract evidenceId for activity logging 
-            evidence_id = res.pop("evidenceId")
-            file_references.append(res)
-            
-            await ActivityService.log_activity(
-                user_id=user_id,
-                type="evidence_uploaded",
-                title=f"File uploaded: {res['filename']}",
-                entity_id=evidence_id,
-                entity_type="evidence"
-            )
+        # Add background tasks for logging (don't block the gather if we want max speed, 
+        # but here we'll include the user message save in gather to ensure it's in history)
+        if message:
+            tasks.append(ChatService.save_message(chat_id, user_id, "user", message))
+            # Activity logging can definitely be backgrounded
+            if background_tasks:
+                background_tasks.add_task(ActivityService.log_activity, 
+                    user_id=user_id, 
+                    type="chat_message", 
+                    title="Message sent to Horus",
+                    entity_id=chat_id,
+                    entity_type="chat"
+                )
 
-        # 5. AI Interaction (Streaming)
+        # EXECUTE EVERYTHING IN PARALLEL
+        results = await asyncio.gather(*tasks)
+        
+        summary = results[0]
+        recent_activities = results[1]
+        history = results[2]
+        
+        # Handle dynamic results (files and message save)
+        offset = 3
+        file_results = []
+        if files:
+            file_results = [r for r in results[offset:offset+len(files)] if r is not None]
+            offset += len(files)
+        
+        # Log file uploads in background
+        for res in file_results:
+            evidence_id = res.pop("evidenceId")
+            if background_tasks:
+                background_tasks.add_task(ActivityService.log_activity,
+                    user_id=user_id,
+                    type="evidence_uploaded",
+                    title=f"File uploaded: {res['filename']}",
+                    entity_id=evidence_id,
+                    entity_type="evidence"
+                )
+
+        # 3. AI Interaction (Streaming)
         client = get_gemini_client()
-        context = await self._prepare_context(user_id, summary)
+        context = self._prepare_context_sync(summary, recent_activities)
         
         full_response = ""
-        if file_references:
+        if file_results:
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
-                files=file_references
+                files=file_results
             ):
                 if chunk:
                     full_response += chunk
                     yield chunk
         else:
-            history = await ChatService.get_chat(chat_id, user_id)
-            messages = [{"role": m.role, "content": m.content} for m in history.messages[-10:]]
+            messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
+            # Ensure the current message is included if not already in history (race condition check)
+            if message and not any(m["content"] == message for m in messages):
+                messages.append({"role": "user", "content": message})
             
             async for chunk in client.stream_chat(messages=messages, context=context):
                 if chunk:
                     full_response += chunk
                     yield chunk
 
-        # 6. Save Assistant Response
-        if full_response:
-            await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+        # 4. Save Assistant Response in Background to release the generator faster
+        if full_response and background_tasks:
+            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+        elif full_response:
+             await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+
+    def _prepare_context_sync(self, summary, recent_activities) -> str:
+        """Faster context preparation without extra DB calls."""
+        return f"""
+        Current Platform State Summary:
+        - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
+        - Evidence Vault: {summary.total_evidence} items ({summary.linked_evidence} mapped to criteria)
+        - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
+        - Global Compliance Score: {summary.total_score}%
+        
+        Recent Platform Activities:
+        {self._format_activities(recent_activities)}
+        
+        Critical Pending Gaps:
+        {self._format_gaps(summary.addressable_gaps)}
+        
+        Instructions for Horus Brain:
+        - You are the central intelligence of the Ayn Platform.
+        - You have access to all platform modules (Evidence, Standards, Gap Analysis, Dashboard).
+        - You should help the user navigate, analyze their compliance status, and suggest actions.
+        - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
+        - If gaps are high, suggest specific evidence uploads.
+        - You are not just a chatbot; you are a platform assistant.
+        """
 
     async def _prepare_context(self, user_id: str, summary) -> str:
         """Prepare deep platform state context for AI."""

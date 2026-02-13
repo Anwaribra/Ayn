@@ -15,14 +15,19 @@ class ChatService:
         )
 
     @staticmethod
-    async def get_chat(chat_id: str, user_id: str) -> Optional[Chat]:
+    async def get_chat(chat_id: str, user_id: str, message_limit: int = 50) -> Optional[Chat]:
         db = get_db()
         return await db.chat.find_first(
             where={
                 "id": chat_id,
                 "userId": user_id
             },
-            include={"messages": True}
+            include={
+                "messages": {
+                    "take": -message_limit,  # Last N messages
+                    "order_by": {"timestamp": "asc"}
+                }
+            }
         )
 
     @staticmethod
@@ -34,12 +39,17 @@ class ChatService:
         )
 
     @staticmethod
-    async def get_last_chat(user_id: str) -> Optional[Chat]:
+    async def get_last_chat(user_id: str, message_limit: int = 20) -> Optional[Chat]:
         db = get_db()
         return await db.chat.find_first(
             where={"userId": user_id},
             order={"updatedAt": "desc"},
-            include={"messages": True}
+            include={
+                "messages": {
+                    "take": -message_limit,
+                    "order_by": {"timestamp": "asc"}
+                }
+            }
         )
 
     @staticmethod

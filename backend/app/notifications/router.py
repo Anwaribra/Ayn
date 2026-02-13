@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
 async def create_notification(
     request: NotificationCreateRequest,
     current_user: dict = require_admin
@@ -27,7 +27,7 @@ async def create_notification(
     return await NotificationService.create_notification(request, current_user["email"])
 
 
-@router.get("/", response_model=List[NotificationResponse])
+@router.get("", response_model=List[NotificationResponse])
 async def list_notifications(
     current_user: dict = Depends(get_current_user)
 ):

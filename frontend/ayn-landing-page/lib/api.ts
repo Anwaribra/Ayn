@@ -509,6 +509,10 @@ class ApiClient {
     return fullText
   }
 
+  async getLastChat() {
+    return this.request<any>("/horus/history/last")
+  }
+
   async getChatHistory() {
     return this.request<any[]>("/horus/history")
   }

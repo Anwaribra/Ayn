@@ -40,7 +40,7 @@ import useSWR from "swr"
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
   id: string
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system"
   content: string
   timestamp: number
 }
@@ -77,15 +77,22 @@ export function MarkdownContent({ content }: { content: string }) {
   )
 }
 
+import { useHorus } from "@/lib/horus-context"
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
   const router = useRouter()
   const { user } = useAuth()
+  const {
+    messages,
+    currentChatId,
+    isLoading,
+    sendMessage,
+    newChat,
+    loadChat
+  } = useHorus()
 
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -132,71 +139,20 @@ export default function HorusAIChat() {
     if (e.target) e.target.value = ""
   }
 
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     const text = input.trim()
-    if ((!text && attachedFiles.length === 0) || isLoading) return
+    if (!text && attachedFiles.length === 0) return
 
-    const userMsg: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text || "📎 Attached files for analysis",
-      timestamp: Date.now(),
-    }
-
-    setMessages((prev) => [...prev, userMsg])
     setInput("")
-    setIsLoading(true)
+    const filesToUpload = attachedFiles.map(af => af.file)
+    setAttachedFiles([])
 
-    const assistantMsgId = crypto.randomUUID()
-    setMessages((prev) => [...prev, {
-      id: assistantMsgId,
-      role: "assistant",
-      content: "",
-      timestamp: Date.now()
-    }])
-
-    let fullContent = ""
-    try {
-      await api.horusChatStream(
-        text || "Analyze these files.",
-        attachedFiles.map(f => f.file),
-        currentChatId || undefined,
-        (chunk) => {
-          if (chunk.startsWith("__CHAT_ID__:")) {
-            const newId = chunk.split(":")[1].trim()
-            setCurrentChatId(newId)
-            mutateHistory()
-            return
-          }
-
-          fullContent += chunk
-          setMessages(prev => prev.map(m =>
-            m.id === assistantMsgId ? { ...m, content: fullContent } : m
-          ))
-        }
-      )
-      setAttachedFiles([])
-    } catch (err) {
-      toast.error("Connection lost. Please try again.")
-      setMessages(prev => prev.filter(m => m.id !== assistantMsgId))
-    } finally {
-      setIsLoading(false)
-    }
+    await sendMessage(text, filesToUpload)
+    mutateHistory()
   }
 
   const loadSession = async (session: any) => {
-    setCurrentChatId(session.id)
-    try {
-      const fullChat = await api.getChatMessages(session.id)
-      setMessages(fullChat.messages.map((m: any) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        timestamp: new Date(m.timestamp).getTime()
-      })))
-    } catch (err) {
-      toast.error("Failed to load conversation history.")
-    }
+    await loadChat(session.id)
   }
 
   const deleteSession = async (id: string) => {
@@ -207,12 +163,6 @@ export default function HorusAIChat() {
     } catch (err) {
       toast.error("Failed to delete.")
     }
-  }
-
-  const newChat = () => {
-    setCurrentChatId(null)
-    setMessages([])
-    setAttachedFiles([])
   }
 
   const isEmpty = messages.length === 0
@@ -342,43 +292,60 @@ export default function HorusAIChat() {
               ) : (
                 <div className="space-y-10">
                   {messages.map((msg) => (
-                    <div key={msg.id} className="flex gap-6 items-start animate-fade-in-up">
-                      <div className={cn(
-                        "h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center border transition-all shadow-sm",
-                        msg.role === "assistant"
-                          ? "bg-primary border-primary/20 text-white"
-                          : "bg-surface border-border text-tertiary"
-                      )}>
-                        {msg.role === "assistant" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                      </div>
+                    <div key={msg.id} className={cn(
+                      "flex gap-6 items-start animate-fade-in-up",
+                      msg.role === "system" ? "ml-16 py-2" : ""
+                    )}>
+                      {msg.role !== "system" && (
+                        <div className={cn(
+                          "h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center border transition-all shadow-sm",
+                          msg.role === "assistant"
+                            ? "bg-primary border-primary/20 text-white"
+                            : "bg-surface border-border text-tertiary"
+                        )}>
+                          {msg.role === "assistant" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
+                        </div>
+                      )}
 
                       <div className="flex-1 space-y-2.5 min-w-0">
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-xs uppercase tracking-widest text-secondary">
-                            {msg.role === "assistant" ? "Horus AI" : "You"}
-                          </span>
-                          <span className="text-[10px] text-tertiary font-medium">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div className={cn(
-                          "text-[15px] leading-relaxed text-foreground",
-                          msg.role === "assistant" ? "" : "bg-primary/5 p-4 rounded-3xl border border-primary/10 inline-block shadow-sm"
-                        )}>
-                          {msg.role === "assistant" ? (
-                            msg.content ? (
-                              <MarkdownContent content={msg.content} />
-                            ) : (
-                              <div className="flex gap-1.5 py-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                              </div>
-                            )
-                          ) : (
-                            <p className="font-medium whitespace-pre-wrap">{msg.content}</p>
-                          )}
-                        </div>
+                        {msg.role !== "system" ? (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <span className="font-bold text-xs uppercase tracking-widest text-secondary">
+                                {msg.role === "assistant" ? "Horus AI" : "You"}
+                              </span>
+                              <span className="text-[10px] text-tertiary font-medium">
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <div className={cn(
+                              "text-[15px] leading-relaxed text-foreground",
+                              msg.role === "assistant" ? "" : "bg-primary/5 p-4 rounded-3xl border border-primary/10 inline-block shadow-sm"
+                            )}>
+                              {msg.role === "assistant" ? (
+                                msg.content ? (
+                                  <MarkdownContent content={msg.content} />
+                                ) : (
+                                  <div className="flex gap-1.5 py-2">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                                  </div>
+                                )
+                              ) : (
+                                <p className="font-medium whitespace-pre-wrap">{msg.content}</p>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-3 py-1.5 px-4 rounded-full bg-surface-hover/50 border border-border/40 w-fit group">
+                            <Sparkles className="w-3 h-3 text-primary animate-pulse" />
+                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">{msg.content}</span>
+                            <span className="text-[9px] text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -444,7 +411,7 @@ export default function HorusAIChat() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault()
-                        sendMessage()
+                        handleSendMessage()
                       }
                     }}
                     placeholder="Describe a compliance task or upload evidence..."
@@ -454,7 +421,7 @@ export default function HorusAIChat() {
 
                   <Button
                     size="icon"
-                    onClick={sendMessage}
+                    onClick={handleSendMessage}
                     disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
                     className={cn(
                       "shrink-0 h-10 w-10 rounded-full transition-all shadow-md active:scale-95",

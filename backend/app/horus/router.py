@@ -9,6 +9,8 @@ import traceback
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
+import json
+import asyncio
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 
@@ -104,6 +106,51 @@ async def horus_chat_stream(
             yield chunk
 
     return StreamingResponse(event_generator(), media_type="text/plain")
+
+
+@router.get("/events")
+async def horus_events_stream(
+    current_user = Depends(get_current_user)
+):
+    """
+    Real-time platform event stream (SSE).
+    Horus uses this to push system messages and global notifications.
+    """
+    user_id = get_user_id(current_user)
+    
+    async def event_generator():
+        from app.core.events import event_bus
+        queue = await event_bus.subscribe(user_id)
+        try:
+            # Initial heartbeat/sync
+            yield f"data: {json.dumps({'type': 'sync', 'status': 'connected'})}\n\n"
+            
+            while True:
+                event = await queue.get()
+                yield f"data: {json.dumps(event)}\n\n"
+        except asyncio.CancelledError:
+            from app.core.events import event_bus
+            event_bus.unsubscribe(user_id, queue)
+            raise
+        except Exception as e:
+            logger.error(f"SSE Error: {e}")
+            from app.core.events import event_bus
+            event_bus.unsubscribe(user_id, queue)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/history/last")
+async def get_last_chat(
+    current_user = Depends(get_current_user)
+):
+    """Get the last active chat session for auto-resume."""
+    user_id = get_user_id(current_user)
+    chat = await ChatService.get_last_chat(user_id)
+    if not chat:
+        # No chat found, return null instead of 404 to let frontend handle it
+        return None
+    return chat
 
 
 @router.get("/history")

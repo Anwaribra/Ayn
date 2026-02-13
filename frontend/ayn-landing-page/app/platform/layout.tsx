@@ -11,18 +11,22 @@ export const metadata = {
   description: "Educational Quality Assurance & Compliance Platform",
 }
 
+import { HorusProvider } from "@/lib/horus-context"
+
 export default function PlatformLayout({ children }: { children: ReactNode }) {
   return (
     <PlatformErrorBoundary>
       <CommandPaletteProvider>
         <AuthGuard>
-          <div data-section="platform">
-            <a href="#main-content" className="skip-to-content">
-              Skip to Content
-            </a>
-            <PlatformShell>{children}</PlatformShell>
-            <Toaster />
-          </div>
+          <HorusProvider>
+            <div data-section="platform">
+              <a href="#main-content" className="skip-to-content">
+                Skip to Content
+              </a>
+              <PlatformShell>{children}</PlatformShell>
+              <Toaster />
+            </div>
+          </HorusProvider>
         </AuthGuard>
       </CommandPaletteProvider>
     </PlatformErrorBoundary>

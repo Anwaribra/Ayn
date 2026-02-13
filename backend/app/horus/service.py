@@ -102,7 +102,7 @@ class HorusService:
 
         # 5. AI Interaction
         client = get_gemini_client()
-        context = self._prepare_context(summary)
+        context = await self._prepare_context(user_id, summary)
         
         if file_references:
             ai_response = await client.chat_with_files(
@@ -203,7 +203,7 @@ class HorusService:
 
         # 5. AI Interaction (Streaming)
         client = get_gemini_client()
-        context = self._prepare_context(summary)
+        context = await self._prepare_context(user_id, summary)
         
         full_response = ""
         if file_references:
@@ -227,15 +227,50 @@ class HorusService:
         if full_response:
             await ChatService.save_message(chat_id, user_id, "assistant", full_response)
 
-    def _prepare_context(self, summary) -> str:
-        """Prepare platform state context for AI."""
+    async def _prepare_context(self, user_id: str, summary) -> str:
+        """Prepare deep platform state context for AI."""
+        # Fetch extra context
+        recent_activities = await ActivityService.get_recent_activities(user_id, limit=5)
+        
         return f"""
-        Current Platform State for User:
-        - Files: {summary.total_files} total ({summary.analyzed_files} analyzed)
-        - Evidence: {summary.total_evidence} scopes ({summary.linked_evidence} linked)
-        - Gaps: {summary.total_gaps} total ({summary.closed_gaps} closed)
-        - Performance: {summary.total_score}% overall compliance score
+        Current Platform State Summary:
+        - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
+        - Evidence Vault: {summary.total_evidence} items ({summary.linked_evidence} mapped to criteria)
+        - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
+        - Global Compliance Score: {summary.total_score}%
+        
+        Recent Platform Activities:
+        {self._format_activities(recent_activities)}
+        
+        Critical Pending Gaps:
+        {self._format_gaps(summary.addressable_gaps)}
+        
+        Instructions for Horus Brain:
+        - You are the central intelligence of the Ayn Platform.
+        - You have access to all platform modules (Evidence, Standards, Gap Analysis, Dashboard).
+        - You should help the user navigate, analyze their compliance status, and suggest actions.
+        - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
+        - If gaps are high, suggest specific evidence uploads.
+        - You are not just a chatbot; you are a platform assistant.
         """
+
+    def _format_activities(self, activities) -> str:
+        if not activities: return "No recent activity."
+        lines = []
+        for a in activities:
+            # Handle both model objects and dicts
+            title = a.title if hasattr(a, 'title') else a.get('title', 'Unknown')
+            desc = a.description if hasattr(a, 'description') else a.get('description', '')
+            created = a.createdAt if hasattr(a, 'createdAt') else datetime.utcnow()
+            lines.append(f"- {title}: {desc} ({created.strftime('%Y-%m-%d %H:%M')})")
+        return "\n".join(lines)
+
+    def _format_gaps(self, gaps) -> str:
+        if not gaps: return "No critical gaps found."
+        lines = []
+        for g in gaps[:5]:
+            lines.append(f"- [{g.severity.upper()}] {g.standard} {g.clause}: {g.description[:60]}...")
+        return "\n".join(lines)
 
     def _hash_state(self, summary) -> str:
         return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.utcnow().strftime('%Y%m%d%H')}"

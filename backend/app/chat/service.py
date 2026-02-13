@@ -34,10 +34,17 @@ class ChatService:
         )
 
     @staticmethod
+    async def get_last_chat(user_id: str) -> Optional[Chat]:
+        db = get_db()
+        return await db.chat.find_first(
+            where={"userId": user_id},
+            order={"updatedAt": "desc"},
+            include={"messages": True}
+        )
+
+    @staticmethod
     async def save_message(chat_id: str, user_id: str, role: str, content: str) -> Message:
         db = get_db()
-        # Save message. Note: Message model in schema has userId as String but no relation to User.
-        # It does have a relation to Chat.
         message = await db.message.create(
             data={
                 "chat": {"connect": {"id": chat_id}},
@@ -46,12 +53,22 @@ class ChatService:
                 "content": content
             }
         )
-        # Update chat timestamp
         await db.chat.update(
             where={"id": chat_id},
             data={"updatedAt": datetime.utcnow()}
         )
         return message
+
+    @staticmethod
+    async def add_system_message(user_id: str, content: str, chat_id: Optional[str] = None) -> Optional[Message]:
+        """Add a system message to the current or last chat."""
+        if not chat_id:
+            last_chat = await ChatService.get_last_chat(user_id)
+            if not last_chat:
+                last_chat = await ChatService.create_chat(user_id, title="System Activity")
+            chat_id = last_chat.id
+        
+        return await ChatService.save_message(chat_id, user_id, "system", content)
 
     @staticmethod
     async def delete_chat(chat_id: str, user_id: str):

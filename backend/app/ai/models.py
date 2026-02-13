@@ -11,7 +11,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     """Request model for multi-turn chat."""
-    messages: List[ChatMessage] = Field(..., min_length=1, max_length=50, description="Conversation history")
+    messages: List[ChatMessage] = Field(..., min_length=1, max_length=500, description="Conversation history")
     context: Optional[str] = Field(None, max_length=200, description="Context hint (e.g. 'gap_analysis', 'evidence_analysis')")
 
     class Config:
@@ -98,13 +98,19 @@ class ExtractEvidenceRequest(BaseModel):
 # Response Models
 class AIResponse(BaseModel):
     """Generic AI response."""
-    result: str = Field(..., description="AI-generated result")
+    result: Optional[str] = Field(None, description="DEPRECATED: Use raw_text instead. Kept for backward compatibility.")
+    raw_text: Optional[str] = Field(None, description="Raw text output from the model")
+    structured: Optional[dict] = Field(None, description="Parsed JSON structure if available")
+    error: Optional[str] = Field(None, description="Error message if parsing failed")
+    analysis_id: Optional[str] = Field(None, description="ID of persisted gap analysis if saved")
+    metrics_updated: bool = Field(False, description="Whether platform metrics were updated")
     model: str = Field(default="gemini-pro", description="Model used")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "result": "AI-generated response text...",
+                "raw_text": "Here is the analysis: {...}",
+                "structured": {"score": 85, "summary": "Good..."},
                 "model": "gemini-pro"
             }
         }

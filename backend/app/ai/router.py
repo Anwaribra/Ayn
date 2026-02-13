@@ -9,6 +9,7 @@ from app.core.rate_limit import limiter
 import base64
 
 from app.core.middlewares import get_current_user
+from app.core.db import get_db, Prisma
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ async def chat(
     client = get_gemini_client()
     messages_dicts = [{"role": m.role, "content": m.content} for m in body.messages]
     result = await asyncio.to_thread(client.chat, messages=messages_dicts, context=body.context)
-    return AIResponse(result=result, model="gemini-2.0-flash")
+    return AIResponse(raw_text=result, model="gemini-2.0-flash")
 
 
 @router.post("/chat-with-files", response_model=AIResponse)
@@ -35,6 +36,7 @@ async def chat_with_files(
     request: Request,
     message: str = Form(...),
     files: List[UploadFile] = File(...),
+    db: Prisma = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Multi-modal chat with Horus AI - text + images/documents."""
@@ -60,5 +62,123 @@ async def chat_with_files(
             except:
                 pass
     
-    result = await asyncio.to_thread(client.chat_with_files, message=message, files=file_contents)
-    return AIResponse(result=result, model="gemini-2.0-flash-multimodal")
+    # Enforce JSON output for structured data
+    json_instruction = """
+    CRITICAL INSTRUCTION:
+    You must output ONLY valid JSON.
+    Do not wrap it in markdown code blocks.
+    Do not utilize '```json' tags.
+    Just return the raw JSON object.
+
+    If the user asks for analysis, return:
+    {
+      "summary": "High level summary...",
+      "score": 85,
+      "gaps": [{"title": "Gap Title", "description": "...", "severity": "high"}],
+      "recommendations": ["Rec 1", "Rec 2"]
+    }
+
+    If the user asks a general question, return:
+    {
+      "answer": "Your answer here...",
+      "type": "chat"
+    }
+    """
+    
+    full_message = f"{message}\n\n{json_instruction}"
+    
+    raw_result = ""
+    try:
+        raw_result = await asyncio.to_thread(client.chat_with_files, message=full_message, files=file_contents)
+        
+        # Robust Parsing Strategy
+        import re
+        import json
+        
+        # 1. Cleaner
+        cleaned = raw_result.strip()
+        
+        # 2. Regex to find first valid JSON object/array
+        match = re.search(r'(\{.*\}|\[.*\])', cleaned, re.DOTALL)
+        
+        structured_data = None
+        error_msg = None
+        analysis_id = None
+        metrics_updated = False
+        
+        if match:
+            json_str = match.group(1)
+            try:
+                parsed = json.loads(json_str)
+                
+                # 3. Minimal Validation
+                has_analysis = all(k in parsed for k in ["score", "gaps"])
+                has_chat = "answer" in parsed
+                
+                if has_analysis or has_chat:
+                    structured_data = parsed
+                    
+                    # 4. Persistence (Stage 2)
+                    if has_analysis:
+                        try:
+                            # Lazy import to avoid circular dep issues at module level
+                            from app.gap_analysis.service import GapOneService
+                            from app.platform_state.service import StateService
+                            
+                            gap_service = GapOneService(db)
+                            
+                            # Create analysis record
+                            # We default standard_id to None or a detected one. 
+                            # For now, we assume this is an ad-hoc analysis.
+                            user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+                            
+                            record = await gap_service.create_analysis(
+                                user_id=user_id,
+                                standard_id=None, 
+                                score=float(parsed["score"]),
+                                gaps=parsed["gaps"],
+                                summary=parsed.get("summary", "AI Generated Analysis"),
+                                recommendations=parsed.get("recommendations", [])
+                            )
+                            analysis_id = record.id
+                            
+                            # 5. Metrics Update (Stage 3)
+                            state_service = StateService(db)
+                            await state_service.record_metric_update(
+                                user_id=user_id,
+                                metric_id="alignment_score",
+                                value=float(parsed["score"]),
+                                source_module="gap_analysis"
+                            )
+                            metrics_updated = True
+                            
+                        except Exception as db_err:
+                            import logging
+                            logging.getLogger(__name__).error(f"Persistence Failed: {db_err}")
+                            if structured_data:
+                                structured_data["persistence_error"] = True
+                                structured_data["db_error_detail"] = str(db_err)
+
+                else:
+                    error_msg = "json_structure_invalid"
+            except json.JSONDecodeError:
+                error_msg = "json_parse_failed"
+        else:
+            error_msg = "no_json_found"
+
+        return AIResponse(
+            raw_text=raw_result,
+            structured=structured_data,
+            error=error_msg,
+            analysis_id=analysis_id,
+            metrics_updated=metrics_updated,
+            model="gemini-2.0-flash-multimodal"
+        )
+        
+    except Exception as e:
+        return AIResponse(
+            raw_text=raw_result if raw_result else str(e),
+            structured=None,
+            error=f"execution_error: {str(e)}",
+            model="gemini-2.0-flash-multimodal-fallback"
+        )

@@ -16,7 +16,9 @@ def get_supabase_client() -> Client:
     """Get or create Supabase client."""
     global supabase
     if supabase is None:
-        supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        # Prefer Service Key for backend operations to bypass RLS
+        key = settings.SUPABASE_SERVICE_KEY or settings.SUPABASE_KEY
+        supabase = create_client(settings.SUPABASE_URL, key)
     return supabase
 
 

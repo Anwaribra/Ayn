@@ -14,7 +14,6 @@ from app.gap_analysis.models import (
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap_analysis
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +75,6 @@ class GapAnalysisService:
                     "gapsJson": json.dumps(result["gaps"]),
                     "recommendationsJson": json.dumps(result["recommendations"]),
                 }
-            )
             )
             
             # Trigger Notification

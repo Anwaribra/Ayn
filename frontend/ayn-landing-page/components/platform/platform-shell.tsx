@@ -4,6 +4,9 @@ import { type ReactNode, useState, useMemo, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import useSWR from "swr"
 import {
+  Expand,
+  ArrowLeft,
+  ArrowRight,
   Search,
   Bell,
   PanelLeft,
@@ -134,6 +137,24 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             >
               <PanelLeft className="w-5 h-5" />
             </button>
+
+            {/* Browser Navigation Buttons */}
+            <div className="hidden md:flex items-center gap-1.5 mr-2">
+              <button
+                onClick={() => router.back()}
+                className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-zinc-500 hover:text-blue-500 hover:border-blue-500/30 transition-all active:scale-95"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => router.forward()}
+                className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-zinc-500 hover:text-blue-500 hover:border-blue-500/30 transition-all active:scale-95"
+                title="Go Forward"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
 
             <button
               onClick={() => setCommandPaletteOpen(true)}

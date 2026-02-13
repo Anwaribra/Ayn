@@ -277,7 +277,7 @@ async def get_workflows(
     # helper for time ago
     def time_ago(dt):
         if not dt: return "Never"
-        now = datetime.utcnow()
+        now = datetime.now(datetime.timezone.utc) if dt.tzinfo else datetime.utcnow()
         diff = now - dt
         seconds = diff.total_seconds()
         if seconds < 60: return "Just now"

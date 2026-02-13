@@ -27,7 +27,7 @@ async def generate_gap_analysis_report(
     return await GapAnalysisService.generate_report(request, current_user)
 
 
-@router.get("/", response_model=List[GapAnalysisListItem])
+@router.get("", response_model=List[GapAnalysisListItem])
 async def list_gap_analyses(
     current_user: dict = Depends(get_current_user),
 ):

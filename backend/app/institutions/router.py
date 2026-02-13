@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/", response_model=InstitutionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InstitutionResponse, status_code=status.HTTP_201_CREATED)
 async def create_institution(
     request: InstitutionCreateRequest,
     current_user: dict = require_admin
@@ -66,7 +66,7 @@ async def assign_user_to_institution(
     return await InstitutionService.assign_user(institution_id, request, current_user["email"])
 
 
-@router.get("/", response_model=List[InstitutionResponse])
+@router.get("", response_model=List[InstitutionResponse])
 async def list_institutions(
     current_user: dict = Depends(get_current_user)
 ):

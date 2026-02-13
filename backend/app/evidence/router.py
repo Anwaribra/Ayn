@@ -64,7 +64,7 @@ async def get_evidence(
     return await EvidenceService.get_evidence(evidence_id)
 
 
-@router.get("/", response_model=List[EvidenceResponse])
+@router.get("", response_model=List[EvidenceResponse])
 async def list_evidence(
     current_user: dict = Depends(get_current_user)
 ):

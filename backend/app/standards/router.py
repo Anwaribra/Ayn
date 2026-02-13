@@ -21,7 +21,7 @@ router = APIRouter()
 
 # ==================== Standards Endpoints ====================
 
-@router.get("/", response_model=List[StandardResponse])
+@router.get("", response_model=List[StandardResponse])
 async def list_standards(
     current_user: dict = Depends(get_current_user)
 ):
@@ -31,7 +31,7 @@ async def list_standards(
     return await StandardService.list_standards()
 
 
-@router.post("/", response_model=StandardResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=StandardResponse, status_code=status.HTTP_201_CREATED)
 async def create_standard(
     request: StandardCreateRequest,
     current_user: dict = require_admin

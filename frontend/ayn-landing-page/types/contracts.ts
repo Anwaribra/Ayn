@@ -82,6 +82,11 @@ export interface DashboardMetricsResponse {
   evidenceCount: number;
   alignmentPercentage: number;
   totalGapAnalyses: number;
+  recentEvidence: any[];
+  recentAnalyses: any[];
+  recentActivities: any[];
+  unreadNotificationsCount: number;
+  recentScores: any[];
 }
 
 export interface EvidenceResponse {

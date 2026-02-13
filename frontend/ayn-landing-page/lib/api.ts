@@ -436,10 +436,11 @@ class ApiClient {
     return response.json()
   }
 
-  async horusChat(message: string, files?: File[]) {
+  async horusChat(message: string, files?: File[], chatId?: string) {
     const token = this.getToken()
     const formData = new FormData()
     formData.append("message", message)
+    if (chatId) formData.append("chat_id", chatId)
 
     if (files) {
       files.forEach((file) => {
@@ -461,6 +462,63 @@ class ApiClient {
     }
 
     return response.json()
+  }
+
+  async horusChatStream(
+    message: string,
+    files?: File[],
+    chatId?: string,
+    onChunk?: (chunk: string) => void
+  ) {
+    const token = this.getToken()
+    const formData = new FormData()
+    formData.append("message", message)
+    if (chatId) formData.append("chat_id", chatId)
+
+    if (files) {
+      files.forEach((file) => {
+        formData.append("files", file)
+      })
+    }
+
+    const response = await fetch(`${API_BASE_URL}/horus/chat/stream`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("Streaming failed")
+    }
+
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    let fullText = ""
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        fullText += chunk
+        if (onChunk) onChunk(chunk)
+      }
+    }
+    return fullText
+  }
+
+  async getChatHistory() {
+    return this.request<any[]>("/horus/history")
+  }
+
+  async getChatMessages(chatId: string) {
+    return this.request<any>(`/horus/history/${chatId}`)
+  }
+
+  async deleteChat(chatId: string) {
+    return this.request(`/horus/history/${chatId}`, { method: "DELETE" })
   }
 
   async generateAnswer(prompt: string, context?: string) {

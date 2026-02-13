@@ -334,7 +334,7 @@ class GeminiClient:
             response = self.model.generate_content(full_prompt_with_system)
             return response.text
     
-    def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
+    async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         system_instruction = SYSTEM_PROMPT
         if context:
             context_hints = {
@@ -374,6 +374,36 @@ class GeminiClient:
             full_prompt = f"{system_instruction}\n\n---\nConversation History:\n{history_text}\nUser: {last_msg}\n\nAssistant:"
             response = self.model.generate_content(full_prompt)
             return response.text
+
+    async def stream_chat(self, messages: List[Dict[str, str]], context: Optional[str] = None):
+        """Streaming chat response."""
+        system_instruction = SYSTEM_PROMPT
+        if context:
+            system_instruction += f"\n\nAdditional context: {context}"
+        
+        if USE_NEW_API:
+            contents = []
+            for msg in messages:
+                role = "user" if msg["role"] == "user" else "model"
+                contents.append(
+                    genai_types.Content(
+                        role=role,
+                        parts=[genai_types.Part.from_text(text=msg["content"])]
+                    )
+                )
+            
+            for chunk in self.client.models.generate_content_stream(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                ),
+                contents=contents,
+            ):
+                yield chunk.text
+        else:
+            # Fallback for old API if streaming not supported easily
+            response = self.chat(messages, context)
+            yield await response
     
     def summarize(self, content: str, max_length: int = 100) -> str:
         prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
@@ -492,6 +522,39 @@ class GeminiClient:
             response = self.model.generate_content(full_prompt_with_system)
             return response.text
 
+    async def stream_chat_with_files(self, message: str, files: List[Dict]):
+        """Streaming multimodal chat with files."""
+        if USE_NEW_API:
+            parts = []
+            parts.append(genai_types.Part.from_text(text=message))
+            
+            for file_item in files:
+                if file_item["type"] == "image":
+                    import base64
+                    img_bytes = base64.b64decode(file_item["data"])
+                    parts.append(genai_types.Part.from_bytes(data=img_bytes, mime_type=file_item["mime_type"]))
+                elif file_item["type"] == "document" and file_item.get("mime_type") == "application/pdf":
+                    import base64
+                    pdf_bytes = base64.b64decode(file_item["data"])
+                    parts.append(genai_types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"))
+                elif file_item["type"] == "text":
+                    parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"))
+            
+            for chunk in self.client.models.generate_content_stream(
+                model=self.model_name,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                ),
+                contents=genai_types.Content(
+                    role="user",
+                    parts=parts
+                ),
+            ):
+                yield chunk.text
+        else:
+            response = self.chat_with_files(message, files)
+            yield await response
+
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────
 class HorusAIClient:
@@ -561,11 +624,32 @@ class HorusAIClient:
         
         raise Exception(f"All AI providers failed: {str(last_error)}")
     
+    async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
+        """Call a streaming method on Gemini first, fall back to OpenRouter on failure."""
+        # Note: OpenRouter streaming would need separate implementation, for now Gemini only
+        if self.gemini:
+            try:
+                method = getattr(self.gemini, method_name)
+                async for chunk in method(*args, **kwargs):
+                    yield chunk
+                return
+            except Exception as e:
+                logger.warning(f"Gemini {method_name} failed: {e}. Falling back to non-streaming OpenRouter if available.")
+        
+        # Fallback to non-streaming if streaming fails
+        non_stream_method = method_name.replace("stream_", "")
+        result = self._call_with_fallback(non_stream_method, *args, **kwargs)
+        yield result
+
     # ── Public API (same interface as GeminiClient) ──────────────────────────
     
     def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         return self._call_with_fallback("chat", messages=messages, context=context)
     
+    async def stream_chat(self, messages: List[Dict[str, str]], context: Optional[str] = None):
+        async for chunk in self._stream_with_fallback("stream_chat", messages=messages, context=context):
+            yield chunk
+
     def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
         return self._call_with_fallback("generate_text", prompt=prompt, context=context)
     
@@ -583,6 +667,14 @@ class HorusAIClient:
     
     def chat_with_files(self, message: str, files: List[Dict]) -> str:
         return self._call_with_fallback("chat_with_files", message=message, files=files)
+    
+    async def stream_chat_with_files(self, message: str, files: List[Dict]):
+        async for chunk in self._stream_with_fallback("stream_chat_with_files", message=message, files=files):
+            yield chunk
+
+    @property
+    def provider(self) -> str:
+        return self._provider
     
     @property
     def provider(self) -> str:

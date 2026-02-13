@@ -23,6 +23,8 @@ model User {
   institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: Cascade)
   evidence      Evidence[] @relation("EvidenceUploader")
   notifications Notification[]
+  chats         Chat[]
+  activities    Activity[]
 
   // Platform State Relations
   platformFiles    PlatformFile[]
@@ -115,6 +117,7 @@ model Evidence {
   fileUrl         String
   originalFilename String? // Storing original name as required
   uploadedById    String
+  ownerId         String?   // Organization/Institution identifier for multi-tenancy
   
   // AI Analysis Data
   title           String?
@@ -135,6 +138,7 @@ model Evidence {
   updatedAt       DateTime @updatedAt
 
   @@index([uploadedById])
+  @@index([ownerId])
   @@index([status])
 }
 
@@ -152,6 +156,50 @@ model EvidenceCriterion {
   @@unique([evidenceId, criterionId])
   @@index([evidenceId])
   @@index([criterionId])
+}
+
+// Chat Persistence Models
+model Chat {
+  id        String    @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  userId    String
+  role      String   // user, assistant, system
+  content   String   @db.Text
+  timestamp DateTime @default(now())
+  
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+}
+
+// Activity Feed Model
+model Activity {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // evidence_uploaded, analysis_finished, score_updated, etc.
+  title       String
+  description String?  @db.Text
+  entityId    String?  // Reference to related object (evidenceId, chatId, etc.)
+  entityType  String?
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
 }
 
 // Notification System
@@ -193,11 +241,8 @@ model GapAnalysis {
   @@index([archived])
 }
 
-// Notification Model
-
-
 // ═══════════════════════════════════════════════════════════════════════════
-// PLATFORM STATE MODELS
+// PLATFORM STATE MODELS (Transitioning to Activity/Notification system)
 // ═══════════════════════════════════════════════════════════════════════════
 
 model PlatformFile {
@@ -309,3 +354,4 @@ model PlatformEvent {
   @@index([type])
   @@index([timestamp])
 }
+

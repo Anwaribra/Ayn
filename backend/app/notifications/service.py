@@ -104,3 +104,16 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Error marking all read: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to mark all read")
+
+    @staticmethod
+    async def get_unread_count(user_id: str) -> int:
+        """Get the count of unread notifications for a user."""
+        db = get_db()
+        try:
+            count = await db.notification.count(
+                where={"userId": user_id, "isRead": False}
+            )
+            return count
+        except Exception as e:
+            logger.error(f"Error fetching unread count: {e}")
+            return 0

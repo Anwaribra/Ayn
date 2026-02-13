@@ -62,6 +62,7 @@ class EvidenceService:
                 data={
                     "fileUrl": public_url, 
                     "uploadedById": current_user["id"],
+                    "ownerId": current_user.get("institutionId"), # Use institutionId as ownerId for isolation
                     "originalFilename": file.filename,
                     "title": file.filename, # Default title is filename until AI analysis completes
                     "status": "processing"
@@ -470,10 +471,19 @@ class EvidenceService:
 
     @staticmethod
     async def list_evidence(current_user: dict) -> List[EvidenceResponse]:
-        """List evidence."""
+        """List evidence with isolation."""
         db = get_db()
         try:
-            where = {} if current_user["role"] == "ADMIN" else {"uploadedById": current_user["id"]}
+            # Isolation: Admin sees all, User sees their own or their institution's
+            if current_user["role"] == "ADMIN":
+                where = {}
+            else:
+                institution_id = current_user.get("institutionId")
+                if institution_id:
+                    where = {"OR": [{"uploadedById": current_user["id"]}, {"ownerId": institution_id}]}
+                else:
+                    where = {"uploadedById": current_user["id"]}
+            
             evidence_list = await db.evidence.find_many(
                 where=where, 
                 order={"createdAt": "desc"},

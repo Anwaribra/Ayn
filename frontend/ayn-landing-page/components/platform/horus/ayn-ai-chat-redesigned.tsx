@@ -21,7 +21,7 @@ import {
   User,
   Sparkles,
   FileText,
-  Image as ImageIcon,
+  ImageIcon,
   X,
   Loader2,
   MessageSquare,
@@ -36,7 +36,7 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/lib/auth-context"
-import useSWR from "swr"
+import useSWR, { mutate } from "swr"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -57,45 +57,7 @@ interface ChatSession {
   id: string
   title: string
   messages: Message[]
-  createdAt: number
-}
-
-// ─── Storage ────────────────────────────────────────────────────────────────────
-const MESSAGES_KEY = "horus-messages"
-const SESSIONS_KEY = "horus-sessions"
-
-function saveMessages(messages: Message[]) {
-  if (typeof window === "undefined") return
-  try {
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
-  } catch { }
-}
-
-function loadMessages(): Message[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(MESSAGES_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-function saveSessions(sessions: ChatSession[]) {
-  if (typeof window === "undefined") return
-  try {
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
-  } catch { }
-}
-
-function loadSessions(): ChatSession[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(SESSIONS_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
+  createdAt: string
 }
 
 // ─── Markdown Content ───────────────────────────────────────────────────────────
@@ -112,7 +74,7 @@ export function MarkdownContent({ content }: { content: string }) {
             inline ? (
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
             ) : (
-              <code className="block rounded-lg bg-muted/50 p-4 font-mono text-sm overflow-x-auto">
+              <code className="block rounded-lg bg-muted/50 p-4 font-mono text-sm overflow-x-auto w-full">
                 {children}
               </code>
             ),
@@ -128,52 +90,29 @@ export function MarkdownContent({ content }: { content: string }) {
 export default function HorusAIChat() {
   const router = useRouter()
   const { user } = useAuth()
+
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
-  const [sessions, setSessions] = useState<ChatSession[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Remote Data
+  const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
   const { data: metrics } = useSWR(user ? "dashboard-metrics" : null, () => api.getDashboardMetrics())
-  const { data: gapAnalyses } = useSWR(user ? "gap-analyses" : null, () => api.getGapAnalyses())
-  const { data: evidence } = useSWR(user ? "evidence" : null, () => api.getEvidence())
 
   const complianceEquilibrium = metrics?.alignmentPercentage ?? 0
-  const activeGaps = (gapAnalyses ?? []).length
-  const indexedAssets = evidence?.length ?? 0
-
-  const recommendedActions = (gapAnalyses ?? [])
-    .filter((g: { overallScore: number }) => (g.overallScore ?? 100) < 80)
-    .slice(0, 5)
-    .map((g: { id: string; standardTitle: string }) => ({
-      id: g.id,
-      label: `Remediate ${g.standardTitle}`,
-    }))
+  const indexedAssets = metrics?.evidenceCount ?? 0
 
   const actionPills = [
     { label: "Map Compliance", icon: Sparkles, href: "/platform/standards" },
     { label: "Verify Evidence", icon: Settings2, href: "/platform/evidence" },
     { label: "Audit Procedure", icon: CheckCircle2, href: "/platform/gap-analysis" },
   ]
-
-  // Load sessions on mount (but start fresh chat)
-  useEffect(() => {
-    const savedSessions = loadSessions()
-    if (savedSessions.length > 0) setSessions(savedSessions)
-    // Always start with fresh chat - don't auto-load old messages
-  }, [])
-
-  // Save on change
-  useEffect(() => {
-    if (messages.length > 0) saveMessages(messages)
-  }, [messages])
-
-  useEffect(() => {
-    if (sessions.length > 0) saveSessions(sessions)
-  }, [sessions])
 
   // Auto-scroll
   useEffect(() => {
@@ -221,222 +160,239 @@ export default function HorusAIChat() {
     setInput("")
     setIsLoading(true)
 
+    // Temporary placeholder for assistant message
+    const assistantMsgId = crypto.randomUUID()
+    setMessages((prev) => [...prev, {
+      id: assistantMsgId,
+      role: "assistant",
+      content: "",
+      timestamp: Date.now()
+    }])
+
+    let fullContent = ""
     try {
-      let response
-
-      if (attachedFiles.length > 0) {
-        response = await api.horusChat(text || "Analyze these files.", attachedFiles.map((f) => f.file))
-        setAttachedFiles([])
-      } else {
-        // For simplicity, we send current message to horusChat
-        // History is handled by Horus stateawareness if needed
-        response = await api.horusChat(text)
-      }
-
-      const assistantMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.content || response.raw_text || response.result || "No response.",
-        timestamp: Date.now(),
-      }
-
-      if (response.structured) {
-        const s = response.structured
-        if (s.summary && s.score) {
-          assistantMsg.content = `**Analysis Complete**\n\n${s.summary}\n\n**Score:** ${s.score}/100`
-          if (s.gaps?.length > 0) {
-            assistantMsg.content += `\n\n**Gaps Identified:**\n` + s.gaps.map((g: any) => `- ${g.title}: ${g.description}`).join('\n')
+      await api.horusChatStream(
+        text || "Analyze these files.",
+        attachedFiles.map(f => f.file),
+        currentChatId || undefined,
+        (chunk) => {
+          // Check for special ChatID chunk
+          if (chunk.startsWith("__CHAT_ID__:")) {
+            const newId = chunk.split(":")[1].trim()
+            setCurrentChatId(newId)
+            mutateHistory()
+            return
           }
-        }
-      }
 
-      setMessages((prev) => [...prev, assistantMsg])
+          fullContent += chunk
+          setMessages(prev => prev.map(m =>
+            m.id === assistantMsgId ? { ...m, content: fullContent } : m
+          ))
+        }
+      )
+      setAttachedFiles([])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send message")
+      toast.error("Dialogue interrupted. Connection unstable.")
+      setMessages(prev => prev.filter(m => m.id !== assistantMsgId))
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Save current chat
-  const saveCurrentSession = () => {
-    if (messages.length === 0) return
-    const firstMsg = messages.find((m) => m.role === "user")
-    const title = firstMsg ? firstMsg.content.slice(0, 40) + "..." : "New Chat"
-    const session: ChatSession = {
-      id: crypto.randomUUID(),
-      title,
-      messages,
-      createdAt: Date.now(),
-    }
-    setSessions((prev) => [session, ...prev])
-  }
-
   // Load session
-  const loadSession = (session: ChatSession) => {
-    setMessages(session.messages)
+  const loadSession = async (session: any) => {
+    setCurrentChatId(session.id)
+    try {
+      const fullChat = await api.getChatMessages(session.id)
+      setMessages(fullChat.messages.map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.timestamp).getTime()
+      })))
+    } catch (err) {
+      toast.error("Failed to retrieve record.")
+    }
   }
 
   // Delete session
-  const deleteSession = (id: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id))
+  const deleteSession = async (id: string) => {
+    try {
+      await api.deleteChat(id)
+      mutateHistory()
+      if (currentChatId === id) {
+        newChat()
+      }
+    } catch (err) {
+      toast.error("Deletion failed.")
+    }
   }
 
   // New chat
   const newChat = () => {
-    if (messages.length >= 2) {
-      // Auto-save only if there's actual conversation (at least 2 messages)
-      saveCurrentSession()
-    }
+    setCurrentChatId(null)
     setMessages([])
     setAttachedFiles([])
-    localStorage.removeItem(MESSAGES_KEY)
   }
 
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col">
-      {/* V3 Header */}
-      <div className="shrink-0 px-4 pb-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Neural Node</span>
-          <span className="text-zinc-700">•</span>
-          <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Horus Intelligence Hub</span>
+    <div className="flex h-[calc(100vh-56px)] flex-col bg-black/40 backdrop-blur-md">
+      {/* V4 Ultra-Modern Header */}
+      <div className="shrink-0 px-6 pt-6 pb-4 flex justify-between items-end">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Core Intelligence Active</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            Horus <span className="text-blue-500/80">Brain</span>
+          </h1>
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white">Horus Command</h1>
-        <div className="flex flex-wrap gap-3">
-          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Integrity 100.0% Secure</span>
-          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Linkage Secure</span>
-          <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Synchronized AY-294-G Core</span>
+
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={newChat} className="glass-panel border-white/5 bg-white/5 hover:bg-white/10 transition-all rounded-xl h-10 px-4">
+            <PlusCircle className="h-4 w-4 mr-2 text-blue-500" />
+            New Thread
+          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="glass-panel border-white/5 bg-white/5 hover:bg-white/10 transition-all rounded-xl h-10 px-4">
+                <History className="h-4 w-4 mr-2" />
+                History
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80 sm:w-96 bg-zinc-950/95 border-white/5 backdrop-blur-xl">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-xl font-bold">Dialogue History</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                {(!history || history.length === 0) ? (
+                  <div className="text-center py-20 opacity-30">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4" />
+                    <p className="text-sm">Neural archives empty</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {history.map((session: any) => (
+                      <div
+                        key={session.id}
+                        className={cn(
+                          "group relative rounded-2xl border p-4 cursor-pointer transition-all duration-300",
+                          currentChatId === session.id
+                            ? "bg-blue-500/10 border-blue-500/30"
+                            : "bg-white/5 border-white/5 hover:border-white/20"
+                        )}
+                        onClick={() => loadSession(session)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <MessageSquare className={cn("h-4 w-4 mt-1", currentChatId === session.id ? "text-blue-500" : "text-zinc-500")} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate pr-6">{session.title || "Untitled dialogue"}</p>
+                            <p className="text-[10px] text-zinc-500 mt-1">
+                              {new Date(session.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteSession(session.id)
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 
-      {/* Main Chat + Right Sidebar */}
-      <div className="flex-1 flex min-h-0">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex min-h-0 relative">
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top actions - New Chat, History */}
-          <div className="flex justify-end gap-2 px-4 pb-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={newChat} className="glass-panel border-white/5">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="glass-panel border-white/5">
-                  <History className="h-4 w-4 mr-2" />
-                  History
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-80 sm:w-96">
-                <SheetHeader>
-                  <SheetTitle>Previous Conversations</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <Button onClick={newChat} variant="default" className="w-full mb-4">
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Start New Chat
-                  </Button>
-                  <ScrollArea className="h-[calc(100vh-180px)]">
-                    {sessions.length === 0 ? (
-                      <div className="text-center text-sm text-muted-foreground py-12">
-                        <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                        <p>No saved conversations</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {sessions.map((session) => (
-                          <div
-                            key={session.id}
-                            className="group relative rounded-lg border bg-card p-3 hover:shadow-sm cursor-pointer transition-all"
-                            onClick={() => loadSession(session)}
-                          >
-                            <div className="flex items-start gap-3">
-                              <MessageSquare className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium line-clamp-2 mb-1">{session.title}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(session.createdAt).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deleteSession(session.id)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          {/* Messages Area */}
           <ScrollArea className="flex-1">
-            <div className="mx-auto max-w-2xl px-4 py-6">
+            <div className="mx-auto max-w-3xl px-6 py-8">
               {isEmpty ? (
-                <div className="space-y-6">
-                  <div className="glass-panel p-6 rounded-2xl border-white/5">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Horus Neural Link</p>
-                    <p className="text-sm text-zinc-400 leading-relaxed">
-                      Neural bridge established. I am Horus, your institutional intelligence layer. I have indexed your compliance history and evidence library. How shall we optimize the quality hub today?
+                <div className="space-y-10 mt-12">
+                  <div className="space-y-4 max-w-xl">
+                    <div className="inline-block px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                      Platform Intelligence
+                    </div>
+                    <h2 className="text-4xl font-black text-white leading-tight">
+                      Experience the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">future of compliance.</span>
+                    </h2>
+                    <p className="text-zinc-400 leading-relaxed text-lg">
+                      I am Horus — the global brain of Ayn. I analyze your documents, track your alignment, and optimize your institutional quality in real-time.
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {actionPills.map((pill) => (
                       <button
                         key={pill.label}
                         onClick={() => router.push(pill.href)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-white/5 text-[12px] font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                        className="group flex flex-col items-start gap-4 p-5 rounded-3xl glass-panel border-white/5 bg-white/5 hover:bg-white/10 transition-all text-left"
                       >
-                        <pill.icon className="w-3.5 h-3.5" />
-                        {pill.label}
+                        <div className="p-3 rounded-2xl bg-blue-500/10 group-hover:scale-110 transition-transform">
+                          <pill.icon className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <span className="font-bold text-zinc-200">{pill.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="space-y-8">
+                <div className="space-y-10">
                   {messages.map((msg) => (
-                    <div key={msg.id} className="flex gap-4 items-start">
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback
-                          className={cn(
-                            msg.role === "assistant"
-                              ? "bg-gradient-to-br from-blue-500 to-cyan-500"
-                              : "bg-muted"
-                          )}
-                        >
-                          {msg.role === "assistant" ? (
-                            <Bot className="h-4 w-4 text-white" />
-                          ) : (
-                            <User className="h-4 w-4" />
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
+                    <div key={msg.id} className={cn(
+                      "flex gap-6 items-start animate-in fade-in slide-in-from-bottom-2 duration-500",
+                      msg.role === "assistant" ? "flex-row" : "flex-row"
+                    )}>
+                      <div className={cn(
+                        "h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center p-0.5",
+                        msg.role === "assistant"
+                          ? "bg-gradient-to-br from-blue-600 to-emerald-600 shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                          : "bg-zinc-800"
+                      )}>
+                        {msg.role === "assistant" ? (
+                          <Bot className="h-5 w-5 text-white" />
+                        ) : (
+                          <User className="h-5 w-5 text-zinc-400" />
+                        )}
+                      </div>
 
-                      <div className="flex-1 space-y-2 min-w-0">
-                        <div className="font-semibold text-sm">
-                          {msg.role === "assistant" ? "Horus" : "You"}
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className="flex items-center gap-3">
+                          <span className="font-black text-sm uppercase tracking-widest text-zinc-300">
+                            {msg.role === "assistant" ? "Horus Intelligence" : "Protocol Operator"}
+                          </span>
+                          <span className="text-[10px] text-zinc-600 font-mono">
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <div className="text-sm leading-relaxed">
+                        <div className={cn(
+                          "text-[15px] leading-relaxed",
+                          msg.role === "assistant" ? "text-zinc-200" : "text-zinc-300 bg-white/5 p-4 rounded-3xl inline-block"
+                        )}>
                           {msg.role === "assistant" ? (
-                            <MarkdownContent content={msg.content} />
+                            msg.content ? (
+                              <MarkdownContent content={msg.content} />
+                            ) : (
+                              <div className="flex gap-1 py-2">
+                                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.15s]" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
+                              </div>
+                            )
                           ) : (
                             <p>{msg.content}</p>
                           )}
@@ -444,154 +400,152 @@ export default function HorusAIChat() {
                       </div>
                     </div>
                   ))}
-
-                  {isLoading && (
-                    <div className="flex gap-4 items-start">
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500">
-                          <Bot className="h-4 w-4 text-white" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-2">
-                        <div className="font-semibold text-sm">Horus</div>
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                          <span className="text-sm text-muted-foreground">Analyzing...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={scrollRef} />
+                  <div ref={scrollRef} className="h-8" />
                 </div>
               )}
             </div>
           </ScrollArea>
 
           {/* Input Area */}
-          <div className="border-t border-white/5 p-4 shrink-0">
-            <div className="mx-auto max-w-2xl space-y-3">
+          <div className="p-6 shrink-0 max-w-4xl mx-auto w-full">
+            <div className="space-y-4">
               {/* File Previews */}
               {attachedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-1">
+                <div className="flex flex-wrap gap-3 px-2">
                   {attachedFiles.map((file) => (
-                    <div key={file.id} className="relative flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-sm">
+                    <div key={file.id} className="relative flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3 pr-4 group animate-in zoom-in-95 duration-200">
                       {file.type === "image" && file.preview ? (
-                        <img src={file.preview} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                      ) : file.type === "image" ? (
-                        <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-blue-500" />
-                        </div>
+                        <img src={file.preview} alt="" className="h-10 w-10 rounded-xl object-cover" />
                       ) : (
-                        <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-purple-500" />
+                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-blue-500" />
                         </div>
                       )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium max-w-[150px]">{file.file.name}</p>
-                        <p className="text-xs text-muted-foreground">{(file.file.size / 1024).toFixed(0)} KB</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold max-w-[120px]">{file.file.name}</p>
+                        <p className="text-[10px] text-zinc-500">{(file.file.size / 1024).toFixed(0)} KB</p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
+                      <button
                         onClick={() => setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))}
+                        className="h-6 w-6 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center hover:bg-red-500 transition-colors"
                       >
                         <X className="h-3 w-3" />
-                      </Button>
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Input */}
-              <div className="relative flex items-end gap-3 rounded-2xl glass-panel border-white/5 p-3 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx,.txt"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={attachedFiles.length >= 5}
-                  className="shrink-0 h-9 w-9"
-                >
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                </Button>
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
-                  placeholder="> Initiate a neural dialogue..."
-                  className="flex-1 resize-none bg-transparent border-0 shadow-none focus-visible:ring-0 min-h-[40px] max-h-[200px] text-sm"
-                  disabled={isLoading}
-                />
+              {/* Advanced Input Bar */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-3xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
+                <div className="relative flex items-end gap-3 rounded-3xl bg-zinc-950 border border-white/10 p-3 shadow-2xl">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={attachedFiles.length >= 5}
+                    className="shrink-0 h-10 w-10 rounded-2xl transition-all hover:bg-white/10"
+                  >
+                    <Paperclip className="h-5 w-5 text-zinc-400" />
+                  </Button>
 
-                <Button
-                  size="icon"
-                  onClick={sendMessage}
-                  disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
-                  className="shrink-0 h-9 w-9 rounded-full bg-primary hover:bg-primary/90"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        sendMessage()
+                      }
+                    }}
+                    placeholder="Message Horus..."
+                    className="flex-1 resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 py-2.5 px-2 text-sm leading-relaxed text-zinc-200 placeholder:text-zinc-600 min-h-[44px] max-h-[200px]"
+                    disabled={isLoading}
+                  />
+
+                  <Button
+                    size="icon"
+                    onClick={sendMessage}
+                    disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
+                    className={cn(
+                      "shrink-0 h-10 w-10 rounded-2xl transition-all",
+                      isLoading ? "bg-zinc-800" : "bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20"
+                    )}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
+              <p className="text-[10px] text-center text-zinc-600 font-medium">
+                Horus can summarize documents, map evidence, and answer platform queries.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar — Live Context + Recommended */}
-        <aside className="hidden lg:flex w-72 flex-col shrink-0 border-l border-white/5 pl-6 py-4">
+        {/* Dynamic Context Sidebar */}
+        <aside className="hidden xl:flex w-80 flex-col shrink-0 border-l border-white/5 bg-zinc-950/20 backdrop-blur-sm p-6 space-y-8">
           <div className="space-y-6">
-            <div>
-              <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">Live Context</h4>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Compliance Equilibrium</p>
-                  <p className="mono text-lg font-bold text-white">{complianceEquilibrium}%</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Active Audit Gaps</p>
-                  <p className="mono text-lg font-bold text-white">{activeGaps}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Neural Indexed Assets</p>
-                  <p className="mono text-lg font-bold text-white">{indexedAssets.toLocaleString()}</p>
+            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] pl-1">Live Telemetry</h4>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-5 rounded-3xl bg-white/5 border border-white/5 space-y-1">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Compliance Equity</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-black text-white">{complianceEquilibrium}%</span>
+                  <div className="mb-2 h-1 w-12 bg-emerald-500/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500" style={{ width: `${complianceEquilibrium}%` }} />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">Recommended</h4>
-              <div className="space-y-2">
-                {recommendedActions.length === 0 ? (
-                  <p className="text-[11px] text-zinc-600 italic">No pending remediations</p>
-                ) : (
-                  recommendedActions.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => router.push("/platform/gap-analysis")}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg glass-panel border-white/5 text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-all text-left"
-                    >
-                      {item.label}
-                      <ChevronRight className="w-3 h-3 shrink-0" />
-                    </button>
-                  ))
-                )}
+              <div className="p-5 rounded-3xl bg-white/5 border border-white/5 space-y-1">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Neural Assets</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-black text-white">{indexedAssets}</span>
+                  <div className="px-2 py-0.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400">INDEXED</div>
+                </div>
               </div>
             </div>
           </div>
-          <p className="mt-auto pt-6 text-[9px] font-bold text-zinc-700 uppercase tracking-widest">Brain Version AYN-v2.4-LATEST</p>
+
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] pl-1">System Health</h4>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-zinc-500 font-medium">Memory Sync</span>
+                <span className="text-emerald-500 font-bold uppercase tracking-tighter">OPTIMAL</span>
+              </div>
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-zinc-500 font-medium">LLM Latency</span>
+                <span className="text-zinc-300 font-bold">24ms</span>
+              </div>
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-zinc-500 font-medium">Neural Pathways</span>
+                <span className="text-zinc-300 font-bold tabular-nums">48,291</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-auto border-t border-white/5 pt-6 flex items-center gap-3 px-1">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-zinc-800 to-zinc-700 flex items-center justify-center font-black text-[10px] text-white">V4</div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black text-white uppercase tracking-tighter">Horus Cerebral Core</p>
+              <p className="text-[9px] text-zinc-600 font-medium">Build AYN-2024-STABLE</p>
+            </div>
+          </div>
         </aside>
       </div>
     </div>

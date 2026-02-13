@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, UploadFile, File, Request
+from fastapi import APIRouter, status, Depends, UploadFile, File, Request, BackgroundTasks
 from typing import List
 from app.core.middlewares import get_current_user
 from app.core.rate_limit import limiter
@@ -20,13 +20,14 @@ router = APIRouter()
 @limiter.limit("20/minute")
 async def upload_evidence(
     request: Request,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
     """
     Upload evidence file.
     """
-    return await EvidenceService.upload_evidence(file, current_user)
+    return await EvidenceService.upload_evidence(file, current_user, background_tasks)
 
 
 @router.delete("/{evidence_id}", status_code=status.HTTP_200_OK)

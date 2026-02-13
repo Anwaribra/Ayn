@@ -33,8 +33,11 @@ class EvidenceResponse(BaseModel):
 
 class UploadEvidenceResponse(BaseModel):
     """Response for uploading evidence."""
+    success: bool = True
     message: str
-    evidence: EvidenceResponse
+    evidenceId: Optional[str] = None
+    analysisTriggered: bool = False
+    evidence: Optional[EvidenceResponse] = None
 
 
 class AttachEvidenceResponse(BaseModel):

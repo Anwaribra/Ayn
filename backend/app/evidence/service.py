@@ -26,30 +26,189 @@ class EvidenceService:
     """Service for evidence management business logic."""
     
     @staticmethod
-    async def upload_evidence(file: UploadFile, current_user: dict) -> UploadEvidenceResponse:
-        """Upload evidence file."""
+    async def upload_evidence(file: UploadFile, current_user: dict, background_tasks: BackgroundTasks) -> UploadEvidenceResponse:
+        """
+        Upload evidence file with background AI analysis.
+        Fault-tolerant: Upload succeeds even if AI fails.
+        """
+        # 1. Validation
         if file.content_type not in ALLOWED_FILE_TYPES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File type not allowed")
         
-        file_content = await file.read()
-        if len(file_content) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large")
-        
+        # Read content for validation and analysis
+        try:
+            file_content = await file.read()
+            if len(file_content) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=f"File too large (max {MAX_FILE_SIZE//1024//1024}MB)")
+        except Exception as e:
+            logger.error(f"File read error: {e}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to read file")
+
+        # Reset stream for upload
         await file.seek(0)
+        
         db = get_db()
         try:
+            # 2. Critical Path: Storage + DB
+            # Upload to Supabase
             public_url, _ = await upload_file_to_supabase(file)
+            
+            # Create Record
             evidence = await db.evidence.create(
-                data={"fileUrl": public_url, "uploadedById": current_user["id"]}
+                data={
+                    "fileUrl": public_url, 
+                    "uploadedById": current_user["id"],
+                    "title": file.filename, # Default title
+                    "type": file.content_type
+                }
             )
-            logger.info(f"User {current_user['email']} uploaded: {evidence.id}")
+            logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
+            
+            # 3. Non-Critical Path: Background Analysis
+            # We assume text/pdf/image analysis.
+            try:
+                background_tasks.add_task(
+                    EvidenceService.analyze_evidence_task,
+                    evidence_id=evidence.id,
+                    file_content=file_content,
+                    filename=file.filename,
+                    mime_type=file.content_type,
+                    user_id=current_user["id"]
+                )
+                analysis_triggered = True
+            except Exception as bg_error:
+                logger.error(f"Failed to schedule background analysis: {bg_error}")
+                analysis_triggered = False
+
             return UploadEvidenceResponse(
+                success=True,
                 message="Uploaded successfully",
+                evidenceId=evidence.id,
+                analysisTriggered=analysis_triggered,
                 evidence=EvidenceResponse.model_validate(evidence)
             )
+            
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.error(f"Upload error: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Upload failed")
+            logger.error(f"Upload error details: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail={"error": "Valid upload failed", "stage": "persistence", "detail": str(e)}
+            )
+
+    @staticmethod
+    async def analyze_evidence_task(evidence_id: str, file_content: bytes, filename: str, mime_type: str, user_id: str):
+        """
+        Background task: Analyze evidence using AI and update state.
+        Never throws exceptions to the caller.
+        """
+        import asyncio
+        from app.ai.service import get_gemini_client
+        from app.platform_state.service import StateService
+        # Re-get DB session for background task
+        # Note: get_db() yields, so we need to use it as context manager or similar mechanism if tailored for bg tasks.
+        # But typically for simple scripts we can instantiate Prisma or use logic that handles its own connection.
+        # However, `StateService` expects a `db` object (Prisma client).
+        # We need a fresh DB session for the background task context.
+        from app.core.db import db as prisma_client
+
+        logger.info(f"Starting background analysis for {evidence_id}")
+        
+        try:
+             # Connect if not connected (Prisma client is singleton mostly)
+            if not prisma_client.is_connected():
+                await prisma_client.connect()
+
+            # 1. AI Analysis
+            client = get_gemini_client()
+            
+            # Prepare prompt
+            prompt = """
+            Analyze this uploaded evidence file.
+            Identify:
+            1. Document Type (Policy, Record, Meeting Minutes, etc.)
+            2. Key Standards/Clauses it likely supports (ISO 21001, etc.)
+            3. Confidence Score (0-100)
+            
+            Return ONLY JSON:
+            {
+               "document_type": "...",
+               "standards": ["..."],
+               "clauses": ["..."],
+               "confidence": 85,
+               "summary": "..."
+            }
+            """
+            
+            # Prepare file for AI (mocking the structure chat_with_files uses)
+            import base64
+            b64_data = base64.b64encode(file_content).decode("utf-8")
+            
+            # We reuse chat_with_files logic or call gemini directly
+            # Here we construct the file object manually
+            files_payload = [{
+                "type": "image" if mime_type.startswith("image") else "text",
+                "mime_type": mime_type,
+                "data": b64_data,
+                "filename": filename
+            }]
+            
+            # Call AI
+            raw_response = await asyncio.to_thread(
+                client.chat_with_files, 
+                message=prompt, 
+                files=files_payload
+            )
+            
+            # Parse Response
+            import json
+            import re
+            
+            # Extract JSON
+            match = re.search(r'(\{.*\}|\[.*\])', raw_response, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(1))
+                
+                # 2. Update State
+                state_service = StateService(prisma_client)
+                
+                # Record File Analysis (updates PlatformFile) 
+                # Note: We need a file_id. 
+                # Currently Evidence and PlatformFile are separate entities in this system 
+                # (Evidence is the compliance asset, PlatformFile is the raw file).
+                # But `record_file_upload` logic normally happens.
+                # Here we have `evidence_id`. 
+                # Let's see if we can update the Evidence record directly or create a PlatformFile record.
+                
+                # For this fix, let's assuming we strictly update the Evidence record 
+                # or call the generic state analysis recorder.
+                
+                # Let's try to update the Evidence title/type if generic
+                await prisma_client.evidence.update(
+                    where={"id": evidence_id},
+                    data={
+                        "title": f"{parsed.get('document_type', 'Document')} - {filename}",
+                        # We could store metadata here if schema allows
+                    }
+                )
+                
+                # Record Metric
+                await state_service.record_metric_update(
+                    user_id=user_id,
+                    metric_id="evidence_processed",
+                    name="Evidence Processed",
+                    value=1,
+                    source_module="ai_worker"
+                )
+                
+                logger.info(f"Background analysis complete for {evidence_id}")
+            else:
+                logger.warning(f"AI returned invalid JSON for {evidence_id}")
+
+        except Exception as e:
+            # Swallow error to keep worker alive
+            logger.error(f"Background analysis failed for {evidence_id}: {e}")
 
     @staticmethod
     async def delete_evidence(evidence_id: str, current_user: dict):

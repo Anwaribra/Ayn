@@ -376,8 +376,11 @@ export interface UpdateUserRequest {
 }
 
 export interface UploadEvidenceResponse {
+  success?: boolean;
   message: string;
-  evidence: EvidenceResponse;
+  evidenceId?: string;
+  analysisTriggered?: boolean;
+  evidence?: EvidenceResponse;
 }
 
 export interface UserResponse {

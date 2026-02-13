@@ -158,34 +158,48 @@ class HorusService:
                 entity_type="chat"
             )
 
-        # 3. Get State Summary
-        summary = await self.state_manager.get_state_summary(user_id)
+        # 3 & 4. Get State Summary and Handle Files in Parallel
+        import asyncio
         
-        # 4. Handle Files
+        async def process_file(f):
+            upload_result = await EvidenceService.upload_evidence(
+                file=f,
+                current_user=current_user,
+                background_tasks=background_tasks
+            )
+            if upload_result.success:
+                content = await f.read()
+                await f.seek(0)
+                return {
+                    "type": "image" if f.content_type.startswith("image/") else "document" if f.content_type == "application/pdf" else "text",
+                    "mime_type": f.content_type,
+                    "data": base64.b64encode(content).decode("utf-8"),
+                    "filename": f.filename,
+                    "evidenceId": upload_result.evidenceId
+                }
+            return None
+
+        # Fetch summary and process all files concurrently
+        summary_task = self.state_manager.get_state_summary(user_id)
+        file_tasks = [process_file(f) for f in (files or [])]
+        
+        results = await asyncio.gather(summary_task, *file_tasks)
+        summary = results[0]
+        file_results = [r for r in results[1:] if r is not None]
+        
         file_references = []
-        if files:
-            for file in files:
-                upload_result = await EvidenceService.upload_evidence(
-                    file=file,
-                    current_user=current_user,
-                    background_tasks=background_tasks
-                )
-                if upload_result.success:
-                    content = await file.read()
-                    await file.seek(0)
-                    file_references.append({
-                        "type": "image" if file.content_type.startswith("image/") else "document" if file.content_type == "application/pdf" else "text",
-                        "mime_type": file.content_type,
-                        "data": base64.b64encode(content).decode("utf-8"),
-                        "filename": file.filename
-                    })
-                    await ActivityService.log_activity(
-                        user_id=user_id,
-                        type="evidence_uploaded",
-                        title=f"File uploaded: {file.filename}",
-                        entity_id=upload_result.evidenceId,
-                        entity_type="evidence"
-                    )
+        for res in file_results:
+            # Extract evidenceId for activity logging 
+            evidence_id = res.pop("evidenceId")
+            file_references.append(res)
+            
+            await ActivityService.log_activity(
+                user_id=user_id,
+                type="evidence_uploaded",
+                title=f"File uploaded: {res['filename']}",
+                entity_id=evidence_id,
+                entity_type="evidence"
+            )
 
         # 5. AI Interaction (Streaming)
         client = get_gemini_client()

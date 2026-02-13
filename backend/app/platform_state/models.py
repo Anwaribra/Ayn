@@ -294,13 +294,16 @@ class PlatformStateManager:
     async def get_state_summary(self, user_id: str) -> StateSummary:
         """Get state summary. Returns empty if tables don't exist."""
         if not await self._check_tables():
-            # Return empty summary - frontend will show appropriate message
             return StateSummary()
         
-        files = await self.get_files_by_user(user_id)
-        evidence = await self.get_evidence_by_user(user_id)
-        gaps = await self.get_gaps_by_user(user_id)
-        metrics = await self.get_metrics_by_user(user_id)
+        # Parallel fetch for speed
+        import asyncio
+        files, evidence, gaps, metrics = await asyncio.gather(
+            self.get_files_by_user(user_id),
+            self.get_evidence_by_user(user_id),
+            self.get_gaps_by_user(user_id),
+            self.get_metrics_by_user(user_id)
+        )
         
         unlinked = [f for f in files if not f.linked_evidence_ids]
         addressable = [g for g in gaps if g.status == "defined" and g.related_file_ids]

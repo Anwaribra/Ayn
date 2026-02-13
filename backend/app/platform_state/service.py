@@ -130,21 +130,24 @@ class StateService:
             "updated_at": datetime.utcnow()
         })
         
-        # Notify on significant score changes or specific metrics
-        if "alignment" in name.lower() or "score" in name.lower():
-             try:
-                from app.notifications.service import NotificationService
-                from app.notifications.models import NotificationCreateRequest
-                await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=user_id,
-                    type="info",
-                    title="Metric Updated",
-                    message=f"{name} is now {value}",
-                    relatedEntityId=metric_id,
-                    relatedEntityType="metric"
-                ))
-             except Exception as e:
-                print(f"Failed to send notification: {e}")
+        # Notify only on SIGNIFICANT score changes/updates that actually changed the value
+        if ("alignment" in name.lower() or "score" in name.lower()):
+            has_changed = (metric.previous_value is None) or (abs(metric.value - metric.previous_value) > 0.001)
+            
+            if has_changed:
+                 try:
+                    from app.notifications.service import NotificationService
+                    from app.notifications.models import NotificationCreateRequest
+                    await NotificationService.create_notification(NotificationCreateRequest(
+                        userId=user_id,
+                        type="info",
+                        title="Metric Updated",
+                        message=f"{name} is now {value}",
+                        relatedEntityId=metric_id,
+                        relatedEntityType="metric"
+                    ))
+                 except Exception as e:
+                    print(f"Failed to send notification: {e}")
                 
         return metric
     

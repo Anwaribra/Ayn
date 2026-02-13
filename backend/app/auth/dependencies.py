@@ -28,9 +28,9 @@ def require_roles(allowed_roles: List[str]):
 
 
 # Convenience dependencies for common role checks
-require_admin = Depends(require_roles(["ADMIN"]))
-require_teacher = Depends(require_roles(["TEACHER"]))
-require_auditor = Depends(require_roles(["AUDITOR"]))
-require_admin_or_teacher = Depends(require_roles(["ADMIN", "TEACHER"]))
-require_admin_or_auditor = Depends(require_roles(["ADMIN", "AUDITOR"]))
+require_admin = require_roles(["ADMIN"])
+require_teacher = require_roles(["TEACHER"])
+require_auditor = require_roles(["AUDITOR"])
+require_admin_or_teacher = require_roles(["ADMIN", "TEACHER"])
+require_admin_or_auditor = require_roles(["ADMIN", "AUDITOR"])
 

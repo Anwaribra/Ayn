@@ -23,7 +23,7 @@ router = APIRouter()
 @router.post("", response_model=InstitutionResponse, status_code=status.HTTP_201_CREATED)
 async def create_institution(
     request: InstitutionCreateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Create a new institution.
@@ -35,7 +35,7 @@ async def create_institution(
 async def update_institution(
     institution_id: str,
     request: InstitutionUpdateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Update an institution.
@@ -58,7 +58,7 @@ async def get_institution(
 async def assign_user_to_institution(
     institution_id: str,
     request: AssignUserRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Assign a user to an institution.
@@ -80,7 +80,7 @@ async def list_institutions(
 async def link_standard_to_institution(
     institution_id: str,
     request: LinkStandardRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Link a standard to an institution.
@@ -103,7 +103,7 @@ async def list_institution_standards(
 async def unlink_standard_from_institution(
     institution_id: str,
     standard_id: str,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Unlink a standard from an institution.

@@ -34,7 +34,7 @@ async def list_standards(
 @router.post("", response_model=StandardResponse, status_code=status.HTTP_201_CREATED)
 async def create_standard(
     request: StandardCreateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Create a new standard.
@@ -46,7 +46,7 @@ async def create_standard(
 async def update_standard(
     standard_id: str,
     request: StandardUpdateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Update a standard.
@@ -71,7 +71,7 @@ async def list_criteria_for_standard(
 async def create_criterion(
     standard_id: str,
     request: CriterionCreateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Create a new criterion for a standard.
@@ -83,7 +83,7 @@ async def create_criterion(
 async def update_criterion(
     criterion_id: str,
     request: CriterionUpdateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin)
 ):
     """
     Update a criterion.

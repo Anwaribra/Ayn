@@ -420,7 +420,7 @@ class ApiClient {
       formData.append("files", file)
     })
 
-    const response = await fetch(`${API_BASE_URL}/ai/chat-with-files`, {
+    const response = await fetch(`${API_BASE_URL}/horus/chat`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -431,6 +431,33 @@ class ApiClient {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: "Failed to process files" }))
       throw new Error(error.detail || "Failed to process files")
+    }
+
+    return response.json()
+  }
+
+  async horusChat(message: string, files?: File[]) {
+    const token = this.getToken()
+    const formData = new FormData()
+    formData.append("message", message)
+
+    if (files) {
+      files.forEach((file) => {
+        formData.append("files", file)
+      })
+    }
+
+    const response = await fetch(`${API_BASE_URL}/horus/chat`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "Horus chat failed" }))
+      throw new Error(error.detail || "Horus chat failed")
     }
 
     return response.json()

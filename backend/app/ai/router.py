@@ -52,6 +52,13 @@ async def chat_with_files(
                 "data": base64.b64encode(content).decode("utf-8"),
                 "filename": file.filename
             })
+        elif file.content_type == "application/pdf":
+            file_contents.append({
+                "type": "document",
+                "mime_type": "application/pdf",
+                "data": base64.b64encode(content).decode("utf-8"),
+                "filename": file.filename
+            })
         else:
             try:
                 file_contents.append({

@@ -453,6 +453,15 @@ class GeminiClient:
                             mime_type=file_item["mime_type"]
                         )
                     )
+                elif file_item["type"] == "document" and file_item.get("mime_type") == "application/pdf":
+                    import base64
+                    pdf_bytes = base64.b64decode(file_item["data"])
+                    parts.append(
+                        genai_types.Part.from_bytes(
+                            data=pdf_bytes,
+                            mime_type="application/pdf"
+                        )
+                    )
                 elif file_item["type"] == "text":
                     # Text file content
                     parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"))

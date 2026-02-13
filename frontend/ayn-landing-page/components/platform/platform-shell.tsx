@@ -1,8 +1,9 @@
 ﻿"use client"
 
-import { type ReactNode, useState, useMemo, useEffect } from "react"
+import { type ReactNode, useState, useMemo, useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import useSWR from "swr"
+import { toast } from "sonner"
 import {
   Expand,
   ArrowLeft,
@@ -94,6 +95,29 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     () => notifications?.filter((n: Notification) => !n.isRead).length ?? 0,
     [notifications],
   )
+
+  // Live Toast for New Notifications
+  const lastNotifId = useRef<string | null>(null)
+  useEffect(() => {
+    const unread = notifications?.filter(n => !n.isRead) || []
+    if (unread.length > 0) {
+      const latest = unread[0]
+      if (latest.id !== lastNotifId.current) {
+        lastNotifId.current = latest.id
+        toast(latest.title, {
+          description: latest.message,
+          action: {
+            label: "View",
+            onClick: () => {
+              if (latest.relatedEntityType === 'evidence') router.push('/platform/evidence')
+              else if (latest.relatedEntityType === 'gap') router.push('/platform/gap-analysis')
+              else router.push('/platform/notifications')
+            }
+          }
+        })
+      }
+    }
+  }, [notifications])
 
   const handleClearNotifications = async () => {
     await api.markAllNotificationsRead()

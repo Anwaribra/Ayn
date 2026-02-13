@@ -8,6 +8,16 @@ Like ChatGPT, but can see and control the entire Ayn platform.
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
+import base64
+import json
+import logging
+import asyncio
+from app.ai.service import get_gemini_client
+from app.evidence.service import EvidenceService
+from app.notifications.service import NotificationService
+from app.notifications.models import NotificationCreateRequest
+
+logger = logging.getLogger(__name__)
 
 
 class Observation(BaseModel):
@@ -15,6 +25,7 @@ class Observation(BaseModel):
     content: str
     timestamp: datetime
     state_hash: str
+    structured: Optional[Dict[str, Any]] = None
     suggested_actions: List[Dict[str, Any]] = []  # Only populated if user asks for help
 
 
@@ -32,18 +43,106 @@ class HorusService:
     def __init__(self, state_manager):
         self.state_manager = state_manager
     
-    async def chat(self, user_id: str, message: Optional[str] = None) -> Observation:
+    async def chat(
+        self, 
+        user_id: str, 
+        message: Optional[str] = None, 
+        files: List[Any] = None,
+        background_tasks: Any = None,
+        db: Any = None,
+        current_user: Any = None
+    ) -> Observation:
         """
         Main chat interface. Natural conversation with platform awareness.
+        Handles text and file attachments.
         """
         summary = await self.state_manager.get_state_summary(user_id)
         state_hash = self._hash_state(summary)
         
-        # If no message, just return current state awareness
-        if not message:
-            return self._generate_awareness_greeting(summary, state_hash)
+        # ─── File Handling ──────────────────────────────────────────────────
+        file_references = []
+        uploaded_evidence_ids = []
         
-        message_lower = message.lower()
+        if files and len(files) > 0:
+            for file in files:
+                try:
+                    # 1. Upload to Evidence System
+                    upload_result = await EvidenceService.upload_evidence(
+                        file=file,
+                        current_user=current_user,
+                        background_tasks=background_tasks
+                    )
+                    
+                    if upload_result.success:
+                        uploaded_evidence_ids.append(upload_result.evidenceId)
+                        
+                        # 2. Prepare for AI context
+                        content = await file.read()
+                        await file.seek(0) # Reset for any other potential reads
+                        
+                        if file.content_type.startswith("image/"):
+                            file_references.append({
+                                "type": "image",
+                                "mime_type": file.content_type,
+                                "data": base64.b64encode(content).decode("utf-8"),
+                                "filename": file.filename
+                            })
+                        elif file.content_type == "application/pdf":
+                            file_references.append({
+                                "type": "document",
+                                "mime_type": "application/pdf",
+                                "data": base64.b64encode(content).decode("utf-8"),
+                                "filename": file.filename
+                            })
+                        else:
+                            try:
+                                file_references.append({
+                                    "type": "text",
+                                    "data": content.decode("utf-8"),
+                                    "filename": file.filename
+                                })
+                            except:
+                                pass
+                except Exception as e:
+                    logger.error(f"Failed to process file {file.filename} in Horus: {e}")
+
+        # ─── AI Interaction ─────────────────────────────────────────────────
+        client = get_gemini_client()
+        
+        # If files provided, use multimodal chat
+        if file_references:
+            # Instruction for structured output if analysis is implied
+            system_instruction = """
+            Return a natural chat response. 
+            If you are analyzing files, provide a clear summary and evaluation.
+            Always maintain your Horus persona.
+            """
+            
+            # Using shared prompt logic
+            ai_response = await asyncio.to_thread(
+                client.chat_with_files,
+                message=f"{message}\n\n[Context: User uploaded {len(file_references)} files to the platform]",
+                files=file_references
+            )
+            
+            # Notify about successful processing
+            await NotificationService.create_notification(NotificationCreateRequest(
+                userId=user_id,
+                type="success",
+                title="Horus Analysis Ready",
+                message=f"I've processed {len(file_references)} file(s). You can find them in your Evidence Library.",
+                relatedEntityId=uploaded_evidence_ids[0] if uploaded_evidence_ids else None,
+                relatedEntityType="evidence"
+            ))
+            
+            return Observation(
+                content=ai_response,
+                timestamp=datetime.utcnow(),
+                state_hash=state_hash
+            )
+
+        # ─── Casual Conversational Logic ────────────────────────────────────
+        message_lower = (message or "").lower()
         
         # Check if user is asking for help/action
         is_asking_for_help = any(word in message_lower for word in [
@@ -74,7 +173,7 @@ class HorusService:
             return self._handle_action_request(summary, state_hash, message)
         
         # Default: conversational response with implicit awareness
-        return self._generate_conversational_response(summary, state_hash, message)
+        return await self._generate_conversational_response(summary, state_hash, message)
     
     def _generate_awareness_greeting(self, summary, state_hash, conversational=False) -> Observation:
         """Generate a greeting that shows platform awareness."""
@@ -202,43 +301,38 @@ class HorusService:
             suggested_actions=self._generate_action_suggestions(summary)
         )
     
-    def _generate_conversational_response(self, summary, state_hash, message) -> Observation:
-        """Generate a natural conversational response."""
-        # Simple conversational responses with awareness
-        lower_msg = message.lower()
+    async def _generate_conversational_response(self, summary, state_hash, message) -> Observation:
+        """Generate a natural conversational response using AI."""
+        client = get_gemini_client()
         
-        # Thank you responses
-        if any(word in lower_msg for word in ["thanks", "thank you", "شكرا", "شكراً"]):
+        # Prepare context about current platform state
+        context = f"""
+        Current Platform State:
+        - Files: {summary.total_files} total ({summary.analyzed_files} analyzed, {summary.unlinked_files} unlinked)
+        - Evidence: {summary.total_evidence} scopes ({summary.linked_evidence} linked)
+        - Gaps: {summary.total_gaps} total ({summary.closed_gaps} closed, {summary.addressed_gaps} addressed)
+        """
+        
+        try:
+            # Call AI for a natural response
+            ai_response = await asyncio.to_thread(
+                client.chat,
+                messages=[{"role": "user", "content": message}],
+                context=context
+            )
+            
             return Observation(
-                content="You're welcome! I'm here whenever you need anything about your compliance project.",
+                content=ai_response,
                 timestamp=datetime.utcnow(),
                 state_hash=state_hash
             )
-        
-        # Goodbye
-        if any(word in lower_msg for word in ["bye", "goodbye", "see you", "مع السلامة"]):
+        except Exception as e:
+            logger.error(f"AI Chat failed: {e}")
             return Observation(
-                content="Goodbye! I'll keep an eye on your platform state. Come back anytime!",
+                content=f"I understand you're asking about '{message}'. I can see you have {summary.total_files} files and {summary.total_gaps} gaps in the system.",
                 timestamp=datetime.utcnow(),
                 state_hash=state_hash
             )
-        
-        # Default response - acknowledge with awareness
-        awareness = []
-        if summary.total_files > 0:
-            awareness.append(f"{summary.total_files} file{'s' if summary.total_files > 1 else ''}")
-        if summary.total_evidence > 0:
-            awareness.append(f"{summary.total_evidence} evidence scope{'s' if summary.total_evidence > 1 else ''}")
-        if summary.total_gaps > 0:
-            awareness.append(f"{summary.total_gaps} gap{'s' if summary.total_gaps > 1 else ''}")
-        
-        context = f" (I can see you have {', '.join(awareness)} in the system)" if awareness else ""
-        
-        return Observation(
-            content=f"I understand.{context}\n\nFeel free to ask me about your platform state, or tell me what you'd like to do next.",
-            timestamp=datetime.utcnow(),
-            state_hash=state_hash
-        )
     
     def _handle_action_request(self, summary, state_hash, message) -> Observation:
         """Handle requests to trigger actions."""

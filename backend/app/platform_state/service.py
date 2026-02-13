@@ -155,3 +155,7 @@ class StateService:
     async def get_current_state(self, user_id: str) -> StateSummary:
         """Get current platform state summary."""
         return await self.manager.get_state_summary(user_id)
+
+    async def get_state_summary(self, user_id: str) -> StateSummary:
+        """Alias for horus."""
+        return await self.get_current_state(user_id)

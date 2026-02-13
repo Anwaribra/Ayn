@@ -4,12 +4,14 @@ Horus AI API Router
 Conversational AI with full platform awareness.
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, BackgroundTasks
+from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db, Prisma
+from app.horus.service import HorusService
+from app.platform_state.service import StateService
 import traceback
 
 router = APIRouter(prefix="/horus", tags=["horus"])
@@ -20,6 +22,7 @@ class Observation(BaseModel):
     content: str
     timestamp: datetime
     state_hash: str
+    structured: Optional[dict] = None
 
 
 def get_user_id(current_user):
@@ -114,23 +117,41 @@ async def horus_chat(
 
 @router.post("/chat", response_model=Observation)
 async def horus_chat_post(
-    query: Optional[str] = Query(None, description="User message to Horus"),
+    background_tasks: BackgroundTasks,
+    message: str = Form(...),
+    files: List[UploadFile] = File(None),
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """
-    Chat with Horus AI (POST method).
+    Chat with Horus AI - Central platform intelligence.
+    Handles text messages and file attachments.
     """
     try:
-        _ = get_user_id(current_user)
-        return generate_horus_response(query)
+        user_id = get_user_id(current_user)
+        
+        # Initialize services
+        state_service = StateService(db)
+        horus_service = HorusService(state_service)
+        
+        # Process chat
+        result = await horus_service.chat(
+            user_id=user_id,
+            message=message,
+            files=files,
+            background_tasks=background_tasks,
+            db=db,
+            current_user=current_user
+        )
+        return result
+        
     except HTTPException:
         raise
     except Exception as e:
         print(f"Horus error: {e}")
         print(traceback.format_exc())
         return Observation(
-            content=f"⚠️ Error: {str(e)}",
+            content=f"⚠️ Horus Error: {str(e)}",
             timestamp=datetime.utcnow(),
             state_hash="error"
         )

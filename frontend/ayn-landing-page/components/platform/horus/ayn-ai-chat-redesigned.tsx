@@ -225,22 +225,29 @@ export default function HorusAIChat() {
       let response
 
       if (attachedFiles.length > 0) {
-        response = await api.chatWithFiles(text || "Analyze these files.", attachedFiles.map((f) => f.file))
+        response = await api.horusChat(text || "Analyze these files.", attachedFiles.map((f) => f.file))
         setAttachedFiles([])
       } else {
-        const chatHistory = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }))
-        response = await api.chat(chatHistory)
+        // For simplicity, we send current message to horusChat
+        // History is handled by Horus stateawareness if needed
+        response = await api.horusChat(text)
       }
 
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.structured
-          ? (response.structured.summary
-            ? `**Analysis Complete**\n\n${response.structured.summary}\n\n**Score:** ${response.structured.score}/100`
-            : response.structured.answer || "```json\n" + JSON.stringify(response.structured, null, 2) + "\n```")
-          : (response.raw_text || response.result || "No response."),
+        content: response.content || response.raw_text || response.result || "No response.",
         timestamp: Date.now(),
+      }
+
+      if (response.structured) {
+        const s = response.structured
+        if (s.summary && s.score) {
+          assistantMsg.content = `**Analysis Complete**\n\n${s.summary}\n\n**Score:** ${s.score}/100`
+          if (s.gaps?.length > 0) {
+            assistantMsg.content += `\n\n**Gaps Identified:**\n` + s.gaps.map((g: any) => `- ${g.title}: ${g.description}`).join('\n')
+          }
+        }
       }
 
       setMessages((prev) => [...prev, assistantMsg])

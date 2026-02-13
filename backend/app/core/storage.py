@@ -47,8 +47,24 @@ async def upload_file_to_supabase(
     file_path = f"{folder}/{unique_filename}"
     
     # Upload to Supabase Storage (run blocking call in thread)
+    # Upload to Supabase Storage (run blocking call in thread)
     try:
-        def _upload():
+        def _ensure_and_upload():
+            bucket_exists = False
+            try:
+                # Some clients return list, others throw. List is safer.
+                buckets = client.storage.list_buckets()
+                bucket_exists = any(b.name == settings.SUPABASE_BUCKET for b in buckets)
+            except Exception:
+                # If list fails, fallback to get_bucket or assume checks failed
+                pass
+
+            if not bucket_exists:
+                try:
+                    client.storage.create_bucket(settings.SUPABASE_BUCKET, options={"public": True})
+                except Exception as e:
+                    logger.warning(f"Bucket creation failed/exists: {e}")
+
             return client.storage.from_(settings.SUPABASE_BUCKET).upload(
                 path=file_path,
                 file=file_content,
@@ -58,7 +74,7 @@ async def upload_file_to_supabase(
                 }
             )
             
-        await asyncio.to_thread(_upload)
+        await asyncio.to_thread(_ensure_and_upload)
         
         # Construct public URL
         public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_BUCKET}/{file_path}"

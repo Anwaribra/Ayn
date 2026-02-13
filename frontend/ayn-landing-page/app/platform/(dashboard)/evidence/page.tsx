@@ -78,10 +78,14 @@ function EvidenceContent() {
         setIsUploading(false)
       } catch (err: any) {
         console.error("Upload failed details:", err)
-        if (err.message && err.message.includes("File too large")) {
+        let msg = err.message || "Upload failed";
+        if (typeof msg === "object") {
+          try { msg = JSON.stringify(msg); } catch { }
+        }
+        if (msg.includes("File too large")) {
           toast.error("File is too large (Maximum 10MB)")
         } else {
-          toast.error(err.message || "Upload failed. Please try again.")
+          toast.error(msg)
         }
       } finally {
         setUploading(false)

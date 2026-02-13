@@ -266,26 +266,6 @@ class ApiClient {
     return this.request(`/evidence/${id}`, { method: "DELETE" })
   }
 
-  // Notifications
-  async getNotifications() {
-    return this.request<import("./types").Notification[]>("/notifications")
-  }
-
-  async getUnreadNotifications() {
-    return this.request<import("./types").Notification[]>("/notifications/unread")
-  }
-
-  async markNotificationAsRead(id: string) {
-    return this.request(`/notifications/${id}`, { method: "PUT" })
-  }
-
-  async createNotification(data: { userId: string; title: string; body: string }) {
-    return this.request("/notifications", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // PLATFORM STATE APIs (Modules WRITE)
   // ═══════════════════════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 """Pydantic models for evidence."""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Any
 from datetime import datetime
 
 
@@ -37,7 +37,7 @@ class EvidenceResponse(BaseModel):
     updatedAt: datetime
     
     # Relations
-    criteria: list = []
+    criteria: Optional[List[Any]] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

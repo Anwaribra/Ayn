@@ -138,8 +138,18 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <PanelLeft className="w-5 h-5" />
             </button>
 
-            {/* Browser Navigation Buttons */}
+            {/* Desktop Sidebar Toggle & Navigation */}
             <div className="hidden md:flex items-center gap-1.5 mr-2">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-zinc-500 hover:text-blue-500 hover:border-blue-500/30 transition-all active:scale-95"
+                title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+              >
+                {sidebarOpen ? <PanelLeft className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+              </button>
+
+              <div className="w-px h-4 bg-[var(--border-subtle)] mx-1" />
+
               <button
                 onClick={() => router.back()}
                 className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-zinc-500 hover:text-blue-500 hover:border-blue-500/30 transition-all active:scale-95"

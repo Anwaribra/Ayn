@@ -59,9 +59,7 @@ class EvidenceService:
             evidence = await db.evidence.create(
                 data={
                     "fileUrl": public_url, 
-                    "uploadedById": current_user["id"],
-                    "title": file.filename, # Default title
-                    "type": file.content_type
+                    "uploadedById": current_user["id"]
                 }
             )
             logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
@@ -175,25 +173,9 @@ class EvidenceService:
                 # 2. Update State
                 state_service = StateService(prisma_client)
                 
-                # Record File Analysis (updates PlatformFile) 
-                # Note: We need a file_id. 
-                # Currently Evidence and PlatformFile are separate entities in this system 
-                # (Evidence is the compliance asset, PlatformFile is the raw file).
-                # But `record_file_upload` logic normally happens.
-                # Here we have `evidence_id`. 
-                # Let's see if we can update the Evidence record directly or create a PlatformFile record.
-                
-                # For this fix, let's assuming we strictly update the Evidence record 
-                # or call the generic state analysis recorder.
-                
-                # Let's try to update the Evidence title/type if generic
-                await prisma_client.evidence.update(
-                    where={"id": evidence_id},
-                    data={
-                        "title": f"{parsed.get('document_type', 'Document')} - {filename}",
-                        # We could store metadata here if schema allows
-                    }
-                )
+                # We cannot update title/type on Evidence as fields don't exist.
+                # Instead, we should create/update a PlatformFile record if needed.
+                # For now, we skip updating the Evidence record itself.
                 
                 # Record Metric
                 await state_service.record_metric_update(

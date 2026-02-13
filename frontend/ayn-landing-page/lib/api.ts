@@ -398,6 +398,30 @@ class ApiClient {
     return this.request("/horus/state/evidence")
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NOTIFICATION APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getNotifications() {
+    return this.request<import("./types").Notification[]>("/notifications")
+  }
+
+  async getUnreadNotifications() {
+    return this.request<import("./types").Notification[]>("/notifications/unread")
+  }
+
+  async markNotificationRead(id: string) {
+    return this.request<{ message: string; notificationId: string; read: boolean }>(`/notifications/${id}`, {
+      method: "PUT",
+    })
+  }
+
+  async markAllNotificationsRead() {
+    return this.request<{ message: string; count: number }>("/notifications/read-all", {
+      method: "PUT",
+    })
+  }
+
   // AI
   async chat(messages: { role: "user" | "assistant"; content: string }[], context?: string) {
     return this.request<import("./types").AIResponse>("/ai/chat", {

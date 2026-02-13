@@ -87,27 +87,30 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const { data: notifications, mutate: mutateNotifications } = useSWR<Notification[]>(
     isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
-    { refreshInterval: 60_000, revalidateOnFocus: false, dedupingInterval: 30_000 },
+    { refreshInterval: 10_000, revalidateOnFocus: false, dedupingInterval: 5_000 },
   )
   const notificationCount = useMemo(
-    () => notifications?.filter((n: Notification) => !n.read).length ?? 0,
+    () => notifications?.filter((n: Notification) => !n.isRead).length ?? 0,
     [notifications],
   )
 
-  const handleClearNotifications = () => {
-    // In a real app, you'd call an API to mark all as read
+  const handleClearNotifications = async () => {
+    await api.markAllNotificationsRead()
     mutateNotifications(
-      notifications?.map(n => ({ ...n, read: true })) ?? [],
+      notifications?.map(n => ({ ...n, isRead: true })) ?? [],
       { revalidate: false }
     )
   }
 
-  const handleDismissNotification = (id: string) => {
-    // Mark as read instead of deleting — user can still see it
+  const handleDismissNotification = async (id: string) => {
+    await api.markNotificationRead(id)
     mutateNotifications(
-      notifications?.map(n => n.id === id ? { ...n, read: true } : n) ?? [],
+      notifications?.map(n => n.id === id ? { ...n, isRead: true } : n) ?? [],
       { revalidate: false }
     )
+    if (notifications?.find(n => n.id === id)?.relatedEntityId) {
+      // Logic to navigate can be added here
+    }
   }
 
   return (
@@ -115,119 +118,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       data-platform-theme={platformTheme}
       className="flex h-screen overflow-hidden selection:bg-blue-500/30 relative transition-colors duration-300 bg-[var(--background)] text-[var(--foreground)]"
     >
-      {/* Cinematic background - V3 style */}
-      <div className="cinematic-bg fixed inset-0 pointer-events-none" />
-
-      {/* Sidebar - Fixed width */}
-      <PlatformSidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(false)}
-        notificationCount={notificationCount}
-      />
-
-      {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Notification backdrop */}
-      {showNotifications && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowNotifications(false)}
-        />
-      )}
-
-      {/* Main Content - Flexible, centered in remaining space */}
-      <main id="main-content" className="flex flex-1 flex-col relative z-10 overflow-hidden min-w-0">
-        {/* App Title — subtle depth */}
-        <div
-          className="px-6 md:px-10 pt-4 pb-1 border-b border-[var(--border-subtle)] bg-[var(--bg-deep)]"
-        >
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-[0.15em]">
-            AYN — Education Quality & Compliance
-          </p>
-        </div>
-        {/* TopBar — V3 style */}
-        <header
-          className="h-16 px-6 md:px-10 flex items-center justify-between relative z-20 pointer-events-none border-b border-[var(--border-light)] bg-[var(--surface)] transition-colors duration-300"
-        >
-          <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
-            {/* Sidebar toggle — always visible on mobile, only when closed on desktop */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-              className={cn(
-                "w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-all bg-[var(--sidebar-bg)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-light)] active:scale-95 shadow-xl",
-                sidebarOpen && "md:hidden"
-              )}
-            >
-              <PanelLeft className={cn(
-                "w-5 h-5 transition-transform duration-300",
-                !sidebarOpen && "rotate-180"
-              )} />
-            </button>
-
-
-            <div className="hidden sm:flex items-center gap-2">
-              <button
-                onClick={() => router.back()}
-                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)]"
-                title="Go back"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => router.forward()}
-                className="p-1.5 text-zinc-500 hover:text-white transition-colors bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)]"
-                title="Go forward"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="relative group min-w-[140px] sm:min-w-[200px] md:min-w-[320px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-blue-500 transition-colors z-10" />
-              <input
-                type="text"
-                readOnly
-                onClick={() => setCommandPaletteOpen(true)}
-                placeholder="Search hub..."
-                className="w-full h-9 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg pl-11 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:bg-[var(--surface-card)] transition-all placeholder:text-zinc-600 cursor-pointer text-[var(--text-primary)]"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-light)] bg-[var(--surface)] pointer-events-none">
-                <Command className="w-2 h-2 text-zinc-600" />
-                <span className="text-[10px] font-bold text-zinc-600">K</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
-            <button
-              onClick={() => setCommandPaletteOpen(true)}
-              className="hidden md:block text-zinc-500 hover:text-white transition-all duration-300 p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95"
-              title="Search history"
-              aria-label="Search history"
-            >
-              <History className="w-4 h-4" />
-            </button>
-            <div className="relative notification-dropdown-container">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="text-zinc-500 hover:text-white transition-all duration-300 relative p-2 hover:bg-white/5 rounded-lg hover:scale-110 active:scale-95 group"
-                title="Notifications"
-                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-              >
-                <Bell className="w-4 h-4 group-hover:animate-swing" />
-                {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 px-1 min-w-[14px] h-[14px] bg-[#C9424A] rounded-full flex items-center justify-center text-[10px] font-bold text-white border border-[var(--bg-deep)] shadow-sm">
-                    {notificationCount}
-                  </span>
-                )}
-              </button>
+      {/* ... code ... */}
 
               {/* Notification Dropdown */}
               {showNotifications && (
@@ -235,7 +126,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Activity</h3>
                     <div className="flex items-center gap-2">
-                      <button
+                       <button
                         onClick={handleClearNotifications}
                         className="text-[10px] text-blue-500 font-bold hover:underline"
                       >
@@ -249,33 +140,39 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {!notifications || notifications.length === 0 ? (
                       <p className="text-center py-8 text-zinc-600 italic text-sm">Quiet for now.</p>
                     ) : (
-                      notifications.slice(0, 8).map((n) => (
-                        <div
-                          key={n.id}
-                          className="flex gap-4 group cursor-pointer hover:bg-[var(--surface)] p-2 rounded-xl transition-colors"
-                          onClick={() => handleDismissNotification(n.id)}
-                        >
-                          <div className={`w-1 h-10 rounded-full flex-shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-[var(--border-subtle)]'}`} />
-                          <div className="flex-1">
-                            <h4 className={`text-sm font-bold ${!n.read ? 'text-zinc-100' : 'text-zinc-500'}`}>{n.title}</h4>
-                            <p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{n.body}</p>
-                            <span className="text-[10px] text-zinc-700 mt-1.5 block font-bold uppercase tracking-tighter">
-                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                      notifications.slice(0, 8).map((n) => {
+                        const isError = n.type === 'error'
+                        const isSuccess = n.type === 'success'
+                        const color = isError ? 'bg-red-500' : (isSuccess ? 'bg-emerald-500' : 'bg-blue-500')
+                        
+                        return (
+                          <div
+                            key={n.id}
+                            className={`flex gap-3 group cursor-pointer hover:bg-[var(--surface-hover)] p-3 rounded-xl transition-all ${!n.isRead ? 'bg-[var(--surface)] border border-[var(--border-subtle)]' : 'opacity-70'}`}
+                            onClick={() => handleDismissNotification(n.id)}
+                          >
+                            <div className={`w-1 h-full min-h-[2rem] rounded-full flex-shrink-0 ${!n.isRead ? color : 'bg-zinc-700'}`} />
+                            <div className="flex-1 min-w-0">
+                              <h4 className={`text-xs font-bold ${!n.isRead ? 'text-zinc-100' : 'text-zinc-500'}`}>{n.title}</h4>
+                              <p className="text-[10px] text-zinc-400 line-clamp-2 mt-0.5 leading-relaxed">{n.message}</p>
+                              <span className="text-[9px] text-zinc-600 mt-1.5 block font-bold uppercase tracking-wider">
+                                {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            {!n.isRead && <div className={`w-2 h-2 rounded-full ${color} mt-1.5`} />}
                           </div>
-                          {!n.read && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1" />}
-                        </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
                   {notifications && notifications.length > 0 && (
                     <button
                       onClick={() => { setShowNotifications(false); router.push('/platform/notifications'); }}
-                      className="w-full mt-4 py-3 rounded-2xl bg-[var(--surface)] hover:bg-[var(--surface-card)] transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center"
+                      className="w-full mt-4 py-3 rounded-2xl bg-[var(--surface-card)] hover:bg-[var(--surface-hover)] transition-colors text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white text-center border border-[var(--border-subtle)]"
                     >
                       View All Activity
                     </button>
@@ -311,18 +208,18 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               )}
             </button>
             <div className="w-px h-4 bg-[var(--border-light)]" />
-          </div>
-        </header>
+          </div >
+        </header >
 
-        {/* Main content area - V3 surface; pb-32 clears fixed bottom search bar */}
-        <div
-          className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300 bg-[var(--bg-deep)]"
-        >
-          <div className="max-w-[1280px] w-full mx-auto">
-            {children}
-          </div>
-        </div>
-      </main>
+    {/* Main content area - V3 surface; pb-32 clears fixed bottom search bar */ }
+    < div
+  className = "flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300 bg-[var(--bg-deep)]"
+    >
+    <div className="max-w-[1280px] w-full mx-auto">
+      {children}
+    </div>
+        </div >
+      </main >
 
       <FloatingAIBar />
       <CommandPalette />

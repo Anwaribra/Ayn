@@ -11,6 +11,10 @@ from app.gap_analysis.models import (
     GapItem,
     ArchiveRequest,
 )
+    ArchiveRequest,
+)
+from app.notifications.service import NotificationService
+from app.notifications.models import NotificationCreateRequest
 from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap_analysis
 import logging
 
@@ -75,7 +79,22 @@ class GapAnalysisService:
                     "recommendationsJson": json.dumps(result["recommendations"]),
                 }
             )
-            logger.info(f"User {current_user['email']} generated gap analysis {record.id}")
+            )
+            
+            # Trigger Notification
+            try:
+                await NotificationService.create_notification(NotificationCreateRequest(
+                    userId=current_user["id"],
+                    type="success",
+                    title="Report Generated",
+                    message=f"Gap analysis for '{standard.title}' is ready.",
+                    relatedEntityId=record.id,
+                    relatedEntityType="report"
+                ))
+            except Exception as e:
+                logger.error(f"Failed to send notification: {e}")
+                
+            logger.info(f"User {current_user.get('email', 'unknown')} generated gap analysis {record.id}")
             return GapAnalysisService._build_response(record, standard.title)
         except Exception as e:
             logger.error(f"Generation error: {e}")

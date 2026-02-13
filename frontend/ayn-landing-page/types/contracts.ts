@@ -91,6 +91,12 @@ export interface EvidenceResponse {
   uploadedById: string;
   createdAt: string;
   updatedAt: string;
+  title?: string | null;
+  summary?: string | null;
+  documentType?: string | null;
+  confidenceScore?: number | null;
+  status: string;
+  criteria?: any[];
 }
 
 export interface ExplainRequest {
@@ -209,11 +215,13 @@ export interface NotificationCreateRequest {
 export interface NotificationResponse {
   id: string;
   userId: string;
+  type: string;
   title: string;
-  body: string;
-  read: boolean;
+  message: string;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  isRead: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface PlatformEvent {

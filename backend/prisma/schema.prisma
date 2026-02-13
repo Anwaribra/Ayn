@@ -103,25 +103,74 @@ model Criterion {
   description String?
 
   standard    Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
-  evidence    Evidence[]
+  evidence    Evidence[] // Deprecated single link
+  evidenceCriteria EvidenceCriterion[] // New many-to-many link
 
   @@index([standardId])
 }
 
 // Evidence Model
 model Evidence {
-  id          String   @id @default(uuid())
-  criterionId String?
-  fileUrl     String
-  uploadedById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(uuid())
+  fileUrl         String
+  originalFilename String? // Storing original name as required
+  uploadedById    String
+  
+  // AI Analysis Data
+  title           String?
+  summary         String?  @db.Text
+  documentType    String?
+  confidenceScore Float?   @default(0.0)
+  status          String   @default("processing") // processing, analyzed, failed, unmapped
+  
+  // Relations
+  uploadedBy      User     @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  criteria        EvidenceCriterion[]
 
-  criterion   Criterion? @relation(fields: [criterionId], references: [id], onDelete: SetNull)
-  uploadedBy  User @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  // Deprecated single link (keeping for safety until migration complete)
+  criterionId     String?
+  criterion       Criterion? @relation(fields: [criterionId], references: [id], onDelete: SetNull)
 
-  @@index([criterionId])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   @@index([uploadedById])
+  @@index([status])
+}
+
+// Many-to-Many Link between Evidence and Criteria
+model EvidenceCriterion {
+  id          String    @id @default(uuid())
+  evidenceId  String
+  criterionId String
+  
+  evidence    Evidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+
+  @@unique([evidenceId, criterionId])
+  @@index([evidenceId])
+  @@index([criterionId])
+}
+
+// Notification System
+model Notification {
+  id              String   @id @default(uuid())
+  userId          String
+  type            String   // info, success, warning, error
+  title           String
+  message         String   @db.Text
+  relatedEntityId String?
+  relatedEntityType String? // evidence, gap, report, workflow
+  isRead          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt(sort: Desc)])
 }
 
 // Gap Analysis Model
@@ -145,20 +194,7 @@ model GapAnalysis {
 }
 
 // Notification Model
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  title     String
-  body      String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([read])
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PLATFORM STATE MODELS

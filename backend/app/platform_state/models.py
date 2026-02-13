@@ -220,6 +220,25 @@ class PlatformStateManager:
             return [PlatformGap.model_validate(g) for g in gaps]
         except Exception:
             return []
+
+    async def find_gaps_by_standard_clause(self, user_id: str, standard_name: str, clause_code: str) -> List[PlatformGap]:
+        """Find open gaps for a specific standard clause."""
+        if not await self._check_tables():
+            return []
+            
+        try:
+            # Flexible matching for standard and clause
+            gaps = await self.db.platform_gaps.find_many(
+                where={
+                    "user_id": user_id,
+                    "status": "defined", # Only find open gaps
+                    "standard": {"contains": standard_name, "mode": "insensitive"},
+                    "clause": {"contains": clause_code, "mode": "insensitive"}
+                }
+            )
+            return [PlatformGap.model_validate(g) for g in gaps]
+        except Exception:
+            return []
     
     # ═══════════════════════════════════════════════════════════════════════════
     # METRIC OPERATIONS

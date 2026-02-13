@@ -218,8 +218,9 @@ function EvidenceContent() {
             const color = CAT_COLORS[i % CAT_COLORS.length]
             const hasLink = !!item.criterionId
             const year = new Date(item.createdAt).getFullYear()
-            const fileName = item.fileUrl.split('/').pop() || "Unknown"
+            const fileName = item.title || item.originalFilename || item.fileUrl.split('/').pop() || "Unknown"
             const size = fileName.split('.').pop()?.toUpperCase() || "DOC"
+            const status = item.status || "processing"
 
             return viewMode === "grid" ? (
               <div
@@ -233,17 +234,19 @@ function EvidenceContent() {
                   </div>
                   <div className="flex gap-1.5">
                     {hasLink && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
-                    {!hasLink && <Clock className="w-4 h-4 text-amber-500" />}
+                    {!hasLink && status === "analyzed" && <div className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold rounded uppercase">Analyzed</div>}
+                    {!hasLink && status === "processing" && <div className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded uppercase animate-pulse">Processing</div>}
+                    {!hasLink && status === "failed" && <div className="px-2 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-bold rounded uppercase">Failed</div>}
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-blue-400 transition-colors" title={fileName}>
                       {fileName}
                     </h3>
                     <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
-                      {item.criterionId ? "Linked" : "Unlinked"}
+                      {item.criterionId ? "Linked" : (status === "unmapped" ? "Unmapped" : status)}
                     </p>
                   </div>
 
@@ -271,14 +274,26 @@ function EvidenceContent() {
                     <FileText className="w-4 h-4 text-zinc-400 group-hover:text-white" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-white">{fileName}</h4>
-                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                      {size} • {year}
-                    </p>
+                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-blue-400 transition-colors" title={fileName}>
+                      {fileName}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                        {size} • {year}
+                      </p>
+                      {status === "analyzed" && <span className="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase">Analyzed</span>}
+                      {status === "processing" && <span className="text-[8px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase animate-pulse">Processing</span>}
+                      {status === "failed" && <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold uppercase">Failed</span>}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {hasLink ? <ShieldCheck className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-amber-500" />}
+                  {/* Status Icon */}
+                  {hasLink ? <ShieldCheck className="w-4 h-4 text-emerald-500" /> : (
+                    status === "processing" ? <Clock className="w-4 h-4 text-amber-500 animate-pulse" /> :
+                      status === "failed" ? <div className="w-2 h-2 rounded-full bg-red-500" /> :
+                        <div className="w-2 h-2 rounded-full bg-zinc-700" />
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setDeleteConfirm(item.id) }}
                     className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"

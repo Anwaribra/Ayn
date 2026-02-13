@@ -23,9 +23,21 @@ class EvidenceResponse(BaseModel):
     id: str
     criterionId: Optional[str] = None
     fileUrl: str
+    originalFilename: Optional[str] = None
     uploadedById: str
+    
+    # AI Fields
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    documentType: Optional[str] = None
+    confidenceScore: Optional[float] = 0.0
+    status: str = "processing"
+    
     createdAt: datetime
     updatedAt: datetime
+    
+    # Relations
+    criteria: list = []
 
     class Config:
         from_attributes = True

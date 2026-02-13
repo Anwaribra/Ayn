@@ -19,12 +19,13 @@ router = APIRouter()
 @router.post("", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
 async def create_notification(
     request: NotificationCreateRequest,
-    current_user: dict = require_admin
+    current_user: dict = Depends(require_admin) # Keep admin check for manual creation
 ):
     """
-    Create a notification.
+    Create a notification manually (Admin only).
     """
-    return await NotificationService.create_notification(request, current_user["email"])
+    # Service no longer takes admin_email
+    return await NotificationService.create_notification(request)
 
 
 @router.get("", response_model=List[NotificationResponse])
@@ -35,6 +36,17 @@ async def list_notifications(
     List notifications for the current user.
     """
     return await NotificationService.list_notifications(current_user["id"])
+
+
+@router.put("/read-all", status_code=status.HTTP_200_OK)
+async def mark_all_notifications_read(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Mark all notifications as read for the current user.
+    """
+    count = await NotificationService.mark_all_read(current_user["id"])
+    return {"message": "All notifications marked as read", "count": count}
 
 
 @router.put("/{notification_id}", response_model=MarkReadResponse)

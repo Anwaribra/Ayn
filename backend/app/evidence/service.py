@@ -10,6 +10,8 @@ from app.evidence.models import (
     AttachEvidenceRequest,
     AttachEvidenceResponse
 )
+from app.notifications.service import NotificationService
+from app.notifications.models import NotificationCreateRequest
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,10 +61,26 @@ class EvidenceService:
             evidence = await db.evidence.create(
                 data={
                     "fileUrl": public_url, 
-                    "uploadedById": current_user["id"]
+                    "uploadedById": current_user["id"],
+                    "originalFilename": file.filename,
+                    "title": file.filename, # Default title is filename until AI analysis completes
+                    "status": "processing"
                 }
             )
             logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
+            
+            # 2.5 Trigger Notification
+            try:
+                await NotificationService.create_notification(NotificationCreateRequest(
+                    userId=current_user["id"],
+                    type="info",
+                    title="Evidence Uploaded",
+                    message=f"File '{file.filename}' has been uploaded.",
+                    relatedEntityId=evidence.id,
+                    relatedEntityType="evidence"
+                ))
+            except Exception as notif_error:
+                logger.error(f"Failed to send notification: {notif_error}")
             
             # 3. Non-Critical Path: Background Analysis
             # We assume text/pdf/image analysis.
@@ -124,29 +142,32 @@ class EvidenceService:
             client = get_gemini_client()
             
             # Prepare prompt
+            # Prepare prompt with structured output enforcement
             prompt = """
-            Analyze this uploaded evidence file.
-            Identify:
-            1. Document Type (Policy, Record, Meeting Minutes, etc.)
-            2. Key Standards/Clauses it likely supports (ISO 21001, etc.)
-            3. Confidence Score (0-100)
+            Analyze this uploaded evidence file for educational accreditation compliance (ISO 21001 / NAQAAE).
             
-            Return ONLY JSON:
+            Identify:
+            1. Document Type (e.g., Policy, Meeting Minutes, Strategic Plan, Student Record)
+            2. Specific Standards & Clauses it likely supports.
+            3. A confidence score (0-100) based on content relevance.
+            4. A clear, concise summary of the document content.
+            
+            CRITICAL: Return ONLY valid JSON. No markdown. No code blocks.
+            Format:
             {
-               "document_type": "...",
-               "standards": ["..."],
-               "clauses": ["..."],
-               "confidence": 85,
-               "summary": "..."
+               "document_type": "string",
+               "related_standard": "string (e.g. ISO 21001)",
+               "mapped_criteria": ["clause_number_or_id"],
+               "confidence": number,
+               "risk_flag": boolean,
+               "summary": "string",
+               "title": "Suggested Title (e.g. 'Strategic Plan 2024')"
             }
             """
             
-            # Prepare file for AI (mocking the structure chat_with_files uses)
+            # Prepare file payload
             import base64
             b64_data = base64.b64encode(file_content).decode("utf-8")
-            
-            # We reuse chat_with_files logic or call gemini directly
-            # Here we construct the file object manually
             files_payload = [{
                 "type": "image" if mime_type.startswith("image") else "text",
                 "mime_type": mime_type,
@@ -168,27 +189,221 @@ class EvidenceService:
             # Extract JSON
             match = re.search(r'(\{.*\}|\[.*\])', raw_response, re.DOTALL)
             if match:
-                parsed = json.loads(match.group(1))
-                
-                # 2. Update State
-                state_service = StateService(prisma_client)
-                
-                # We cannot update title/type on Evidence as fields don't exist.
-                # Instead, we should create/update a PlatformFile record if needed.
-                # For now, we skip updating the Evidence record itself.
-                
-                # Record Metric
-                await state_service.record_metric_update(
-                    user_id=user_id,
-                    metric_id="evidence_processed",
-                    name="Evidence Processed",
-                    value=1,
-                    source_module="ai_worker"
-                )
-                
-                logger.info(f"Background analysis complete for {evidence_id}")
+                try:
+                    parsed = json.loads(match.group(1))
+                    
+                    # Validate fields
+                    doc_type = parsed.get("document_type", "Unknown")
+                    summary = parsed.get("summary", "No summary provided.")
+                    title = parsed.get("title", filename)
+                    confidence = float(parsed.get("confidence", 0))
+                    
+                    # 2. Update Evidence Record
+                    # We use the prisma client passed from the caller or re-instantiated
+                    await prisma_client.evidence.update(
+                        where={"id": evidence_id},
+                        data={
+                            "title": title,
+                            "summary": summary,
+                            "documentType": doc_type,
+                            "confidenceScore": confidence,
+                            "status": "analyzed",
+                            "updatedAt": datetime.utcnow()
+                        }
+                    )
+                    
+                    # 3. Handle Criteria Mapping
+                    mapped_codes = parsed.get("mapped_criteria", [])
+                    standard_name = parsed.get("related_standard", "")
+                    
+                    mapping_status = "unmapped"
+                    
+                    if mapped_codes:
+                        # Try to find standard first
+                        standard = None
+                        if standard_name:
+                            # Loose match for standard title
+                            standards = await prisma_client.standard.find_many(
+                                where={"title": {"contains": standard_name, "mode": "insensitive"}}
+                            )
+                            if standards:
+                                standard = standards[0]
+                        
+                        # Find matching criteria
+                        matched_criteria_ids = []
+                        
+                        # If we found a standard, scope search to it
+                        criteria_query = {"standardId": standard.id} if standard else {}
+                        
+                        all_criteria = await prisma_client.criterion.find_many(where=criteria_query)
+                        
+                        for code in mapped_codes:
+                            # Match if criterion title starts with code (e.g. "8.1")
+                            # Normalize code and title for comparison
+                            norm_code = str(code).strip().lower()
+                            for crit in all_criteria:
+                                if crit.title and crit.title.strip().lower().startswith(norm_code):
+                                    matched_criteria_ids.append(crit.id)
+                                    break # Mapping to first match per code
+                        
+                        # Create mappings
+                        if matched_criteria_ids:
+                            mapping_status = "analyzed"
+                            for crit_id in set(matched_criteria_ids):
+                                try:
+                                    await prisma_client.evidencecriterion.create(
+                                        data={
+                                            "evidenceId": evidence_id,
+                                            "criterionId": crit_id
+                                        }
+                                    )
+                                except Exception:
+                                    pass # Ignore duplicates
+                        else:
+                            mapping_status = "unmapped"
+                    else:
+                        mapping_status = "unmapped"
+
+                    # Update status
+                    await prisma_client.evidence.update(
+                        where={"id": evidence_id},
+                        data={"status": mapping_status}
+                    )
+                    
+                    # Log activity
+                    if mapping_status == "analyzed":
+                        logger.info(f"Evidence {evidence_id} mapped to {len(matched_criteria_ids)} criteria.")
+                    else:
+                        logger.warning(f"Evidence {evidence_id} analyzed but unmapped (Codes: {mapped_codes})")
+                    
+                    # 4. Gap Analysis Integration
+                    state_service = StateService(prisma_client)
+                    gaps_addressed = 0
+                    
+                    if standard_name and mapped_codes:
+                        for code in mapped_codes:
+                            matching_gaps = await state_service.find_open_gaps_for_evidence(
+                                user_id=user_id,
+                                standard_name=standard_name, # e.g. "ISO 21001"
+                                clause_code=code # e.g. "8.3"
+                            )
+                            
+                            for gap in matching_gaps:
+                                await state_service.record_gap_addressed(gap.id, evidence_id)
+                                gaps_addressed += 1
+                                logger.info(f"Gap {gap.id} addressed by evidence {evidence_id}")
+
+                    # 5. Update Metrics
+                    await state_service.record_metric_update(
+                        user_id=user_id,
+                        metric_id="evidence_processed",
+                        name="Evidence Processed",
+                        value=1,
+                        source_module="ai_worker"
+                    )
+                    
+                    if gaps_addressed > 0:
+                        await state_service.record_metric_update(
+                            user_id=user_id,
+                            metric_id="gaps_addressed_by_ai",
+                            name="Gaps Auto-Addressed",
+                            value=gaps_addressed,
+                            source_module="ai_worker"
+                        )
+
+                        # Notify Gap Closure
+                        try:
+                            await NotificationService.create_notification(NotificationCreateRequest(
+                                userId=user_id,
+                                type="success",
+                                title="Gap Addressed",
+                                message=f"{gaps_addressed} gap(s) were addressed by '{title}'.",
+                                relatedEntityId=evidence_id,
+                                relatedEntityType="gap"
+                            ))
+                        except Exception: pass
+
+                    # Notify Analysis Success
+                    try:
+                        await NotificationService.create_notification(NotificationCreateRequest(
+                            userId=user_id,
+                            type="success",
+                            title="Analysis Complete",
+                            message=f"Evidence '{title}' analyzed successfully.",
+                            relatedEntityId=evidence_id,
+                            relatedEntityType="evidence"
+                        ))
+                    except Exception: pass
+
+                except json.JSONDecodeError:
+                    logger.error(f"AI returned invalid JSON for {evidence_id}")
+                    await prisma_client.evidence.update(
+                        where={"id": evidence_id},
+                        data={"status": "failed"}
+                    )
+                    try:
+                        await NotificationService.create_notification(NotificationCreateRequest(
+                            userId=user_id,
+                            type="error",
+                            title="Analysis Failed",
+                            message=f"AI could not analyze '{filename}'. Invalid response format.",
+                            relatedEntityId=evidence_id,
+                            relatedEntityType="evidence"
+                        ))
+                    except: pass
+
+                except Exception as ex:
+                    logger.error(f"Error parsing AI response: {ex}")
+                    await prisma_client.evidence.update(
+                         where={"id": evidence_id},
+                         data={"status": "failed"}
+                    )
+                    try:
+                        await NotificationService.create_notification(NotificationCreateRequest(
+                            userId=user_id,
+                            type="error",
+                            title="Analysis Failed",
+                            message=f"Analysis failed for '{filename}'.",
+                            relatedEntityId=evidence_id,
+                            relatedEntityType="evidence"
+                        ))
+                    except: pass
             else:
-                logger.warning(f"AI returned invalid JSON for {evidence_id}")
+                logger.warning(f"No JSON found in AI response for {evidence_id}")
+                await prisma_client.evidence.update(
+                    where={"id": evidence_id},
+                    data={"status": "failed"}
+                )
+                try:
+                    await NotificationService.create_notification(NotificationCreateRequest(
+                        userId=user_id,
+                        type="error",
+                        title="Analysis Failed",
+                        message=f"AI could not extract data from '{filename}'.",
+                        relatedEntityId=evidence_id,
+                        relatedEntityType="evidence"
+                    ))
+                except: pass
+
+        except Exception as e:
+            logger.error(f"Background analysis failed for {evidence_id}: {e}")
+            try:
+                if prisma_client.is_connected():
+                    await prisma_client.evidence.update(
+                        where={"id": evidence_id},
+                        data={"status": "failed"}
+                    )
+                    await NotificationService.create_notification(NotificationCreateRequest(
+                        userId=user_id,
+                        type="error",
+                        title="System Error",
+                        message=f"System error while processing '{filename}'.",
+                        relatedEntityId=evidence_id,
+                        relatedEntityType="evidence"
+                    ))
+            except:
+                pass
+
 
         except Exception as e:
             # Swallow error to keep worker alive
@@ -259,7 +474,11 @@ class EvidenceService:
         db = get_db()
         try:
             where = {} if current_user["role"] == "ADMIN" else {"uploadedById": current_user["id"]}
-            evidence_list = await db.evidence.find_many(where=where, order={"createdAt": "desc"})
+            evidence_list = await db.evidence.find_many(
+                where=where, 
+                order={"createdAt": "desc"},
+                include={"criteria": True}
+            )
             return [EvidenceResponse.model_validate(ev) for ev in evidence_list]
         except Exception as e:
             logger.error(f"List error: {e}")

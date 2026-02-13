@@ -72,7 +72,7 @@ class StateService:
     
     async def record_gap_defined(self, user_id: str, gap_id: str, standard: str, clause: str, description: str, severity: str = "medium") -> PlatformGap:
         """Record that a gap was defined."""
-        return await self.manager.create_gap({
+        gap = await self.manager.create_gap({
             "id": gap_id,
             "standard": standard,
             "clause": clause,
@@ -81,6 +81,23 @@ class StateService:
             "user_id": user_id,
             "created_at": datetime.utcnow()
         })
+        
+        # Notify 
+        try:
+            from app.notifications.service import NotificationService
+            from app.notifications.models import NotificationCreateRequest
+            await NotificationService.create_notification(NotificationCreateRequest(
+                userId=user_id,
+                type="warning",
+                title="New Gap Identified",
+                message=f"Gap found in {standard} {clause}: {description[:100]}...",
+                relatedEntityId=gap_id,
+                relatedEntityType="gap"
+            ))
+        except Exception as e:
+            print(f"Failed to send notification: {e}")
+            
+        return gap
     
     async def record_gap_addressed(self, gap_id: str, evidence_id: str):
         """Record that a gap was addressed by evidence."""
@@ -89,6 +106,14 @@ class StateService:
     async def record_gap_closed(self, gap_id: str):
         """Record that a gap was closed."""
         await self.manager.close_gap(gap_id)
+        
+        # Notify (we need user_id, assume manager or caller handles context, but here we might lack user_id if not passed. 
+        # Actually close_gap in manager might return the record with user_id.
+        # For now, skipping notification if user_id is missing, or we'd need to fetch the gap first.)
+    
+    async def find_open_gaps_for_evidence(self, user_id: str, standard_name: str, clause_code: str) -> List[PlatformGap]:
+        """Find open gaps that match the evidence content."""
+        return await self.manager.find_gaps_by_standard_clause(user_id, standard_name, clause_code)
     
     # ═══════════════════════════════════════════════════════════════════════════
     # METRIC OPERATIONS (Called by Dashboard module)
@@ -96,7 +121,7 @@ class StateService:
     
     async def record_metric_update(self, user_id: str, metric_id: str, name: str, value: float, source_module: str) -> PlatformMetric:
         """Record a metric update."""
-        return await self.manager.update_metric({
+        metric = await self.manager.update_metric({
             "id": metric_id,
             "name": name,
             "value": value,
@@ -104,6 +129,24 @@ class StateService:
             "user_id": user_id,
             "updated_at": datetime.utcnow()
         })
+        
+        # Notify on significant score changes or specific metrics
+        if "alignment" in name.lower() or "score" in name.lower():
+             try:
+                from app.notifications.service import NotificationService
+                from app.notifications.models import NotificationCreateRequest
+                await NotificationService.create_notification(NotificationCreateRequest(
+                    userId=user_id,
+                    type="info",
+                    title="Metric Updated",
+                    message=f"{name} is now {value}",
+                    relatedEntityId=metric_id,
+                    relatedEntityType="metric"
+                ))
+             except Exception as e:
+                print(f"Failed to send notification: {e}")
+                
+        return metric
     
     # ═══════════════════════════════════════════════════════════════════════════
     # STATE SUMMARY (Called by Horus)

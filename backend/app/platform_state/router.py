@@ -272,12 +272,13 @@ async def get_workflows(
     current_user = Depends(get_current_user)
 ):
     """Get system workflows status."""
-    from datetime import datetime
+    from datetime import datetime, timezone
     
     # helper for time ago
     def time_ago(dt):
         if not dt: return "Never"
-        now = datetime.now(datetime.timezone.utc) if dt.tzinfo else datetime.utcnow()
+        # dt is likely timezone aware (Prisma), so make 'now' aware
+        now = datetime.now(timezone.utc) if dt.tzinfo else datetime.utcnow()
         diff = now - dt
         seconds = diff.total_seconds()
         if seconds < 60: return "Just now"

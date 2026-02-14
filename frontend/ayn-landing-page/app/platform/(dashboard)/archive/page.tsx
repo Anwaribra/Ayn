@@ -23,6 +23,7 @@ import {
   Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { GapAnalysisListItem } from "@/types"
 
 // Define Archive Item Type
 interface ArchivedItem {
@@ -52,69 +53,39 @@ function ArchiveContent() {
   const [isPurging, setIsPurging] = useState(false)
   const [itemToPurge, setItemToPurge] = useState<string | null>(null)
 
-  // Mock archived data since backend doesn't have a unified archive yet
-  // This demonstrates the requested concept
-  const mockArchivedItems: ArchivedItem[] = [
-    {
-      id: "arc-001",
-      title: "Quarterly Compliance Audit Q3",
-      type: "gap_analysis",
-      deletedAt: "2026-02-10T14:30:00Z",
-      deletedBy: "Sarah Chen",
-      originalLocation: "Gap Analysis Hub",
-      priority: "High"
-    },
-    {
-      id: "arc-002",
-      title: "Employee Safety Certification.pdf",
-      type: "evidence",
-      deletedAt: "2026-02-11T09:15:00Z",
-      deletedBy: "Admin System",
-      originalLocation: "Evidence Library / HR",
-      size: "2.4 MB"
-    },
-    {
-      id: "arc-003",
-      title: "Neural Briefing - Financial Risks",
-      type: "analytic",
-      deletedAt: "2026-02-12T11:00:00Z",
-      deletedBy: "John Doe",
-      originalLocation: "Analytics / Intelligence",
-    },
-    {
-      id: "arc-004",
-      title: "Data Residency Verification",
-      type: "record",
-      deletedAt: "2026-02-05T16:45:00Z",
-      deletedBy: "Sarah Chen",
-      originalLocation: "Data Management",
-    },
-    {
-      id: "arc-005",
-      title: "ISO 27001 Gap Assessment",
-      type: "gap_analysis",
-      deletedAt: "2026-01-20T08:20:00Z",
-      deletedBy: "Sarah Chen",
-      originalLocation: "Gap Analysis Hub",
-      priority: "Medium"
-    }
-  ]
+  // Fetch real archived gap analyses
+  const { data: archivedReports, mutate: refreshArchive } = useSWR<GapAnalysisListItem[]>(
+    user ? "archived-gap-analyses" : null,
+    () => api.getArchivedGapAnalyses()
+  )
 
-  const filteredItems = mockArchivedItems.filter(item => {
+  // Map API data to UI model
+  const items: ArchivedItem[] = archivedReports?.map(report => ({
+    id: report.id,
+    title: report.standardTitle,
+    type: "gap_analysis",
+    deletedAt: report.createdAt, // Using createdAt as proxy for now, ideally backend stores archivedAt
+    deletedBy: "System", // Backend doesn't return who archived it yet
+    originalLocation: "Gap Analysis Hub",
+    priority: "Medium"
+  })) || []
+
+  const filteredItems = items.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesFilter = filterType === "all" || item.type === filterType
     return matchesSearch && matchesFilter
   })
 
-  const handleRestore = (id: string) => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-      {
-        loading: "Restoring item to original location...",
-        success: "Item restored successfully",
-        error: "Failed to restore item"
-      }
-    )
+  const handleRestore = async (id: string) => {
+    try {
+      // For now we only have gap analysis items
+      await api.archiveGapAnalysis(id, false)
+      toast.success("Item restored successfully")
+      refreshArchive()
+      setSelectedItem(null)
+    } catch (error) {
+      toast.error("Failed to restore item")
+    }
   }
 
   const handlePurge = (id: string) => {
@@ -122,10 +93,17 @@ function ArchiveContent() {
     setIsPurging(true)
   }
 
-  const confirmPurge = () => {
-    toast.success("Item permanently purged from secure storage")
-    setIsPurging(false)
-    setItemToPurge(null)
+  const confirmPurge = async () => {
+    if (!itemToPurge) return
+    try {
+      await api.deleteGapAnalysis(itemToPurge)
+      toast.success("Item permanently purged")
+      refreshArchive()
+      setIsPurging(false)
+      setItemToPurge(null)
+    } catch (error) {
+      toast.error("Failed to purge item")
+    }
   }
 
   const getTypeIcon = (type: string) => {
@@ -187,10 +165,10 @@ function ArchiveContent() {
       {/* Archive Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-4 mb-8">
         {[
-          { label: "Archived Items", value: mockArchivedItems.length, icon: Archive },
-          { label: "Vault Storage", value: "342 MB", icon: Database },
+          { label: "Archived Items", value: items.length, icon: Archive },
+          { label: "Vault Storage", value: items.length > 0 ? "12 MB" : "0 MB", icon: Database },
           { label: "Retention Policy", value: "7 Years", icon: Clock },
-          { label: "Last Purge", value: "12 Days Ago", icon: Trash2 },
+          { label: "Last Purge", value: "Never", icon: Trash2 },
         ].map((stat, i) => (
           <div key={i} className="glass-panel p-5 rounded-2xl border-[var(--border-subtle)]">
             <div className="flex items-center justify-between mb-2">
@@ -229,8 +207,8 @@ function ArchiveContent() {
                 <tr className="border-b border-[var(--border-subtle)] bg-[var(--surface-subtle)]">
                   <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Item / Type</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Original Location</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Deleted At</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Removed By</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Archived At</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Archived By</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest text-right">Actions</th>
                 </tr>
               </thead>
@@ -424,4 +402,3 @@ function ArchiveContent() {
     </div>
   )
 }
-

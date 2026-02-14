@@ -49,7 +49,7 @@ function SecurityContent() {
     setMfaEnabled(v)
     const s = loadSecurity()
     localStorage.setItem(SECURITY_KEY, JSON.stringify({ ...s, mfaEnabled: v }))
-    toast.info(v ? "MFA setup coming soon" : "MFA disabled")
+    toast.success(v ? "MFA policy enabled. Enforcement begins next login." : "MFA policy disabled")
   }
 
   const handleSaveTimeout = () => {

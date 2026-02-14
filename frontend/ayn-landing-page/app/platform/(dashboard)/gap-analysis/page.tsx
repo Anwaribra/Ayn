@@ -16,7 +16,8 @@ import {
   Target,
   Radio,
 } from "lucide-react"
-import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard } from "@/types"
+import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
+import { EvidenceSelector } from "@/components/platform/evidence-selector"
 
 export default function GapAnalysisPage() {
   return (
@@ -34,14 +35,21 @@ function GapAnalysisContent() {
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
+  // Remediation State
+  const [isRemediating, setIsRemediating] = useState(false)
+  const [targetGap, setTargetGap] = useState<{ gap: GapItem, standardId: string } | null>(null)
+
   // ESC to close delete confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && deleteConfirm) setDeleteConfirm(null)
+      if (e.key === 'Escape') {
+        if (deleteConfirm) setDeleteConfirm(null)
+        if (isRemediating) setIsRemediating(false)
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [deleteConfirm])
+  }, [deleteConfirm, isRemediating])
 
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
@@ -89,6 +97,40 @@ function GapAnalysisContent() {
     }
   }, [mutate, activeReport])
 
+  const handleRemediateClick = (gapItem: GapItem) => {
+    if (!activeReport) return
+    setTargetGap({ gap: gapItem, standardId: activeReport.standardId })
+    setIsRemediating(true)
+  }
+
+  const handleEvidenceSelected = async (evidence: Evidence) => {
+    if (!targetGap) return
+
+    try {
+      const gapId = crypto.randomUUID()
+      // 1. Create the PlatformGap (State)
+      await api.recordGapDefined(
+        gapId,
+        targetGap.standardId,
+        targetGap.gap.criterionTitle, // Clause/Criterion
+        targetGap.gap.gap, // Description
+        targetGap.gap.priority.toLowerCase() // Severity
+      )
+
+      // 2. Link Evidence (Address it)
+      await api.recordGapAddressed(gapId, evidence.id)
+
+      toast.success("Evidence linked to gap", {
+        description: `Linked "${evidence.title || "Evidence"}" to ${targetGap.gap.criterionTitle}`
+      })
+      setIsRemediating(false)
+      setTargetGap(null)
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to link evidence")
+    }
+  }
+
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
     const priorityMap: Record<string, string> = { high: "High", medium: "Med", low: "Low" }
     const statusMap: Record<string, string> = { not_met: "Critical", no_evidence: "Critical", partially_met: "Warning", met: "Verified" }
@@ -98,6 +140,7 @@ function GapAnalysisContent() {
     const bg = p === "High" ? "bg-red-500/5" : p === "Med" ? "bg-amber-500/5" : "bg-emerald-500/5"
     const riskScore = p === "High" ? 88 : p === "Med" ? 42 : 12
     return {
+      original: item, // Keep reference to original item
       title: item.criterionTitle ?? "Unnamed Criterion",
       priority: p,
       status: s,
@@ -226,7 +269,7 @@ function GapAnalysisContent() {
                 </div>
                 <div className="h-10 w-px bg-white/5 hidden md:block" />
                 <button
-                  onClick={() => toast.info('Remediation workflow coming soon — track this gap in your evidence library')}
+                  onClick={() => handleRemediateClick(gap.original)}
                   className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
@@ -307,6 +350,13 @@ function GapAnalysisContent() {
           </div>
         </div>
       )}
+
+      {/* Evidence Selector Modal */}
+      <EvidenceSelector
+        open={isRemediating}
+        onOpenChange={setIsRemediating}
+        onSelect={handleEvidenceSelected}
+      />
     </div>
   )
 }

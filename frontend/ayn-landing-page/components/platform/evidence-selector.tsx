@@ -35,7 +35,7 @@ export function EvidenceSelector({ open, onOpenChange, onSelect }: EvidenceSelec
         return evidence.filter((e) =>
             e.title?.toLowerCase().includes(lower) ||
             e.originalFilename?.toLowerCase().includes(lower) ||
-            e.type?.toLowerCase().includes(lower)
+            e.documentType?.toLowerCase().includes(lower)
         )
     }, [evidence, searchQuery])
 
@@ -81,7 +81,7 @@ export function EvidenceSelector({ open, onOpenChange, onSelect }: EvidenceSelec
                     ) : (
                         <div className="space-y-1">
                             {filteredEvidence.map((item) => {
-                                const Icon = getIcon(item.type || "")
+                                const Icon = getIcon(item.documentType || "")
                                 return (
                                     <button
                                         key={item.id}
@@ -100,7 +100,7 @@ export function EvidenceSelector({ open, onOpenChange, onSelect }: EvidenceSelec
                                             </h4>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-[var(--surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
-                                                    {item.type || "Document"}
+                                                    {item.documentType || "Document"}
                                                 </span>
                                                 <span className="text-xs text-zinc-600 truncate">
                                                     {new Date(item.createdAt).toLocaleDateString()}

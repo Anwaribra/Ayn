@@ -53,19 +53,20 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     <aside
       className={cn(
         // Base layout
-        "fixed inset-y-0 left-0 flex flex-col z-40 select-none flex-shrink-0",
+        "fixed inset-y-0 left-0 flex flex-col z-50 select-none flex-shrink-0",
         // Width & background
-        "w-[260px] max-w-[85vw] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]",
+        "w-64 max-w-[85vw] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] shadow-xl md:shadow-none",
         // Use dvh for mobile viewport, fallback to vh
         "h-[100dvh] h-screen",
         // Transition
-        "transition-transform duration-300 ease-in-out",
-        // Desktop: sticky positioning instead of fixed
-        "md:sticky md:top-0 md:w-[240px] md:max-w-none",
+        "transition-transform md:transition-[width,opacity,transform] duration-300 ease-in-out",
+        // Desktop: static/relative flow (in flex container), but use sticking if preferred. 
+        // User requested "Main Content should occupy the remaining space", implying flex flow.
+        "md:translate-x-0 md:static md:h-screen md:w-64",
         // Open / closed states
         open
           ? "translate-x-0"
-          : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none"
+          : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden md:opacity-0"
       )}
     >
       {/* ─── Header: Logo ─── */}

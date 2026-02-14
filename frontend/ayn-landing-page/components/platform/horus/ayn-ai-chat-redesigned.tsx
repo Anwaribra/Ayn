@@ -198,7 +198,7 @@ export default function HorusAIChat() {
                 History
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 sm:w-96 bg-background border-l border-border/50">
+            <SheetContent side="right" className="w-80 sm:w-96 bg-background border-l border-border/50 data-[state=open]:duration-300 data-[state=closed]:duration-300 ease-in-out">
               <SheetHeader className="mb-6">
                 <SheetTitle className="text-lg font-bold">Chat History</SheetTitle>
               </SheetHeader>

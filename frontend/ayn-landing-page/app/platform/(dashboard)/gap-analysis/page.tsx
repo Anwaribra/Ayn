@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
+import { EmptyState } from "@/components/platform/empty-state"
 
 export default function GapAnalysisPage() {
   return (
@@ -216,109 +217,118 @@ function GapAnalysisContent() {
       </div>
 
       {/* Summary Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 px-4">
-        {[
-          { label: "Identified Gaps", val: String(activeGapCount).padStart(2, "0"), icon: Zap, color: "text-red-500" },
-          { label: "Total Scans", val: String(reports?.length ?? 0), icon: Radio, color: "text-amber-500" },
-          { label: "Remediation Rate", val: `${remediationRate}%`, icon: Activity, color: "text-blue-500" },
-          { label: "Alignment Index", val: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, color: "text-emerald-500" },
-        ].map((s, i) => (
-          <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-[var(--border-subtle)] animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}>
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)]">
-              <s.icon className={`w-4 h-4 ${s.color}`} />
-            </div>
-            <div>
-              <div className="mono text-xl font-bold text-[var(--text-primary)]">{s.val}</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">{s.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Gap List */}
-      <div className="space-y-4 px-4">
-        {filteredGaps.length === 0 ? (
-          <div className="text-center py-16">
-            <CheckCircle2 className="w-10 h-10 text-emerald-500/30 mx-auto mb-4" />
-            <p className="text-sm text-zinc-600 italic">No critical gaps detected. System is stable.</p>
-          </div>
-        ) : (
-          filteredGaps.map((gap, i) => (
-            <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-start md:items-center gap-8 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
-              <div className={`w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center ${gap.bg} border border-[var(--border-subtle)]`}>
-                {gap.priority === "High" ? <AlertTriangle className={`w-5 h-5 ${gap.color}`} /> :
-                  gap.priority === "Med" ? <Info className={`w-5 h-5 ${gap.color}`} /> :
-                    <CheckCircle2 className={`w-5 h-5 ${gap.color}`} />}
-              </div>
-
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-                  <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
-                  <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${gap.priority === "High" ? "bg-red-500/5 text-red-500 border-red-500/10" : "bg-white/5 text-zinc-600 border-[var(--border-subtle)]"
-                    }`}>
-                    {gap.status}
-                  </span>
+      {/* Summary Matrix & Results */}
+      {(!reports || reports.length === 0) && !activeReport ? (
+        <div className="mt-10">
+          <EmptyState type="gap-analysis" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 px-4">
+            {[
+              { label: "Identified Gaps", val: String(activeGapCount).padStart(2, "0"), icon: Zap, color: "text-red-500" },
+              { label: "Total Scans", val: String(reports?.length ?? 0), icon: Radio, color: "text-amber-500" },
+              { label: "Remediation Rate", val: `${remediationRate}%`, icon: Activity, color: "text-blue-500" },
+              { label: "Alignment Index", val: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, color: "text-emerald-500" },
+            ].map((s, i) => (
+              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-[var(--border-subtle)] animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}>
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)]">
+                  <s.icon className={`w-4 h-4 ${s.color}`} />
                 </div>
-                <p className="text-zinc-500 text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
-              </div>
-
-              <div className="flex items-center gap-10">
-                <div className="text-right hidden xl:block">
-                  <div className="text-[10px] font-bold text-zinc-700 uppercase tracking-widest mb-1">Risk Impact</div>
-                  <div className="mono text-xl font-bold text-zinc-400">{gap.riskScore}%</div>
-                </div>
-                <div className="h-10 w-px bg-white/5 hidden md:block" />
-                <button
-                  onClick={() => handleRemediateClick(gap.original)}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  Remediate
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Previous Reports */}
-      {reports && reports.length > 0 && (
-        <section className="mt-16 px-4">
-          <div className="flex items-center gap-4 mb-8">
-            <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Previous Scans</h2>
-            <div className="h-px w-20 bg-[var(--border-subtle)]" />
-          </div>
-          <div className="space-y-3">
-            {reports.map((report) => (
-              <div
-                key={report.id}
-                className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-[var(--border-subtle)] group cursor-pointer"
-                onClick={() => handleViewReport(report.id)}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
-                    <span className="mono text-[10px] font-bold text-zinc-500">{Math.round(report.overallScore)}%</span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-zinc-100">{report.standardTitle}</h4>
-                    <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
-                    className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  >
-                    Delete
-                  </button>
-                  <Play className="w-4 h-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
+                <div>
+                  <div className="mono text-xl font-bold text-[var(--text-primary)]">{s.val}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">{s.label}</div>
                 </div>
               </div>
             ))}
           </div>
-        </section>
+
+          {/* Gap List */}
+          <div className="space-y-4 px-4">
+            {filteredGaps.length === 0 ? (
+              <div className="text-center py-16">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500/30 mx-auto mb-4" />
+                <p className="text-sm text-zinc-600 italic">No critical gaps detected. System is stable.</p>
+              </div>
+            ) : (
+              filteredGaps.map((gap, i) => (
+                <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-start md:items-center gap-8 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
+                  <div className={`w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center ${gap.bg} border border-[var(--border-subtle)]`}>
+                    {gap.priority === "High" ? <AlertTriangle className={`w-5 h-5 ${gap.color}`} /> :
+                      gap.priority === "Med" ? <Info className={`w-5 h-5 ${gap.color}`} /> :
+                        <CheckCircle2 className={`w-5 h-5 ${gap.color}`} />}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
+                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${gap.priority === "High" ? "bg-red-500/5 text-red-500 border-red-500/10" : "bg-white/5 text-zinc-600 border-[var(--border-subtle)]"
+                        }`}>
+                        {gap.status}
+                      </span>
+                    </div>
+                    <p className="text-zinc-500 text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
+                  </div>
+
+                  <div className="flex items-center gap-10">
+                    <div className="text-right hidden xl:block">
+                      <div className="text-[10px] font-bold text-zinc-700 uppercase tracking-widest mb-1">Risk Impact</div>
+                      <div className="mono text-xl font-bold text-zinc-400">{gap.riskScore}%</div>
+                    </div>
+                    <div className="h-10 w-px bg-white/5 hidden md:block" />
+                    <button
+                      onClick={() => handleRemediateClick(gap.original)}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      Remediate
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Previous Reports */}
+          {reports && reports.length > 0 && (
+            <section className="mt-16 px-4">
+              <div className="flex items-center gap-4 mb-8">
+                <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Previous Scans</h2>
+                <div className="h-px w-20 bg-[var(--border-subtle)]" />
+              </div>
+              <div className="space-y-3">
+                {reports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-[var(--border-subtle)] group cursor-pointer"
+                    onClick={() => handleViewReport(report.id)}
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
+                        <span className="mono text-[10px] font-bold text-zinc-500">{Math.round(report.overallScore)}%</span>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-zinc-100">{report.standardTitle}</h4>
+                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
+                        className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      >
+                        Delete
+                      </button>
+                      <Play className="w-4 h-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       {/* Delete Confirmation Modal */}

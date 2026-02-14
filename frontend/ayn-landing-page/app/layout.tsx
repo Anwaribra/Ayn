@@ -2,7 +2,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
@@ -82,7 +82,7 @@ export default function RootLayout({
           {children}
           <Toaster richColors position="top-right" />
         </AuthProvider>
-        <Analytics />
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )

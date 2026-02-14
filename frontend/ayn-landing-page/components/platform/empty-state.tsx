@@ -23,7 +23,7 @@ interface EmptyStateProps {
 const emptyStateConfig = {
   evidence: {
     icon: Archive,
-    title: "Evidence Vault is Empty",
+    title: "Ready to Audit?",
     description: "Your institutional evidence library is waiting for its first assets. Upload policies, procedures, and documentation to enable Horus AI compliance analysis.",
     ctaText: "Upload First Evidence",
     ctaHref: "#",
@@ -33,7 +33,7 @@ const emptyStateConfig = {
   },
   standards: {
     icon: BookOpen,
-    title: "No Standards Configured",
+    title: "Configure Standards",
     description: "Define your compliance frameworks to activate Horus AI monitoring. Import from our library or create custom standards tailored to your institution.",
     ctaText: "Browse Standards Library",
     ctaHref: "/platform/standards",
@@ -43,9 +43,9 @@ const emptyStateConfig = {
   },
   "gap-analysis": {
     icon: Target,
-    title: "No Gap Analysis History",
+    title: "Ready for Assessment?",
     description: "Run your first compliance assessment to establish a baseline. Horus AI will identify vulnerabilities and create a remediation roadmap.",
-    ctaText: "Start First Audit",
+    ctaText: "Initiate First Analysis",
     ctaHref: "/platform/gap-analysis",
     ctaAction: false,
     tip: "Tip: Running monthly gap analyses reduces compliance drift by up to 60%.",
@@ -63,10 +63,10 @@ const emptyStateConfig = {
   },
   reports: {
     icon: FileText,
-    title: "No Reports Generated",
+    title: "Unlock Institutional Insights",
     description: "Generate comprehensive compliance reports once you have evidence and standards mapped. Export to PDF or share with stakeholders.",
-    ctaText: "Generate First Report",
-    ctaHref: "/platform/standards",
+    ctaText: "Generate Intelligence",
+    ctaHref: "/platform/gap-analysis",
     ctaAction: false,
     tip: "Tip: Schedule monthly auto-reports to keep leadership informed without manual work.",
     illustration: "reports",

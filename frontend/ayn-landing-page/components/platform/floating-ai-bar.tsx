@@ -107,7 +107,7 @@ export default function FloatingAIBar() {
 
   // Don't show on the Horus AI page (it has its own full chat)
   const isHorusPage = pathname?.includes("/horus-ai")
-  
+
   // Ctrl+I shortcut to focus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -180,7 +180,7 @@ export default function FloatingAIBar() {
   return (
     <div
       ref={barRef}
-      className="fixed bottom-5 left-1/2 z-30 w-full max-w-xl -translate-x-1/2 px-4"
+      className="fixed bottom-5 left-1/2 z-30 w-full max-w-xl -translate-x-1/2 px-4 shadow-sm"
     >
       <AnimatePresence>
         {isOpen && answer && (

@@ -179,32 +179,28 @@ export function Hero() {
 
   return (
     <>
-      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)] bg-[#F9FAFB]">
-        {/* Subtle background pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.03)_0%,transparent_60%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.8)_0%,transparent_100%)] pointer-events-none" />
-
-        {/* Smooth transition to dark section */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-b from-transparent via-[#F9FAFB]/50 to-[#0B0F1A] pointer-events-none z-10" />
+      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-[var(--spacing-content)]">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               {/* Main headline */}
               <motion.h1
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight text-slate-900"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <span className="inline-block bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-600 bg-clip-text text-transparent">
+                <span className="inline-block bg-gradient-to-r from-foreground via-foreground/95 to-primary/90 bg-clip-text text-transparent">
                   Ayn
                 </span>
               </motion.h1>
 
               {/* Static subtitle */}
               <motion.h2
-                className="text-xl md:text-2xl font-medium mb-2 text-slate-600 tracking-tight"
+                className="text-xl md:text-2xl font-medium mb-2 text-muted-foreground tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -219,14 +215,14 @@ export function Hero() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <span className="text-lg text-indigo-600 font-medium">
+                <span className="text-lg text-[var(--brand)] font-medium">
                   {displayedText}
-                  <span className="inline-block w-[2px] h-5 bg-indigo-600 ml-0.5 animate-pulse" />
+                  <span className="inline-block w-[2px] h-5 bg-[var(--brand)] ml-0.5 animate-pulse" />
                 </span>
               </motion.div>
 
               <motion.p
-                className="text-sm text-slate-500 mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed"
+                className="text-sm text-muted-foreground/80 mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -242,7 +238,7 @@ export function Hero() {
               >
                 <ShinyButton
                   href="/login" // Ideally this should point to signup if available, but login is fine for now
-                  className="bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
                 >
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -251,7 +247,7 @@ export function Hero() {
                   size="lg"
                   variant="outline"
                   onClick={scrollToFeatures}
-                  className="border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto"
+                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto"
                 >
                   Explore Platform
                 </Button>
@@ -261,20 +257,20 @@ export function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
-                className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-400"
+                className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-muted-foreground/70"
               >
                 <div className="flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-indigo-500" />
+                  <Brain className="w-3.5 h-3.5 text-primary" />
                   <span>Conversational AI</span>
                 </div>
-                <div className="w-px h-3 bg-slate-300" />
+                <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
-                  <FileCheck className="w-3.5 h-3.5 text-indigo-500" />
+                  <FileCheck className="w-3.5 h-3.5 text-primary" />
                   <span>Quality Standards Support</span>
                 </div>
-                <div className="w-px h-3 bg-slate-300" />
+                <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                  <Shield className="w-3.5 h-3.5 text-primary" />
                   <span>Framework Ready</span>
                 </div>
               </motion.div>
@@ -293,13 +289,13 @@ export function Hero() {
             <div className="relative flex md:hidden justify-center mt-8">
               <Link
                 href="/login"
-                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-slate-200 bg-white/50 backdrop-blur-sm hover:border-indigo-500/40 transition-all"
+                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all"
               >
-                <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
-                  <Lock className="w-7 h-7 text-indigo-600/80" />
+                <div className="w-14 h-14 rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <Lock className="w-7 h-7 text-primary/80" />
                 </div>
-                <span className="text-sm font-medium text-slate-900">Get Started</span>
-                <span className="text-xs text-slate-500">Try the platform today</span>
+                <span className="text-sm font-medium text-foreground">Get Started</span>
+                <span className="text-xs text-muted-foreground">Try the platform today</span>
               </Link>
             </div>
           </div>
@@ -309,7 +305,7 @@ export function Hero() {
           <button
             type="button"
             onClick={scrollToFeatures}
-            className="text-slate-400 hover:text-slate-600 transition-colors flex flex-col items-center gap-2"
+            className="text-muted-foreground hover:text-foreground transition-colors flex flex-col items-center gap-2"
             aria-label="Scroll to features"
           >
             <span className="text-[10px] uppercase tracking-widest font-medium opacity-50">Discover</span>

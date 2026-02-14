@@ -108,7 +108,9 @@ export function HorusIntelligenceSection() {
   return (
     <section
       id="horus-intelligence"
-      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden bg-[#0B0F1A]"
+    <section
+      id="horus-intelligence"
+      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden bg-[#050505]"
     >
       {/* Mesh Gradient and subtle grid */}
       <div className="absolute top-0 left-0 w-full h-[500px] bg-[radial-gradient(circle_at_top_left,rgba(30,41,59,0.5)_0%,transparent_50%)] pointer-events-none" />

@@ -105,8 +105,6 @@ export function HorusIntelligenceSection() {
   return (
     <section
       id="horus-intelligence"
-    <section
-      id="horus-intelligence"
       className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden bg-white"
     >
       {/* Mesh Gradient and subtle grid - Light Theme */}
@@ -380,5 +378,5 @@ export function HorusIntelligenceSection() {
             Every upload, every assessment, every insight flows through Horus
           </p>
         </motion.div>
-  )
+        )
 }

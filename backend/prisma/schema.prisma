@@ -261,9 +261,9 @@ model PlatformFile {
   // State
   status      String   @default("uploaded")
   
-  // Cross-module links (stored as JSON)
-  linkedEvidenceIds Json @default("[]")
-  linkedGapIds  Json @default("[]")
+  // Cross-module links (Relations)
+  evidence    PlatformEvidence[] @relation("FileEvidence")
+  gaps        PlatformGap[]      @relation("FileGaps")
   
   // Metadata
   createdAt   DateTime @default(now())
@@ -285,7 +285,8 @@ model PlatformEvidence {
   status      String   @default("defined")
   
   // References
-  sourceFileIds Json @default("[]")
+  files       PlatformFile[]     @relation("FileEvidence")
+  gaps        PlatformGap[]      @relation("GapEvidence")
   criteriaRefs Json @default("[]")
   
   // Metadata
@@ -310,8 +311,8 @@ model PlatformGap {
   status      String   @default("defined")
   
   // References
-  evidenceIds Json @default("[]")
-  relatedFileIds Json @default("[]")
+  evidence    PlatformEvidence[] @relation("GapEvidence")
+  files       PlatformFile[]     @relation("FileGaps")
   
   // Metadata
   createdAt   DateTime @default(now())

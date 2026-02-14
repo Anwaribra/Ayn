@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import type { DashboardMetrics } from "@/types"
 import { EmptyState } from "@/components/platform/empty-state"
-import { DashboardMetricsSkeleton } from "@/components/platform/skeleton-loader"
+import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -40,6 +40,11 @@ function DashboardContent() {
     () => api.getDashboardMetrics(),
     { refreshInterval: 30000 }
   )
+
+
+  if (isLoading) {
+    return <DashboardPageSkeleton />
+  }
 
   const alignmentScore = metrics?.alignmentPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0

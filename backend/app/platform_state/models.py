@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
 
+
 class PlatformFile(BaseModel):
     id: str
     name: str
@@ -20,6 +21,7 @@ class PlatformFile(BaseModel):
     clauses: List[str] = []
     analysis_confidence: float = 0.0
     status: str = "uploaded"
+    # Relations (computed or fetched)
     linked_evidence_ids: List[str] = []
     linked_gap_ids: List[str] = []
     created_at: datetime
@@ -32,6 +34,7 @@ class PlatformEvidence(BaseModel):
     type: str
     user_id: str
     status: str = "defined"
+    # Relations
     source_file_ids: List[str] = []
     criteria_refs: List[str] = []
     created_at: datetime
@@ -46,6 +49,7 @@ class PlatformGap(BaseModel):
     severity: str = "medium"
     user_id: str
     status: str = "defined"
+    # Relations
     evidence_ids: List[str] = []
     related_file_ids: List[str] = []
     created_at: datetime
@@ -105,13 +109,16 @@ class PlatformStateManager:
         
         try:
             # Try to query one of the tables
-            if hasattr(self.db, 'platform_files'):
+            if hasattr(self.db, 'platformfile'): # Prisma Python often creates lowercase usage
+                 await self.db.platformfile.find_first(take=1)
+                 self._tables_exist = True
+            elif hasattr(self.db, 'platform_files'): # Fallback depending on naming
                 await self.db.platform_files.find_first(take=1)
                 self._tables_exist = True
             else:
-                # Prisma client doesn't have the table attribute
-                print("Platform state tables not found in Prisma client")
-                self._tables_exist = False
+                # Attempt to determine via introspection or similar if needed, 
+                # but usually attributes exist if client generated
+                self._tables_exist = True
         except Exception as e:
             # Tables don't exist yet or other error
             print(f"Platform state tables check failed: {e}")
@@ -126,11 +133,29 @@ class PlatformStateManager:
     async def create_file(self, file_data: dict) -> Optional[PlatformFile]:
         """Record a file upload."""
         if not await self._check_tables():
-            return None  # Tables don't exist yet
+            return None
         
         try:
-            file = await self.db.platform_files.create(data=file_data)
-            return PlatformFile.model_validate(file)
+            # Remove relation fields if passed in data to avoid errors
+            data = {k: v for k, v in file_data.items() if k not in ['linked_evidence_ids', 'linked_gap_ids']}
+            
+            # Map snake_case keys to Prisma schema camelCase if needed, 
+            # but prisma-python usually handles input data matching schema.
+            # Schema: id, name, type, size, userId, detectedStandards...
+            
+            # We need to ensure keys match Prisma schema
+            prisma_data = {
+                "id": data["id"],
+                "name": data["name"],
+                "type": data["type"],
+                "size": data["size"],
+                "userId": data["user_id"],
+                "createdAt": data["created_at"],
+                "updatedAt": data["updated_at"]
+            }
+
+            file = await self.db.platformfile.create(data=prisma_data)
+            return self._map_file(file)
         except Exception as e:
             print(f"Error creating file: {e}")
             return None
@@ -141,18 +166,19 @@ class PlatformStateManager:
             return None
         
         try:
-            file = await self.db.platform_files.update(
+            file = await self.db.platformfile.update(
                 where={"id": file_id},
                 data={
-                    "detected_standards": analysis.get("standards", []),
-                    "document_type": analysis.get("document_type"),
+                    "detectedStandards": analysis.get("standards", []),
+                    "documentType": analysis.get("document_type"),
                     "clauses": analysis.get("clauses", []),
-                    "analysis_confidence": analysis.get("confidence", 0),
+                    "analysisConfidence": analysis.get("confidence", 0),
                     "status": "analyzed",
-                    "updated_at": datetime.utcnow()
-                }
+                    "updatedAt": datetime.utcnow()
+                },
+                include={"evidence": True, "gaps": True}
             )
-            return PlatformFile.model_validate(file)
+            return self._map_file(file)
         except Exception as e:
             print(f"Error analyzing file: {e}")
             return None
@@ -163,10 +189,37 @@ class PlatformStateManager:
             return []
         
         try:
-            files = await self.db.platform_files.find_many(where={"user_id": user_id})
-            return [PlatformFile.model_validate(f) for f in files]
-        except Exception:
+            files = await self.db.platformfile.find_many(
+                where={"userId": user_id},
+                include={"evidence": True, "gaps": True}
+            )
+            return [self._map_file(f) for f in files]
+        except Exception as e:
+            print(f"Error getting files: {e}")
             return []
+            
+    def _map_file(self, f) -> PlatformFile:
+        """Map Prisma result to Pydantic model, handling relations."""
+        # relations are lists of objects if included
+        ev_ids = [e.id for e in f.evidence] if f.evidence else []
+        gap_ids = [g.id for g in f.gaps] if f.gaps else []
+        
+        return PlatformFile(
+            id=f.id,
+            name=f.name,
+            type=f.type,
+            size=f.size,
+            user_id=f.userId,
+            detected_standards=f.detectedStandards,
+            document_type=f.documentType,
+            clauses=f.clauses,
+            analysis_confidence=f.analysisConfidence,
+            status=f.status,
+            linked_evidence_ids=ev_ids,
+            linked_gap_ids=gap_ids,
+            created_at=f.createdAt,
+            updated_at=f.updatedAt
+        )
     
     # ═══════════════════════════════════════════════════════════════════════════
     # EVIDENCE OPERATIONS
@@ -178,11 +231,39 @@ class PlatformStateManager:
             return None
         
         try:
-            evidence = await self.db.platform_evidence.create(data=evidence_data)
-            return PlatformEvidence.model_validate(evidence)
+            prisma_data = {
+                "id": evidence_data["id"],
+                "title": evidence_data["title"],
+                "type": evidence_data["type"],
+                "userId": evidence_data["user_id"],
+                "criteriaRefs": evidence_data.get("criteria_refs", []),
+                "createdAt": evidence_data["created_at"],
+                "updatedAt": evidence_data["updated_at"]
+            }
+            
+            evidence = await self.db.platformevidence.create(data=prisma_data)
+            return self._map_evidence(evidence)
         except Exception as e:
             print(f"Error creating evidence: {e}")
             return None
+            
+    async def link_evidence_to_files(self, evidence_id: str, file_ids: List[str]):
+        """Link evidence to multiple files."""
+        if not await self._check_tables():
+            return
+            
+        try:
+            # Connect existing files
+            await self.db.platformevidence.update(
+                where={"id": evidence_id},
+                data={
+                    "files": {
+                        "connect": [{"id": fid} for fid in file_ids]
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"Error linking evidence to files: {e}")
     
     async def get_evidence_by_user(self, user_id: str) -> List[PlatformEvidence]:
         """Get all evidence for user."""
@@ -190,10 +271,27 @@ class PlatformStateManager:
             return []
         
         try:
-            evidence = await self.db.platform_evidence.find_many(where={"user_id": user_id})
-            return [PlatformEvidence.model_validate(e) for e in evidence]
+            evidence = await self.db.platformevidence.find_many(
+                where={"userId": user_id},
+                include={"files": True}
+            )
+            return [self._map_evidence(e) for e in evidence]
         except Exception:
             return []
+
+    def _map_evidence(self, e) -> PlatformEvidence:
+        file_ids = [f.id for f in e.files] if e.files else []
+        return PlatformEvidence(
+            id=e.id,
+            title=e.title,
+            type=e.type,
+            user_id=e.userId,
+            status=e.status,
+            source_file_ids=file_ids,
+            criteria_refs=e.criteriaRefs,
+            created_at=e.createdAt,
+            updated_at=e.updatedAt
+        )
     
     # ═══════════════════════════════════════════════════════════════════════════
     # GAP OPERATIONS
@@ -205,11 +303,55 @@ class PlatformStateManager:
             return None
         
         try:
-            gap = await self.db.platform_gaps.create(data=gap_data)
-            return PlatformGap.model_validate(gap)
+            prisma_data = {
+                "id": gap_data["id"],
+                "standard": gap_data["standard"],
+                "clause": gap_data["clause"],
+                "description": gap_data["description"],
+                "severity": gap_data["severity"],
+                "userId": gap_data["user_id"],
+                "createdAt": gap_data["created_at"]
+            }
+            
+            gap = await self.db.platformgap.create(data=prisma_data)
+            return self._map_gap(gap)
         except Exception as e:
             print(f"Error creating gap: {e}")
             return None
+
+    async def address_gap(self, gap_id: str, evidence_id: str):
+        """Address a gap with an evidence item."""
+        if not await self._check_tables():
+            return
+            
+        try:
+            await self.db.platformgap.update(
+                where={"id": gap_id},
+                data={
+                    "status": "addressed",
+                    "evidence": {
+                        "connect": [{"id": evidence_id}]
+                    }
+                }
+            )
+        except Exception as e:
+            print(f"Error addressing gap: {e}")
+
+    async def close_gap(self, gap_id: str):
+        """Close a gap."""
+        if not await self._check_tables():
+            return
+            
+        try:
+            await self.db.platformgap.update(
+                where={"id": gap_id},
+                data={
+                    "status": "closed",
+                    "closedAt": datetime.utcnow()
+                }
+            )
+        except Exception as e:
+            print(f"Error closing gap: {e}")
     
     async def get_gaps_by_user(self, user_id: str) -> List[PlatformGap]:
         """Get all gaps for user."""
@@ -217,8 +359,11 @@ class PlatformStateManager:
             return []
         
         try:
-            gaps = await self.db.platform_gaps.find_many(where={"user_id": user_id})
-            return [PlatformGap.model_validate(g) for g in gaps]
+            gaps = await self.db.platformgap.find_many(
+                where={"userId": user_id},
+                include={"evidence": True, "files": True}
+            )
+            return [self._map_gap(g) for g in gaps]
         except Exception:
             return []
 
@@ -228,18 +373,35 @@ class PlatformStateManager:
             return []
             
         try:
-            # Flexible matching for standard and clause
-            gaps = await self.db.platform_gaps.find_many(
+            gaps = await self.db.platformgap.find_many(
                 where={
-                    "user_id": user_id,
-                    "status": "defined", # Only find open gaps
+                    "userId": user_id,
+                    "status": "defined",
                     "standard": {"contains": standard_name, "mode": "insensitive"},
                     "clause": {"contains": clause_code, "mode": "insensitive"}
-                }
+                },
+                include={"evidence": True, "files": True}
             )
-            return [PlatformGap.model_validate(g) for g in gaps]
+            return [self._map_gap(g) for g in gaps]
         except Exception:
             return []
+
+    def _map_gap(self, g) -> PlatformGap:
+        ev_ids = [e.id for e in g.evidence] if g.evidence else []
+        file_ids = [f.id for f in g.files] if g.files else []
+        return PlatformGap(
+            id=g.id,
+            standard=g.standard,
+            clause=g.clause,
+            description=g.description,
+            severity=g.severity,
+            user_id=g.userId,
+            status=g.status,
+            evidence_ids=ev_ids,
+            related_file_ids=file_ids,
+            created_at=g.createdAt,
+            closed_at=g.closedAt
+        )
     
     # ═══════════════════════════════════════════════════════════════════════════
     # METRIC OPERATIONS
@@ -251,27 +413,33 @@ class PlatformStateManager:
             return None
         
         try:
-            existing = await self.db.platform_metrics.find_unique(
+            existing = await self.db.platformmetric.find_unique(
                 where={"id": metric_data.get("id")}
             )
             
+            # Prisma Python returns objects, handle potential dict fallback if raw
+            existing_val = existing.value if existing else None
+            
             if existing:
-                # Prisma returns dict - use dict access
-                existing_id = existing["id"] if isinstance(existing, dict) else existing.id
-                existing_value = existing["value"] if isinstance(existing, dict) else existing.value
-                
-                metric = await self.db.platform_metrics.update(
-                    where={"id": existing_id},
+                metric = await self.db.platformmetric.update(
+                    where={"id": existing.id},
                     data={
                         "value": metric_data["value"],
-                        "previous_value": existing_value,
-                        "updated_at": datetime.utcnow()
+                        "previousValue": existing_val,
+                        "updatedAt": datetime.utcnow()
                     }
                 )
             else:
-                metric = await self.db.platform_metrics.create(data=metric_data)
+                metric = await self.db.platformmetric.create(data={
+                    "id": metric_data["id"],
+                    "name": metric_data["name"],
+                    "value": metric_data["value"],
+                    "sourceModule": metric_data["source_module"],
+                    "userId": metric_data["user_id"],
+                    "updatedAt": datetime.utcnow()
+                })
             
-            return PlatformMetric.model_validate(metric)
+            return self._map_metric(metric)
         except Exception as e:
             print(f"Error updating metric: {e}")
             return None
@@ -282,21 +450,32 @@ class PlatformStateManager:
             return []
         
         try:
-            metrics = await self.db.platform_metrics.find_many(where={"user_id": user_id})
-            return [PlatformMetric.model_validate(m) for m in metrics]
+            metrics = await self.db.platformmetric.find_many(where={"userId": user_id})
+            return [self._map_metric(m) for m in metrics]
         except Exception:
             return []
+            
+    def _map_metric(self, m) -> PlatformMetric:
+        return PlatformMetric(
+            id=m.id,
+            name=m.name,
+            value=m.value,
+            previous_value=m.previousValue,
+            source_module=m.sourceModule,
+            user_id=m.userId,
+            updated_at=m.updatedAt
+        )
     
     # ═══════════════════════════════════════════════════════════════════════════
     # STATE SUMMARY
     # ═══════════════════════════════════════════════════════════════════════════
     
     async def get_state_summary(self, user_id: str) -> StateSummary:
-        """Get state summary. Returns empty if tables don't exist."""
+        """Get state summary."""
         if not await self._check_tables():
             return StateSummary()
         
-        # Parallel fetch for speed
+        # Parallel fetch
         import asyncio
         files, evidence, gaps, metrics = await asyncio.gather(
             self.get_files_by_user(user_id),

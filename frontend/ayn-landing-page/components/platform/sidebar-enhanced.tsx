@@ -40,7 +40,7 @@ const menuItems = [
   { id: "archive", icon: Archive, label: "Archive", href: "/platform/archive" },
 ]
 
-export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
+export default function PlatformSidebar({ open, onToggle, notificationCount }: SidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
 
@@ -118,15 +118,30 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
                       : "text-[var(--text-tertiary)] group-hover:text-[var(--sidebar-foreground)]"
                   )}
                 />
+
+                {/* Notification Badge on Dashboard icon when sidebar is collapsed (or item has notification) */}
+                {item.id === "dashboard" && notificationCount && notificationCount > 0 && !open && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                )}
               </div>
 
               {/* Label */}
               <span className={cn(
-                "text-sm font-medium tracking-wide truncate transition-colors duration-200",
+                "text-sm font-medium tracking-wide truncate transition-colors duration-200 flex-1",
                 isActive ? "text-[var(--sidebar-foreground)]" : "group-hover:text-[var(--sidebar-foreground)]"
               )}>
                 {item.label}
               </span>
+
+              {/* Notification Badge (Expanded State) */}
+              {item.id === "dashboard" && notificationCount && notificationCount > 0 && (
+                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
 
               {/* Hover arrow */}
               <ChevronRight

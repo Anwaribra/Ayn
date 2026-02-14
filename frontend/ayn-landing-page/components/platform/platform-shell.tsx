@@ -150,6 +150,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       <PlatformSidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        notificationCount={notificationCount}
       />
 
       <main className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">

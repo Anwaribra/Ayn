@@ -204,3 +204,23 @@ export function StatsGridSkeleton({ count = 4 }: { count?: number }) {
     </div>
   )
 }
+export function DashboardPageSkeleton() {
+  return (
+    <div className="animate-fade-in-up space-y-12 pb-20 pt-6">
+      {/* Hero Section Skeleton */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex-1 min-h-[350px] md:h-[400px] rounded-[48px] glass-panel border-white/5 animate-pulse" />
+        <div className="w-full lg:w-96 hidden lg:block h-[400px] rounded-[32px] glass-panel border-white/5 animate-pulse" />
+      </div>
+
+      {/* Metrics Skeleton */}
+      <DashboardMetricsSkeleton />
+
+      {/* Bottom Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 h-96 rounded-[48px] glass-panel border-white/5 animate-pulse" />
+        <div className="h-96 rounded-[48px] glass-panel border-white/5 animate-pulse" />
+      </div>
+    </div>
+  )
+}

@@ -81,7 +81,7 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
 
       {/* Browser mockup */}
       <motion.div
-        className="relative z-10 rounded-xl overflow-hidden border border-border/50 bg-card shadow-2xl"
+        className="relative z-10 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xl"
         animate={{
           y: isHovered ? -8 : 0,
           scale: isHovered ? 1.02 : 1,
@@ -89,52 +89,52 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
         {/* Browser header */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 border-b border-border/50">
+        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-200">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80" />
             <div className="w-3 h-3 rounded-full bg-amber-500/80" />
             <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="px-3 py-1 rounded-md bg-background/50 text-[10px] text-muted-foreground">
+            <div className="px-3 py-1 rounded-md bg-white text-[10px] text-slate-400 shadow-sm border border-slate-100">
               app.aynplatform.com
             </div>
           </div>
         </div>
 
         {/* Demo content */}
-        <div className="relative aspect-[16/10] bg-gradient-to-br from-background to-muted/30 p-6">
+        <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-50 to-white p-6">
           {/* Mock Dashboard UI */}
           <div className="grid grid-cols-3 gap-4 h-full">
             {/* Sidebar mock */}
             <div className="col-span-1 space-y-3">
-              <div className="h-8 w-8 rounded-lg bg-[var(--brand)]/10 flex items-center justify-center">
-                <span className="text-sm font-bold text-[var(--brand)]">A</span>
+              <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <span className="text-sm font-bold text-indigo-600">A</span>
               </div>
               <div className="space-y-2">
-                <div className="h-2 w-full rounded bg-muted" />
-                <div className="h-2 w-3/4 rounded bg-muted" />
-                <div className="h-2 w-1/2 rounded bg-muted" />
+                <div className="h-2 w-full rounded bg-slate-200" />
+                <div className="h-2 w-3/4 rounded bg-slate-100" />
+                <div className="h-2 w-1/2 rounded bg-slate-100" />
               </div>
             </div>
             {/* Main content mock */}
             <div className="col-span-2 space-y-4">
               <div className="flex gap-4">
-                <div className="flex-1 h-16 rounded-lg bg-card border border-border/50 p-3">
-                  <div className="h-2 w-12 rounded bg-muted mb-2" />
-                  <div className="h-4 w-8 rounded bg-[var(--brand)]/20" />
+                <div className="flex-1 h-16 rounded-lg bg-white border border-slate-100 p-3 shadow-sm">
+                  <div className="h-2 w-12 rounded bg-slate-200 mb-2" />
+                  <div className="h-4 w-8 rounded bg-indigo-100" />
                 </div>
-                <div className="flex-1 h-16 rounded-lg bg-card border border-border/50 p-3">
-                  <div className="h-2 w-12 rounded bg-muted mb-2" />
-                  <div className="h-4 w-8 rounded bg-emerald-500/20" />
+                <div className="flex-1 h-16 rounded-lg bg-white border border-slate-100 p-3 shadow-sm">
+                  <div className="h-2 w-12 rounded bg-slate-200 mb-2" />
+                  <div className="h-4 w-8 rounded bg-emerald-100" />
                 </div>
               </div>
-              <div className="h-32 rounded-lg bg-card border border-border/50 p-4">
-                <div className="h-2 w-24 rounded bg-muted mb-4" />
+              <div className="h-32 rounded-lg bg-white border border-slate-100 p-4 shadow-sm">
+                <div className="h-2 w-24 rounded bg-slate-200 mb-4" />
                 <div className="flex items-end gap-2 h-16">
-                  <div className="flex-1 h-8 rounded-t bg-[var(--brand)]/30" />
-                  <div className="flex-1 h-12 rounded-t bg-[var(--brand)]/50" />
-                  <div className="flex-1 h-10 rounded-t bg-[var(--brand)]/40" />
+                  <div className="flex-1 h-8 rounded-t bg-indigo-100" />
+                  <div className="flex-1 h-12 rounded-t bg-indigo-200" />
+                  <div className="flex-1 h-10 rounded-t bg-indigo-100" />
                 </div>
               </div>
             </div>
@@ -179,28 +179,30 @@ export function Hero() {
 
   return (
     <>
-      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />
+      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)] bg-white">
+        {/* Subtle background gradients for depth without lines */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/40 via-white to-white pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-100/30 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/30 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/2" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-[var(--spacing-content)]">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               {/* Main headline */}
               <motion.h1
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight text-slate-900"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <span className="inline-block bg-gradient-to-r from-foreground via-foreground/95 to-primary/90 bg-clip-text text-transparent">
+                <span className="inline-block bg-gradient-to-r from-slate-900 via-indigo-900 to-indigo-800 bg-clip-text text-transparent">
                   Ayn
                 </span>
               </motion.h1>
 
               {/* Static subtitle */}
               <motion.h2
-                className="text-xl md:text-2xl font-medium mb-2 text-muted-foreground tracking-tight"
+                className="text-xl md:text-2xl font-medium mb-2 text-slate-700 tracking-tight"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -208,21 +210,21 @@ export function Hero() {
                 Achieve Full Institutional Compliance in Minutes, Not Months with Horus AI
               </motion.h2>
 
-              {/* Animated typewriter subtitle */}
+              {/* Animated typewriter subtitle - Enhanced visible cursor */}
               <motion.div
-                className="h-8 mb-4"
+                className="h-8 mb-4 flex items-center justify-center lg:justify-start"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <span className="text-lg text-[var(--brand)] font-medium">
+                <span className="text-lg text-indigo-600 font-semibold">
                   {displayedText}
-                  <span className="inline-block w-[2px] h-5 bg-[var(--brand)] ml-0.5 animate-pulse" />
                 </span>
+                <span className="inline-block w-[3px] h-6 bg-indigo-600 ml-1 animate-pulse rounded-full" />
               </motion.div>
 
               <motion.p
-                className="text-sm text-muted-foreground/80 mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed"
+                className="text-sm text-slate-500 mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -238,7 +240,7 @@ export function Hero() {
               >
                 <ShinyButton
                   href="/login" // Ideally this should point to signup if available, but login is fine for now
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300"
                 >
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -247,7 +249,7 @@ export function Hero() {
                   size="lg"
                   variant="outline"
                   onClick={scrollToFeatures}
-                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto"
+                  className="border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 px-8 py-6 text-base font-medium bg-white w-full sm:w-auto hover:border-slate-300"
                 >
                   Explore Platform
                 </Button>
@@ -257,26 +259,26 @@ export function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
-                className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-muted-foreground/70"
+                className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-400"
               >
                 <div className="flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-primary" />
+                  <Brain className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Conversational AI</span>
                 </div>
-                <div className="w-px h-3 bg-border" />
+                <div className="w-px h-3 bg-slate-200" />
                 <div className="flex items-center gap-1.5">
-                  <FileCheck className="w-3.5 h-3.5 text-primary" />
+                  <FileCheck className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Quality Standards Support</span>
                 </div>
-                <div className="w-px h-3 bg-border" />
+                <div className="w-px h-3 bg-slate-200" />
                 <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-primary" />
+                  <Shield className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Framework Ready</span>
                 </div>
               </motion.div>
             </div>
 
-            {/* Interactive Demo Preview */}
+            {/* Interactive Demo Preview with matching Light Theme */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -289,13 +291,13 @@ export function Hero() {
             <div className="relative flex md:hidden justify-center mt-8">
               <Link
                 href="/login"
-                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all"
+                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-slate-200 bg-white shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
               >
-                <div className="w-14 h-14 rounded-xl bg-muted border border-border flex items-center justify-center">
-                  <Lock className="w-7 h-7 text-primary/80" />
+                <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                  <Lock className="w-7 h-7 text-indigo-600/80" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Get Started</span>
-                <span className="text-xs text-muted-foreground">Try the platform today</span>
+                <span className="text-sm font-medium text-slate-900">Get Started</span>
+                <span className="text-xs text-slate-500">Try the platform today</span>
               </Link>
             </div>
           </div>
@@ -305,7 +307,7 @@ export function Hero() {
           <button
             type="button"
             onClick={scrollToFeatures}
-            className="text-muted-foreground hover:text-foreground transition-colors flex flex-col items-center gap-2"
+            className="text-slate-400 hover:text-slate-600 transition-colors flex flex-col items-center gap-2"
             aria-label="Scroll to features"
           >
             <span className="text-[10px] uppercase tracking-widest font-medium opacity-50">Discover</span>

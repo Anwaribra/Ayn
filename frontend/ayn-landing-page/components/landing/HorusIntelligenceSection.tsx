@@ -13,7 +13,7 @@ const NodeCard = ({
   description,
   position,
 }: {
-  nodeRef: React.RefObject<HTMLDivElement>
+  nodeRef: React.RefObject<HTMLDivElement | null>
   icon: React.ComponentType<{ className?: string }>
   title: string
   description: string
@@ -23,7 +23,7 @@ const NodeCard = ({
 
   return (
     <motion.div
-      ref={nodeRef}
+      ref={nodeRef as React.RefObject<HTMLDivElement>}
       initial={{ opacity: 0, scale: 0.8 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}

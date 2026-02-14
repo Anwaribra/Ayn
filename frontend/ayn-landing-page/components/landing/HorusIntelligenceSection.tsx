@@ -7,13 +7,13 @@ import { AnimatedBeam } from "@/components/ui/animated-beam"
 import { cn } from "@/lib/utils"
 
 const NodeCard = ({
-  ref,
+  nodeRef,
   icon: Icon,
   title,
   description,
   position,
 }: {
-  ref: React.RefObject<HTMLDivElement | null>
+  nodeRef: React.RefObject<HTMLDivElement | null>
   icon: React.ComponentType<{ className?: string }>
   title: string
   description: string
@@ -23,7 +23,7 @@ const NodeCard = ({
 
   return (
     <motion.div
-      ref={ref}
+      ref={nodeRef}
       initial={{ opacity: 0, scale: 0.8 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}
@@ -37,30 +37,35 @@ const NodeCard = ({
       {isCenter ? (
         <motion.div
           animate={{
-            scale: [1, 1.01, 1],
+            scale: [1, 1.02, 1],
           }}
           transition={{
-            duration: 5,
+            duration: 4,
             repeat: Infinity,
             ease: "easeInOut",
           }}
           className="relative"
         >
-          {/* Subtle single glow layer */}
-          <div className="absolute -inset-2 bg-gradient-to-br from-[#00D9FF]/8 to-[#7B68EE]/8 rounded-2xl blur-xl" />
+          {/* Enhanced multi-layer glow */}
+          <div className="absolute -inset-4 bg-[radial-gradient(circle,rgba(0,217,255,0.15)_0%,transparent_70%)] blur-2xl" />
+          <div className="absolute -inset-[1px] bg-gradient-to-br from-[#00D9FF] to-[#7B68EE] rounded-3xl opacity-30" />
 
-          <div className="relative rounded-2xl border-2 border-[#00D9FF]/40 bg-gradient-to-br from-card via-card to-card/95 p-12 shadow-xl">
+          {/* Card Body */}
+          <div className="relative rounded-3xl bg-[#0A0A0A] p-12 shadow-2xl border border-white/10 backdrop-blur-xl">
             {/* Solid icon container */}
-            <div className="relative w-24 h-24 mx-auto rounded-xl bg-gradient-to-br from-[#00D9FF]/15 to-[#7B68EE]/15 border-2 border-[#00D9FF]/50 flex items-center justify-center mb-6 shadow-lg">
-              <Brain className="w-12 h-12 text-[#00D9FF] drop-shadow-sm" />
+            <div className="relative w-28 h-28 mx-auto rounded-2xl bg-gradient-to-br from-[#00D9FF]/10 to-[#7B68EE]/10 border border-[#00D9FF]/30 flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(0,217,255,0.15)] group">
+              <Brain className="w-14 h-14 text-[#00D9FF] drop-shadow-[0_0_10px_rgba(0,217,255,0.6)]" />
+
+              {/* Internal pulse */}
+              <div className="absolute inset-0 rounded-2xl border border-[#00D9FF]/20 animate-ping opacity-20" />
             </div>
 
             {/* Content */}
             <div className="relative z-10 text-center">
-              <h3 className="text-3xl font-bold mb-3 bg-gradient-to-r from-[#00D9FF] to-[#7B68EE] bg-clip-text text-transparent">
+              <h3 className="text-4xl font-bold mb-3 bg-gradient-to-r from-[#00D9FF] via-white to-[#7B68EE] bg-clip-text text-transparent drop-shadow-sm">
                 Horus AI
               </h3>
-              <p className="text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
+              <p className="text-lg text-zinc-400 leading-relaxed max-w-xs mx-auto font-medium">
                 The central operating intelligence
               </p>
             </div>
@@ -68,18 +73,21 @@ const NodeCard = ({
         </motion.div>
       ) : (
         /* Side nodes - secondary but readable */
-        <div className="relative rounded-xl border border-border bg-card/80 p-5">
+        <div className="relative rounded-2xl border border-white/5 bg-zinc-900/40 p-6 backdrop-blur-sm hover:bg-zinc-900/60 transition-all duration-500 group">
+          {/* Hover glow */}
+          <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
           {/* Simple icon */}
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mb-3">
-            <Icon className="w-5 h-5 text-foreground/60" />
+          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 border border-white/5 group-hover:border-white/10 transition-colors">
+            <Icon className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
           </div>
 
           {/* Content */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-1">
+            <h4 className="text-base font-bold text-zinc-200 mb-1.5 group-hover:text-white transition-colors">
               {title}
             </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-zinc-500 leading-relaxed group-hover:text-zinc-400 transition-colors">
               {description}
             </p>
           </div>
@@ -100,11 +108,11 @@ export function HorusIntelligenceSection() {
   return (
     <section
       id="horus-intelligence"
-      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden"
+      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden bg-[#050505]"
     >
       {/* Calm, subtle background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_30%_at_50%_50%,hsl(var(--muted))_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.03)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100%_40px] opacity-10 pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Section header */}
@@ -119,7 +127,7 @@ export function HorusIntelligenceSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)] text-xs font-medium mb-4"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/20 text-[#00D9FF] text-xs font-medium mb-4 shadow-[0_0_10px_rgba(0,217,255,0.2)]"
           >
             <Brain className="w-3.5 h-3.5" />
             Central Intelligence
@@ -129,10 +137,10 @@ export function HorusIntelligenceSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 text-white"
           >
             One System.{" "}
-            <span className="bg-gradient-to-r from-[var(--brand)] via-primary to-purple-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#00D9FF] via-white to-[#7B68EE] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(0,217,255,0.3)]">
               One Intelligence.
             </span>
           </motion.h2>
@@ -141,7 +149,7 @@ export function HorusIntelligenceSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
-            className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
+            className="text-zinc-400 text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
           >
             Horus AI understands the full quality ecosystem. Evidence, standards,
             analysis, and insights operate as one connected system — not isolated tools.
@@ -156,44 +164,48 @@ export function HorusIntelligenceSection() {
             fromRef={leftTop}
             toRef={centerRef}
             curvature={30}
-            duration={3.5}
+            duration={3}
             delay={0}
             gradientStartColor="#00D9FF"
             gradientStopColor="#7B68EE"
-            pathWidth={3}
+            pathWidth={2}
+            pathOpacity={0.2}
           />
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={leftBottom}
             toRef={centerRef}
             curvature={-30}
-            duration={3.5}
-            delay={0.3}
+            duration={3}
+            delay={0.5}
             gradientStartColor="#00D9FF"
             gradientStopColor="#7B68EE"
-            pathWidth={3}
+            pathWidth={2}
+            pathOpacity={0.2}
           />
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={rightTop}
             toRef={centerRef}
             curvature={-30}
-            duration={3.5}
-            delay={0.6}
+            duration={3}
+            delay={1}
             gradientStartColor="#00D9FF"
             gradientStopColor="#7B68EE"
-            pathWidth={3}
+            pathWidth={2}
+            pathOpacity={0.2}
           />
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={rightBottom}
             toRef={centerRef}
             curvature={30}
-            duration={3.5}
-            delay={0.9}
+            duration={3}
+            delay={1.5}
             gradientStartColor="#00D9FF"
             gradientStopColor="#7B68EE"
-            pathWidth={3}
+            pathWidth={2}
+            pathOpacity={0.2}
           />
 
           {/* Grid layout */}
@@ -201,7 +213,7 @@ export function HorusIntelligenceSection() {
             {/* Left column */}
             <div className="col-start-1 row-start-1">
               <NodeCard
-                ref={leftTop}
+                nodeRef={leftTop}
                 icon={FileText}
                 title="Evidence"
                 description="Documents, policies, and records"
@@ -210,7 +222,7 @@ export function HorusIntelligenceSection() {
             </div>
             <div className="col-start-1 row-start-2">
               <NodeCard
-                ref={leftBottom}
+                nodeRef={leftBottom}
                 icon={Shield}
                 title="Standards"
                 description="Compliance frameworks and criteria"
@@ -221,7 +233,7 @@ export function HorusIntelligenceSection() {
             {/* Center - Horus AI */}
             <div className="col-start-2 col-span-2 row-start-1 row-span-2 flex items-center justify-center">
               <NodeCard
-                ref={centerRef}
+                nodeRef={centerRef}
                 icon={Brain}
                 title="Horus AI"
                 description=""
@@ -232,7 +244,7 @@ export function HorusIntelligenceSection() {
             {/* Right column */}
             <div className="col-start-4 row-start-1">
               <NodeCard
-                ref={rightTop}
+                nodeRef={rightTop}
                 icon={BarChart3}
                 title="Gap Analysis"
                 description="Identify compliance gaps and risks"
@@ -241,7 +253,7 @@ export function HorusIntelligenceSection() {
             </div>
             <div className="col-start-4 row-start-2">
               <NodeCard
-                ref={rightBottom}
+                nodeRef={rightBottom}
                 icon={Sparkles}
                 title="Insights"
                 description="Actionable recommendations and reports"
@@ -261,18 +273,18 @@ export function HorusIntelligenceSection() {
             className="relative"
           >
             {/* Subtle glow for mobile */}
-            <div className="absolute -inset-2 bg-gradient-to-br from-[#00D9FF]/10 to-[#7B68EE]/10 rounded-2xl blur-lg" />
-            
-            <div className="relative rounded-2xl border-2 border-[#00D9FF]/40 bg-card p-6 shadow-xl">
+            <div className="absolute -inset-2 bg-gradient-to-br from-[#00D9FF]/20 to-[#7B68EE]/20 rounded-2xl blur-lg" />
+
+            <div className="relative rounded-2xl border border-white/10 bg-zinc-900/90 p-6 shadow-2xl backdrop-blur-sm">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00D9FF]/15 to-[#7B68EE]/15 border-2 border-[#00D9FF]/50 flex items-center justify-center shadow-lg">
-                  <Brain className="w-8 h-8 text-[#00D9FF] drop-shadow-sm" />
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00D9FF]/10 to-[#7B68EE]/10 border border-[#00D9FF]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,217,255,0.1)]">
+                  <Brain className="w-8 h-8 text-[#00D9FF] drop-shadow-[0_0_8px_rgba(0,217,255,0.5)]" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold bg-gradient-to-r from-[#00D9FF] to-[#7B68EE] bg-clip-text text-transparent mb-1">
                     Horus AI
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-zinc-400">
                     Central Intelligence
                   </p>
                 </div>
@@ -288,12 +300,12 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/80 p-4">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center mb-2">
-                  <FileText className="w-4 h-4 text-foreground/60" />
+              <div className="h-full rounded-xl border border-white/5 bg-zinc-900/50 p-4 hover:bg-zinc-900/80 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center mb-2">
+                  <FileText className="w-4 h-4 text-zinc-400" />
                 </div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">Evidence</h4>
-                <p className="text-xs text-muted-foreground">
+                <h4 className="text-sm font-semibold text-zinc-200 mb-1">Evidence</h4>
+                <p className="text-xs text-zinc-500">
                   Documents, policies, and records
                 </p>
               </div>
@@ -305,14 +317,14 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/80 p-4">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center mb-2">
-                  <Shield className="w-4 h-4 text-foreground/60" />
+              <div className="h-full rounded-xl border border-white/5 bg-zinc-900/50 p-4 hover:bg-zinc-900/80 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center mb-2">
+                  <Shield className="w-4 h-4 text-zinc-400" />
                 </div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">
+                <h4 className="text-sm font-semibold text-zinc-200 mb-1">
                   Standards
                 </h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-zinc-500">
                   Compliance frameworks and criteria
                 </p>
               </div>
@@ -324,14 +336,14 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/80 p-4">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center mb-2">
-                  <BarChart3 className="w-4 h-4 text-foreground/60" />
+              <div className="h-full rounded-xl border border-white/5 bg-zinc-900/50 p-4 hover:bg-zinc-900/80 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center mb-2">
+                  <BarChart3 className="w-4 h-4 text-zinc-400" />
                 </div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">
+                <h4 className="text-sm font-semibold text-zinc-200 mb-1">
                   Gap Analysis
                 </h4>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-zinc-500">
                   Identify compliance gaps and risks
                 </p>
               </div>
@@ -343,12 +355,12 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
-              <div className="h-full rounded-xl border border-border bg-card/80 p-4">
-                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center mb-2">
-                  <Sparkles className="w-4 h-4 text-foreground/60" />
+              <div className="h-full rounded-xl border border-white/5 bg-zinc-900/50 p-4 hover:bg-zinc-900/80 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center mb-2">
+                  <Sparkles className="w-4 h-4 text-zinc-400" />
                 </div>
-                <h4 className="text-sm font-semibold text-foreground mb-1">Insights</h4>
-                <p className="text-xs text-muted-foreground">
+                <h4 className="text-sm font-semibold text-zinc-200 mb-1">Insights</h4>
+                <p className="text-xs text-zinc-500">
                   Actionable recommendations and reports
                 </p>
               </div>
@@ -364,7 +376,7 @@ export function HorusIntelligenceSection() {
           transition={{ delay: 0.8 }}
           className="mt-12 text-center"
         >
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-zinc-500">
             Every upload, every assessment, every insight flows through Horus
           </p>
         </motion.div>

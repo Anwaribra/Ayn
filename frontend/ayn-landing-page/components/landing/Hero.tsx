@@ -237,19 +237,19 @@ export function Hero() {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <ShinyButton
-                  href="/login"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-6 py-5 text-sm font-medium w-full sm:w-auto"
+                  href="/login" // Ideally this should point to signup if available, but login is fine for now
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
                 >
-                  Talk to Horus AI
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </ShinyButton>
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={scrollToFeatures}
-                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-6 py-5 text-sm bg-transparent w-full sm:w-auto"
+                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto"
                 >
-                  See How It Works
+                  Explore Platform
                 </Button>
               </motion.div>
 

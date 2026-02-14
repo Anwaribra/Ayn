@@ -378,5 +378,7 @@ export function HorusIntelligenceSection() {
             Every upload, every assessment, every insight flows through Horus
           </p>
         </motion.div>
-        )
+      </div>
+    </section>
+  )
 }

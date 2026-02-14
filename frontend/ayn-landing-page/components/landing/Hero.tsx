@@ -205,7 +205,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Meet Horus AI — Your Quality Intelligence Assistant
+                Achieve Full Institutional Compliance in Minutes, Not Months with Horus AI
               </motion.h2>
 
               {/* Animated typewriter subtitle */}
@@ -227,7 +227,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                Talk to Horus AI in natural language, with full control over your quality system. Upload evidence, ask compliance questions, generate reports — Horus understands your institution and guides every step.
+                Streamline education quality assurance with intelligent automation. Eliminate manual audit fatigue, ensure pinpoint accuracy in reporting, and maintain continuous compliance with ease.
               </motion.p>
 
               <motion.div

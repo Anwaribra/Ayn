@@ -169,7 +169,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-card)] text-zinc-500 hover:text-blue-500 hover:border-blue-500/30 transition-all active:scale-95"
                 title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
               >
-                {sidebarOpen ? <PanelLeft className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+                <PanelLeft className="w-4 h-4" />
               </button>
 
               <div className="w-px h-4 bg-[var(--border-subtle)] mx-1" />

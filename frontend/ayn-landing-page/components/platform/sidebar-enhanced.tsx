@@ -68,20 +68,11 @@ export default function PlatformSidebar({ open, onToggle }: SidebarProps) {
           : "-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden md:opacity-0 md:pointer-events-none"
       )}
     >
-      {/* ─── Header: Logo & Close ─── */}
-      <div className="flex items-center justify-between px-4 py-4 md:px-5 md:py-5 flex-shrink-0">
+      {/* ─── Header: Logo ─── */}
+      <div className="flex items-center px-4 py-4 md:px-5 md:py-5 flex-shrink-0">
         <Link href="/" className="hover:opacity-80 transition-opacity" aria-label="Back to homepage">
           <AynLogo size="sm" withGlow={false} heroStyle />
         </Link>
-
-        <button
-          onClick={onToggle}
-          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-[var(--sidebar-foreground)] transition-all bg-[var(--surface)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-light)] active:scale-90"
-          title="Close Sidebar"
-          aria-label="Close sidebar"
-        >
-          <PanelLeft className="w-4 h-4" />
-        </button>
       </div>
 
       {/* ─── Navigation: Scrollable ─── */}

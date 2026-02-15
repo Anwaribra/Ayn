@@ -52,12 +52,12 @@ export function MarkdownContent({ content }: { content: string }) {
   // Custom renderer to intercept specific headers and wrap them in styled blocks? 
   // For now, we use standard prose with enhanced styling.
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-layer-2 prose-pre:border prose-pre:border-border prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-ul:list-disc prose-ul:pl-4">
+    <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-layer-2 prose-pre:border prose-pre:border-border prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-ul:list-disc prose-ul:pl-4 text-foreground">
       <ReactMarkdown
         components={{
           h2: ({ children }) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
           h3: ({ children }) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
-          p: ({ children }) => <p className="mb-3 last:mb-0 text-muted-foreground font-medium leading-relaxed">{children}</p>,
+          p: ({ children }) => <p className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</p>,
           ul: ({ children }) => <ul className="mb-3 space-y-1 text-muted-foreground">{children}</ul>,
           li: ({ children }) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
           code: ({ inline, children }: any) =>
@@ -98,7 +98,7 @@ function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => v
       </div>
       <button
         onClick={onRemove}
-        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -193,7 +193,7 @@ export default function HorusAIChat() {
       {/* ─── Header ─── */}
       <div className="shrink-0 px-6 py-4 flex justify-between items-center bg-layer-1/50 backdrop-blur-md border-b border-border z-10">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/5">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
             <Bot className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -238,7 +238,7 @@ export default function HorusAIChat() {
                         className={cn(
                           "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
                           currentChatId === session.id
-                            ? "bg-primary/10 border-primary/20 text-primary shadow-lg shadow-primary/5"
+                            ? "bg-primary/10 border-primary/20 text-primary"
                             : "bg-layer-2 border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -272,7 +272,7 @@ export default function HorusAIChat() {
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {isEmpty ? (
               <div className="mt-12 animate-fade-in-up space-y-12 text-center">
-                <div className="w-20 h-20 bg-gradient-to-tr from-primary/20 to-primary/5 rounded-[32px] mx-auto flex items-center justify-center shadow-xl shadow-primary/10 mb-6">
+                <div className="w-20 h-20 bg-gradient-to-tr from-primary/20 to-primary/5 rounded-[32px] mx-auto flex items-center justify-center mb-6">
                   <Cpu className="w-10 h-10 text-primary" />
                 </div>
                 <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
@@ -293,7 +293,7 @@ export default function HorusAIChat() {
                     <button
                       key={i}
                       onClick={() => sendMessage(pill.label)}
-                      className="group flex flex-col items-start p-5 bg-layer-2 border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 rounded-2xl transition-all text-left"
+                      className="group flex flex-col items-start p-5 bg-layer-2 border border-border hover:border-primary/30 hover:shadow-lg rounded-2xl transition-all text-left"
                     >
                       <div className="p-2 rounded-lg bg-primary/10 text-primary mb-3 group-hover:scale-110 transition-transform">
                         <pill.icon className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function HorusAIChat() {
                     <div className={cn(
                       "max-w-[85%] rounded-3xl p-6 shadow-sm",
                       msg.role === 'user'
-                        ? "bg-primary/10 text-foreground rounded-tr-none border border-primary/20"
+                        ? "bg-primary text-primary-foreground rounded-tr-none"
                         : "bg-layer-2 border border-border rounded-tl-none"
                     )}>
                       {msg.role === 'assistant' && (
@@ -359,7 +359,7 @@ export default function HorusAIChat() {
         </ScrollArea>
 
         {/* ─── Input Area ─── */}
-        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none">
+        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-layer-0 via-layer-0/90 to-transparent pointer-events-none">
           <div className="max-w-3xl mx-auto pointer-events-auto">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (
@@ -370,7 +370,7 @@ export default function HorusAIChat() {
               </div>
             )}
 
-            <div className="relative group rounded-[28px] bg-layer-2 border border-border shadow-xl shadow-primary/5 hover:border-primary/30 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+            <div className="relative group rounded-[28px] bg-layer-2 border border-border shadow-xl hover:border-primary/30 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all">
               <div className="flex items-end p-2 pl-4">
                 <label className="p-2.5 rounded-full hover:bg-layer-3 text-muted-foreground hover:text-foreground cursor-pointer transition-colors mr-2 mb-1">
                   <input type="file" className="hidden" multiple onChange={handleFileSelect} />
@@ -398,7 +398,7 @@ export default function HorusAIChat() {
                     "rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg",
                     isLoading || (!input.trim() && attachedFiles.length === 0)
                       ? "bg-muted text-muted-foreground shadow-none"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95"
                   )}
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

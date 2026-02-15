@@ -61,22 +61,22 @@ function DashboardContent() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Visualizer */}
           <div className="flex-1 relative group">
-            <div className="w-full min-h-[350px] md:h-[400px] rounded-[48px] overflow-hidden glass-panel flex items-center justify-between px-6 sm:px-10 md:px-16 relative border-none bg-gradient-to-br from-zinc-900 to-black">
+            <div className="w-full min-h-[350px] md:h-[400px] rounded-[48px] overflow-hidden glass-panel flex items-center justify-between px-6 sm:px-10 md:px-16 relative border-none bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-zinc-900 dark:to-black">
               <div className="relative z-10 max-w-xl">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Ayn Brain Live</span>
+                    <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-[0.2em]">Ayn Brain Live</span>
                   </div>
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9] italic text-white">
+                <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9] italic text-foreground">
                   Institutional <br />
-                  <span className="text-white/60">Intelligence.</span>
+                  <span className="text-muted-foreground">Intelligence.</span>
                 </h1>
 
-                <p className="text-lg text-white/60 font-medium mb-12 max-w-sm leading-relaxed">
-                  Horus is active. Your compliance framework is mapped with <span className="text-white font-bold">{alignmentScore}%</span> accuracy across <span className="text-white font-bold">{evidenceCount}</span> verified assets.
+                <p className="text-lg text-muted-foreground font-medium mb-12 max-w-sm leading-relaxed">
+                  Horus is active. Your compliance framework is mapped with <span className="text-foreground font-bold">{alignmentScore}%</span> accuracy across <span className="text-foreground font-bold">{evidenceCount}</span> verified assets.
                 </p>
 
                 <div className="flex flex-wrap gap-4">
@@ -89,7 +89,7 @@ function DashboardContent() {
                   </Link>
                   <Link
                     href="/platform/gap-analysis"
-                    className="flex items-center gap-3 px-10 py-5 glass-panel rounded-[24px] font-black text-sm hover:bg-white/10 transition-all border-white/10 text-white"
+                    className="flex items-center gap-3 px-10 py-5 glass-panel rounded-[24px] font-black text-sm hover:bg-black/5 hover:text-foreground transition-all border-border text-foreground dark:text-white dark:hover:bg-white/10 dark:border-white/10"
                   >
                     Run Fresh Audit
                   </Link>
@@ -102,7 +102,7 @@ function DashboardContent() {
                 <div className="absolute inset-8 rounded-full border border-emerald-500/5 animate-[spin_15s_linear_infinite_reverse]" />
 
                 <svg className="w-full h-full transform -rotate-90" style={{ filter: "drop-shadow(0 0 20px rgba(37,99,235,0.2))" }}>
-                  <circle cx="160" cy="160" r="120" stroke="rgba(255,255,255,0.03)" strokeWidth="12" fill="transparent" />
+                  <circle cx="160" cy="160" r="120" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-200 dark:text-slate-800" />
                   <circle
                     cx="160" cy="160" r="120"
                     stroke="url(#dashHealthGrad)" strokeWidth="12"
@@ -120,16 +120,16 @@ function DashboardContent() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <div className="flex items-baseline gap-1">
-                    <span className="mono text-8xl font-black tracking-tighter text-white">
+                    <span className="mono text-8xl font-black tracking-tighter text-foreground">
                       {isLoading ? "—" : Math.round(alignmentScore)}
                     </span>
-                    <span className="text-2xl font-black text-white/60">%</span>
+                    <span className="text-2xl font-black text-muted-foreground">%</span>
                   </div>
-                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.4em] mt-2">Alignment Index</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em] mt-2">Alignment Index</span>
                 </div>
               </div>
 
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/10 via-transparent to-emerald-600/5 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/5 via-transparent to-emerald-600/5 pointer-events-none" />
             </div>
           </div>
 

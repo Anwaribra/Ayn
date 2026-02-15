@@ -257,10 +257,10 @@ export default function FloatingAIBar() {
       <motion.div
         layout
         className={cn(
-          "flex items-center gap-2 rounded-2xl border bg-card/80 px-4 py-2.5 shadow-lg shadow-black/10 backdrop-blur-xl transition-all duration-300",
+          "flex items-center gap-2 rounded-2xl border bg-layer-2/80 px-4 py-2.5 shadow-lg backdrop-blur-xl transition-all duration-300",
           isFocused || isOpen
-            ? "border-[var(--brand)]/30 shadow-xl shadow-[var(--brand)]/5 ring-1 ring-[var(--brand)]/10"
-            : "border-white/[0.08]",
+            ? "border-primary/30 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
+            : "border-border shadow-sm",
         )}
       >
         {/* Bot icon */}

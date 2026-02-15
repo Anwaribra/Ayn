@@ -311,7 +311,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 scroll-smooth transition-colors duration-300 bg-layer-0">
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-40 scroll-smooth transition-colors duration-300 bg-layer-0">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

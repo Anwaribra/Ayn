@@ -52,24 +52,24 @@ export function MarkdownContent({ content }: { content: string }) {
   // Custom renderer to intercept specific headers and wrap them in styled blocks? 
   // For now, we use standard prose with enhanced styling.
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 prose-headings:font-bold prose-headings:text-zinc-900 prose-a:text-blue-600 prose-strong:text-zinc-900 prose-ul:list-disc prose-ul:pl-4">
+    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-zinc-900 dark:prose-strong:text-zinc-100 prose-ul:list-disc prose-ul:pl-4">
       <ReactMarkdown
         components={{
-          h2: ({ children }) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-zinc-800 border-b border-zinc-100 pb-2">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-sm font-bold mt-4 mb-2 text-zinc-700 uppercase tracking-wide">{children}</h3>,
-          p: ({ children }) => <p className="mb-3 last:mb-0 text-zinc-600 font-medium leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="mb-3 space-y-1 text-zinc-600">{children}</ul>,
+          h2: ({ children }) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-zinc-800 border-b border-zinc-100 pb-2 dark:text-zinc-100 dark:border-zinc-800">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-bold mt-4 mb-2 text-zinc-700 uppercase tracking-wide dark:text-zinc-300">{children}</h3>,
+          p: ({ children }) => <p className="mb-3 last:mb-0 text-zinc-600 font-medium leading-relaxed dark:text-zinc-300">{children}</p>,
+          ul: ({ children }) => <ul className="mb-3 space-y-1 text-zinc-600 dark:text-zinc-400">{children}</ul>,
           li: ({ children }) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
           code: ({ inline, children }: any) =>
             inline ? (
-              <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[12px] text-zinc-800 border border-zinc-200">{children}</code>
+              <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[12px] text-zinc-800 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">{children}</code>
             ) : (
-              <code className="block rounded-xl bg-zinc-900 p-4 font-mono text-[12px] text-zinc-300 overflow-x-auto w-full">
+              <code className="block rounded-xl bg-zinc-900 p-4 font-mono text-[12px] text-zinc-300 overflow-x-auto w-full border border-white/10">
                 {children}
               </code>
             ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-blue-500 pl-4 py-1 my-4 bg-blue-50/50 rounded-r-lg italic text-blue-900/80">
+            <blockquote className="border-l-4 border-blue-500 pl-4 py-1 my-4 bg-blue-50/50 rounded-r-lg italic text-blue-900/80 dark:bg-blue-900/20 dark:text-blue-300">
               {children}
             </blockquote>
           )
@@ -191,44 +191,44 @@ export default function HorusAIChat() {
   return (
     <div className="flex h-full flex-col bg-transparent relative">
       {/* ─── Header ─── */}
-      <div className="shrink-0 px-6 py-4 flex justify-between items-center bg-white/50 backdrop-blur-md border-b border-zinc-100 z-10">
+      <div className="shrink-0 px-6 py-4 flex justify-between items-center bg-white/50 backdrop-blur-md border-b border-zinc-100 z-10 dark:bg-slate-950/50 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/10">
+          <div className="h-10 w-10 rounded-xl bg-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/10 dark:bg-indigo-600 dark:shadow-indigo-500/20">
             <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-zinc-900 flex items-center gap-2">
-              Horus <span className="text-zinc-400 font-medium">Core</span>
+            <h1 className="text-lg font-black tracking-tight text-zinc-900 flex items-center gap-2 dark:text-white">
+              Horus <span className="text-zinc-400 font-medium dark:text-zinc-500">Core</span>
             </h1>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Neural Sync Active</span>
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold dark:text-zinc-400">Neural Sync Active</span>
             </div>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={newChat} className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2">
+          <Button variant="ghost" size="sm" onClick={newChat} className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2 dark:hover:bg-slate-800 dark:hover:text-zinc-200">
             <PlusCircle className="h-4 w-4" />
             New
           </Button>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2">
+              <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2 dark:hover:bg-slate-800 dark:hover:text-zinc-200">
                 <History className="h-4 w-4" />
                 History
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-zinc-100">
-              <div className="p-6 border-b border-zinc-100">
-                <h2 className="text-lg font-black text-zinc-900">Session History</h2>
+            <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-zinc-100 dark:border-slate-800 dark:bg-slate-950">
+              <div className="p-6 border-b border-zinc-100 dark:border-slate-800">
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white">Session History</h2>
               </div>
               <ScrollArea className="h-[calc(100vh-80px)]">
                 <div className="p-4 space-y-2">
                   {(!history || history.length === 0) ? (
                     <div className="text-center py-12">
-                      <MessageSquare className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-zinc-500">No chat history</p>
+                      <MessageSquare className="h-8 w-8 text-zinc-300 mx-auto mb-2 dark:text-zinc-600" />
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">No chat history</p>
                     </div>
                   ) : (
                     history.map((session: any) => (
@@ -238,25 +238,25 @@ export default function HorusAIChat() {
                         className={cn(
                           "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
                           currentChatId === session.id
-                            ? "bg-zinc-900 border-zinc-900 text-white shadow-lg shadow-zinc-900/20"
-                            : "bg-white border-zinc-100 hover:border-zinc-200 text-zinc-600"
+                            ? "bg-zinc-900 border-zinc-900 text-white shadow-lg shadow-zinc-900/20 dark:bg-indigo-600 dark:border-indigo-600 dark:shadow-indigo-500/20"
+                            : "bg-white border-zinc-100 hover:border-zinc-200 text-zinc-600 dark:bg-slate-900 dark:border-slate-800 dark:text-zinc-400 dark:hover:border-slate-700"
                         )}
                       >
                         <div className="flex justify-between items-start gap-2">
-                          <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-white" : "text-zinc-800")}>
+                          <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-white" : "text-zinc-800 dark:text-zinc-200")}>
                             {session.title || "Untitled Conversation"}
                           </p>
                           <button
                             onClick={(e) => deleteSession(session.id, e)}
                             className={cn(
                               "opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg",
-                              currentChatId === session.id ? "hover:bg-white/20 text-white/50 hover:text-white" : "hover:bg-red-50 text-zinc-400 hover:text-red-500"
+                              currentChatId === session.id ? "hover:bg-white/20 text-white/50 hover:text-white" : "hover:bg-red-50 text-zinc-400 hover:text-red-500 dark:hover:bg-red-900/20"
                             )}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
-                        <p className={cn("text-[10px] font-medium mt-1 uppercase tracking-wide", currentChatId === session.id ? "text-zinc-400" : "text-zinc-400")}>
+                        <p className={cn("text-[10px] font-medium mt-1 uppercase tracking-wide", currentChatId === session.id ? "text-zinc-400 dark:text-blue-200" : "text-zinc-400 dark:text-zinc-500")}>
                           {new Date(session.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -279,11 +279,11 @@ export default function HorusAIChat() {
                   <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[32px] mx-auto flex items-center justify-center shadow-xl shadow-blue-600/20 mb-6">
                     <Cpu className="w-10 h-10 text-white" />
                   </div>
-                  <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight">
-                    Horus <span className="text-zinc-400">Online.</span>
+                  <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight dark:text-white">
+                    Horus <span className="text-zinc-400 dark:text-zinc-500">Online.</span>
                   </h2>
-                  <p className="text-lg text-zinc-500 font-medium max-w-lg mx-auto leading-relaxed">
-                    Institutional intelligence ready. I have indexed <span className="text-zinc-900 font-bold">{indexedAssets} assets</span>.
+                  <p className="text-lg text-zinc-500 font-medium max-w-lg mx-auto leading-relaxed dark:text-zinc-400">
+                    Institutional intelligence ready. I have indexed <span className="text-zinc-900 font-bold dark:text-white">{indexedAssets} assets</span>.
                     How can I assist your compliance workflow today?
                   </p>
                 </div>
@@ -293,12 +293,12 @@ export default function HorusAIChat() {
                     <button
                       key={pill.label}
                       onClick={() => router.push(pill.href)}
-                      className="group p-4 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left"
+                      className="group p-4 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700"
                     >
-                      <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform dark:bg-blue-900/20 dark:text-blue-400">
                         <pill.icon className="w-5 h-5" />
                       </div>
-                      <h3 className="font-bold text-zinc-900 text-sm mb-1">{pill.label}</h3>
+                      <h3 className="font-bold text-zinc-900 text-sm mb-1 dark:text-zinc-100">{pill.label}</h3>
                       <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wide flex items-center gap-1">
                         {pill.desc} <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </p>
@@ -315,7 +315,7 @@ export default function HorusAIChat() {
                   )}>
                     <div className={cn(
                       "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                      msg.role === 'user' ? "bg-zinc-900 text-white" : "bg-white border border-zinc-200 text-blue-600"
+                      msg.role === 'user' ? "bg-zinc-900 text-white dark:bg-slate-700" : "bg-white border border-zinc-200 text-blue-600 dark:bg-slate-900 dark:border-slate-800 dark:text-blue-400"
                     )}>
                       {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                     </div>
@@ -323,12 +323,12 @@ export default function HorusAIChat() {
                     <div className={cn(
                       "max-w-[85%] rounded-3xl p-6 shadow-sm",
                       msg.role === 'user'
-                        ? "bg-zinc-900 text-zinc-100 rounded-tr-none"
-                        : "bg-white border border-zinc-200 rounded-tl-none"
+                        ? "bg-zinc-900 text-zinc-100 rounded-tr-none dark:bg-slate-700 dark:text-white"
+                        : "bg-white border border-zinc-200 rounded-tl-none dark:bg-slate-900 dark:border-slate-800"
                     )}>
                       {msg.role === 'assistant' && (
-                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-zinc-100">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Horus Analysis</span>
+                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-zinc-100 dark:border-slate-800">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Horus Analysis</span>
                         </div>
                       )}
                       <MarkdownContent content={msg.content} />
@@ -339,16 +339,16 @@ export default function HorusAIChat() {
                 {/* Loading State */}
                 {isLoading && (
                   <div className="flex gap-4 animate-pulse">
-                    <div className="w-8 h-8 rounded-xl bg-white border border-zinc-200 flex items-center justify-center text-blue-600 shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-white border border-zinc-200 flex items-center justify-center text-blue-600 shrink-0 dark:bg-slate-900 dark:border-slate-800 dark:text-blue-400">
                       <Loader2 className="w-4 h-4 animate-spin" />
                     </div>
-                    <div className="bg-white border border-zinc-200 rounded-3xl rounded-tl-none p-6 shadow-sm flex items-center gap-3">
+                    <div className="bg-white border border-zinc-200 rounded-3xl rounded-tl-none p-6 shadow-sm flex items-center gap-3 dark:bg-slate-900 dark:border-slate-800">
                       <span className="flex gap-1">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.15s]" />
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
                       </span>
-                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Processing</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest dark:text-zinc-500">Processing</span>
                     </div>
                   </div>
                 )}
@@ -359,7 +359,7 @@ export default function HorusAIChat() {
         </ScrollArea>
 
         {/* ─── Input Area ─── */}
-        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none">
+        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none dark:from-slate-950 dark:via-slate-950/80">
           <div className="max-w-3xl mx-auto pointer-events-auto">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (
@@ -370,9 +370,9 @@ export default function HorusAIChat() {
               </div>
             )}
 
-            <div className="relative group rounded-[28px] bg-white border border-zinc-200 shadow-xl shadow-zinc-200/50 hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+            <div className="relative group rounded-[28px] bg-white border border-zinc-200 shadow-xl shadow-zinc-200/50 hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all dark:bg-slate-900 dark:border-slate-800 dark:shadow-black/20 dark:hover:border-slate-700">
               <div className="flex items-end p-2 pl-4">
-                <label className="p-2.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 cursor-pointer transition-colors mr-2 mb-1">
+                <label className="p-2.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 cursor-pointer transition-colors mr-2 mb-1 dark:hover:bg-slate-800 dark:text-zinc-500 dark:hover:text-zinc-300">
                   <input type="file" className="hidden" multiple onChange={handleFileSelect} />
                   <Paperclip className="w-5 h-5" />
                 </label>
@@ -387,7 +387,7 @@ export default function HorusAIChat() {
                     }
                   }}
                   placeholder="Ask about compliance status, gaps, or upload evidence..."
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-zinc-900 placeholder:text-zinc-400 py-3.5 max-h-32 resize-none font-medium leading-relaxed"
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-zinc-900 placeholder:text-zinc-400 py-3.5 max-h-32 resize-none font-medium leading-relaxed dark:text-white dark:placeholder:text-zinc-500"
                   style={{ minHeight: '52px' }}
                 />
 
@@ -397,8 +397,8 @@ export default function HorusAIChat() {
                   className={cn(
                     "rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg",
                     isLoading || (!input.trim() && attachedFiles.length === 0)
-                      ? "bg-zinc-100 text-zinc-300 shadow-none"
-                      : "bg-zinc-900 text-white hover:bg-zinc-800 hover:scale-105 active:scale-95 shadow-zinc-900/20"
+                      ? "bg-zinc-100 text-zinc-300 shadow-none dark:bg-slate-800 dark:text-slate-700"
+                      : "bg-zinc-900 text-white hover:bg-zinc-800 hover:scale-105 active:scale-95 shadow-zinc-900/20 dark:bg-indigo-600 dark:hover:bg-indigo-500"
                   )}
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
@@ -406,7 +406,7 @@ export default function HorusAIChat() {
               </div>
             </div>
             <div className="text-center mt-3">
-              <p className="text-[10px] text-zinc-400 font-medium">
+              <p className="text-[10px] text-zinc-400 font-medium dark:text-zinc-600">
                 Horus can make mistakes. Verify critical compliance data.
               </p>
             </div>

@@ -67,15 +67,15 @@ function EvidenceContent() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Vault Secure</span>
+            <div className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center gap-1.5 dark:bg-emerald-900/20 dark:border-emerald-900/30">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse dark:bg-emerald-400" />
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest dark:text-emerald-400">Vault Secure</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
-            Evidence <span className="text-zinc-400 font-light">Library</span>
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Evidence <span className="text-zinc-400 font-light dark:text-zinc-500">Library</span>
           </h1>
-          <p className="text-zinc-500 font-medium mt-1">
+          <p className="text-zinc-500 font-medium mt-1 dark:text-zinc-400">
             Centralized repository for institutional compliance assets.
           </p>
         </div>
@@ -110,16 +110,16 @@ function EvidenceContent() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="h-64 rounded-3xl bg-zinc-100 animate-pulse" />
+            <div key={i} className="h-64 rounded-3xl bg-zinc-100 animate-pulse dark:bg-slate-800" />
           ))}
         </div>
       ) : evidenceList?.length === 0 ? (
-        <div className="text-center py-20 rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-100 mx-auto flex items-center justify-center mb-4">
-            <UploadCloud className="w-8 h-8 text-zinc-400" />
+        <div className="text-center py-20 rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="w-16 h-16 rounded-2xl bg-zinc-100 mx-auto flex items-center justify-center mb-4 dark:bg-slate-800">
+            <UploadCloud className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
           </div>
-          <h3 className="text-lg font-bold text-zinc-900">No evidence found</h3>
-          <p className="text-zinc-500 max-w-sm mx-auto mt-2">
+          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">No evidence found</h3>
+          <p className="text-zinc-500 max-w-sm mx-auto mt-2 dark:text-zinc-400">
             Upload proof documents, reports, or policies to start mapping your compliance framework.
           </p>
         </div>
@@ -129,38 +129,40 @@ function EvidenceContent() {
             <div
               key={evidence.id}
               onClick={() => setSelectedEvidence(evidence)}
-              className="group relative flex flex-col justify-between p-5 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer h-full min-h-[220px]"
+              className="group relative flex flex-col justify-between p-5 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer h-full min-h-[220px] dark:bg-slate-900 dark:border-slate-800 dark:hover:border-blue-500/50 dark:hover:bg-slate-800/50"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className={cn(
                   "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5",
-                  evidence.status === 'linked' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-zinc-100 text-zinc-600 border-zinc-200"
+                  evidence.status === 'linked'
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30"
+                    : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-slate-800 dark:text-zinc-400 dark:border-slate-700"
                 )}>
-                  {evidence.status === 'linked' ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />}
+                  {evidence.status === 'linked' ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500" />}
                   {evidence.status}
                 </div>
-                <button className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors opacity-0 group-hover:opacity-100">
+                <button className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors opacity-0 group-hover:opacity-100 dark:hover:bg-slate-700 dark:text-zinc-500 dark:hover:text-zinc-300">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="mb-4">
-                <h3 className="font-bold text-zinc-900 group-hover:text-blue-600 transition-colors leading-tight mb-2 line-clamp-2">
+                <h3 className="font-bold text-zinc-900 group-hover:text-blue-600 transition-colors leading-tight mb-2 line-clamp-2 dark:text-zinc-100 dark:group-hover:text-blue-400">
                   {evidence.title || "Untitled Document"}
                 </h3>
-                <p className="text-xs text-zinc-500 line-clamp-2">
+                <p className="text-xs text-zinc-500 line-clamp-2 dark:text-zinc-400">
                   {(evidence.criteria?.length ?? 0) > 0
                     ? `This document maps to ${evidence.criteria?.length} criteria in the framework.`
                     : "Pending analysis by Horus AI."}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-zinc-50 mt-auto">
+              <div className="flex items-center justify-between pt-4 border-t border-zinc-50 mt-auto dark:border-slate-800/50">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                  <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
                     <FileText className="w-3 h-3" />
                   </div>
-                  <div className="text-[10px] font-medium text-zinc-400">
+                  <div className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
                     {new Date(evidence.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -177,66 +179,68 @@ function EvidenceContent() {
             className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setSelectedEvidence(null)}
           />
-          <div className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-zinc-100 flex items-start justify-between bg-zinc-50/50">
+          <div className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 dark:bg-slate-900 dark:shadow-slate-950/50 border dark:border-slate-800">
+            <div className="p-6 border-b border-zinc-100 flex items-start justify-between bg-zinc-50/50 dark:bg-slate-900/50 dark:border-slate-800">
               <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 dark:bg-blue-900/20 dark:border-blue-900/30">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-zinc-900 leading-tight mb-1">{selectedEvidence.title}</h3>
+                  <h3 className="text-lg font-bold text-zinc-900 leading-tight mb-1 dark:text-white">{selectedEvidence.title}</h3>
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                      selectedEvidence.status === 'linked' ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-600"
+                      selectedEvidence.status === 'linked'
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : "bg-zinc-100 text-zinc-600 dark:bg-slate-800 dark:text-zinc-400"
                     )}>
                       {selectedEvidence.status}
                     </span>
                     <span className="text-xs text-zinc-400">•</span>
-                    <span className="text-xs text-zinc-500 font-medium">Added {new Date(selectedEvidence.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-zinc-500 font-medium dark:text-zinc-400">Added {new Date(selectedEvidence.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedEvidence(null)}
-                className="p-2 rounded-full hover:bg-zinc-200/50 text-zinc-400 hover:text-zinc-600 transition-colors"
+                className="p-2 rounded-full hover:bg-zinc-200/50 text-zinc-400 hover:text-zinc-600 transition-colors dark:hover:bg-slate-800 dark:hover:text-zinc-200"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6">
+            <div className="p-6 overflow-y-auto space-y-6 dark:bg-slate-900">
               <div>
                 <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Linked Standards</h4>
                 {(selectedEvidence.criteria?.length ?? 0) > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedEvidence.criteria?.map(ref => (
-                      <div key={ref.id || ref} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                      <div key={ref.id || ref} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-900/30">
                         {ref.title || ref.id || "Standard Link"}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500 italic">No standards linked yet. Run Horus analysis to map this document.</p>
+                  <p className="text-sm text-zinc-500 italic dark:text-zinc-400">No standards linked yet. Run Horus analysis to map this document.</p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                  <div className="text-xs font-medium text-zinc-500 mb-1">Impact Score</div>
-                  <div className="text-2xl font-black text-zinc-900">High</div>
+                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 dark:bg-slate-800/50 dark:border-slate-800">
+                  <div className="text-xs font-medium text-zinc-500 mb-1 dark:text-zinc-400">Impact Score</div>
+                  <div className="text-2xl font-black text-zinc-900 dark:text-white">High</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                  <div className="text-xs font-medium text-zinc-500 mb-1">Confidence</div>
-                  <div className="text-2xl font-black text-emerald-600">
+                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 dark:bg-slate-800/50 dark:border-slate-800">
+                  <div className="text-xs font-medium text-zinc-500 mb-1 dark:text-zinc-400">Confidence</div>
+                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                     {selectedEvidence.confidenceScore ? `${Math.round(selectedEvidence.confidenceScore * 100)}%` : "N/A"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-zinc-100 bg-zinc-50/50 flex gap-3 justify-end">
-              <button className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
+            <div className="p-4 border-t border-zinc-100 bg-zinc-50/50 flex gap-3 justify-end dark:bg-slate-900/50 dark:border-slate-800">
+              <button className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 dark:hover:bg-red-900/20 dark:text-red-400">
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>
@@ -244,7 +248,7 @@ function EvidenceContent() {
                 href={selectedEvidence.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-6 py-2 bg-zinc-900 text-white font-bold rounded-xl text-sm hover:bg-zinc-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
+                className="px-6 py-2 bg-zinc-900 text-white font-bold rounded-xl text-sm hover:bg-zinc-800 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open File

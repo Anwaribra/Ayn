@@ -107,7 +107,7 @@ function StandardsContent() {
                 onClick={() => setActiveTab("database")}
                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "database"
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
-                  : "bg-white text-zinc-500 hover:bg-zinc-100"}`}
+                  : "bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800"}`}
               >
                 Regulatory Database
               </button>
@@ -115,15 +115,15 @@ function StandardsContent() {
                 onClick={() => setActiveTab("mapping")}
                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "mapping"
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
-                  : "bg-white text-zinc-500 hover:bg-zinc-100"}`}
+                  : "bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800"}`}
               >
                 Compliance Mapping
               </button>
             </div>
-            <h1 className="text-4xl font-black tracking-tight text-zinc-900">
-              Standards <span className="text-zinc-400 font-light">Hub</span>
+            <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+              Standards <span className="text-zinc-400 font-light dark:text-zinc-500">Hub</span>
             </h1>
-            <p className="text-zinc-500 font-medium">Manage and map your institutional compliance frameworks.</p>
+            <p className="text-zinc-500 font-medium dark:text-zinc-400">Manage and map your institutional compliance frameworks.</p>
           </div>
 
           <div className="w-full md:w-1/2 lg:w-1/3">

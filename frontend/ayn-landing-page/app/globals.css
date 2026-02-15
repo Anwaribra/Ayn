@@ -9,43 +9,51 @@
 
   /* Enterprise Light Theme Colors */
   --background: oklch(0.985 0.002 240);
-  --foreground: oklch(0.12 0.02 240); /* Darker, more contrast */
-  
+  --foreground: oklch(0.12 0.02 240);
+  /* Darker, more contrast */
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.12 0.02 240);
-  
+
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.12 0.02 240);
-  
+
   /* Brand: Royal/Enterprise Blue */
-  --primary: oklch(0.40 0.18 255); /* Deep vibrant blue */
+  --primary: oklch(0.40 0.18 255);
+  /* Deep vibrant blue */
   --primary-foreground: oklch(1 0 0);
-  
+
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 240);
-  
+
   --muted: oklch(0.96 0.002 240);
   --muted-foreground: oklch(0.45 0.02 240);
-  
+
   --accent: oklch(0.96 0.01 255);
   --accent-foreground: oklch(0.20 0.05 255);
-  
+
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  
+
   --border: oklch(0.90 0.005 240);
   --input: oklch(0.96 0.005 240);
   --ring: oklch(0.40 0.18 255);
-  
+
   /* Status Colors (Enterprise Grade) */
-  --chart-1: oklch(0.40 0.18 255); /* Primary Blue */
-  --chart-2: oklch(0.55 0.15 150); /* Success Green */
-  --chart-3: oklch(0.60 0.18 45);  /* Warning Amber */
-  --chart-4: oklch(0.55 0.22 25);  /* Error Red */
-  --chart-5: oklch(0.5 0.1 280);   /* Purple Info */
-  
-  --radius: 0.75rem; /* Slightly more rounded for modern feel */
-  
+  --chart-1: oklch(0.40 0.18 255);
+  /* Primary Blue */
+  --chart-2: oklch(0.55 0.15 150);
+  /* Success Green */
+  --chart-3: oklch(0.60 0.18 45);
+  /* Warning Amber */
+  --chart-4: oklch(0.55 0.22 25);
+  /* Error Red */
+  --chart-5: oklch(0.5 0.1 280);
+  /* Purple Info */
+
+  --radius: 0.75rem;
+  /* Slightly more rounded for modern feel */
+
   /* Sidebar Specifics */
   --sidebar: oklch(0.99 0.001 240);
   --sidebar-foreground: oklch(0.25 0.02 240);
@@ -55,25 +63,92 @@
   --sidebar-accent-foreground: oklch(0.12 0.02 240);
   --sidebar-border: oklch(0.92 0.005 240);
   --sidebar-ring: oklch(0.40 0.18 255);
-  
+
   /* Surface Colors for Depth */
   --surface: #ffffff;
   --surface-hover: oklch(0.98 0.002 240);
   --surface-active: oklch(0.96 0.005 240);
   --surface-card: #ffffff;
   --surface-modal: #ffffff;
-  
+
   /* Text Colors */
   --text-primary: oklch(0.12 0.02 240);
   --text-secondary: oklch(0.40 0.02 240);
   --text-tertiary: oklch(0.55 0.02 240);
 }
 
+.dark {
+  /* Enterprise Dark Theme - Slate Palette */
+  --background: oklch(0.10 0.03 245);
+  /* Slate 950 */
+  --foreground: oklch(0.98 0.01 240);
+  /* Slate 50 */
+
+  --card: oklch(0.13 0.03 245);
+  /* Slate 900 */
+  --card-foreground: oklch(0.98 0.01 240);
+
+  --popover: oklch(0.13 0.03 245);
+  --popover-foreground: oklch(0.98 0.01 240);
+
+  --primary: oklch(0.40 0.18 255);
+  /* Keep Blue */
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.18 0.04 245);
+  /* Slate 800 */
+  --secondary-foreground: oklch(0.98 0.01 240);
+
+  --muted: oklch(0.18 0.04 245);
+  --muted-foreground: oklch(0.65 0.05 240);
+  /* Slate 400 */
+
+  --accent: oklch(0.18 0.04 245);
+  --accent-foreground: oklch(0.98 0.01 240);
+
+  --destructive: oklch(0.3 0.15 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.18 0.04 245);
+  /* Slate 800 */
+  --input: oklch(0.18 0.04 245);
+  --ring: oklch(0.40 0.18 255);
+
+  /* Status Colors Adjustments for Dark Mode */
+  --chart-1: oklch(0.45 0.18 255);
+  --chart-2: oklch(0.60 0.15 150);
+  --chart-3: oklch(0.65 0.18 45);
+  --chart-4: oklch(0.60 0.22 25);
+  --chart-5: oklch(0.55 0.1 280);
+
+  /* Sidebar Specifics */
+  --sidebar: oklch(0.10 0.03 245);
+  --sidebar-foreground: oklch(0.98 0.01 240);
+  --sidebar-primary: oklch(0.40 0.18 255);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.18 0.04 245);
+  --sidebar-accent-foreground: oklch(0.98 0.01 240);
+  --sidebar-border: oklch(0.18 0.04 245);
+  --sidebar-ring: oklch(0.40 0.18 255);
+
+  /* Surface Colors for Depth */
+  --surface: oklch(0.13 0.03 245);
+  --surface-hover: oklch(0.18 0.04 245);
+  --surface-active: oklch(0.20 0.05 245);
+  --surface-card: oklch(0.13 0.03 245);
+  --surface-modal: oklch(0.13 0.03 245);
+
+  /* Text Colors */
+  --text-primary: oklch(0.98 0.02 240);
+  --text-secondary: oklch(0.70 0.02 240);
+  --text-tertiary: oklch(0.50 0.02 240);
+}
+
 @theme inline {
   --font-sans: "Inter", "Geist", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Geist Mono", monospace;
   --font-arabic: "Noto Sans Arabic", "Arial", sans-serif;
-  
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -98,12 +173,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -121,13 +196,18 @@
 
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
-    background-image: 
+    background-image:
       radial-gradient(circle at 0% 0%, oklch(0.40 0.18 255 / 0.03) 0%, transparent 50%),
       radial-gradient(circle at 100% 100%, oklch(0.55 0.15 150 / 0.03) 0%, transparent 50%);
     background-attachment: fixed;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply tracking-tight font-bold text-foreground;
   }
 }
@@ -141,29 +221,29 @@
 
 /* Glass Panels */
 .glass-panel {
-  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all duration-300;
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all duration-300 dark:bg-slate-900/70 dark:border-slate-800;
 }
 
 .glass-panel:hover {
-  @apply bg-white/80 shadow-md border-white/40;
+  @apply bg-white/80 shadow-md border-white/40 dark:bg-slate-900/80 dark:border-slate-700;
 }
 
 /* Card Elevation System */
 .card-elevation-1 {
-  box-shadow: 
+  box-shadow:
     0 1px 2px 0 rgba(0, 0, 0, 0.05),
     0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .card-elevation-2 {
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03),
     0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .card-elevation-3 {
-  box-shadow: 
+  box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.05),
     0 4px 6px -2px rgba(0, 0, 0, 0.025),
     0 0 0 1px rgba(0, 0, 0, 0.02);
@@ -173,12 +253,15 @@
 .badge-verified {
   @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
 }
+
 .badge-analyzed {
   @apply bg-blue-50 text-blue-700 border border-blue-200;
 }
+
 .badge-pending {
   @apply bg-amber-50 text-amber-700 border border-amber-200;
 }
+
 .badge-failed {
   @apply bg-red-50 text-red-700 border border-red-200;
 }
@@ -189,6 +272,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -200,17 +284,31 @@
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
+
 .animate-spin-slow {
   animation: spin-slow 12s linear infinite;
 }
 
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
+
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
@@ -227,9 +325,11 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   @apply bg-zinc-200 hover:bg-zinc-300 rounded-full transition-colors;
 }

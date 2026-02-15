@@ -67,8 +67,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         className={cn(
           "relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group mb-1",
           isActive
-            ? "bg-primary/10 text-primary shadow-sm"
-            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+            ? "bg-primary/10 text-primary shadow-sm dark:bg-primary/20 dark:text-blue-400"
+            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-slate-800/50"
         )}
       >
         {isActive && (
@@ -81,7 +81,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <div className={cn(
           "w-5 h-5 flex items-center justify-center transition-colors",
-          isActive ? "text-primary" : "text-zinc-400 group-hover:text-zinc-600"
+          isActive ? "text-primary dark:text-blue-400" : "text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300"
         )}>
           <item.icon className="w-[18px] h-[18px]" />
 
@@ -95,7 +95,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <span className={cn(
           "text-sm font-medium tracking-wide truncate flex-1",
-          isActive ? "font-semibold text-primary" : ""
+          isActive ? "font-semibold text-primary dark:text-blue-400" : ""
         )}>
           {item.label}
         </span>
@@ -108,7 +108,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         {/* Hover indication */}
         {!isActive && (
-          <ChevronRight className="w-3 h-3 text-zinc-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+          <ChevronRight className="w-3 h-3 text-zinc-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all dark:text-zinc-600" />
         )}
       </Link>
     )
@@ -118,6 +118,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     <aside
       className={cn(
         "fixed inset-y-0 left-0 flex flex-col z-50 select-none bg-white border-r border-zinc-200 shadow-xl md:shadow-none",
+        "dark:bg-slate-950 dark:border-slate-800/50",
         "h-[100dvh] transition-transform md:transition-[width,opacity,transform] duration-300 ease-in-out",
         "w-72 max-w-[85vw]", // Slightly wider for enterprise feel
         "md:static md:h-screen md:translate-x-0",

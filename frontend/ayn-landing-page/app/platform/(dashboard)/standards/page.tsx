@@ -106,24 +106,24 @@ function StandardsContent() {
               <button
                 onClick={() => setActiveTab("database")}
                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "database"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
-                  : "bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800"}`}
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                  : "bg-layer-2 text-muted-foreground hover:bg-layer-3 hover:text-foreground"}`}
               >
                 Regulatory Database
               </button>
               <button
                 onClick={() => setActiveTab("mapping")}
                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "mapping"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
-                  : "bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800"}`}
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                  : "bg-layer-2 text-muted-foreground hover:bg-layer-3 hover:text-foreground"}`}
               >
                 Compliance Mapping
               </button>
             </div>
-            <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
-              Standards <span className="text-zinc-400 font-light dark:text-zinc-500">Hub</span>
+            <h1 className="text-4xl font-black tracking-tight text-foreground">
+              Standards <span className="text-muted-foreground font-light">Hub</span>
             </h1>
-            <p className="text-zinc-500 font-medium dark:text-zinc-400">Manage and map your institutional compliance frameworks.</p>
+            <p className="text-muted-foreground font-medium">Manage and map your institutional compliance frameworks.</p>
           </div>
 
           <div className="w-full md:w-1/2 lg:w-1/3">
@@ -145,7 +145,7 @@ function StandardsContent() {
                 window.location.href = `/platform/standards/new?template=${template.id}`
               }} />
               <Link href="/platform/standards/new">
-                <Button className="bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Custom
                 </Button>
@@ -157,28 +157,28 @@ function StandardsContent() {
             <Link
               key={c.id}
               href={`/platform/standards/${c.id}`}
-              className="group glass-panel rounded-[32px] p-6 border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[220px] animate-fade-in-up"
+              className="group glass-panel rounded-[32px] p-6 bg-layer-2 border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[220px] animate-fade-in-up"
               style={{ animationDelay: `${i * 100}ms` }}
             >
               <div className="flex justify-between items-start">
-                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/50 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
-                  {(() => { const Icon = CARD_ICONS[i % CARD_ICONS.length]; return <Icon className="w-6 h-6 text-zinc-700/80 group-hover:text-zinc-900 transition-colors" /> })()}
+                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/50 dark:border-white/10 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+                  {(() => { const Icon = CARD_ICONS[i % CARD_ICONS.length]; return <Icon className="w-6 h-6 text-foreground/80 group-hover:text-foreground transition-colors" /> })()}
                 </div>
-                <div className="w-8 h-8 rounded-full bg-white border border-zinc-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0">
-                  <ArrowUpRight className="w-4 h-4 text-zinc-900" />
+                <div className="w-8 h-8 rounded-full bg-layer-2 border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0">
+                  <ArrowUpRight className="w-4 h-4 text-foreground" />
                 </div>
               </div>
 
               <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">{c.code}</span>
-                <h3 className="text-xl font-bold text-zinc-900 mb-4 leading-tight group-hover:text-blue-600 transition-colors">{c.title}</h3>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">{c.code}</span>
+                <h3 className="text-xl font-bold text-foreground mb-4 leading-tight group-hover:text-primary transition-colors">{c.title}</h3>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                     <span>Alignment Score</span>
                     <span className={c.equilibrium >= 80 ? "text-emerald-500" : "text-amber-500"}>{c.equilibrium}%</span>
                   </div>
-                  <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-layer-3 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-1000 ${c.equilibrium >= 80 ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${c.equilibrium ?? 0}%` }} />
                   </div>
                 </div>
@@ -192,10 +192,10 @@ function StandardsContent() {
       <section className="px-4 pt-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-black italic text-zinc-900">Framework Topology</h2>
-            <div className="h-px w-16 bg-zinc-200" />
+            <h2 className="text-2xl font-black italic text-foreground">Framework Topology</h2>
+            <div className="h-px w-16 bg-border" />
           </div>
-          <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+          <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
             Run Alignment Analysis <ArrowUpRight className="w-3 h-3" />
           </Link>
         </div>
@@ -211,29 +211,29 @@ function StandardsContent() {
                 <Link
                   key={std.id}
                   href={`/platform/standards/${std.id}`}
-                  className="glass-panel p-5 rounded-[24px] border-zinc-100 hover:border-blue-200 flex items-center justify-between hover:bg-white hover:shadow-lg hover:shadow-blue-500/5 transition-all group cursor-pointer animate-fade-in-up"
+                  className="glass-panel p-5 rounded-[24px] bg-layer-2 border-border hover:border-primary/50 flex items-center justify-between hover:bg-layer-2 hover:shadow-lg hover:shadow-primary/5 transition-all group cursor-pointer animate-fade-in-up"
                   style={{ animationDelay: `${(i + 4) * 60}ms` }}
                 >
                   <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                      <Icon className="w-5 h-5 text-zinc-400 group-hover:text-blue-600 transition-colors" />
+                    <div className="w-12 h-12 rounded-2xl bg-layer-3 border border-border flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
+                      <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-zinc-900 group-hover:text-blue-700 transition-colors">{std.title}</h4>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
+                      <h4 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{std.title}</h4>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
                         <span>Last Audit: {report ? new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase() : "—"}</span>
-                        <span className="w-1 h-1 rounded-full bg-zinc-300" />
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
                         <span>{evidenceNodes} Evidence Assets</span>
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     {status && (
-                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full border ${status === "OPTIMAL" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full border ${status === "OPTIMAL" ? "badge-verified" : "badge-pending"}`}>
                         {status}
                       </span>
                     )}
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-50 text-zinc-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    <button className="w-8 h-8 rounded-full flex items-center justify-center bg-layer-3 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                       <Play className="w-3 h-3 fill-current" />
                     </button>
                   </div>
@@ -243,9 +243,9 @@ function StandardsContent() {
 
             {(standards ?? []).length === 0 && !isLoading && (
               <div className="col-span-full">
-                <div className="glass-panel rounded-3xl p-12 text-center border-dashed border-2 border-zinc-200 bg-zinc-50/50">
-                  <Target className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                  <p className="text-zinc-500 font-medium mb-6">No standards available for topology mapping.</p>
+                <div className="glass-panel rounded-3xl p-12 text-center border-dashed border-2 border-border bg-layer-2/50">
+                  <Target className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-medium mb-6">No standards available for topology mapping.</p>
                   <StandardsTemplatesButton onSelect={(template: Template) => {
                     window.location.href = `/platform/standards/new?template=${template.id}`
                   }} />
@@ -254,18 +254,18 @@ function StandardsContent() {
             )}
           </div>
 
-          <div className="glass-panel rounded-[32px] p-8 bg-zinc-900 text-white flex flex-col relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="glass-panel rounded-[32px] p-8 bg-layer-4 text-layer-0 flex flex-col relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2 rounded-lg bg-white/10">
-                  <Shield className="w-5 h-5 text-blue-400" />
+                  <Shield className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Intelligence Summary</h4>
+                <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Intelligence Summary</h4>
               </div>
 
-              <p className="text-lg font-medium leading-relaxed mb-8 text-zinc-200">
+              <p className="text-lg font-medium leading-relaxed mb-8 text-white/80">
                 Current institutional framework contains <span className="text-white font-bold text-2xl">{collections.length}</span> active standards.
                 {(() => {
                   const needsReview = (standards ?? []).find((s) => getStandardStatus(s.id) === "WARNING")
@@ -282,7 +282,7 @@ function StandardsContent() {
 
             <div className="mt-auto pt-8 border-t border-white/10 flex items-center gap-4 relative z-10">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Ayn Core Live Sync</span>
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Ayn Core Live Sync</span>
             </div>
           </div>
         </div>

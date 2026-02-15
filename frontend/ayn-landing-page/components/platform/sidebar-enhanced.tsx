@@ -67,8 +67,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         className={cn(
           "relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group mb-1",
           isActive
-            ? "bg-primary/10 text-primary shadow-sm dark:bg-primary/20 dark:text-blue-400"
-            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-slate-800/50"
+            ? "bg-primary/10 text-primary shadow-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-layer-2"
         )}
       >
         {isActive && (
@@ -81,7 +81,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <div className={cn(
           "w-5 h-5 flex items-center justify-center transition-colors",
-          isActive ? "text-primary dark:text-blue-400" : "text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300"
+          isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
         )}>
           <item.icon className="w-[18px] h-[18px]" />
 
@@ -95,7 +95,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <span className={cn(
           "text-sm font-medium tracking-wide truncate flex-1",
-          isActive ? "font-semibold text-primary dark:text-blue-400" : ""
+          isActive ? "font-semibold text-primary" : ""
         )}>
           {item.label}
         </span>
@@ -108,7 +108,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         {/* Hover indication */}
         {!isActive && (
-          <ChevronRight className="w-3 h-3 text-zinc-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all dark:text-zinc-600" />
+          <ChevronRight className="w-3 h-3 text-muted-foreground/30 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
         )}
       </Link>
     )
@@ -117,8 +117,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 flex flex-col z-50 select-none bg-white border-r border-zinc-200 shadow-xl md:shadow-none",
-        "dark:bg-slate-950 dark:border-slate-800/50",
+        "fixed inset-y-0 left-0 flex flex-col z-50 select-none bg-layer-1 border-r border-border shadow-xl md:shadow-none",
         "h-[100dvh] transition-transform md:transition-[width,opacity,transform] duration-300 ease-in-out",
         "w-72 max-w-[85vw]", // Slightly wider for enterprise feel
         "md:static md:h-screen md:translate-x-0",
@@ -145,8 +144,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         {/* Compliance Section */}
         <div className="space-y-1">
           <div className="px-3 mb-2 flex items-center gap-2">
-            <ShieldCheck className="w-3 h-3 text-zinc-400" />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Compliance Core</span>
+            <ShieldCheck className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Compliance Core</span>
           </div>
           {COMPLIANCE_WORKFLOW.map((item) => (
             <NavItem key={item.id} item={item} />
@@ -156,8 +155,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         {/* Strategy Section */}
         <div className="space-y-1">
           <div className="px-3 mb-2 flex items-center gap-2">
-            <Layers className="w-3 h-3 text-zinc-400" />
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Strategy</span>
+            <Layers className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Strategy</span>
           </div>
           {INSIGHTS_TOOLS.map((item) => (
             <NavItem key={item.id} item={item} />
@@ -167,28 +166,28 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       </nav>
 
       {/* ─── Footer: User & Settings ─── */}
-      <div className="flex-shrink-0 border-t border-zinc-100 p-4 space-y-1 bg-zinc-50/50">
+      <div className="flex-shrink-0 border-t border-border p-4 space-y-1 bg-layer-1/50">
         <NavItem item={{ id: "settings", icon: Settings, label: "Platform Settings", href: "/platform/settings" }} />
 
-        <div className="pt-3 mt-2 border-t border-zinc-200/50">
+        <div className="pt-3 mt-2 border-t border-border">
           <Link
             href="/platform/settings/account"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-zinc-200 transition-all group/profile"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-layer-2 hover:shadow-sm border border-transparent hover:border-border transition-all group/profile"
           >
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center ring-1 ring-zinc-200 group-hover/profile:ring-primary/30 transition-all overflow-hidden">
-              <UserCircle2 className="w-6 h-6 text-zinc-400" />
+            <div className="w-10 h-10 rounded-full bg-layer-2 flex items-center justify-center ring-1 ring-border group-hover/profile:ring-primary/30 transition-all overflow-hidden">
+              <UserCircle2 className="w-6 h-6 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-zinc-900 truncate">
+              <div className="text-sm font-bold text-foreground truncate">
                 {user?.name ?? "Governance Officer"}
               </div>
-              <div className="text-[10px] text-zinc-500 font-medium truncate uppercase tracking-wide">
+              <div className="text-[10px] text-muted-foreground font-medium truncate uppercase tracking-wide">
                 {user?.institutionId ? "Enterprise Admin" : "System User"}
               </div>
             </div>
             <button
               onClick={(e) => { e.preventDefault(); handleLogout(); }}
-              className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />

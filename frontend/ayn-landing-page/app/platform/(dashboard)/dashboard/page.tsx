@@ -72,10 +72,10 @@ function DashboardContent() {
 
                 <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9] italic text-white">
                   Institutional <br />
-                  <span className="text-zinc-600">Intelligence.</span>
+                  <span className="text-white/60">Intelligence.</span>
                 </h1>
 
-                <p className="text-lg text-zinc-400 font-medium mb-12 max-w-sm leading-relaxed">
+                <p className="text-lg text-white/60 font-medium mb-12 max-w-sm leading-relaxed">
                   Horus is active. Your compliance framework is mapped with <span className="text-white font-bold">{alignmentScore}%</span> accuracy across <span className="text-white font-bold">{evidenceCount}</span> verified assets.
                 </p>
 
@@ -123,9 +123,9 @@ function DashboardContent() {
                     <span className="mono text-8xl font-black tracking-tighter text-white">
                       {isLoading ? "—" : Math.round(alignmentScore)}
                     </span>
-                    <span className="text-2xl font-black text-zinc-600">%</span>
+                    <span className="text-2xl font-black text-white/60">%</span>
                   </div>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em] mt-2">Alignment Index</span>
+                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.4em] mt-2">Alignment Index</span>
                 </div>
               </div>
 
@@ -149,16 +149,16 @@ function DashboardContent() {
             { label: "Critical Gaps", value: String(activeGaps), sub: "Needs Action", icon: AlertTriangle, color: "text-amber-500" },
             { label: "Recent Performance", value: metrics?.recentScores?.[0]?.score ? `${metrics.recentScores[0].score}%` : "Stable", sub: "Trend", icon: Zap, color: "text-indigo-500" },
           ].map((m, i) => (
-            <div key={i} className="glass-panel p-8 rounded-[40px] border-white/5 flex flex-col justify-between min-h-[180px] hover:bg-white/[0.02] transition-colors group dark:border-slate-800">
+            <div key={i} className="bg-layer-2 p-8 rounded-[40px] border border-border flex flex-col justify-between min-h-[180px] hover:border-blue-500/20 transition-all group shadow-sm">
               <div className="flex justify-between items-start">
-                <div className={cn("w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center transition-transform group-hover:scale-110 dark:bg-slate-800", m.color)}>
+                <div className={cn("w-12 h-12 rounded-2xl bg-layer-1 flex items-center justify-center transition-transform group-hover:scale-110", m.color)}>
                   <m.icon className="w-6 h-6" />
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-500 transition-colors dark:text-zinc-400 dark:group-hover:text-zinc-200" />
+                <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
               <div>
-                <div className="text-4xl font-black tracking-tighter text-zinc-900 mb-1 dark:text-white">{m.value}</div>
-                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none dark:text-zinc-400">{m.label}</div>
+                <div className="text-4xl font-black tracking-tighter text-foreground mb-1">{m.value}</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">{m.label}</div>
               </div>
             </div>
           ))}
@@ -168,26 +168,26 @@ function DashboardContent() {
       {/* Recent Evidence & Scores Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Evidence */}
-        <div className="lg:col-span-2 glass-panel p-8 rounded-[48px] border-white/5 dark:border-slate-800">
+        <div className="lg:col-span-2 bg-layer-2 p-8 rounded-[48px] border border-border shadow-sm">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-zinc-900 italic dark:text-white">Recent Evidence</h3>
-            <Link href="/platform/evidence" className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">View Library</Link>
+            <h3 className="text-xl font-black text-foreground italic">Recent Evidence</h3>
+            <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
           </div>
 
           <div className="space-y-4">
             {metrics?.recentEvidence?.length === 0 ? (
-              <p className="text-center py-12 text-zinc-600 italic dark:text-zinc-400">No evidence uploaded yet.</p>
+              <p className="text-center py-12 text-muted-foreground italic">No evidence uploaded yet.</p>
             ) : (
               metrics?.recentEvidence?.map((ev: any) => (
-                <div key={ev.id} className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.02] border border-zinc-100 hover:border-zinc-200 transition-all dark:bg-slate-800/50 dark:border-slate-800 dark:hover:border-slate-700">
+                <div key={ev.id} className="flex items-center gap-4 p-4 rounded-3xl bg-layer-1 border border-border hover:border-primary/20 transition-all">
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-blue-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-zinc-900 truncate dark:text-zinc-100">{ev.title || ev.originalFilename}</h4>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5 dark:text-zinc-400">{ev.status}</p>
+                    <h4 className="font-bold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5">{ev.status}</p>
                   </div>
-                  <div className="text-[10px] font-mono text-zinc-600 dark:text-zinc-500">
+                  <div className="text-[10px] font-mono text-muted-foreground">
                     {new Date(ev.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -197,19 +197,19 @@ function DashboardContent() {
         </div>
 
         {/* Recent Performance Log */}
-        <div className="glass-panel p-8 rounded-[48px] border-white/5 dark:border-slate-800">
-          <h3 className="text-xl font-black text-zinc-900 italic mb-8 dark:text-white">Score History</h3>
+        <div className="bg-layer-2 p-8 rounded-[48px] border border-border shadow-sm">
+          <h3 className="text-xl font-black text-foreground italic mb-8">Score History</h3>
           <div className="space-y-6">
             {metrics?.recentScores?.length === 0 ? (
-              <p className="text-center py-12 text-zinc-600 italic dark:text-zinc-400">Analytical data pending.</p>
+              <p className="text-center py-12 text-muted-foreground italic">Analytical data pending.</p>
             ) : (
               metrics?.recentScores?.map((s: any, i: number) => (
                 <div key={i} className="space-y-2">
                   <div className="flex justify-between items-end px-1">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest truncate max-w-[150px] dark:text-zinc-400">{s.standard}</span>
-                    <span className="text-xs font-black text-zinc-900 dark:text-white">{s.score}%</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[150px]">{s.standard}</span>
+                    <span className="text-xs font-black text-foreground">{s.score}%</span>
                   </div>
-                  <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden dark:bg-slate-800">
+                  <div className="h-1.5 w-full bg-layer-1 rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-1000",
@@ -223,9 +223,9 @@ function DashboardContent() {
             )}
           </div>
 
-          <div className="mt-12 p-6 rounded-[32px] bg-blue-500/5 border border-blue-500/10 dark:bg-blue-900/20 dark:border-blue-900/30">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-2 dark:text-blue-400">Horus Tip</p>
-            <p className="text-xs text-zinc-500 leading-relaxed font-medium dark:text-zinc-400">
+          <div className="mt-12 p-6 rounded-[32px] bg-blue-500/5 border border-blue-500/10">
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-2">Horus Tip</p>
+            <p className="text-xs text-muted-foreground leading-relaxed font-medium">
               Try uploading more evidence for the gaps Identified in your latest NAQAAE analysis to bump the index.
             </p>
           </div>

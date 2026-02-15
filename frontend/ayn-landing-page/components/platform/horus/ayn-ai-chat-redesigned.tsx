@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Sheet,
@@ -20,7 +19,6 @@ import {
   User,
   Sparkles,
   FileText,
-  ImageIcon,
   X,
   Loader2,
   MessageSquare,
@@ -29,22 +27,19 @@ import {
   PlusCircle,
   Settings2,
   CheckCircle2,
-  ArrowUpRight
+  ArrowUpRight,
+  Cpu,
+  ShieldAlert,
+  Lightbulb
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
+import { useHorus } from "@/lib/horus-context"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
-interface Message {
-  id: string
-  role: "user" | "assistant" | "system"
-  content: string
-  timestamp: number
-}
-
 interface AttachedFile {
   id: string
   file: File
@@ -54,21 +49,30 @@ interface AttachedFile {
 
 // ─── Markdown Content ───────────────────────────────────────────────────────────
 export function MarkdownContent({ content }: { content: string }) {
+  // Custom renderer to intercept specific headers and wrap them in styled blocks? 
+  // For now, we use standard prose with enhanced styling.
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border">
+    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 prose-headings:font-bold prose-headings:text-zinc-900 prose-a:text-blue-600 prose-strong:text-zinc-900 prose-ul:list-disc prose-ul:pl-4">
       <ReactMarkdown
         components={{
-          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-          ul: ({ children }) => <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>,
-          ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>,
+          h2: ({ children }) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-zinc-800 border-b border-zinc-100 pb-2">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-bold mt-4 mb-2 text-zinc-700 uppercase tracking-wide">{children}</h3>,
+          p: ({ children }) => <p className="mb-3 last:mb-0 text-zinc-600 font-medium leading-relaxed">{children}</p>,
+          ul: ({ children }) => <ul className="mb-3 space-y-1 text-zinc-600">{children}</ul>,
+          li: ({ children }) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
           code: ({ inline, children }: any) =>
             inline ? (
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[13px]">{children}</code>
+              <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[12px] text-zinc-800 border border-zinc-200">{children}</code>
             ) : (
-              <code className="block rounded-xl bg-muted/30 p-4 font-mono text-[13px] overflow-x-auto w-full border border-border/50">
+              <code className="block rounded-xl bg-zinc-900 p-4 font-mono text-[12px] text-zinc-300 overflow-x-auto w-full">
                 {children}
               </code>
             ),
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-4 border-blue-500 pl-4 py-1 my-4 bg-blue-50/50 rounded-r-lg italic text-blue-900/80">
+              {children}
+            </blockquote>
+          )
         }}
       >
         {content}
@@ -77,7 +81,30 @@ export function MarkdownContent({ content }: { content: string }) {
   )
 }
 
-import { useHorus } from "@/lib/horus-context"
+// ─── File Preview Component ─────────────────────────────────────────────────────
+function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
+  return (
+    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl bg-white border border-zinc-200 shadow-sm transition-all hover:border-blue-300 hover:shadow-md">
+      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+        {file.type === 'image' && file.preview ? (
+          <img src={file.preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+        ) : (
+          <FileText className="w-4 h-4" />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-bold text-zinc-700 truncate max-w-[120px]">{file.file.name}</p>
+        <p className="text-[10px] text-zinc-400 uppercase font-bold">{(file.file.size / 1024).toFixed(0)}KB</p>
+      </div>
+      <button
+        onClick={onRemove}
+        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  )
+}
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
@@ -94,26 +121,22 @@ export default function HorusAIChat() {
 
   const [input, setInput] = useState("")
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
-
   const scrollRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
   const { data: metrics } = useSWR(user ? "dashboard-metrics" : null, () => api.getDashboardMetrics())
 
-  const complianceScore = metrics?.alignmentPercentage ?? 0
   const indexedAssets = metrics?.evidenceCount ?? 0
 
   const actionPills = [
-    { label: "Compliance Map", icon: Sparkles, href: "/platform/standards" },
-    { label: "Asset Library", icon: Settings2, href: "/platform/evidence" },
-    { label: "Audit Review", icon: CheckCircle2, href: "/platform/gap-analysis" },
+    { label: "Compliance Map", icon: Sparkles, href: "/platform/standards", desc: "View alignment status" },
+    { label: "Asset Library", icon: Settings2, href: "/platform/evidence", desc: "Manage evidence" },
+    { label: "Audit Review", icon: CheckCircle2, href: "/platform/gap-analysis", desc: "Check for gaps" },
   ]
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  }, [messages, isLoading])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -151,15 +174,13 @@ export default function HorusAIChat() {
     mutateHistory()
   }
 
-  const loadSession = async (session: any) => {
-    await loadChat(session.id)
-  }
-
-  const deleteSession = async (id: string) => {
+  const deleteSession = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       await api.deleteChat(id)
       mutateHistory()
       if (currentChatId === id) newChat()
+      toast.success("Thread deleted")
     } catch (err) {
       toast.error("Failed to delete.")
     }
@@ -168,337 +189,229 @@ export default function HorusAIChat() {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex h-full flex-col bg-transparent">
-      {/* ─── Refined Ultra-Pro Header ─── */}
-      <div className="shrink-0 px-8 py-6 flex justify-between items-center border-b border-border/40 bg-surface/30 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-            <Bot className="h-5 w-5 text-primary" />
+    <div className="flex h-full flex-col bg-transparent relative">
+      {/* ─── Header ─── */}
+      <div className="shrink-0 px-6 py-4 flex justify-between items-center bg-white/50 backdrop-blur-md border-b border-zinc-100 z-10">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/10">
+            <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              Horus <span className="text-muted-foreground font-medium text-sm">/ Brain</span>
+            <h1 className="text-lg font-black tracking-tight text-zinc-900 flex items-center gap-2">
+              Horus <span className="text-zinc-400 font-medium">Core</span>
             </h1>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-tertiary font-bold mt-0.5">
+            <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Neural Sync Active
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Neural Sync Active</span>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={newChat} className="rounded-xl border-border/50 bg-background/50 hover:bg-accent transition-all h-9 px-4 text-xs font-bold">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Thread
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={newChat} className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2">
+            <PlusCircle className="h-4 w-4" />
+            New
           </Button>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-xl border-border/50 bg-background/50 hover:bg-accent transition-all h-9 px-4 text-xs font-bold">
-                <History className="h-4 w-4 mr-2" />
+              <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 font-bold text-xs gap-2">
+                <History className="h-4 w-4" />
                 History
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 sm:w-96 bg-background border-l border-border/50 data-[state=open]:duration-300 data-[state=closed]:duration-300 ease-in-out">
-              <SheetHeader className="mb-6">
-                <SheetTitle className="text-lg font-bold">Chat History</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className="h-[calc(100vh-100px)] pr-4">
-                {(!history || history.length === 0) ? (
-                  <div className="text-center py-20 text-muted-foreground opacity-50">
-                    <MessageSquare className="h-10 w-10 mx-auto mb-4" />
-                    <p className="text-sm">No archives found</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {history.map((session: any) => (
+            <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-zinc-100">
+              <div className="p-6 border-b border-zinc-100">
+                <h2 className="text-lg font-black text-zinc-900">Session History</h2>
+              </div>
+              <ScrollArea className="h-[calc(100vh-80px)]">
+                <div className="p-4 space-y-2">
+                  {(!history || history.length === 0) ? (
+                    <div className="text-center py-12">
+                      <MessageSquare className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-zinc-500">No chat history</p>
+                    </div>
+                  ) : (
+                    history.map((session: any) => (
                       <div
                         key={session.id}
+                        onClick={() => loadChat(session.id)}
                         className={cn(
-                          "group relative rounded-xl border p-3.5 cursor-pointer transition-all duration-200",
+                          "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
                           currentChatId === session.id
-                            ? "bg-primary/5 border-primary/30"
-                            : "bg-surface-card border-border/40 hover:border-border hover:bg-surface-hover"
+                            ? "bg-zinc-900 border-zinc-900 text-white shadow-lg shadow-zinc-900/20"
+                            : "bg-white border-zinc-100 hover:border-zinc-200 text-zinc-600"
                         )}
-                        onClick={() => loadSession(session)}
                       >
-                        <div className="flex items-start gap-3">
-                          <MessageSquare className={cn("h-4 w-4 mt-0.5", currentChatId === session.id ? "text-primary" : "text-tertiary")} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate pr-6 text-foreground">{session.title || "Untitled Chat"}</p>
-                            <p className="text-[10px] text-tertiary mt-1 font-medium">
-                              {new Date(session.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
+                        <div className="flex justify-between items-start gap-2">
+                          <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-white" : "text-zinc-800")}>
+                            {session.title || "Untitled Conversation"}
+                          </p>
+                          <button
+                            onClick={(e) => deleteSession(session.id, e)}
+                            className={cn(
+                              "opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg",
+                              currentChatId === session.id ? "hover:bg-white/20 text-white/50 hover:text-white" : "hover:bg-red-50 text-zinc-400 hover:text-red-500"
+                            )}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2.5 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteSession(session.id)
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <p className={cn("text-[10px] font-medium mt-1 uppercase tracking-wide", currentChatId === session.id ? "text-zinc-400" : "text-zinc-400")}>
+                          {new Date(session.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </ScrollArea>
             </SheetContent>
           </Sheet>
         </div>
       </div>
 
-      <div className="flex-1 flex min-h-0 relative">
-        <div className="flex-1 flex flex-col min-w-0">
-          <ScrollArea className="flex-1">
-            <div className="mx-auto max-w-3xl w-full px-6 py-10">
-              {isEmpty ? (
-                <div className="space-y-12 mt-8 animate-fade-in-up">
-                  <div className="space-y-5 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
-                      <Sparkles className="w-3 h-3" /> Intelligence Node
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-foreground leading-[1.1] tracking-tight">
-                      How can I assist your <span className="text-primary italic">Compliance Journey?</span>
-                    </h2>
-                    <p className="text-secondary text-lg font-medium leading-relaxed max-w-xl">
-                      I am Horus — your platform brain. I've indexed {indexedAssets} assets. Ask me to analyze files, map standards, or summarize your alignment status.
-                    </p>
+      {/* ─── Chat Area ─── */}
+      <div className="flex-1 overflow-hidden relative">
+        <ScrollArea className="h-full px-6 py-8">
+          <div className="max-w-3xl mx-auto space-y-8 pb-4">
+            {isEmpty ? (
+              <div className="mt-12 animate-fade-in-up space-y-12 text-center">
+                <div className="space-y-4">
+                  <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[32px] mx-auto flex items-center justify-center shadow-xl shadow-blue-600/20 mb-6">
+                    <Cpu className="w-10 h-10 text-white" />
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {actionPills.map((pill) => (
-                      <button
-                        key={pill.label}
-                        onClick={() => router.push(pill.href)}
-                        className="group flex flex-col items-start gap-4 p-6 rounded-3xl bg-surface-card border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all text-left shadow-sm"
-                      >
-                        <div className="p-3 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform">
-                          <pill.icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="font-bold text-foreground text-sm">{pill.label}</span>
-                          <div className="text-[10px] text-tertiary flex items-center gap-1 font-medium group-hover:text-primary transition-colors">
-                            Go to module <ArrowUpRight className="w-2.5 h-2.5" />
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  <h2 className="text-4xl md:text-5xl font-black text-zinc-900 tracking-tight">
+                    Horus <span className="text-zinc-400">Online.</span>
+                  </h2>
+                  <p className="text-lg text-zinc-500 font-medium max-w-lg mx-auto leading-relaxed">
+                    Institutional intelligence ready. I have indexed <span className="text-zinc-900 font-bold">{indexedAssets} assets</span>.
+                    How can I assist your compliance workflow today?
+                  </p>
                 </div>
-              ) : (
-                <div className="space-y-10">
-                  {messages.map((msg) => (
-                    <div key={msg.id} className={cn(
-                      "flex gap-6 items-start animate-fade-in-up",
-                      msg.role === "system" ? "ml-16 py-2" : ""
-                    )}>
-                      {msg.role !== "system" && (
-                        <div className={cn(
-                          "h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center border transition-all shadow-sm",
-                          msg.role === "assistant"
-                            ? "bg-primary border-primary/20 text-white"
-                            : "bg-surface border-border text-tertiary"
-                        )}>
-                          {msg.role === "assistant" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                        </div>
-                      )}
 
-                      <div className="flex-1 space-y-2.5 min-w-0">
-                        {msg.role !== "system" ? (
-                          <>
-                            <div className="flex items-center gap-3">
-                              <span className="font-bold text-xs uppercase tracking-widest text-secondary">
-                                {msg.role === "assistant" ? "Horus AI" : "You"}
-                              </span>
-                              <span className="text-[10px] text-tertiary font-medium">
-                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <div className={cn(
-                              "text-[15px] leading-relaxed text-foreground",
-                              msg.role === "assistant" ? "" : "bg-primary/5 p-4 rounded-3xl border border-primary/10 inline-block shadow-sm"
-                            )}>
-                              {msg.role === "assistant" ? (
-                                msg.content ? (
-                                  <MarkdownContent content={msg.content} />
-                                ) : (
-                                  <div className="flex gap-1.5 py-2">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
-                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                                  </div>
-                                )
-                              ) : (
-                                <p className="font-medium whitespace-pre-wrap">{msg.content}</p>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-3 py-1.5 px-4 rounded-full bg-surface-hover/50 border border-border/40 w-fit group">
-                            <Sparkles className="w-3 h-3 text-primary animate-pulse" />
-                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">{msg.content}</span>
-                            <span className="text-[9px] text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                  {actionPills.map((pill) => (
+                    <button
+                      key={pill.label}
+                      onClick={() => router.push(pill.href)}
+                      className="group p-4 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
+                        <pill.icon className="w-5 h-5" />
                       </div>
-                    </div>
+                      <h3 className="font-bold text-zinc-900 text-sm mb-1">{pill.label}</h3>
+                      <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wide flex items-center gap-1">
+                        {pill.desc} <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </p>
+                    </button>
                   ))}
-                  <div ref={scrollRef} className="h-12" />
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* ─── Compact Smart Input ─── */}
-          <div className="px-6 pb-8 pt-2 shrink-0 max-w-3xl mx-auto w-full">
-            <div className="space-y-4">
-              {attachedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-2 animate-in slide-in-from-bottom-2 duration-300">
-                  {attachedFiles.map((file) => (
-                    <div key={file.id} className="relative flex items-center gap-3 rounded-2xl bg-surface-card border border-border/60 p-2.5 pr-4 group shadow-sm">
-                      {file.type === "image" && file.preview ? (
-                        <img src={file.preview} alt="" className="h-9 w-9 rounded-xl object-cover" />
-                      ) : (
-                        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <FileText className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-bold max-w-[120px] text-foreground">{file.file.name}</p>
-                        <p className="text-[9px] text-tertiary">{(file.file.size / 1024).toFixed(0)} KB</p>
-                      </div>
-                      <button
-                        onClick={() => setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                        className="h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center hover:bg-destructive hover:text-white transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="relative group transition-all">
-                <div className="flex items-end gap-2 bg-background border border-border/80 rounded-[28px] p-2 shadow-lg focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx,.txt"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={attachedFiles.length >= 5}
-                    className="shrink-0 h-10 w-10 rounded-full text-tertiary hover:text-foreground hover:bg-accent"
-                  >
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSendMessage()
-                      }
-                    }}
-                    placeholder="Describe a compliance task or upload evidence..."
-                    className="flex-1 resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 py-2.5 px-3 text-sm leading-relaxed text-foreground placeholder:text-tertiary min-h-[44px] max-h-[200px] font-medium"
-                    disabled={isLoading}
-                  />
-
-                  <Button
-                    size="icon"
-                    onClick={handleSendMessage}
-                    disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
-                    className={cn(
-                      "shrink-0 h-10 w-10 rounded-full transition-all shadow-md active:scale-95",
-                      isLoading ? "bg-muted" : "bg-primary hover:bg-primary/90 text-white"
-                    )}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
               </div>
-              <p className="text-[10px] text-center text-tertiary font-bold uppercase tracking-widest opacity-60">
-                Authorized Platform Intelligence Node AYN-001
+            ) : (
+              <>
+                {messages.map((msg) => (
+                  <div key={msg.id} className={cn(
+                    "flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                    msg.role === 'user' ? "flex-row-reverse" : "flex-row"
+                  )}>
+                    <div className={cn(
+                      "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                      msg.role === 'user' ? "bg-zinc-900 text-white" : "bg-white border border-zinc-200 text-blue-600"
+                    )}>
+                      {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                    </div>
+
+                    <div className={cn(
+                      "max-w-[85%] rounded-3xl p-6 shadow-sm",
+                      msg.role === 'user'
+                        ? "bg-zinc-900 text-zinc-100 rounded-tr-none"
+                        : "bg-white border border-zinc-200 rounded-tl-none"
+                    )}>
+                      {msg.role === 'assistant' && (
+                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-zinc-100">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Horus Analysis</span>
+                        </div>
+                      )}
+                      <MarkdownContent content={msg.content} />
+                    </div>
+                  </div>
+                ))}
+
+                {/* Loading State */}
+                {isLoading && (
+                  <div className="flex gap-4 animate-pulse">
+                    <div className="w-8 h-8 rounded-xl bg-white border border-zinc-200 flex items-center justify-center text-blue-600 shrink-0">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </div>
+                    <div className="bg-white border border-zinc-200 rounded-3xl rounded-tl-none p-6 shadow-sm flex items-center gap-3">
+                      <span className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
+                      </span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Processing</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            <div ref={scrollRef} />
+          </div>
+        </ScrollArea>
+
+        {/* ─── Input Area ─── */}
+        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none">
+          <div className="max-w-3xl mx-auto pointer-events-auto">
+            {/* Attached Files Preview */}
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3 animate-in slide-in-from-bottom-2">
+                {attachedFiles.map(file => (
+                  <FilePreview key={file.id} file={file} onRemove={() => setAttachedFiles(prev => prev.filter(p => p.id !== file.id))} />
+                ))}
+              </div>
+            )}
+
+            <div className="relative group rounded-[28px] bg-white border border-zinc-200 shadow-xl shadow-zinc-200/50 hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+              <div className="flex items-end p-2 pl-4">
+                <label className="p-2.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 cursor-pointer transition-colors mr-2 mb-1">
+                  <input type="file" className="hidden" multiple onChange={handleFileSelect} />
+                  <Paperclip className="w-5 h-5" />
+                </label>
+
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSendMessage()
+                    }
+                  }}
+                  placeholder="Ask about compliance status, gaps, or upload evidence..."
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-zinc-900 placeholder:text-zinc-400 py-3.5 max-h-32 resize-none font-medium leading-relaxed"
+                  style={{ minHeight: '52px' }}
+                />
+
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
+                  className={cn(
+                    "rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg",
+                    isLoading || (!input.trim() && attachedFiles.length === 0)
+                      ? "bg-zinc-100 text-zinc-300 shadow-none"
+                      : "bg-zinc-900 text-white hover:bg-zinc-800 hover:scale-105 active:scale-95 shadow-zinc-900/20"
+                  )}
+                >
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                </Button>
+              </div>
+            </div>
+            <div className="text-center mt-3">
+              <p className="text-[10px] text-zinc-400 font-medium">
+                Horus can make mistakes. Verify critical compliance data.
               </p>
             </div>
           </div>
         </div>
-
-        {/* ─── Minimal Context Sidebar ─── */}
-        <aside className="hidden xl:flex w-72 flex-col shrink-0 border-l border-border/40 bg-surface/10 p-6 space-y-10">
-          <div className="space-y-6">
-            <h4 className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] pl-1">Compliance Pulse</h4>
-            <div className="space-y-4">
-              <div className="p-5 rounded-3xl bg-surface-card border border-border/50 space-y-2 shadow-sm">
-                <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest">Alignment Index</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-foreground">{complianceScore}%</span>
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${complianceScore}%` }} />
-                  </div>
-                </div>
-              </div>
-              <div className="p-5 rounded-3xl bg-surface-card border border-border/50 space-y-2 shadow-sm">
-                <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest">Indexed Evidence</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-foreground">{indexedAssets}</span>
-                  <div className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-bold text-emerald-500">SYNCED</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <h4 className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] pl-1">Platform Status</h4>
-            <div className="space-y-3.5 px-1">
-              <div className="flex items-center justify-between text-[11px] font-bold">
-                <span className="text-tertiary uppercase tracking-tighter">Availability</span>
-                <span className="text-emerald-500">99.9%</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-bold">
-                <span className="text-tertiary uppercase tracking-tighter">Latency</span>
-                <span className="text-foreground">22ms</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-bold">
-                <span className="text-tertiary uppercase tracking-tighter">Neural Load</span>
-                <span className="text-foreground uppercase italic px-1.5 py-0.5 bg-muted rounded text-[9px]">Normal</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-auto flex flex-col gap-4">
-            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
-              <p className="text-[10px] text-primary font-black uppercase tracking-[0.1em] mb-1">Cerebral Core</p>
-              <p className="text-[9px] text-secondary font-medium leading-relaxed">
-                Platform Awareness: Global <br />
-                Encryption: 256-bit AES
-              </p>
-            </div>
-            <div className="flex items-center gap-3 px-1 text-tertiary">
-              <div className="h-6 w-6 rounded-lg bg-muted flex items-center justify-center font-black text-[9px]">V4</div>
-              <span className="text-[9px] font-bold uppercase tracking-widest opacity-80">Build STABLE-2024.2.13</span>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   )

@@ -1,9 +1,9 @@
 import { FileText, MoreVertical, ShieldAlert, CheckCircle2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { PlatformEvidence } from "@/types"
+import { PlatformEvidence, Evidence } from "@/types"
 
 interface EvidenceCardProps {
-    evidence: PlatformEvidence
+    evidence: PlatformEvidence | Evidence
     onClick?: () => void
 }
 
@@ -22,8 +22,26 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
         void: ShieldAlert,
     }
 
-    const StatusIcon = statusIcons[evidence.status as keyof typeof statusIcons] || FileText
-    const statusClass = statusClasses[evidence.status as keyof typeof statusClasses] || "badge-pending"
+    // Normalize data access
+    const status = evidence.status as keyof typeof statusIcons
+    const title = evidence.title || "Untitled Document"
+
+    // Handle different date formats
+    const dateStr = 'created_at' in evidence
+        ? evidence.created_at
+        : (evidence as any).createdAt || new Date().toISOString()
+
+    // Handle criteria counts
+    const criteriaCount = 'criteria_refs' in evidence
+        ? evidence.criteria_refs.length
+        : (evidence as any).criteria?.length || 0
+
+    const sourceFileCount = 'source_file_ids' in evidence
+        ? evidence.source_file_ids.length
+        : 0
+
+    const StatusIcon = statusIcons[status] || FileText
+    const statusClass = statusClasses[status] || "badge-pending"
 
     return (
         <div
@@ -38,36 +56,35 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                     <StatusIcon className="w-3 h-3" />
                     {evidence.status}
                 </div>
-                <button className="p-1.5 rounded-full hover:bg-layer-3 text-muted-foreground hover:text-foreground transition-colors">
+                <button className="p-1.5 rounded-full hover:bg-layer-3 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
                     <MoreVertical className="w-4 h-4" />
                 </button>
             </div>
 
             <div className="mb-4">
                 <h3 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight mb-1 line-clamp-2">
-                    {evidence.title}
+                    {title}
                 </h3>
                 <p className="text-xs text-muted-foreground line-clamp-2">
-                    {evidence.criteria_refs.length > 0
-                        ? `Linked to ${evidence.criteria_refs.length} criteria in ${evidence.source_file_ids.length} files.`
+                    {criteriaCount > 0
+                        ? `Linked to ${criteriaCount} criteria${sourceFileCount > 0 ? ` in ${sourceFileCount} files` : ''}.`
                         : "No criteria linked yet."}
                 </p>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
                 <div className="flex -space-x-2">
-                    {/* Placeholder for standard icons or avatars related to this evidence */}
-                    <div className="w-6 h-6 rounded-full bg-blue-500/10 border-2 border-layer-2 flex items-center justify-center text-[8px] font-bold text-primary">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 border-2 border-layer-2 flex items-center justify-center text-[8px] font-bold text-primary">
                         S
                     </div>
-                    {evidence.criteria_refs.length > 1 && (
+                    {criteriaCount > 1 && (
                         <div className="w-6 h-6 rounded-full bg-layer-3 border-2 border-layer-2 flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-                            +{evidence.criteria_refs.length - 1}
+                            +{criteriaCount - 1}
                         </div>
                     )}
                 </div>
                 <div className="text-[10px] font-medium text-muted-foreground">
-                    {new Date(evidence.created_at).toLocaleDateString()}
+                    {new Date(dateStr).toLocaleDateString()}
                 </div>
             </div>
         </div>

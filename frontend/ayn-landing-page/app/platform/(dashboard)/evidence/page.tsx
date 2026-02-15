@@ -8,6 +8,7 @@ import useSWR, { mutate } from "swr"
 import { Evidence } from "@/types"
 import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
+import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -72,10 +73,10 @@ function EvidenceContent() {
               <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest dark:text-emerald-400">Vault Secure</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Evidence <span className="text-zinc-400 font-light dark:text-zinc-500">Library</span>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
+            Evidence <span className="text-muted-foreground font-light">Library</span>
           </h1>
-          <p className="text-zinc-500 font-medium mt-1 dark:text-zinc-400">
+          <p className="text-muted-foreground font-medium mt-1">
             Centralized repository for institutional compliance assets.
           </p>
         </div>
@@ -126,48 +127,11 @@ function EvidenceContent() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {evidenceList?.map((evidence) => (
-            <div
+            <EvidenceCard
               key={evidence.id}
+              evidence={evidence}
               onClick={() => setSelectedEvidence(evidence)}
-              className="group relative flex flex-col justify-between p-5 rounded-3xl bg-white border border-zinc-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer h-full min-h-[220px] dark:bg-slate-900 dark:border-slate-800 dark:hover:border-blue-500/50 dark:hover:bg-slate-800/50"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className={cn(
-                  "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5",
-                  evidence.status === 'linked'
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30"
-                    : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-slate-800 dark:text-zinc-400 dark:border-slate-700"
-                )}>
-                  {evidence.status === 'linked' ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500" />}
-                  {evidence.status}
-                </div>
-                <button className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors opacity-0 group-hover:opacity-100 dark:hover:bg-slate-700 dark:text-zinc-500 dark:hover:text-zinc-300">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="font-bold text-zinc-900 group-hover:text-blue-600 transition-colors leading-tight mb-2 line-clamp-2 dark:text-zinc-100 dark:group-hover:text-blue-400">
-                  {evidence.title || "Untitled Document"}
-                </h3>
-                <p className="text-xs text-zinc-500 line-clamp-2 dark:text-zinc-400">
-                  {(evidence.criteria?.length ?? 0) > 0
-                    ? `This document maps to ${evidence.criteria?.length} criteria in the framework.`
-                    : "Pending analysis by Horus AI."}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-zinc-50 mt-auto dark:border-slate-800/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                    <FileText className="w-3 h-3" />
-                  </div>
-                  <div className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
-                    {new Date(evidence.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </div>
       )}

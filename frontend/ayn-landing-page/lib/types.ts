@@ -40,8 +40,11 @@ export interface PlatformFile {
 
 export interface PlatformEvidence {
   id: string
+  evidence_id: string
   title: string
-  type: string
+  ev_type: string // 'file', 'link', 'text', etc
+  type: string // legacy
+  description?: string
   user_id: string
   status: "defined" | "linked" | "complete" | "void"
   source_file_ids: string[]

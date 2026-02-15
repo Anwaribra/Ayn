@@ -12,11 +12,14 @@ interface Message {
     timestamp: number
 }
 
+type HorusStatus = "idle" | "searching" | "generating" | "error"
+
 interface HorusContextType {
     messages: Message[]
     currentChatId: string | null
-    isLoading: boolean
+    status: HorusStatus
     sendMessage: (text: string, files?: File[]) => Promise<void>
+    stopGeneration: () => void
     newChat: () => void
     loadChat: (chatId: string) => Promise<void>
 }
@@ -27,8 +30,9 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth()
     const [messages, setMessages] = useState<Message[]>([])
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
+    const [status, setStatus] = useState<HorusStatus>("idle")
     const isInitialized = useRef(false)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     // 1. Auto-Resume Last Session on mount
     useEffect(() => {
@@ -87,8 +91,17 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
         return () => eventSource.close()
     }, [user])
 
+    const stopGeneration = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            abortControllerRef.current = null
+            setStatus("idle")
+            toast.info("Generation stopped")
+        }
+    }
+
     const sendMessage = async (text: string, files?: File[]) => {
-        if ((!text && (!files || files.length === 0)) || isLoading) return
+        if ((!text && (!files || files.length === 0)) || status !== "idle") return
 
         const userMsg: Message = {
             id: crypto.randomUUID(),
@@ -98,8 +111,23 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
         }
 
         setMessages(prev => [...prev, userMsg])
-        setIsLoading(true)
+        setStatus("searching")
 
+        // 1. RAG Search Step
+        let augmentedMessage = text
+        try {
+            if (text.length > 10) {
+                const context = await api.searchRelevantEvidence(text)
+                if (context) {
+                    augmentedMessage = `${context}\n\n[User Query]:\n${text}`
+                    console.log("[Horus] Context injected:", context.length, "chars")
+                }
+            }
+        } catch (err) {
+            console.warn("[Horus] Search step failed, proceeding without context.")
+        }
+
+        setStatus("generating")
         const assistantMsgId = crypto.randomUUID()
         setMessages(prev => [...prev, {
             id: assistantMsgId,
@@ -108,10 +136,13 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
             timestamp: Date.now()
         }])
 
+        // 2. Stream Generation
+        abortControllerRef.current = new AbortController()
         let fullContent = ""
+
         try {
             await api.horusChatStream(
-                text || "Analyze these files.",
+                augmentedMessage || "Analyze these files.",
                 files,
                 currentChatId || undefined,
                 (chunk) => {
@@ -125,23 +156,28 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
                     setMessages(prev => prev.map(m =>
                         m.id === assistantMsgId ? { ...m, content: fullContent } : m
                     ))
-                }
+                },
+                abortControllerRef.current.signal
             )
-        } catch (err) {
-            toast.error("Horus connection interrupted.")
-            setMessages(prev => prev.filter(m => m.id !== assistantMsgId))
+        } catch (err: any) {
+            if (err.name !== 'AbortError') {
+                toast.error("Horus connection interrupted.")
+                setMessages(prev => prev.filter(m => m.id !== assistantMsgId)) // Remove empty message on error
+            }
         } finally {
-            setIsLoading(false)
+            setStatus("idle")
+            abortControllerRef.current = null
         }
     }
 
     const newChat = () => {
+        stopGeneration()
         setCurrentChatId(null)
         setMessages([])
     }
 
     const loadChat = async (chatId: string) => {
-        setIsLoading(true)
+        stopGeneration()
         try {
             const chat = await api.getChatMessages(chatId)
             setCurrentChatId(chat.id)
@@ -153,13 +189,11 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
             })))
         } catch (err) {
             toast.error("Failed to load chat history.")
-        } finally {
-            setIsLoading(false)
         }
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, isLoading, sendMessage, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, sendMessage, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

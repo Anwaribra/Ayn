@@ -468,7 +468,8 @@ class ApiClient {
     message: string,
     files?: File[],
     chatId?: string,
-    onChunk?: (chunk: string) => void
+    onChunk?: (chunk: string) => void,
+    signal?: AbortSignal
   ) {
     const token = this.getToken()
     const formData = new FormData()
@@ -487,6 +488,7 @@ class ApiClient {
         Authorization: `Bearer ${token}`,
       },
       body: formData,
+      signal,
     })
 
     if (!response.ok) {
@@ -498,15 +500,72 @@ class ApiClient {
     let fullText = ""
 
     if (reader) {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        fullText += chunk
-        if (onChunk) onChunk(chunk)
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value, { stream: true })
+          fullText += chunk
+          if (onChunk) onChunk(chunk)
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          log('Stream aborted by user')
+        } else {
+          throw err
+        }
       }
     }
     return fullText
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CLIENT-SIDE RAG (Heuristic)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async searchRelevantEvidence(query: string): Promise<string> {
+    try {
+      // Parallel fetch of evidence and gaps metadata
+      const [evidence, gaps] = await Promise.all([
+        this.getStateEvidence(),
+        this.getStateGaps()
+      ])
+
+      const terms = query.toLowerCase().split(' ').filter(t => t.length > 3)
+      if (terms.length === 0) return ""
+
+      let context = "Relevant Platform Knowledge:\n"
+
+      // 1. Search Evidence matches
+      const relevantEvidence = evidence.filter(e =>
+        terms.some(t => e.title.toLowerCase().includes(t) || e.ev_type.toLowerCase().includes(t))
+      ).slice(0, 5)
+
+      if (relevantEvidence.length > 0) {
+        context += "\n[Evidence Found]:\n"
+        relevantEvidence.forEach(e => {
+          context += `- "${e.title}" (${e.ev_type}) ID: ${e.evidence_id.slice(0, 8)}\n`
+        })
+      }
+
+      // 2. Search Gap matches
+      const relevantGaps = gaps.filter(g =>
+        terms.some(t => g.description.toLowerCase().includes(t) || g.standard.toLowerCase().includes(t))
+      ).slice(0, 5)
+
+      if (relevantGaps.length > 0) {
+        context += "\n[Gaps Found]:\n"
+        relevantGaps.forEach(g => {
+          context += `- Gap in ${g.standard}: ${g.description} (Severity: ${g.severity})\n`
+        })
+      }
+
+      return context === "Relevant Platform Knowledge:\n" ? "" : context
+
+    } catch (err) {
+      console.error("RAG Search failed:", err)
+      return ""
+    }
   }
 
   async getLastChat() {

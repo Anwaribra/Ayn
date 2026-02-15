@@ -30,7 +30,9 @@ import {
   ArrowUpRight,
   Cpu,
   ShieldAlert,
-  Lightbulb
+  Lightbulb,
+  StopCircle,
+  Search
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -113,8 +115,9 @@ export default function HorusAIChat() {
   const {
     messages,
     currentChatId,
-    isLoading,
+    status,
     sendMessage,
+    stopGeneration,
     newChat,
     loadChat
   } = useHorus()
@@ -122,21 +125,19 @@ export default function HorusAIChat() {
   const [input, setInput] = useState("")
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
   const { data: metrics } = useSWR(user ? "dashboard-metrics" : null, () => api.getDashboardMetrics())
 
   const indexedAssets = metrics?.evidenceCount ?? 0
 
-  const actionPills = [
-    { label: "Compliance Map", icon: Sparkles, href: "/platform/standards", desc: "View alignment status" },
-    { label: "Asset Library", icon: Settings2, href: "/platform/evidence", desc: "Manage evidence" },
-    { label: "Audit Review", icon: CheckCircle2, href: "/platform/gap-analysis", desc: "Check for gaps" },
-  ]
-
+  // Auto-scroll effect
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isLoading])
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages, status])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -187,9 +188,10 @@ export default function HorusAIChat() {
   }
 
   const isEmpty = messages.length === 0
+  const isProcessing = status !== "idle"
 
   return (
-    <div className="flex h-full flex-col bg-transparent relative">
+    <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
       {/* ─── Header ─── */}
       <div className="shrink-0 px-6 py-4 flex justify-between items-center bg-layer-1/50 backdrop-blur-md border-b border-border z-10">
         <div className="flex items-center gap-3">
@@ -267,8 +269,8 @@ export default function HorusAIChat() {
       </div>
 
       {/* ─── Chat Area ─── */}
-      <div className="flex-1 overflow-hidden relative">
-        <ScrollArea className="h-full px-6 py-8">
+      <div className="flex-1 overflow-hidden relative flex flex-col">
+        <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar">
           <div className="max-w-3xl mx-auto space-y-8 pb-4">
             {isEmpty ? (
               <div className="mt-12 animate-fade-in-up space-y-12 text-center">
@@ -336,31 +338,40 @@ export default function HorusAIChat() {
                   </div>
                 ))}
 
-                {/* Loading State */}
-                {isLoading && (
+                {/* Status Indicator */}
+                {status !== "idle" && (
                   <div className="flex gap-4 animate-pulse">
                     <div className="w-8 h-8 rounded-xl bg-layer-2 border border-border flex items-center justify-center text-primary shrink-0">
                       <Loader2 className="w-4 h-4 animate-spin" />
                     </div>
                     <div className="bg-layer-2 border border-border rounded-3xl rounded-tl-none p-6 shadow-sm flex items-center gap-3">
-                      <span className="flex gap-1">
-                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
-                      </span>
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Processing</span>
+                      {status === 'searching' ? (
+                        <>
+                          <Search className="w-4 h-4 text-primary animate-pulse" />
+                          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Reading Platform Knowledge...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex gap-1">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                            <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                            <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                          </span>
+                          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Processing</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
               </>
             )}
-            <div ref={scrollRef} />
+            <div ref={messagesEndRef} className="h-4" />
           </div>
-        </ScrollArea>
+        </div>
 
         {/* ─── Input Area ─── */}
-        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-layer-0 via-layer-0/90 to-transparent pointer-events-none">
-          <div className="max-w-3xl mx-auto pointer-events-auto">
+        <div className="flex-shrink-0 p-6 bg-gradient-to-t from-layer-0 via-layer-0/90 to-transparent">
+          <div className="max-w-3xl mx-auto relative">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3 animate-in slide-in-from-bottom-2">
@@ -383,26 +394,40 @@ export default function HorusAIChat() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
-                      handleSendMessage()
+                      if (isProcessing) {
+                        stopGeneration()
+                      } else {
+                        handleSendMessage()
+                      }
                     }
                   }}
-                  placeholder="Ask about compliance status, gaps, or upload evidence..."
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-3.5 max-h-32 resize-none font-medium leading-relaxed"
+                  placeholder={status === 'searching' ? "Scanning knowledge base..." : (status === 'generating' ? "Generating response..." : "Ask about compliance status, gaps, or upload evidence...")}
+                  disabled={isProcessing}
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-foreground placeholder:text-muted-foreground py-3.5 max-h-32 resize-none font-medium leading-relaxed disabled:opacity-50"
                   style={{ minHeight: '52px' }}
                 />
 
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
-                  className={cn(
-                    "rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg",
-                    isLoading || (!input.trim() && attachedFiles.length === 0)
-                      ? "bg-muted text-muted-foreground shadow-none"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95"
-                  )}
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                </Button>
+                {isProcessing ? (
+                  <Button
+                    onClick={stopGeneration}
+                    className="rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:scale-105 active:scale-95"
+                  >
+                    <StopCircle className="w-5 h-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={(!input.trim() && attachedFiles.length === 0)}
+                    className={cn(
+                      "rounded-full w-12 h-12 flex items-center justify-center transition-all mb-0.5 ml-2 shadow-lg",
+                      (!input.trim() && attachedFiles.length === 0)
+                        ? "bg-muted text-muted-foreground shadow-none"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95"
+                    )}
+                  >
+                    <Send className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
             <div className="text-center mt-3">

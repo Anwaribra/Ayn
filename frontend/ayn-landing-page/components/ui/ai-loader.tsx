@@ -23,7 +23,6 @@ export const Component: React.FC<AILoaderProps> = ({
     <div
       className={cn(
         "relative flex items-center justify-center font-sans select-none ai-loader-letters",
-        variant === "inline" && "rounded-2xl bg-gradient-to-b from-primary/20 via-primary/10 to-transparent dark:from-primary/15 dark:via-primary/10 dark:to-transparent border border-[var(--border-subtle)]",
         className
       )}
       style={{ width: size, height: size }}

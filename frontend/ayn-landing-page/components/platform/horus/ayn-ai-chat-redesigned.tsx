@@ -228,12 +228,12 @@ export default function HorusAIChat() {
         </Sheet>
       </div>
 
-      {/* ─── Chat Area (full height, no header) ─── */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
-        <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
-          <div className="max-w-3xl mx-auto space-y-6 pb-4">
+      {/* ─── Chat Area (full height, centered) ─── */}
+      <div className="flex-1 overflow-hidden relative flex flex-col items-center">
+        <div className="flex-1 w-full max-w-3xl overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
+          <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
-              <div className="flex-1 min-h-[40vh] flex items-center justify-center">
+              <div className="flex-1 min-h-[40vh] flex items-center justify-center w-full">
                 <AILoader variant="inline" text="Horus AI" size={180} />
               </div>
             ) : (

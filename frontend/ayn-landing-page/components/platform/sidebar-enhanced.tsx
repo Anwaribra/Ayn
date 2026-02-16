@@ -117,7 +117,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 flex flex-col z-50 select-none bg-layer-1 border-r border-border shadow-xl md:shadow-none",
+        "fixed inset-y-0 left-0 flex flex-col z-50 select-none glass-layer-1 shadow-xl md:shadow-none",
         "h-[100dvh] transition-transform md:transition-[width,opacity,transform] duration-300 ease-in-out",
         "w-72 max-w-[85vw]", // Slightly wider for enterprise feel
         "md:static md:h-screen md:translate-x-0",

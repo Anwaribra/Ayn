@@ -46,7 +46,7 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group relative flex flex-col justify-between p-5 rounded-3xl bg-layer-2 border border-border hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer h-full"
+            className="group relative flex flex-col justify-between p-5 rounded-3xl glass-layer-2 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer h-full"
         >
             <div className="flex justify-between items-start mb-4">
                 <div className={cn(
@@ -74,11 +74,11 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
 
             <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
                 <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 border-2 border-layer-2 flex items-center justify-center text-[8px] font-bold text-primary">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-primary">
                         S
                     </div>
                     {criteriaCount > 1 && (
-                        <div className="w-6 h-6 rounded-full bg-layer-3 border-2 border-layer-2 flex items-center justify-center text-[8px] font-bold text-muted-foreground">
+                        <div className="w-6 h-6 rounded-full glass-layer-3 border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-muted-foreground">
                             +{criteriaCount - 1}
                         </div>
                     )}

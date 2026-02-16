@@ -150,6 +150,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         platformTheme === "dark" && "dark"
       )}
     >
+      {/* 🌌 Cinematic Background Layer */}
+      <div className="cinematic-bg" />
+
       {/* Mobile Backdrop */}
       <div
         className={cn(

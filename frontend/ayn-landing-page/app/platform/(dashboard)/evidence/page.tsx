@@ -115,12 +115,12 @@ function EvidenceContent() {
           ))}
         </div>
       ) : evidenceList?.length === 0 ? (
-        <div className="text-center py-20 rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-slate-800 dark:bg-slate-900/50">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-100 mx-auto flex items-center justify-center mb-4 dark:bg-slate-800">
-            <UploadCloud className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
+        <div className="text-center py-20 rounded-3xl border-2 border-dashed border-glass-border glass-layer-2">
+          <div className="w-16 h-16 rounded-2xl glass-layer-3 mx-auto flex items-center justify-center mb-4">
+            <UploadCloud className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">No evidence found</h3>
-          <p className="text-zinc-500 max-w-sm mx-auto mt-2 dark:text-zinc-400">
+          <h3 className="text-lg font-bold text-foreground">No evidence found</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto mt-2">
             Upload proof documents, reports, or policies to start mapping your compliance framework.
           </p>
         </div>
@@ -143,7 +143,7 @@ function EvidenceContent() {
             className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setSelectedEvidence(null)}
           />
-          <div className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 dark:bg-slate-900 dark:shadow-slate-950/50 border dark:border-slate-800">
+          <div className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-zinc-100 flex items-start justify-between bg-zinc-50/50 dark:bg-slate-900/50 dark:border-slate-800">
               <div className="flex gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 dark:bg-blue-900/20 dark:border-blue-900/30">

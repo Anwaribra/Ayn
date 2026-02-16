@@ -5,12 +5,35 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 [data-section="platform"] {
-  /* Core surfaces - Dark theme (default) */
-  --bg-deep: #07090E;
-  --sidebar-bg: #05070A;
-  --surface: rgba(255, 255, 255, 0.03);
-  --surface-card: rgba(255, 255, 255, 0.04);
-  --surface-modal: #0D1118;
+  /* ═══════════════════════════════════════════════════════════════════════════
+     1️⃣ SEMANTIC LAYER TOKENS (Dark Mode Default)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --layer-0: #05070A;
+  /* App Background - Deep */
+  --layer-1: rgba(10, 13, 18, 0.70);
+  /* Sidebar / Navigation */
+  --layer-2: rgba(20, 24, 32, 0.55);
+  /* Cards / Chat Containers */
+  --layer-3: rgba(25, 30, 40, 0.85);
+  /* Modals / Popovers */
+  --layer-4: #1E293B;
+  /* Toasts / Tooltips */
+
+  /* 2️⃣ GLASS SYSTEM TOKENS (Dark) */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Subtle 1px border */
+  --glass-blur: 20px;
+  /* 16px - 24px range */
+  --glass-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  /* Core surfaces (Mapped to Layers) */
+  --bg-deep: var(--layer-0);
+  --sidebar-bg: var(--layer-1);
+  --surface: var(--layer-2);
+  --surface-card: var(--layer-2);
+  --surface-modal: var(--layer-3);
 
   /* Accent palette - desaturated for premium feel */
   --accent-blue: #3B6FD9;
@@ -26,7 +49,7 @@
   --text-tertiary: #64748B;
 
   /* Borders and depth */
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-subtle: var(--glass-border);
   --border-light: rgba(255, 255, 255, 0.12);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -37,11 +60,11 @@
   --glow-blue: rgba(59, 111, 217, 0.12);
 
   /* Override shadcn/ui variables for dark mode */
-  --background: #080A0F;
+  --background: var(--layer-0);
   --foreground: #F1F5F9;
-  --card: rgba(255, 255, 255, 0.04);
+  --card: var(--layer-2);
   --card-foreground: #F1F5F9;
-  --popover: #0D1118;
+  --popover: var(--layer-3);
   --popover-foreground: #F1F5F9;
   --primary: #3B6FD9;
   --primary-foreground: #ffffff;
@@ -53,16 +76,16 @@
   --accent-foreground: #F1F5F9;
   --destructive: #C9424A;
   --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: var(--glass-border);
   --input: rgba(255, 255, 255, 0.06);
   --ring: rgba(59, 111, 217, 0.35);
-  --sidebar: #05070A;
+  --sidebar: var(--layer-1);
   --sidebar-foreground: #F1F5F9;
   --sidebar-primary: #3B6FD9;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #F1F5F9;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-border: var(--glass-border);
   --sidebar-ring: rgba(59, 111, 217, 0.35);
 
   /* Brand overrides */
@@ -74,26 +97,46 @@
 }
 
 /* Light variant for the platform shell only (does NOT affect landing page) */
+/* Light variant for the platform shell only (does NOT affect landing page) */
 [data-section="platform"] [data-platform-theme="light"] {
-  --background: #F1F5F9;
+  /* 1️⃣ SEMANTIC LAYER TOKENS (Light Mode) */
+  --layer-0: #F8FAFC;
+  /* App Background */
+  --layer-1: rgba(255, 255, 255, 0.75);
+  /* Sidebar */
+  --layer-2: rgba(255, 255, 255, 0.65);
+  /* Cards */
+  --layer-3: rgba(255, 255, 255, 0.90);
+  /* Modals */
+  --layer-4: #0F172A;
+  /* Tooltips (Inverse) */
+
+  /* 2️⃣ GLASS SYSTEM TOKENS (Light) */
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(226, 232, 240, 0.6);
+  --glass-blur: 24px;
+  --glass-shadow-soft: 0 4px 20px -2px rgba(148, 163, 184, 0.15);
+  --glass-shadow-strong: 0 12px 40px -4px rgba(148, 163, 184, 0.25);
+
+  /* Core surfaces mapped */
+  --bg-deep: var(--layer-0);
+  --sidebar-bg: var(--layer-1);
+  --surface: var(--layer-2);
+  --surface-card: var(--layer-2);
+  --surface-modal: var(--layer-3);
+
+  --background: var(--layer-0);
   --foreground: #0F172A;
   --primary: #2563EB;
   --primary-foreground: #FFFFFF;
   --card-foreground: #0F172A;
   --popover-foreground: #0F172A;
-  --bg-deep: #F1F5F9;
-
-  --sidebar-bg: #FFFFFF;
-
-  --surface: #F8FAFC;
-  --surface-card: #FFFFFF;
-  --surface-modal: #FFFFFF;
 
   --text-primary: #0F172A;
   --text-secondary: #475569;
   --text-tertiary: #94A3B8;
 
-  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-subtle: var(--glass-border);
   --border-light: rgba(15, 23, 42, 0.10);
   --border: rgba(15, 23, 42, 0.08);
 
@@ -114,6 +157,44 @@
   --sidebar-border: rgba(15, 23, 42, 0.08);
 
   color-scheme: light;
+}
+
+/* 3️⃣ UTILITY CLASSES - GLASS SYSTEM
+   Must be used in place of raw bg-classes
+*/
+[data-section="platform"] .glass-layer-1 {
+  background: var(--layer-1);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  will-change: backdrop-filter;
+  border-right: 1px solid var(--glass-border);
+}
+
+[data-section="platform"] .glass-layer-2 {
+  background: var(--layer-2);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  will-change: backdrop-filter;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+[data-section="platform"] .glass-layer-3 {
+  background: var(--layer-3);
+  backdrop-filter: blur(calc(var(--glass-blur) + 10px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 10px));
+  will-change: backdrop-filter;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+[data-section="platform"] .glass-layer-4 {
+  background: var(--layer-4);
+  color: var(--background);
+  box-shadow: var(--glass-shadow-soft);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
 }
 
 /* ─── Cinematic Background Atmosphere ─────────────────────────────────────── */
@@ -138,11 +219,11 @@
 
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-strong);
 }
 
 [data-section="platform"] [data-platform-theme="light"] .glass-panel {

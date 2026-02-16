@@ -149,9 +149,9 @@ function DashboardContent() {
             { label: "Critical Gaps", value: String(activeGaps), sub: "Needs Action", icon: AlertTriangle, color: "text-amber-500" },
             { label: "Recent Performance", value: metrics?.recentScores?.[0]?.score ? `${metrics.recentScores[0].score}%` : "Stable", sub: "Trend", icon: Zap, color: "text-indigo-500" },
           ].map((m, i) => (
-            <div key={i} className="bg-layer-2 p-8 rounded-[40px] border border-border flex flex-col justify-between min-h-[180px] hover:border-blue-500/20 transition-all group shadow-sm">
+            <div key={i} className="glass-layer-2 p-8 rounded-[40px] flex flex-col justify-between min-h-[180px] hover:border-blue-500/20 transition-all group shadow-sm">
               <div className="flex justify-between items-start">
-                <div className={cn("w-12 h-12 rounded-2xl bg-layer-1 flex items-center justify-center transition-transform group-hover:scale-110", m.color)}>
+                <div className={cn("w-12 h-12 rounded-2xl glass-layer-3 flex items-center justify-center transition-transform group-hover:scale-110", m.color)}>
                   <m.icon className="w-6 h-6" />
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -168,7 +168,7 @@ function DashboardContent() {
       {/* Recent Evidence & Scores Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Evidence */}
-        <div className="lg:col-span-2 bg-layer-2 p-8 rounded-[48px] border border-border shadow-sm">
+        <div className="lg:col-span-2 glass-layer-2 p-8 rounded-[48px] shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black text-foreground italic">Recent Evidence</h3>
             <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
@@ -179,7 +179,7 @@ function DashboardContent() {
               <p className="text-center py-12 text-muted-foreground italic">No evidence uploaded yet.</p>
             ) : (
               metrics?.recentEvidence?.map((ev: any) => (
-                <div key={ev.id} className="flex items-center gap-4 p-4 rounded-3xl bg-layer-1 border border-border hover:border-primary/20 transition-all">
+                <div key={ev.id} className="flex items-center gap-4 p-4 rounded-3xl glass-layer-3 hover:border-primary/20 transition-all">
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-blue-500" />
                   </div>
@@ -197,7 +197,7 @@ function DashboardContent() {
         </div>
 
         {/* Recent Performance Log */}
-        <div className="bg-layer-2 p-8 rounded-[48px] border border-border shadow-sm">
+        <div className="glass-layer-2 p-8 rounded-[48px] shadow-sm">
           <h3 className="text-xl font-black text-foreground italic mb-8">Score History</h3>
           <div className="space-y-6">
             {metrics?.recentScores?.length === 0 ? (

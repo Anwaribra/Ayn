@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils"
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
-  const platformTheme = "dark" // Enforced V3 Theme
+  const [platformTheme, setPlatformTheme] = useState<"dark" | "light">("dark")
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated } = useAuth()
@@ -38,9 +38,20 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette()
 
+  // Load saved platform theme (light/dark) on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem("platform-theme")
+    if (stored === "light" || stored === "dark") {
+      setPlatformTheme(stored)
+    }
+  }, [])
 
-
-
+  // Persist theme choice
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem("platform-theme", platformTheme)
+  }, [platformTheme])
 
   // Auto-close sidebar on small screens  
   useEffect(() => {

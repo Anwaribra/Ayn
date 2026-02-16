@@ -237,6 +237,7 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  /* V3 Dark Mode Gradient: Deep Blue/Slate base specific to user reference */
   background: radial-gradient(circle at 70% 30%, #1e293b44 0%, transparent 50%),
     radial-gradient(circle at 20% 80%, #3b2f1e44 0%, transparent 50%),
     #07090E;
@@ -256,15 +257,15 @@
   mix-blend-mode: overlay;
 }
 
-/* Light mode: Clean "Sunset" Ambient Background - Softer & Lighter */
+/* Light mode: V3 Clean Light - Cool, Cinematic, Crisp */
 [data-section="platform"] [data-platform-theme="light"] .cinematic-bg {
   background:
-    /* Top-right warm glow (Subtle) */
-    radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.08) 0%, transparent 60%),
-    /* Bottom-left soft orange (Subtle) */
-    radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.05) 0%, transparent 60%),
-    /* Base clean gradient */
-    linear-gradient(to bottom, #FFFFFF, #F8FAFC);
+    /* Top-right subtle cool glow */
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    /* Bottom-left soft indigo */
+    radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 60%),
+    /* Base clean slate gradient */
+    linear-gradient(to bottom, #FFFFFF, #F8FAFC, #F1F5F9);
   filter: blur(80px);
   opacity: 1;
 }

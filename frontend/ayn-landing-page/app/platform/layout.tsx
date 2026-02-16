@@ -20,7 +20,7 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       <CommandPaletteProvider>
         <AuthGuard>
           <HorusProvider>
-            <div data-section="platform" className="relative min-h-screen bg-noise">
+            <div data-section="platform" className="relative min-h-screen">
 
 
               <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">

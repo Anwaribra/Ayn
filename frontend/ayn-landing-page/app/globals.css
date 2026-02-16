@@ -24,12 +24,13 @@
   --spacing-content: 1.5rem;
 
   /* Glassmorphism System - Light Mode (Default) */
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.8);
-  --glass-border-subtle: rgba(255, 255, 255, 0.4);
-  --glass-blur: 20px;
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-border-subtle: rgba(255, 255, 255, 0.3);
+  --glass-blur: 16px;
+  /* Shadow includes a subtle 1px ring for contrast against light backgrounds */
+  --glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --glass-shadow-hover: 0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);
@@ -46,6 +47,7 @@
   /* Semantic Roles */
   --background: var(--layer-0);
   --foreground: oklch(0.12 0.02 240);
+
 
   --card: var(--layer-2);
   --card-foreground: oklch(0.12 0.02 240);

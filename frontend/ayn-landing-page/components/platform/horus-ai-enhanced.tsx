@@ -128,7 +128,7 @@ export function HorusAIWidget() {
         className={cn(
           "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center",
           "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-600/30",
-          "hover:scale-110 active:scale-95 transition-all border border-[var(--border-light)]"
+          "hover:scale-110 active:scale-95 transition-all border border-white/20"
         )}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -147,31 +147,31 @@ export function HorusAIWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]"
           >
-            <div className="glass rounded-3xl overflow-hidden shadow-2xl">
+            <div className="glass rounded-3xl overflow-hidden shadow-2xl bg-layer-2">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-white/[0.02]">
+              <div className="flex items-center justify-between p-4 border-b border-border bg-layer-1/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
                     <Brain className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Horus AI</h4>
+                    <h4 className="text-sm font-bold text-foreground">Horus AI</h4>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px] text-emerald-400 font-medium uppercase tracking-wider">Neural Link Active</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wider">Neural Link Active</span>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 text-zinc-500 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-layer-3"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Messages */}
-              <div ref={scrollRef} className="h-[320px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
+              <div ref={scrollRef} className="h-[320px] overflow-y-auto p-4 space-y-4 custom-scrollbar bg-layer-0/30">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -181,22 +181,22 @@ export function HorusAIWidget() {
                     )}
                   >
                     <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                      "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm",
                       msg.role === "assistant"
                         ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-                        : "bg-zinc-700"
+                        : "bg-zinc-200 dark:bg-zinc-700"
                     )}>
                       {msg.role === "assistant" ? (
                         <Brain className="w-4 h-4 text-white" />
                       ) : (
-                        <MessageSquare className="w-4 h-4 text-white" />
+                        <MessageSquare className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
                       )}
                     </div>
                     <div className={cn(
-                      "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed",
+                      "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
                       msg.role === "assistant"
-                        ? "bg-white/40 backdrop-blur-md border border-white/20 text-foreground rounded-tl-sm shadow-sm dark:bg-white/10 dark:border-white/10 dark:text-zinc-200"
-                        : "bg-blue-600/80 backdrop-blur-md text-white border border-blue-500/30 rounded-tr-sm shadow-sm"
+                        ? "bg-layer-2 border border-border text-foreground rounded-tl-sm"
+                        : "bg-blue-600 text-white border border-blue-500/30 rounded-tr-sm"
                     )}>
                       {msg.content}
                     </div>
@@ -205,33 +205,33 @@ export function HorusAIWidget() {
 
                 {isTyping && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
                       <Brain className="w-4 h-4 text-white" />
                     </div>
-                    <div className="bg-[var(--surface)] rounded-2xl rounded-tl-sm p-4 flex items-center gap-1">
-                      <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="bg-layer-2 border border-border rounded-2xl rounded-tl-sm p-4 flex items-center gap-1 shadow-sm">
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                     </div>
                   </div>
                 )}
 
-                {/* Starter Suggestions (only show initially) */}
+                {/* Starter Suggestions */}
                 {messages.length === 1 && !isTyping && (
                   <div className="pt-4 space-y-2">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-3">Starter Suggestions</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Starter Suggestions</p>
                     <div className="grid grid-cols-1 gap-2">
                       {starterSuggestions.map((suggestion) => (
                         <button
                           key={suggestion.id}
                           onClick={() => handleSend(suggestion.prompt)}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all text-left group"
+                          className="flex items-center gap-3 p-3 rounded-xl bg-layer-2 hover:bg-layer-3 border border-border hover:border-primary/30 transition-all text-left group shadow-sm"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                            <suggestion.icon className="w-4 h-4 text-blue-400" />
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <suggestion.icon className="w-4 h-4 text-primary" />
                           </div>
-                          <span className="text-xs text-zinc-300 group-hover:text-white flex-1">{suggestion.label}</span>
-                          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-blue-400" />
+                          <span className="text-xs text-muted-foreground group-hover:text-foreground flex-1 transition-colors">{suggestion.label}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                         </button>
                       ))}
                     </div>
@@ -240,7 +240,7 @@ export function HorusAIWidget() {
               </div>
 
               {/* Input */}
-              <div className="p-4 border-t border-[var(--border-subtle)] bg-white/[0.02]">
+              <div className="p-4 border-t border-border bg-layer-1/50">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -248,13 +248,13 @@ export function HorusAIWidget() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
                     placeholder="Ask Horus anything..."
-                    className="flex-1 h-10 px-4 rounded-xl bg-white/5 border border-[var(--border-light)] text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="flex-1 h-10 px-4 rounded-xl bg-layer-2/80 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                   />
                   <Button
                     size="icon"
                     onClick={() => handleSend(input)}
                     disabled={!input.trim() || isTyping}
-                    className="h-10 w-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+                    className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-md disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -264,7 +264,7 @@ export function HorusAIWidget() {
                     <button
                       key={reply}
                       onClick={() => handleSend(reply)}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-[var(--border-subtle)] text-[10px] text-zinc-400 hover:text-white transition-all"
+                      className="px-3 py-1.5 rounded-lg bg-layer-2 hover:bg-layer-3 border border-border text-[10px] text-muted-foreground hover:text-foreground transition-all shadow-sm"
                     >
                       {reply}
                     </button>

@@ -180,83 +180,64 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
-      {/* ─── Header: minimal, single row ─── */}
-      <div className="shrink-0 px-4 md:px-6 py-3 flex justify-between items-center border-b border-[var(--border-subtle)] bg-background/80 backdrop-blur-sm z-10">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-            <Bot className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-bold tracking-tight text-foreground truncate">
-              Horus AI
-            </h1>
-            <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
-              Ready · {indexedAssets} assets indexed
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="sm" onClick={newChat} className="h-8 px-2.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground text-xs gap-1.5">
-            <PlusCircle className="h-3.5 w-3.5" />
-            New
-          </Button>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-2.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground text-xs gap-1.5">
-                <History className="h-3.5 w-3.5" />
-                History
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-border bg-background">
-              <div className="p-6 border-b border-border">
-                <h2 className="text-lg font-black text-foreground">Session History</h2>
-              </div>
-              <ScrollArea className="h-[calc(100vh-80px)]">
-                <div className="p-4 space-y-2">
-                  {(!history || history.length === 0) ? (
-                    <div className="text-center py-12">
-                      <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                      <p className="text-xs font-medium text-muted-foreground">No chat history</p>
-                    </div>
-                  ) : (
-                    history.map((session: any) => (
-                      <div
-                        key={session.id}
-                        onClick={() => loadChat(session.id)}
-                        className={cn(
-                          "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
-                          currentChatId === session.id
-                            ? "bg-primary/10 border-primary/20 text-primary"
-                            : "glass-layer-2 hover:border-primary/30 text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <div className="flex justify-between items-start gap-2">
-                          <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-primary" : "text-foreground")}>
-                            {session.title || "Untitled Conversation"}
-                          </p>
-                          <button
-                            onClick={(e) => deleteSession(session.id, e)}
-                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-2 font-medium">
-                          {new Date(session.createdAt).toLocaleDateString()}
+      {/* New + History as floating top-right (no header bar) */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
+        <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat">
+          <PlusCircle className="h-4 w-4" />
+        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="History">
+              <History className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-border bg-[var(--layer-0)]">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-black text-foreground">Session History</h2>
+            </div>
+            <ScrollArea className="h-[calc(100vh-80px)]">
+              <div className="p-4 space-y-2">
+                {(!history || history.length === 0) ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs font-medium text-muted-foreground">No chat history</p>
+                  </div>
+                ) : (
+                  history.map((session: any) => (
+                    <div
+                      key={session.id}
+                      onClick={() => loadChat(session.id)}
+                      className={cn(
+                        "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
+                        currentChatId === session.id
+                          ? "bg-primary/10 border-primary/20 text-primary"
+                          : "glass-layer-2 hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-primary" : "text-foreground")}>
+                          {session.title || "Untitled Conversation"}
                         </p>
+                        <button
+                          onClick={(e) => deleteSession(session.id, e)}
+                          className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
-        </div>
+                      <p className="text-[10px] text-muted-foreground mt-2 font-medium">
+                        {new Date(session.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
       </div>
 
-      {/* ─── Chat Area ─── */}
+      {/* ─── Chat Area (full height, no header) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
           <div className="max-w-3xl mx-auto space-y-6 pb-4">
@@ -339,8 +320,8 @@ export default function HorusAIChat() {
           </div>
         </div>
 
-        {/* ─── Input: compact bar ─── */}
-        <div className="flex-shrink-0 p-4 md:p-5 border-t border-[var(--border-subtle)] bg-background/95 backdrop-blur-sm z-20">
+        {/* ─── Input: compact bar (matches platform dark background) ─── */}
+        <div className="flex-shrink-0 p-4 md:p-5 border-t border-[var(--border-subtle)] bg-[var(--layer-0)] z-20">
           <div className="max-w-3xl mx-auto">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">

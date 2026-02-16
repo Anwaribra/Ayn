@@ -94,13 +94,40 @@ function DashboardContent() {
 
       {/* Status Tiles Grid */}
       <section>
-        <StatusTiles />
+        <StatusTiles
+          stats={[
+            {
+              label: "Pending Evidence",
+              value: metrics?.evidenceCount?.toString() || "0",
+              icon: FileText,
+              status: "warning"
+            },
+            {
+              label: "Active Alerts",
+              value: metrics?.unreadNotificationsCount?.toString() || "0",
+              icon: AlertTriangle,
+              status: metrics?.unreadNotificationsCount > 0 ? "critical" : "success"
+            },
+            {
+              label: "Compliance Score",
+              value: `${Math.round(alignmentScore)}%`,
+              icon: Activity,
+              status: alignmentScore > 80 ? "success" : "warning"
+            },
+            {
+              label: "Total Analyses",
+              value: metrics?.totalGapAnalyses?.toString() || "0",
+              icon: Cpu,
+              status: "neutral"
+            }
+          ]}
+        />
       </section>
 
       {/* Activity Graph & Logs */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <ActivityChart />
+          <ActivityChart data={[]} />
 
           {/* Recent Evidence List */}
           <div className="glass-layer-2 p-8 rounded-[40px]">

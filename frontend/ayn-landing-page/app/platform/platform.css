@@ -131,8 +131,8 @@
   /* 2️⃣ GLASS SYSTEM TOKENS (Light) */
   --glass-bg: rgba(255, 255, 255, 0.20);
   /* Range: 0.15-0.25 */
-  --glass-border: rgba(255, 255, 255, 0.12);
-  /* border: 1px solid rgba(255,255,255,0.12) */
+  --glass-border: rgba(15, 23, 42, 0.12);
+  /* border: 1px solid rgba(15,23,42,0.12) - FIXED for visibility */
   --glass-blur: 12px;
   /* Mobile default */
   --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.08);
@@ -169,7 +169,7 @@
   --border: rgba(15, 23, 42, 0.08);
 
   --muted: #E2E8F0;
-  --muted-foreground: #64748B;
+  --muted-foreground: #475569;
 
   --accent: #E8F0FF;
   --accent-foreground: #0F172A;

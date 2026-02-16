@@ -17,32 +17,7 @@ interface StatusTilesProps {
     stats?: StatTile[]
 }
 
-const defaultTiles: StatTile[] = [
-    {
-        label: "Pending Evidence",
-        value: "12",
-        icon: Clock,
-        status: "warning",
-    },
-    {
-        label: "Active Alerts",
-        value: "3",
-        icon: AlertCircle,
-        status: "critical",
-    },
-    {
-        label: "Compliance Score",
-        value: "94%",
-        icon: CheckCircle2,
-        status: "success",
-    },
-    {
-        label: "Horus Uptime",
-        value: "99.9%",
-        icon: Activity,
-        status: "neutral",
-    },
-]
+const defaultTiles: StatTile[] = []
 
 export function StatusTiles({ stats = defaultTiles }: StatusTilesProps) {
     return (

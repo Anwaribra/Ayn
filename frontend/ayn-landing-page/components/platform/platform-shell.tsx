@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils"
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [platformTheme, setPlatformTheme] = useState<"dark" | "light">("dark")
+  const platformTheme = "dark" // Enforced V3 Theme
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated } = useAuth()
@@ -38,20 +38,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette()
 
-  // Load saved platform theme (light/dark) on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const stored = window.localStorage.getItem("platform-theme")
-    if (stored === "light" || stored === "dark") {
-      setPlatformTheme(stored)
-    }
-  }, [])
 
-  // Persist theme choice
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    window.localStorage.setItem("platform-theme", platformTheme)
-  }, [platformTheme])
+
+
 
   // Auto-close sidebar on small screens  
   useEffect(() => {
@@ -295,20 +284,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setPlatformTheme(prev => (prev === "dark" ? "light" : "dark"))}
-              className={cn(
-                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
-                platformTheme === "light"
-                  ? "text-muted-foreground hover:text-foreground hover:bg-layer-2"
-                  : "text-muted-foreground hover:text-foreground hover:bg-layer-2",
-              )}
-              title={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              aria-label={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {platformTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+
 
             <div className="w-px h-4 bg-border" />
           </div>
@@ -323,6 +299,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       <FloatingAIBar />
       <CommandPalette />
-    </div>
+    </div >
   )
 }

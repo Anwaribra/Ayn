@@ -181,14 +181,6 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
-      {/* Full-screen AI loader when Horus is searching or generating */}
-      {isProcessing && (
-        <AILoader
-          size={180}
-          text={status === "searching" ? "Reading..." : "Generating"}
-        />
-      )}
-
       {/* New + History as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat">

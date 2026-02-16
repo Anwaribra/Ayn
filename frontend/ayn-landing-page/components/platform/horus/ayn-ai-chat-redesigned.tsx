@@ -10,7 +10,6 @@ import {
   Paperclip,
   Bot,
   User,
-  Sparkles,
   FileText,
   X,
   Loader2,
@@ -27,7 +26,6 @@ import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
-import { Component as AILoader } from "@/components/ui/ai-loader"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -116,9 +114,6 @@ export default function HorusAIChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
-  const { data: metrics } = useSWR(user ? "dashboard-metrics" : null, () => api.getDashboardMetrics())
-
-  const indexedAssets = metrics?.evidenceCount ?? 0
 
   // Auto-scroll effect
   useEffect(() => {
@@ -237,44 +232,7 @@ export default function HorusAIChat() {
         <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
           <div className="max-w-3xl mx-auto space-y-6 pb-4">
             {isEmpty ? (
-              <div className="animate-fade-in-up pt-8 md:pt-12 pb-6">
-                <div className="text-center max-w-xl mx-auto space-y-6">
-                  {/* Multiple loaders visible on welcome screen */}
-                  <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
-                    <AILoader variant="inline" size={72} text="AI" className="shrink-0" />
-                    <AILoader variant="inline" size={88} text="Horus" className="shrink-0" />
-                    <AILoader variant="inline" size={72} text="Ready" className="shrink-0" />
-                    <AILoader variant="inline" size={64} text="..." className="shrink-0" />
-                  </div>
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                    <Sparkles className="w-7 h-7 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-2">
-                      What can I help you with?
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Ask about compliance, gaps, or upload evidence. I have access to {indexedAssets} indexed asset{indexedAssets !== 1 ? "s" : ""}.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2 pt-2">
-                    {[
-                      "Analyze my latest evidence",
-                      "Draft a compliance report",
-                      "Summarize pending gaps",
-                      "Check standard alignment",
-                    ].map((label) => (
-                      <button
-                        key={label}
-                        onClick={() => sendMessage(label)}
-                        className="px-4 py-2 rounded-full text-sm font-medium bg-muted/80 hover:bg-muted text-foreground/90 hover:text-foreground border border-transparent hover:border-[var(--border-subtle)] transition-all"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <div className="flex-1 min-h-[40vh]" aria-hidden />
             ) : (
               <>
                 {messages.map((msg) => (
@@ -322,9 +280,9 @@ export default function HorusAIChat() {
           </div>
         </div>
 
-        {/* ─── Input: dynamic grow prompt input ─── */}
-        <div className="flex-shrink-0 p-4 md:p-5 border-t border-[var(--border-subtle)] bg-[var(--layer-0)] z-20">
-          <div className="max-w-3xl mx-auto space-y-2">
+        {/* ─── Input: centered, no heavy bar ─── */}
+        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center">
+          <div className="w-full max-w-3xl mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map((file) => (
@@ -362,7 +320,7 @@ export default function HorusAIChat() {
                 ) : null
               }
             />
-            <p className="text-[10px] text-muted-foreground text-center">Horus can make mistakes. Verify important data.</p>
+            <p className="text-[10px] text-muted-foreground/80 text-center mt-1">Horus can make mistakes. Verify important data.</p>
           </div>
         </div>
       </div>

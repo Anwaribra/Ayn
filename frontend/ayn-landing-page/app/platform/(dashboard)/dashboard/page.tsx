@@ -106,7 +106,7 @@ function DashboardContent() {
               label: "Active Alerts",
               value: metrics?.unreadNotificationsCount?.toString() || "0",
               icon: AlertTriangle,
-              status: metrics?.unreadNotificationsCount > 0 ? "critical" : "success"
+              status: (metrics?.unreadNotificationsCount ?? 0) > 0 ? "critical" : "success"
             },
             {
               label: "Compliance Score",
@@ -136,7 +136,7 @@ function DashboardContent() {
               <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
             </div>
             <div className="space-y-3">
-              {metrics?.recentEvidence?.length === 0 ? (
+              {(metrics?.recentEvidence?.length ?? 0) === 0 ? (
                 <p className="text-center py-8 text-muted-foreground text-sm">No evidence uploaded yet.</p>
               ) : (
                 metrics?.recentEvidence?.map((ev: any) => (

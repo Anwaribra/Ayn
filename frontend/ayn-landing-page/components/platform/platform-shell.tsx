@@ -169,7 +169,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       />
 
       <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">
-        <header className="h-16 border-b border-white/10 bg-white/30 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300 dark:bg-black/20">
+        <header className="h-16 border-b border-[var(--border-subtle)] bg-background/95 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -103,38 +103,38 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
             className="w-full max-w-5xl max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="glass-panel rounded-3xl border-white/10 overflow-hidden">
+            <div className="glass-panel rounded-3xl border-border overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02]">
+              <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">Standards Library</h2>
-                      <p className="text-xs text-zinc-500">Browse pre-built compliance frameworks</p>
+                      <h2 className="text-xl font-bold text-foreground">Standards Library</h2>
+                      <p className="text-xs text-muted-foreground">Browse pre-built compliance frameworks</p>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 text-zinc-500 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+                  className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-xl hover:bg-muted"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Search & Filters */}
-              <div className="p-6 border-b border-white/5 space-y-4">
+              <div className="p-6 border-b border-border space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search standards (e.g., ISO, NCAAA, AdvancED)..."
-                    className="w-full h-12 pl-11 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -143,8 +143,8 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                       selectedCategory === null
-                        ? "bg-blue-600 text-white"
-                        : "bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
                     All
@@ -156,8 +156,8 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                         selectedCategory === cat
-                          ? "bg-blue-600 text-white"
-                          : "bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
                       {cat}
@@ -180,8 +180,8 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                         className={cn(
                           "group relative p-5 rounded-2xl border transition-all cursor-pointer",
                           selectedTemplate?.id === template.id
-                            ? "bg-white/[0.08] border-blue-500/50"
-                            : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10"
+                            ? "bg-accent border-primary/50"
+                            : "bg-muted/30 border-border hover:bg-muted/50 hover:border-border"
                         )}
                         onClick={() => setSelectedTemplate(template)}
                       >
@@ -195,12 +195,12 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-sm font-bold text-white truncate">{template.name}</h3>
-                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] text-zinc-400 font-medium">
+                              <span className="px-1.5 py-0.5 rounded bg-muted text-[9px] text-muted-foreground font-medium">
                                 {template.code}
                               </span>
                             </div>
-                            <p className="text-xs text-zinc-500 line-clamp-2 mb-3">{template.description}</p>
-                            <div className="flex items-center gap-4 text-[10px] text-zinc-600">
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{template.description}</p>
+                            <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Target className="w-3 h-3" />
                                 {template.criteriaCount} criteria
@@ -217,23 +217,23 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
-                            className="mt-4 pt-4 border-t border-white/5"
+                            className="mt-4 pt-4 border-t border-border"
                           >
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-2">Key Features</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Key Features</p>
                             <div className="flex flex-wrap gap-2 mb-4">
                               {template.features.map((feature) => (
                                 <span
                                   key={feature}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-[10px] text-zinc-300"
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-[10px] text-foreground"
                                 >
-                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <Check className="w-3 h-3 text-[var(--status-success)]" />
                                   {feature}
                                 </span>
                               ))}
                             </div>
                             <Button
                               onClick={() => onSelect(template)}
-                              className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold"
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold"
                             >
                               <Sparkles className="w-3.5 h-3.5 mr-2" />
                               Import {template.name}
@@ -247,21 +247,21 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
 
                 {filteredTemplates.length === 0 && (
                   <div className="text-center py-12">
-                    <BookOpen className="w-10 h-10 text-zinc-700 mx-auto mb-4" />
-                    <p className="text-sm text-zinc-500">No standards found matching your criteria.</p>
+                    <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">No standards found matching your criteria.</p>
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <p className="text-xs text-zinc-500">
+              <div className="p-6 border-t border-border bg-muted/30 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
                   Showing {filteredTemplates.length} of {templates.length} frameworks
                 </p>
                 <Button
                   variant="outline"
                   onClick={onClose}
-                  className="border-white/10 text-zinc-300 hover:bg-white/5"
+                  className="border-border text-muted-foreground hover:bg-muted"
                 >
                   Close
                 </Button>
@@ -282,7 +282,7 @@ export function StandardsTemplatesButton({ onSelect }: { onSelect: (template: Te
       <Button
         onClick={() => setIsOpen(true)}
         variant="outline"
-        className="border-white/10 hover:bg-white/5 text-zinc-300"
+        className="border-border hover:bg-muted text-muted-foreground"
       >
         <BookOpen className="w-4 h-4 mr-2" />
         Browse Templates

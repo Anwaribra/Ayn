@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
@@ -58,9 +58,9 @@ function EvidenceContent() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Vault Secure</span>
+            <div className="px-2 py-0.5 rounded-full status-success border flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Vault Secure</span>
             </div>
           </div>
           <h1 className="text-4xl font-black tracking-tight text-foreground">
@@ -72,7 +72,7 @@ function EvidenceContent() {
         </div>
 
         <label className={cn(
-          "group relative overflow-hidden rounded-2xl bg-blue-600 text-white px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:shadow-blue-500/30 hover:bg-blue-500 transition-all flex items-center justify-center gap-2 active:scale-95 border border-white/10",
+          "group relative overflow-hidden rounded-2xl bg-primary text-primary-foreground px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-95 border border-border",
           isUploading && "opacity-70 cursor-not-allowed"
         )}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -106,7 +106,7 @@ function EvidenceContent() {
           ))}
         </div>
       ) : evidenceList?.length === 0 ? (
-        <GlassCard variant={2} className="text-center py-20 border-2 border-dashed border-white/10">
+        <GlassCard variant={2} className="text-center py-20 border-2 border-dashed border-border">
           <div className="w-16 h-16 rounded-2xl glass-layer-3 mx-auto flex items-center justify-center mb-6">
             <UploadCloud className="w-8 h-8 text-muted-foreground" />
           </div>
@@ -139,20 +139,20 @@ function EvidenceContent() {
             className="absolute inset-0 bg-[#000000]/60 backdrop-blur-md transition-opacity"
             onClick={() => setSelectedEvidence(null)}
           />
-          <div className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-white/10">
-            <div className="p-6 border-b border-white/5 flex items-start justify-between bg-white/5">
+          <div className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-border">
+            <div className="p-6 border-b border-border flex items-start justify-between bg-muted/30">
               <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-                  <FileText className="w-6 h-6 text-blue-400" />
+                <div className="w-12 h-12 rounded-2xl status-info border flex items-center justify-center shrink-0">
+                  <FileText className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-foreground leading-tight mb-1">{selectedEvidence.title}</h3>
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
                       selectedEvidence.status === 'linked'
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                        : "bg-white/5 text-muted-foreground border border-white/5"
+                        ? "status-success"
+                        : "bg-muted text-muted-foreground border-border"
                     )}>
                       {selectedEvidence.status}
                     </span>
@@ -163,7 +163,7 @@ function EvidenceContent() {
               </div>
               <button
                 onClick={() => setSelectedEvidence(null)}
-                className="p-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+                className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -175,7 +175,7 @@ function EvidenceContent() {
                 {(selectedEvidence.criteria?.length ?? 0) > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedEvidence.criteria?.map(ref => (
-                      <div key={ref.id || ref} className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
+                      <div key={ref.id || ref} className="px-3 py-1.5 rounded-lg status-info border text-xs font-bold">
                         {ref.title || ref.id || "Standard Link"}
                       </div>
                     ))}
@@ -186,21 +186,21 @@ function EvidenceContent() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Impact Score</div>
                   <div className="text-2xl font-black text-foreground">High</div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Confidence</div>
-                  <div className="text-2xl font-black text-emerald-400">
+                  <div className="text-2xl font-black" style={{ color: "var(--status-success)" }}>
                     {selectedEvidence.confidenceScore ? `${Math.round(selectedEvidence.confidenceScore * 100)}%` : "N/A"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/5 bg-white/5 flex gap-3 justify-end">
-              <button className="px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2">
+            <div className="p-4 border-t border-border bg-muted/30 flex gap-3 justify-end">
+              <button className="px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center gap-2">
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>
@@ -208,7 +208,7 @@ function EvidenceContent() {
                 href={selectedEvidence.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-500 transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 flex items-center gap-2"
+                className="px-6 py-2 bg-primary text-primary-foreground font-bold rounded-xl text-sm hover:bg-primary/90 transition-all shadow-lg active:scale-95 flex items-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open File

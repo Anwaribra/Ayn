@@ -34,8 +34,8 @@ function CommandBadge({
 }) {
   const variants = {
     ai: "bg-[var(--brand)]/10 text-[var(--brand)] border-[var(--brand)]/20",
-    new: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    beta: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    new: "status-success",
+    beta: "status-warning",
     default: "bg-muted text-muted-foreground border-border",
   }
 

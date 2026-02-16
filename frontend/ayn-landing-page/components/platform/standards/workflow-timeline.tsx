@@ -29,16 +29,19 @@ export function WorkflowTimeline({ steps: customSteps, className }: WorkflowTime
         <div className={cn("w-full py-6", className)}>
             <div className="relative flex items-center justify-between">
                 {/* Connector Line */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-zinc-100 -z-10 dark:bg-slate-800" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-muted -z-10" />
 
                 {steps.map((step, index) => (
                     <div key={step.id} className="relative flex flex-col items-center group cursor-pointer">
-                        <div className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 relative z-10",
-                            step.status === "completed" ? "bg-emerald-500 border-emerald-100 text-white dark:border-emerald-900/30 dark:bg-emerald-600" :
-                                step.status === "current" ? "bg-white border-blue-500 text-blue-600 shadow-lg shadow-blue-500/20 scale-110 dark:bg-slate-900 dark:border-blue-500 dark:text-blue-400 dark:shadow-blue-900/20" :
-                                    "bg-white border-zinc-200 text-zinc-300 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-700"
-                        )}>
+                        <div
+                            className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 relative z-10",
+                                step.status === "completed" && "text-primary-foreground",
+                                step.status === "current" && "bg-card border-primary text-primary shadow-lg scale-110",
+                                step.status === "pending" && "bg-muted border-border text-muted-foreground"
+                            )}
+                            style={step.status === "completed" ? { backgroundColor: "var(--status-success)", borderColor: "var(--status-success-border)" } : undefined}
+                        >
                             {step.status === "completed" && <CheckCircle2 className="w-5 h-5" />}
                             {step.status === "current" && <Clock className="w-5 h-5 animate-pulse" />}
                             {step.status === "pending" && <Circle className="w-5 h-5" />}
@@ -47,13 +50,13 @@ export function WorkflowTimeline({ steps: customSteps, className }: WorkflowTime
                         <div className="absolute top-12 flex flex-col items-center w-32 text-center">
                             <span className={cn(
                                 "text-xs font-bold transition-colors",
-                                step.status === "current" ? "text-blue-600 dark:text-blue-400" :
-                                    step.status === "completed" ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-600"
+                                step.status === "current" ? "text-primary" :
+                                    step.status === "completed" ? "text-foreground" : "text-muted-foreground"
                             )}>
                                 {step.label}
                             </span>
                             {step.date && (
-                                <span className="text-[10px] text-zinc-400 font-medium mt-0.5 dark:text-zinc-500">{step.date}</span>
+                                <span className="text-[10px] text-muted-foreground font-medium mt-0.5">{step.date}</span>
                             )}
                         </div>
                     </div>

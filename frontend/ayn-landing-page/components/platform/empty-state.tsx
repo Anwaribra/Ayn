@@ -173,8 +173,8 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       </div>
 
       {/* Icon Badge */}
-      <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6">
-        <Icon className="w-8 h-8 text-blue-400" />
+      <div className="w-16 h-16 rounded-2xl status-info border flex items-center justify-center mb-6">
+        <Icon className="w-8 h-8" />
       </div>
 
       {/* Title */}
@@ -191,7 +191,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       {config.ctaAction ? (
         <Button
           size="lg"
-          className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-6 text-sm font-bold rounded-xl shadow-xl shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm font-bold rounded-xl shadow-xl transition-all hover:scale-105 active:scale-95"
         >
           <Plus className="w-4 h-4 mr-2" />
           {config.ctaText}
@@ -200,7 +200,7 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
         <Link href={config.ctaHref}>
           <Button
             size="lg"
-            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-6 text-sm font-bold rounded-xl shadow-xl shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm font-bold rounded-xl shadow-xl transition-all hover:scale-105 active:scale-95"
           >
             <Upload className="w-4 h-4 mr-2" />
             {config.ctaText}
@@ -209,9 +209,9 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
       )}
 
       {/* Pro Tip */}
-      <div className="mt-8 flex items-start gap-3 max-w-sm p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
-        <Lightbulb className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-700 dark:text-amber-200/80 leading-relaxed">
+      <div className="mt-8 flex items-start gap-3 max-w-sm p-4 rounded-xl status-warning border">
+        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <p className="text-xs leading-relaxed">
           {config.tip}
         </p>
       </div>
@@ -233,7 +233,7 @@ export function InlineEmptyState({
   return (
     <div className="glass-panel rounded-[32px] p-12 border-[var(--border-subtle)] text-center">
       <div className="w-14 h-14 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-5">
-        <Icon className="w-6 h-6 text-zinc-500" />
+        <Icon className="w-6 h-6 text-muted-foreground" />
       </div>
       <h4 className="text-lg font-bold text-[var(--text-primary)] mb-2">{title}</h4>
       <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-6">{description}</p>

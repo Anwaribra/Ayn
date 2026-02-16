@@ -56,6 +56,30 @@
   --accent-red: #C9424A;
   --accent-red-soft: #A83B42;
 
+  /* Status semantics (map to accent palette) */
+  --status-info: var(--accent-blue);
+  --status-info-bg: rgba(59, 111, 217, 0.12);
+  --status-info-border: rgba(59, 111, 217, 0.25);
+  --status-success: var(--accent-emerald);
+  --status-success-bg: rgba(14, 164, 122, 0.12);
+  --status-success-border: rgba(14, 164, 122, 0.25);
+  --status-warning: var(--accent-amber);
+  --status-warning-bg: rgba(212, 148, 30, 0.12);
+  --status-warning-border: rgba(212, 148, 30, 0.25);
+  --status-critical: var(--destructive);
+  --status-critical-bg: rgba(201, 66, 74, 0.12);
+  --status-critical-border: rgba(201, 66, 74, 0.25);
+
+  /* Chart and grid */
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-tick: var(--text-tertiary);
+  --chart-tooltip-bg: var(--layer-3);
+  --chart-tooltip-border: var(--glass-border);
+  --chart-tooltip-shadow: var(--glass-shadow-strong);
+
+  /* Chat / overlay fade */
+  --surface-fade: linear-gradient(to top, var(--layer-0) 0%, transparent 100%);
+
   /* Text hierarchy - Improved contrast */
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
@@ -186,6 +210,29 @@
   --sidebar-accent-foreground: #0F172A;
   --sidebar-border: rgba(15, 23, 42, 0.08);
 
+  /* Status semantics (light) */
+  --status-info: var(--primary);
+  --status-info-bg: rgba(37, 99, 235, 0.10);
+  --status-info-border: rgba(37, 99, 235, 0.20);
+  --status-success: #0D9668;
+  --status-success-bg: rgba(13, 150, 104, 0.10);
+  --status-success-border: rgba(13, 150, 104, 0.20);
+  --status-warning: #B45309;
+  --status-warning-bg: rgba(180, 83, 9, 0.10);
+  --status-warning-border: rgba(180, 83, 9, 0.20);
+  --status-critical: var(--destructive);
+  --status-critical-bg: rgba(185, 28, 28, 0.10);
+  --status-critical-border: rgba(185, 28, 28, 0.20);
+
+  /* Chart and grid (light) */
+  --chart-grid: rgba(15, 23, 42, 0.08);
+  --chart-tick: var(--text-tertiary);
+  --chart-tooltip-bg: #FFFFFF;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+  --chart-tooltip-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+
+  --surface-fade: linear-gradient(to top, var(--layer-0) 0%, transparent 100%);
+
   color-scheme: light;
 }
 
@@ -225,6 +272,31 @@
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 12px;
+}
+
+/* ─── Status utility classes (token-based) ───────────────────────────────────── */
+[data-section="platform"] .status-info {
+  color: var(--status-info);
+  background-color: var(--status-info-bg);
+  border-color: var(--status-info-border);
+}
+
+[data-section="platform"] .status-success {
+  color: var(--status-success);
+  background-color: var(--status-success-bg);
+  border-color: var(--status-success-border);
+}
+
+[data-section="platform"] .status-warning {
+  color: var(--status-warning);
+  background-color: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+}
+
+[data-section="platform"] .status-critical {
+  color: var(--status-critical);
+  background-color: var(--status-critical-bg);
+  border-color: var(--status-critical-border);
 }
 
 /* ─── Cinematic Background Atmosphere ─────────────────────────────────────── */
@@ -453,6 +525,31 @@
 
 [data-section="platform"] .score-low {
   color: #C9424A;
+}
+
+/* ─── Platform badge alignment (token-based, overrides globals in platform) ── */
+[data-section="platform"] .badge-verified {
+  background-color: var(--status-success-bg);
+  color: var(--status-success);
+  border-color: var(--status-success-border);
+}
+
+[data-section="platform"] .badge-analyzed {
+  background-color: var(--status-info-bg);
+  color: var(--status-info);
+  border-color: var(--status-info-border);
+}
+
+[data-section="platform"] .badge-pending {
+  background-color: var(--status-warning-bg);
+  color: var(--status-warning);
+  border-color: var(--status-warning-border);
+}
+
+[data-section="platform"] .badge-failed {
+  background-color: var(--status-critical-bg);
+  color: var(--status-critical);
+  border-color: var(--status-critical-border);
 }
 
 /* ─── Modal & Dialog refinements ──────────────────────────────────────────── */

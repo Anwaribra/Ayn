@@ -203,7 +203,7 @@ export default function HorusAIChat() {
               Horus <span className="text-muted-foreground font-medium">Core</span>
             </h1>
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Neural Sync Active</span>
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input Area ─── */}
-        <div className="flex-shrink-0 p-6 bg-gradient-to-t from-[#05070A]/90 via-[#05070A]/60 to-transparent z-20">
+        <div className="flex-shrink-0 p-6 z-20" style={{ background: "var(--surface-fade)" }}>
           <div className="max-w-3xl mx-auto relative">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (

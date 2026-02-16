@@ -17,10 +17,10 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                 </div>
                 <div className="flex gap-2">
                     <span className="flex h-3 w-3 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: "var(--status-success)" }}></span>
                     </span>
-                    <span className="text-xs font-medium text-emerald-500">Live</span>
+                    <span className="text-xs font-medium" style={{ color: "var(--status-success)" }}>Live</span>
                 </div>
             </div>
 

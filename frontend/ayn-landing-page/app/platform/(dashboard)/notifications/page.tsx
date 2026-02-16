@@ -60,10 +60,10 @@ export default function NotificationsPage() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-emerald-500" />
-      case 'error': return <AlertTriangle className="w-5 h-5 text-red-500" />
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-amber-500" />
-      default: return <Info className="w-5 h-5 text-blue-500" />
+      case 'success': return <CheckCircle className="w-5 h-5 text-[var(--status-success)]" />
+      case 'error': return <AlertTriangle className="w-5 h-5 text-destructive" />
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-[var(--status-warning)]" />
+      default: return <Info className="w-5 h-5 text-primary" />
     }
   }
 
@@ -76,19 +76,19 @@ export default function NotificationsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-white/10 text-white" : "text-zinc-500 hover:text-white"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter("unread")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "unread" ? "bg-white/10 text-white" : "text-zinc-500 hover:text-white"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "unread" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Unread
             </button>
             <button
               onClick={handleMarkAllRead}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-blue-400 hover:bg-blue-500/10 transition-colors ml-2 flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors ml-2 flex items-center gap-1"
             >
               <Check className="w-4 h-4" />
               Mark all read
@@ -100,15 +100,15 @@ export default function NotificationsPage() {
       <div className="space-y-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-zinc-600 animate-spin" />
+            <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
           </div>
         ) : !filteredNotifications || filteredNotifications.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-12 text-center border-white/5">
-            <div className="w-16 h-16 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto mb-4 border border-white/5">
-              <Bell className="w-8 h-8 text-zinc-600" />
+          <div className="glass-panel rounded-3xl p-12 text-center border-border">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 border border-border">
+              <Bell className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">No notifications</h3>
-            <p className="text-zinc-500 max-w-sm mx-auto text-sm">
+            <h3 className="text-lg font-bold text-foreground mb-2">No notifications</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto text-sm">
               You're all caught up! When system events occur, they'll appear here.
             </p>
           </div>
@@ -116,29 +116,29 @@ export default function NotificationsPage() {
           filteredNotifications.map((n: Notification) => (
             <div
               key={n.id}
-              className={`glass-panel rounded-2xl p-5 flex gap-4 transition-all hover:bg-white/[0.02] cursor-pointer group relative overflow-hidden ${!n.isRead ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/5'}`}
+              className={`glass-panel rounded-2xl p-5 flex gap-4 transition-all hover:bg-muted/30 cursor-pointer group relative overflow-hidden border ${!n.isRead ? 'border-primary/30 bg-primary/5' : 'border-border'}`}
               onClick={() => navigateToRelated(n)}
             >
-              <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border border-white/5 ${!n.isRead ? 'bg-zinc-800' : 'bg-zinc-900/50'}`}>
+              <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border border-border ${!n.isRead ? 'bg-muted' : 'bg-muted/50'}`}>
                 {getIcon(n.type)}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-start">
-                  <h4 className={`text-base font-bold ${!n.isRead ? 'text-white' : 'text-zinc-400'}`}>{n.title}</h4>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-600">
+                  <h4 className={`text-base font-bold ${!n.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</h4>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                     {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                   </span>
                 </div>
-                <p className={`text-sm mt-1 leading-relaxed ${!n.isRead ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                <p className={`text-sm mt-1 leading-relaxed ${!n.isRead ? 'text-foreground/80' : 'text-muted-foreground'}`}>
                   {n.message}
                 </p>
               </div>
               {!n.isRead && (
-                <div className="w-2 h-2 rounded-full bg-blue-500 self-center" />
+                <div className="w-2 h-2 rounded-full bg-primary self-center" />
               )}
               <button
                 onClick={(e) => handleMarkRead(n.id, e)}
-                className="absolute top-2 right-2 p-2 text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                className="absolute top-2 right-2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
                 title="Mark as read"
               >
               </button>

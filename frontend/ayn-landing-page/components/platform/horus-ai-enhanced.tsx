@@ -127,14 +127,13 @@ export function HorusAIWidget() {
         onClick={() => setIsOpen(true)}
         className={cn(
           "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center",
-          "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-600/30",
-          "hover:scale-110 active:scale-95 transition-all border border-white/20"
+          "bg-primary text-primary-foreground shadow-xl hover:scale-110 active:scale-95 transition-all border border-border"
         )}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
         <Brain className="w-6 h-6" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
+        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
       </motion.button>
 
       {/* Chat Panel */}
@@ -151,14 +150,14 @@ export function HorusAIWidget() {
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border bg-layer-1/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <Brain className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+                    <Brain className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-foreground">Horus AI</h4>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium uppercase tracking-wider">Neural Link Active</span>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
+                      <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--status-success)" }}>Neural Link Active</span>
                     </div>
                   </div>
                 </div>
@@ -183,20 +182,20 @@ export function HorusAIWidget() {
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm",
                       msg.role === "assistant"
-                        ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-                        : "bg-zinc-200 dark:bg-zinc-700"
+                        ? "bg-primary"
+                        : "bg-muted"
                     )}>
                       {msg.role === "assistant" ? (
-                        <Brain className="w-4 h-4 text-white" />
+                        <Brain className="w-4 h-4 text-primary-foreground" />
                       ) : (
-                        <MessageSquare className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                        <MessageSquare className="w-4 h-4 text-muted-foreground" />
                       )}
                     </div>
                     <div className={cn(
                       "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
                       msg.role === "assistant"
                         ? "bg-layer-2 border border-border text-foreground rounded-tl-sm"
-                        : "bg-blue-600 text-white border border-blue-500/30 rounded-tr-sm"
+                        : "bg-primary text-primary-foreground border border-primary/30 rounded-tr-sm"
                     )}>
                       {msg.content}
                     </div>
@@ -205,8 +204,8 @@ export function HorusAIWidget() {
 
                 {isTyping && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
-                      <Brain className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+                      <Brain className="w-4 h-4 text-primary-foreground" />
                     </div>
                     <div className="bg-layer-2 border border-border rounded-2xl rounded-tl-sm p-4 flex items-center gap-1 shadow-sm">
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -295,52 +294,35 @@ export function SystemStatusWidget() {
   }, [])
 
   const statusConfig = {
-    active: {
-      color: "bg-emerald-400",
-      text: "Active",
-      subtext: "Neural Link Established",
-      pulse: true,
-    },
-    syncing: {
-      color: "bg-blue-400",
-      text: "Syncing",
-      subtext: "Processing Updates",
-      pulse: true,
-    },
-    idle: {
-      color: "bg-zinc-500",
-      text: "Idle",
-      subtext: "Waiting for Input",
-      pulse: false,
-    },
+    active: { token: "var(--status-success)", text: "Active", subtext: "Neural Link Established", pulse: true },
+    syncing: { token: "var(--status-info)", text: "Syncing", subtext: "Processing Updates", pulse: true },
+    idle: { token: "var(--muted-foreground)", text: "Idle", subtext: "Waiting for Input", pulse: false },
   }
 
   const current = statusConfig[status]
-  const textColorClass = current.color.replace("bg-", "text-")
 
   return (
     <div className="glass-panel rounded-2xl p-4 border-[var(--border-subtle)]">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-            <Cpu className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <Cpu className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-deep)]",
-            current.color,
-            current.pulse && "animate-pulse"
-          )} />
+          <span
+            className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-deep)]", current.pulse && "animate-pulse")}
+            style={{ backgroundColor: current.token }}
+          />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-white">Horus Neural Link</span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-wider", textColorClass)}>
+            <span className="text-xs font-bold text-foreground">Horus Neural Link</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: current.token }}>
               {current.text}
             </span>
           </div>
-          <p className="text-[10px] text-zinc-500">{current.subtext}</p>
+          <p className="text-[10px] text-muted-foreground">{current.subtext}</p>
         </div>
-        <Zap className="w-4 h-4 text-amber-400" />
+        <Zap className="w-4 h-4 text-[var(--status-warning)]" />
       </div>
     </div>
   )

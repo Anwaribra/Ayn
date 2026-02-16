@@ -63,7 +63,7 @@ export default function NewStandardPage() {
           <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div id="form-error" className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
+                <div id="form-error" className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg" role="alert">
                   {error}
                 </div>
               )}

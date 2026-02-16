@@ -32,10 +32,10 @@ const insightIcons = {
 }
 
 const insightColors = {
-  tip: "text-amber-500 bg-amber-500/10",
-  warning: "text-red-500 bg-red-500/10",
-  suggestion: "text-[var(--brand)] bg-[var(--brand)]/10",
-  trend: "text-emerald-500 bg-emerald-500/10",
+  tip: "status-warning",
+  warning: "status-critical",
+  suggestion: "bg-[var(--brand)]/10 text-[var(--brand)] border-[var(--brand)]/20",
+  trend: "status-success",
 }
 
 export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps) {
@@ -149,7 +149,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
                   "hover:bg-accent/50 border-border/50"
                 )}
               >
-                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", colors)}>
+                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border", colors)}>
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">

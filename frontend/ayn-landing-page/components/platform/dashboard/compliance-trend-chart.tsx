@@ -35,12 +35,15 @@ export function ComplianceTrendChart({ data, title = "Compliance Trajectory", cl
         <div className={cn("glass-panel p-6 rounded-3xl flex flex-col", className)}>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-bold text-zinc-800">{title}</h3>
-                    <p className="text-xs text-zinc-500 font-medium mt-1">6-Month Historical Analysis</p>
+                    <h3 className="text-lg font-bold text-foreground">{title}</h3>
+                    <p className="text-xs text-muted-foreground font-medium mt-1">6-Month Historical Analysis</p>
                 </div>
                 <div className="text-right">
                     <div className="text-2xl font-black text-primary">{currentScore}%</div>
-                    <div className={cn("text-xs font-bold uppercase", trend === "up" ? "text-emerald-600" : "text-rose-600")}>
+                    <div
+                        className="text-xs font-bold uppercase"
+                        style={{ color: trend === "up" ? "var(--status-success)" : "var(--status-critical)" }}
+                    >
                         {trend === "up" ? "+" : ""}{currentScore - previousScore}% vs last month
                     </div>
                 </div>
@@ -55,12 +58,12 @@ export function ComplianceTrendChart({ data, title = "Compliance Trajectory", cl
                                 <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
                         <XAxis
                             dataKey="date"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 10, fill: '#71717a', fontWeight: 600 }}
+                            tick={{ fontSize: 10, fill: 'var(--chart-tick)', fontWeight: 600 }}
                             dy={10}
                         />
                         <YAxis
@@ -70,8 +73,10 @@ export function ComplianceTrendChart({ data, title = "Compliance Trajectory", cl
                         <Tooltip
                             contentStyle={{
                                 borderRadius: '12px',
-                                border: 'none',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                border: '1px solid var(--chart-tooltip-border)',
+                                boxShadow: 'var(--chart-tooltip-shadow)',
+                                backgroundColor: 'var(--chart-tooltip-bg)',
+                                color: 'var(--foreground)',
                                 fontSize: '12px',
                                 fontWeight: 'bold'
                             }}

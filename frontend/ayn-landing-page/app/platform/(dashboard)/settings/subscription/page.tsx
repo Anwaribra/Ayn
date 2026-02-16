@@ -38,7 +38,7 @@ function SubscriptionContent() {
             <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Current Tier</p>
             <p className="text-xl font-bold text-[var(--text-primary)]">AYN OS Standard</p>
           </div>
-          <span className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
+          <span className="px-3 py-1 rounded-lg status-success border text-[10px] font-bold uppercase">
             Active
           </span>
         </div>

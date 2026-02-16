@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
@@ -32,7 +32,7 @@ export default function StandardsPage() {
   )
 }
 
-const CARD_COLORS = ["bg-blue-600/10", "bg-emerald-600/10", "bg-amber-600/10", "bg-indigo-600/10", "bg-rose-600/10", "bg-cyan-600/10"]
+const CARD_COLORS = ["bg-[var(--status-info-bg)]", "bg-[var(--status-success-bg)]", "bg-[var(--status-warning-bg)]", "bg-[var(--status-info-bg)]", "bg-[var(--status-critical-bg)]", "bg-[var(--status-info-bg)]"]
 const CARD_ICONS = [Shield, Target, Layers, Activity, Book, Shield]
 
 function StandardsContent() {
@@ -161,7 +161,7 @@ function StandardsContent() {
               style={{ animationDelay: `${i * 100}ms` }}
             >
               <div className="flex justify-between items-start">
-                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-white/50 dark:border-white/10 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
+                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-border flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
                   {(() => { const Icon = CARD_ICONS[i % CARD_ICONS.length]; return <Icon className="w-6 h-6 text-foreground/80 group-hover:text-foreground transition-colors" /> })()}
                 </div>
                 <div className="w-8 h-8 rounded-full bg-layer-2 border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0">
@@ -176,10 +176,10 @@ function StandardsContent() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                     <span>Alignment Score</span>
-                    <span className={c.equilibrium >= 80 ? "text-emerald-500" : "text-amber-500"}>{c.equilibrium}%</span>
+                    <span style={{ color: c.equilibrium >= 80 ? "var(--status-success)" : "var(--status-warning)" }}>{c.equilibrium}%</span>
                   </div>
                   <div className="h-1.5 bg-layer-3 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-1000 ${c.equilibrium >= 80 ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${c.equilibrium ?? 0}%` }} />
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${c.equilibrium ?? 0}%`, backgroundColor: c.equilibrium >= 80 ? "var(--status-success)" : "var(--status-warning)" }} />
                   </div>
                 </div>
               </div>
@@ -262,27 +262,27 @@ function StandardsContent() {
                 <div className="p-2 rounded-lg bg-white/10">
                   <Shield className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Intelligence Summary</h4>
+                <h4 className="text-[10px] font-bold text-primary-foreground/60 uppercase tracking-widest">Intelligence Summary</h4>
               </div>
 
-              <p className="text-lg font-medium leading-relaxed mb-8 text-white/80">
-                Current institutional framework contains <span className="text-white font-bold text-2xl">{collections.length}</span> active standards.
+              <p className="text-lg font-medium leading-relaxed mb-8 text-primary-foreground/80">
+                Current institutional framework contains <span className="text-primary-foreground font-bold text-2xl">{collections.length}</span> active standards.
                 {(() => {
                   const needsReview = (standards ?? []).find((s) => getStandardStatus(s.id) === "WARNING")
                   return needsReview
-                    ? <> Horus recommends a compliance review of the <span className="text-amber-400 font-bold border-b border-amber-400/30">{needsReview.title}</span> framework.</>
+                    ? <> Horus recommends a compliance review of the <span className="font-bold border-b border-[var(--status-warning)]" style={{ color: "var(--status-warning)" }}>{needsReview.title}</span> framework.</>
                     : " All frameworks are within compliance targets."
                 })()}
               </p>
 
-              <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-white text-zinc-900 font-bold hover:bg-blue-50 transition-all text-center block shadow-lg active:scale-95">
+              <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-primary-foreground text-primary font-bold hover:bg-primary-foreground/90 transition-all text-center block shadow-lg active:scale-95">
                 Generate Compliance Briefing
               </Link>
             </div>
 
-            <div className="mt-auto pt-8 border-t border-white/10 flex items-center gap-4 relative z-10">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Ayn Core Live Sync</span>
+            <div className="mt-auto pt-8 border-t border-primary-foreground/20 flex items-center gap-4 relative z-10">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
+              <span className="text-[10px] font-bold text-primary-foreground/40 uppercase tracking-widest">Ayn Core Live Sync</span>
             </div>
           </div>
         </div>

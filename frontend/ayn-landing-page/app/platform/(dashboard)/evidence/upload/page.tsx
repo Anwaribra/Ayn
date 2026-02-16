@@ -125,7 +125,7 @@ export default function UploadEvidencePage() {
             className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 space-y-6"
           >
             {error && (
-              <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg whitespace-pre-line">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg whitespace-pre-line">
                 {error}
               </div>
             )}

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -87,8 +87,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
           {item.id === "dashboard" && (notificationCount || 0) > 0 && (
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
             </span>
           )}
         </div>
@@ -101,7 +101,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         </span>
 
         {item.id === "dashboard" && (notificationCount || 0) > 0 && (
-          <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm">
+          <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold shadow-sm">
             {(notificationCount ?? 0) > 99 ? '99+' : notificationCount}
           </span>
         )}

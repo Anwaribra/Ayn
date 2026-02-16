@@ -104,8 +104,8 @@ function SecurityContent() {
         </div>
       </div>
 
-      <div className="mt-8 glass-panel p-6 rounded-2xl border-emerald-500/20 bg-emerald-500/5">
-        <div className="flex items-center gap-2 text-emerald-500 mb-2">
+      <div className="mt-8 glass-panel p-6 rounded-2xl status-success border">
+        <div className="flex items-center gap-2 mb-2">
           <Shield className="w-4 h-4" />
           <span className="font-medium">Encryption</span>
         </div>

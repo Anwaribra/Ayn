@@ -24,8 +24,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[var(--bg-deep,#07090E)]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-          <p className="text-sm text-zinc-500">Verifying access...</p>
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Verifying access...</p>
         </div>
       </div>
     )
@@ -35,8 +35,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[var(--bg-deep,#07090E)]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-          <p className="text-sm text-zinc-500">Redirecting to login...</p>
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
         </div>
       </div>
     )

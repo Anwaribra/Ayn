@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
@@ -54,14 +54,14 @@ function DashboardContent() {
       <section className="flex flex-col xl:flex-row gap-6">
         {/* Main Welcome Card */}
         <div className="flex-1 relative overflow-hidden rounded-[40px] glass-card p-8 md:p-12 flex flex-col justify-center min-h-[300px]">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent pointer-events-none" />
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 w-fit">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full status-info border mb-6 w-fit">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-info)" }}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--status-info)" }}></span>
               </span>
-              <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Ayn Brain Live</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Ayn Brain Live</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
               Institutional <br />
@@ -140,9 +140,9 @@ function DashboardContent() {
                 <p className="text-center py-8 text-muted-foreground text-sm">No evidence uploaded yet.</p>
               ) : (
                 metrics?.recentEvidence?.map((ev: any) => (
-                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl glass-layer-3 hover:bg-white/5 transition-all group cursor-pointer">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5 text-blue-500" />
+                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl glass-layer-3 hover:bg-muted/50 transition-all group cursor-pointer">
+                    <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <FileText className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>

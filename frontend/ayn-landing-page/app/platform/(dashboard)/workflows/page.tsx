@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Header } from "@/components/platform/header"
@@ -50,7 +50,7 @@ export default function WorkflowsPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="px-2 py-0.5 rounded bg-zinc-800 border border-[var(--border-subtle)]">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Automation Layer</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Automation Layer</span>
                 </div>
               </div>
               <h1 className="text-4xl font-black tracking-tighter italic text-[var(--text-primary)]">
@@ -68,17 +68,17 @@ export default function WorkflowsPage() {
           {/* Stats Overview */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Active Pipelines", value: isLoading ? "..." : String(activeCount), icon: Play, color: "text-emerald-500" },
-              { label: "Paused Workflows", value: isLoading ? "..." : String(pausedCount), icon: Pause, color: "text-amber-500" },
-              { label: "Total Defined", value: isLoading ? "..." : String(totalCount), icon: Workflow, color: "text-blue-500" }
+              { label: "Active Pipelines", value: isLoading ? "..." : String(activeCount), icon: Play, color: "text-[var(--status-success)]" },
+              { label: "Paused Workflows", value: isLoading ? "..." : String(pausedCount), icon: Pause, color: "text-[var(--status-warning)]" },
+              { label: "Total Defined", value: isLoading ? "..." : String(totalCount), icon: Workflow, color: "text-primary" }
             ].map((stat, i) => (
               <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 border-[var(--border-subtle)]">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-muted border border-[var(--border-subtle)] flex items-center justify-center">
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 <div>
                   <div className="mono text-2xl font-bold text-[var(--text-primary)]">{stat.value}</div>
-                  <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{stat.label}</div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</div>
                 </div>
               </div>
             ))}
@@ -109,9 +109,9 @@ export default function WorkflowsPage() {
                         <div>
                           <div className="flex items-center gap-3 mb-1">
                             <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                              workflow.status === 'paused' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
-                                'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'status-success' :
+                              workflow.status === 'paused' ? 'status-warning' :
+                                'bg-muted text-muted-foreground border-border'
                               }`}>
                               {workflow.status}
                             </span>
@@ -124,16 +124,16 @@ export default function WorkflowsPage() {
 
                       <div className="flex items-center gap-8 pl-16 md:pl-0">
                         <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
-                          <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Trigger</div>
+                          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trigger</div>
                           <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
                         </div>
                         <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
-                          <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Last Run</div>
+                          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Last Run</div>
                           <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
                         </div>
                         <button
                           onClick={() => toast.info('Workflow configuration is locked by admin policy')}
-                          className="p-2 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-[var(--text-primary)] transition-colors"
+                          className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Settings className="h-4 w-4" />
                         </button>

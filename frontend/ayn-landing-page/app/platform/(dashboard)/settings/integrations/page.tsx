@@ -45,7 +45,7 @@ function IntegrationsContent() {
             className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] flex items-center justify-between"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-2xl">
                 {item.icon}
               </div>
               <div>

@@ -23,13 +23,9 @@ export function StatusTiles({ stats = defaultTiles }: StatusTilesProps) {
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((tile, i) => {
-                const color = tile.status === "critical" ? "text-red-500" :
-                    tile.status === "warning" ? "text-amber-500" :
-                        tile.status === "success" ? "text-emerald-500" : "text-blue-500"
-
-                const bg = tile.status === "critical" ? "bg-red-500/10" :
-                    tile.status === "warning" ? "bg-amber-500/10" :
-                        tile.status === "success" ? "bg-emerald-500/10" : "bg-blue-500/10"
+                const statusClass = tile.status === "critical" ? "status-critical" :
+                    tile.status === "warning" ? "status-warning" :
+                        tile.status === "success" ? "status-success" : "status-info"
 
                 return (
                     <GlassCard
@@ -39,8 +35,8 @@ export function StatusTiles({ stats = defaultTiles }: StatusTilesProps) {
                         shine
                         className="flex flex-col items-center justify-center p-4 text-center gap-3 aspect-square lg:aspect-auto lg:h-32"
                     >
-                        <div className={`p-2.5 rounded-xl ${bg}`}>
-                            <tile.icon className={`w-5 h-5 ${color}`} />
+                        <div className={cn("p-2.5 rounded-xl border", statusClass)}>
+                            <tile.icon className="w-5 h-5" />
                         </div>
                         <div>
                             <div className="text-2xl font-bold tracking-tight">{tile.value}</div>

@@ -21,7 +21,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
           elements.push(
             <pre
               key={`code-${i}`}
-              className="my-3 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs font-mono text-gray-800"
+              className="my-3 overflow-x-auto rounded-xl border border-border bg-muted p-4 text-xs font-mono text-foreground"
             >
               <code>{codeContent.join("\n")}</code>
             </pre>,
@@ -48,7 +48,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
         elements.push(
           <h4
             key={`h3-${i}`}
-            className="mb-1.5 mt-4 text-sm font-semibold text-gray-900"
+            className="mb-1.5 mt-4 text-sm font-semibold text-foreground"
           >
             {renderInline(line.slice(4))}
           </h4>,
@@ -59,7 +59,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
         elements.push(
           <h3
             key={`h2-${i}`}
-            className="mb-1.5 mt-5 text-base font-semibold text-gray-900"
+            className="mb-1.5 mt-5 text-base font-semibold text-foreground"
           >
             {renderInline(line.slice(3))}
           </h3>,
@@ -70,7 +70,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
         elements.push(
           <h2
             key={`h1-${i}`}
-            className="mb-2 mt-5 text-lg font-bold text-gray-900"
+            className="mb-2 mt-5 text-lg font-bold text-foreground"
           >
             {renderInline(line.slice(2))}
           </h2>,
@@ -80,7 +80,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
 
       if (/^[-━─═]{3,}$/.test(line.trim())) {
         elements.push(
-          <hr key={`hr-${i}`} className="my-4 border-gray-200" />,
+          <hr key={`hr-${i}`} className="my-4 border-border" />,
         )
         continue
       }
@@ -95,7 +95,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
             style={{ paddingLeft: `${Math.min(indent, 4) * 8}px` }}
           >
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" />
-            <span className="leading-relaxed text-gray-700">{renderInline(itemContent)}</span>
+            <span className="leading-relaxed text-foreground">{renderInline(itemContent)}</span>
           </div>,
         )
         continue
@@ -114,7 +114,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[10px] font-bold text-[var(--brand)]">
                 {match[2]}
               </span>
-              <span className="leading-relaxed text-gray-700">{renderInline(match[3])}</span>
+              <span className="leading-relaxed text-foreground">{renderInline(match[3])}</span>
             </div>,
           )
           continue
@@ -122,7 +122,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
       }
 
       elements.push(
-        <p key={`p-${i}`} className="my-1 leading-relaxed text-gray-700">
+        <p key={`p-${i}`} className="my-1 leading-relaxed text-foreground">
           {renderInline(line)}
         </p>,
       )
@@ -132,7 +132,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
       elements.push(
         <pre
           key="code-end"
-          className="my-3 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs font-mono text-gray-800"
+          className="my-3 overflow-x-auto rounded-xl border border-border bg-muted p-4 text-xs font-mono text-foreground"
         >
           <code>{codeContent.join("\n")}</code>
         </pre>,
@@ -155,7 +155,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
         if (boldMatch[1])
           parts.push(<span key={key++}>{boldMatch[1]}</span>)
         parts.push(
-          <strong key={key++} className="font-semibold text-gray-900">
+          <strong key={key++} className="font-semibold text-foreground">
             {boldMatch[2]}
           </strong>,
         )
@@ -187,7 +187,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
   }
 
   return (
-    <div className="space-y-0 text-sm leading-relaxed text-gray-700">
+    <div className="space-y-0 text-sm leading-relaxed text-foreground">
       {renderMarkdown(content)}
     </div>
   )

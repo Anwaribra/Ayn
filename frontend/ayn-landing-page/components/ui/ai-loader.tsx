@@ -13,7 +13,7 @@ interface AILoaderProps {
 
 export const Component: React.FC<AILoaderProps> = ({
   size = 180,
-  text = "Generating",
+  text = "Horus AI",
   variant = "fullscreen",
   className,
 }) => {
@@ -47,7 +47,9 @@ export const Component: React.FC<AILoaderProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[#1a3379] via-[#0f172a] to-black dark:from-gray-100 dark:via-gray-200 dark:to-gray-300">
-      {content}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+        {content}
+      </div>
     </div>
   )
 }

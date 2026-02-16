@@ -26,6 +26,7 @@ import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
+import { Component as AILoader } from "@/components/ui/ai-loader"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -170,6 +171,10 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
+      {/* Full-screen overlay when generating: centered "Horus AI" loader */}
+      {status === "generating" && (
+        <AILoader variant="fullscreen" text="Horus AI" size={180} />
+      )}
       {/* New + History as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat">

@@ -7,7 +7,7 @@ interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
     gradient?: boolean
     hoverEffect?: boolean
     shine?: boolean
-    variant?: 1 | 2
+    variant?: 1 | 2 | 3 | 4
 }
 
 export function GlassCard({

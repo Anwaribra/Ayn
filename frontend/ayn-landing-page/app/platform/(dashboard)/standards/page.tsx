@@ -39,7 +39,7 @@ function StandardsContent() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<"database" | "mapping">("database")
 
-  const { data: standards, isLoading } = useSWR<Standard[]>(
+  const { data: standards, isLoading, error, mutate } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
   )
@@ -134,7 +134,18 @@ function StandardsContent() {
 
       {/* Grid Collections */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
-        {isLoading ? (
+        {error ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-border bg-muted/30">
+            <p className="text-muted-foreground text-center mb-4">Failed to load standards.</p>
+            <button
+              type="button"
+              onClick={() => mutate()}
+              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : isLoading ? (
           <StandardsGridSkeleton count={4} />
         ) : collections.length === 0 ? (
           <div className="col-span-full">

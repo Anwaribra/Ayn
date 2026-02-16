@@ -26,10 +26,21 @@ function EvidenceContent() {
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
 
-  const { data: evidenceList, isLoading, mutate } = useSWR<Evidence[]>(
+  const { data: evidenceList, isLoading, error, mutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
     () => api.getEvidence()
   )
+
+  const handleDelete = async (evidence: Evidence) => {
+    try {
+      await api.deleteEvidence(evidence.id)
+      toast.success("Evidence deleted")
+      setSelectedEvidence(null)
+      mutate()
+    } catch (error) {
+      toast.error("Failed to delete evidence", { description: "Please try again." })
+    }
+  }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return
@@ -37,20 +48,17 @@ function EvidenceContent() {
     const file = e.target.files[0]
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
+      await api.uploadEvidence(file)
       toast.success("Evidence uploaded successfully", {
         description: "Horus is analyzing the document for compliance standards."
       })
-
       mutate()
     } catch (error) {
       toast.error("Upload failed", { description: "Please try again." })
     } finally {
       setIsUploading(false)
     }
+    e.target.value = ""
   }
 
   return (
@@ -99,7 +107,18 @@ function EvidenceContent() {
 
       <EvidenceFilters />
 
-      {isLoading ? (
+      {error ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-border bg-muted/30">
+          <p className="text-muted-foreground text-center mb-4">Failed to load evidence.</p>
+          <button
+            type="button"
+            onClick={() => mutate()}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="h-64 rounded-3xl glass-layer-1 animate-pulse" />
@@ -200,7 +219,11 @@ function EvidenceContent() {
             </div>
 
             <div className="p-4 border-t border-border bg-muted/30 flex gap-3 justify-end">
-              <button className="px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleDelete(selectedEvidence)}
+                className="px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center gap-2"
+              >
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>

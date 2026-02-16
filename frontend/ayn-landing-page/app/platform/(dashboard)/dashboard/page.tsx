@@ -35,7 +35,7 @@ import { Cpu, Zap } from "lucide-react"
 function DashboardContent() {
   const { user } = useAuth()
 
-  const { data: metrics, isLoading } = useSWR<DashboardMetrics>(
+  const { data: metrics, isLoading, error, mutate } = useSWR<DashboardMetrics>(
     user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
     { refreshInterval: 30000 }
@@ -43,6 +43,21 @@ function DashboardContent() {
 
   if (isLoading) {
     return <DashboardPageSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="animate-fade-in-up flex flex-col items-center justify-center py-20 px-4">
+        <p className="text-muted-foreground text-center mb-4">Failed to load dashboard.</p>
+        <button
+          type="button"
+          onClick={() => mutate()}
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    )
   }
 
   const alignmentScore = metrics?.alignmentPercentage ?? 0

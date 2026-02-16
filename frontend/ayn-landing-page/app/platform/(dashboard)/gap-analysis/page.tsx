@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { useState, useCallback, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import {
   AlertTriangle,
@@ -33,6 +34,7 @@ export default function GapAnalysisPage() {
 
 function GapAnalysisContent() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<"all" | "urgent">("all")
   const [selectedStandard, setSelectedStandard] = useState("")
   const [generating, setGenerating] = useState(false)
@@ -42,6 +44,19 @@ function GapAnalysisContent() {
   // Remediation State
   const [isRemediating, setIsRemediating] = useState(false)
   const [targetGap, setTargetGap] = useState<{ gap: GapItem, standardId: string } | null>(null)
+
+  // Auto-open report when navigating from notification (e.g. ?report=<id>)
+  useEffect(() => {
+    const reportId = searchParams.get("report")
+    if (!reportId || !user) return
+    let cancelled = false
+    api.getGapAnalysis(reportId).then((full) => {
+      if (!cancelled) setActiveReport(full)
+    }).catch(() => {
+      if (!cancelled) toast.error("Failed to load report")
+    })
+    return () => { cancelled = true }
+  }, [searchParams, user])
 
   // ESC to close delete confirm
   useEffect(() => {
@@ -60,7 +75,7 @@ function GapAnalysisContent() {
     () => api.getStandards(),
   )
 
-  const { data: reports, mutate } = useSWR<GapAnalysisListItem[]>(
+  const { data: reports, error: reportsError, mutate } = useSWR<GapAnalysisListItem[]>(
     user ? "gap-analyses" : null,
     () => api.getGapAnalyses(),
   )
@@ -219,7 +234,18 @@ function GapAnalysisContent() {
 
       {/* Summary Matrix */}
       {/* Summary Matrix & Results */}
-      {(!reports || reports.length === 0) && !activeReport ? (
+      {reportsError ? (
+        <div className="mt-10 flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-border bg-muted/30">
+          <p className="text-muted-foreground text-center mb-4">Failed to load gap analyses.</p>
+          <button
+            type="button"
+            onClick={() => mutate()}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (!reports || reports.length === 0) && !activeReport ? (
         <div className="mt-10">
           <EmptyState type="gap-analysis" />
         </div>

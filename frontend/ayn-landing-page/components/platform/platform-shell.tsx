@@ -92,7 +92,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Live Toast for New Notifications
   const lastNotifId = useRef<string | null>(null)
   useEffect(() => {
-    const unread = notifications?.filter(n => !n.isRead) || []
+    const unread = notifications?.filter((n: Notification) => !n.isRead) || []
     if (unread.length > 0) {
       const latest = unread[0]
       if (latest.id !== lastNotifId.current) {
@@ -113,25 +113,32 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }, [notifications])
 
   const handleClearNotifications = async () => {
-    await api.markAllNotificationsRead()
-    mutateNotifications(
-      notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
-      { revalidate: false }
-    )
+    try {
+      await api.markAllNotificationsRead()
+      mutateNotifications(
+        notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
+        { revalidate: false }
+      )
+    } catch {
+      toast.error("Failed to mark all as read")
+    }
   }
 
   const handleDismissNotification = async (id: string) => {
-    await api.markNotificationRead(id)
-    mutateNotifications(
-      notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
-      { revalidate: false }
-    )
-    // Optional: Navigate logic if needed
-    const notification = notifications?.find((n: Notification) => n.id === id)
-    if (notification?.relatedEntityId && notification.relatedEntityType === 'evidence') {
-      router.push('/platform/evidence')
-    } else if (notification?.relatedEntityId && notification.relatedEntityType === 'report') {
-      router.push(`/platform/gap-analysis?report=${notification.relatedEntityId}`)
+    try {
+      await api.markNotificationRead(id)
+      mutateNotifications(
+        notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
+        { revalidate: false }
+      )
+      const notification = notifications?.find((n: Notification) => n.id === id)
+      if (notification?.relatedEntityId && notification.relatedEntityType === 'evidence') {
+        router.push('/platform/evidence')
+      } else if (notification?.relatedEntityId && notification.relatedEntityType === 'report') {
+        router.push(`/platform/gap-analysis?report=${notification.relatedEntityId}`)
+      }
+    } catch {
+      toast.error("Failed to mark as read")
     }
   }
 

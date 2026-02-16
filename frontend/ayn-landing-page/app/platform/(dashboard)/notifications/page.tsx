@@ -9,6 +9,7 @@ import { Bell, Check, Loader2, AlertTriangle, CheckCircle, Info, Trash2 } from "
 import { formatDistanceToNow } from "date-fns"
 import type { Notification } from "@/types"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function NotificationsPage() {
   const { user, isAuthenticated } = useAuth()
@@ -22,25 +23,32 @@ export default function NotificationsPage() {
   )
 
   const handleMarkAllRead = async () => {
-    await api.markAllNotificationsRead()
-    mutate(
-      notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
-      { revalidate: false }
-    )
+    try {
+      await api.markAllNotificationsRead()
+      mutate(
+        notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
+        { revalidate: false }
+      )
+    } catch {
+      toast.error("Failed to mark all as read")
+    }
   }
 
   const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
-    await api.markNotificationRead(id)
-    mutate(
-      notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
-      { revalidate: false }
-    )
+    try {
+      await api.markNotificationRead(id)
+      mutate(
+        notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
+        { revalidate: false }
+      )
+    } catch {
+      toast.error("Failed to mark as read")
+    }
   }
 
-  const navigateToRelated = (n: Notification) => {
-    // Mark read then navigate
-    handleMarkRead(n.id)
+  const navigateToRelated = async (n: Notification) => {
+    await handleMarkRead(n.id)
 
     if (n.relatedEntityType === 'evidence' && n.relatedEntityId) {
       router.push(`/platform/evidence`) // Ideally filter by ID if list view supports it

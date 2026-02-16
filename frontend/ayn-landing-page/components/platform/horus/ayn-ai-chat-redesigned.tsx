@@ -253,6 +253,13 @@ export default function HorusAIChat() {
             {isEmpty ? (
               <div className="animate-fade-in-up pt-8 md:pt-12 pb-6">
                 <div className="text-center max-w-xl mx-auto space-y-6">
+                  {/* Multiple loaders visible on welcome screen */}
+                  <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+                    <AILoader variant="inline" size={72} text="AI" className="shrink-0" />
+                    <AILoader variant="inline" size={88} text="Horus" className="shrink-0" />
+                    <AILoader variant="inline" size={72} text="Ready" className="shrink-0" />
+                    <AILoader variant="inline" size={64} text="..." className="shrink-0" />
+                  </div>
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                     <Sparkles className="w-7 h-7 text-primary" />
                   </div>

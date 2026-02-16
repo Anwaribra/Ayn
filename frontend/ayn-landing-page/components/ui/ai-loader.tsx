@@ -1,35 +1,53 @@
 "use client"
 
 import * as React from "react"
+import { cn } from "@/lib/utils"
 
 interface AILoaderProps {
   size?: number
   text?: string
+  /** "fullscreen" = overlay; "inline" = no overlay, for embedding multiple on a page */
+  variant?: "fullscreen" | "inline"
+  className?: string
 }
 
 export const Component: React.FC<AILoaderProps> = ({
   size = 180,
   text = "Generating",
+  variant = "fullscreen",
+  className,
 }) => {
   const letters = text.split("")
 
+  const content = (
+    <div
+      className={cn(
+        "relative flex items-center justify-center font-sans select-none ai-loader-letters",
+        variant === "inline" && "rounded-2xl bg-gradient-to-b from-primary/20 via-primary/10 to-transparent dark:from-primary/15 dark:via-primary/10 dark:to-transparent border border-[var(--border-subtle)]",
+        className
+      )}
+      style={{ width: size, height: size }}
+    >
+      {letters.map((letter, index) => (
+        <span
+          key={index}
+          className="inline-block text-foreground dark:text-foreground opacity-40 animate-loader-letter"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+          {letter}
+        </span>
+      ))}
+      <div className="absolute inset-0 rounded-full animate-loader-circle" />
+    </div>
+  )
+
+  if (variant === "inline") {
+    return content
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-[#1a3379] via-[#0f172a] to-black dark:from-gray-100 dark:via-gray-200 dark:to-gray-300">
-      <div
-        className="relative flex items-center justify-center font-sans select-none ai-loader-letters"
-        style={{ width: size, height: size }}
-      >
-        {letters.map((letter, index) => (
-          <span
-            key={index}
-            className="inline-block text-white dark:text-gray-800 opacity-40 animate-loader-letter"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            {letter}
-          </span>
-        ))}
-        <div className="absolute inset-0 rounded-full animate-loader-circle" />
-      </div>
+      {content}
     </div>
   )
 }

@@ -238,10 +238,18 @@
   pointer-events: none;
 }
 
-/* Light mode: remove cinematic blur and heavy dark background */
+/* Light mode: Warm "Sunset" Ambient Background */
 [data-section="platform"] [data-platform-theme="light"] .cinematic-bg {
-  background: linear-gradient(to bottom, #F1F5F9, #E5E9F2);
-  filter: none;
+  background:
+    /* Top-right warm glow */
+    radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 50%),
+    /* Bottom-left soft orange */
+    radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
+    /* Center wash */
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, transparent 100%),
+    /* Base gradient */
+    linear-gradient(to bottom, #FFF7ED, #F1F5F9);
+  filter: blur(60px);
   opacity: 1;
 }
 

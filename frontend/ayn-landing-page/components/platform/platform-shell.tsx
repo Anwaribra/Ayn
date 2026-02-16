@@ -146,7 +146,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     <div
       data-platform-theme={platformTheme}
       className={cn(
-        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 bg-layer-0 text-foreground",
+        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground",
         platformTheme === "dark" && "dark"
       )}
     >
@@ -169,7 +169,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         notificationCount={notificationCount}
       />
 
-      <main className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden bg-layer-0">
+      <main className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">
         <header className="h-16 border-b border-border bg-layer-1/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button
@@ -314,7 +314,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-40 scroll-smooth transition-colors duration-300 bg-layer-0">
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-40 scroll-smooth transition-colors duration-300">
           <div className="max-w-[1280px] w-full mx-auto">
             {children}
           </div>

@@ -110,8 +110,6 @@
 }
 
 /* Light variant for the platform shell only (does NOT affect landing page) */
-/* Light variant for the platform shell only (does NOT affect landing page) */
-/* Light variant for the platform shell only (does NOT affect landing page) */
 [data-section="platform"] [data-platform-theme="light"] {
 
   /* Hide noise in light mode for cleaner look */
@@ -575,10 +573,7 @@
 
 [data-section="platform"] .focus-ring:focus-visible {
   outline: none;
-  ring: 2px;
-  ring-color: rgba(59, 111, 217, 0.5);
-  ring-offset: 2px;
-  ring-offset-color: #07090E;
+  box-shadow: 0 0 0 2px #07090E, 0 0 0 4px rgba(59, 111, 217, 0.5);
 }
 
 /* Interactive element base styles */
@@ -819,7 +814,7 @@
 
 /* ─── Focus ring offset in light mode ──────────────────────────────────────── */
 [data-section="platform"] [data-platform-theme="light"] .focus-ring:focus-visible {
-  ring-offset-color: var(--bg-deep);
+  box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px rgba(37, 99, 235, 0.5);
 }
 
 /* ─── Glow effects reduced in light mode ───────────────────────────────────── */

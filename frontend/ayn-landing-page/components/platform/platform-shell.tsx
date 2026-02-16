@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { type ReactNode, useState, useMemo, useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -140,6 +140,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       className={cn(
         "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground"
       )}
+      data-platform-theme={mounted ? resolvedTheme ?? "dark" : undefined}
     >
       {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
       {/* <div className="cinematic-bg" /> */}
@@ -160,7 +161,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         notificationCount={notificationCount}
       />
 
-      <main className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">
+      <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">
         <header className="h-16 border-b border-white/10 bg-white/30 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300 dark:bg-black/20">
           <div className="flex items-center gap-4">
             <button

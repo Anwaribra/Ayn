@@ -6,6 +6,7 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string
     variant?: 1 | 2 | 3 | 4
     hoverEffect?: boolean
+    shine?: boolean
 }
 
 export function GlassCard({
@@ -13,6 +14,7 @@ export function GlassCard({
     className,
     variant = 2,
     hoverEffect = false,
+    shine = false,
     ...props
 }: GlassCardProps) {
     return (
@@ -33,6 +35,9 @@ export function GlassCard({
             )}
             {...props}
         >
+            {shine && (
+                <div className="absolute inset-0 pointer-events-none z-10 border border-white/10 rounded-[inherit] mask-image-gradient" />
+            )}
             {children}
         </div>
     )

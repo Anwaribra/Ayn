@@ -270,22 +270,22 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
-        <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar">
-          <div className="max-w-3xl mx-auto space-y-8 pb-4">
+        <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
+          <div className="max-w-3xl mx-auto space-y-6 pb-4">
             {isEmpty ? (
-              <div className="mt-12 animate-fade-in-up space-y-12 text-center">
-                <div className="w-20 h-20 bg-gradient-to-tr from-primary/20 to-primary/5 rounded-[32px] mx-auto flex items-center justify-center mb-6">
-                  <Cpu className="w-10 h-10 text-primary" />
+              <div className="mt-6 animate-fade-in-up space-y-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-tr from-primary/20 to-primary/5 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                  <Cpu className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
                   Horus <span className="text-muted-foreground">Online.</span>
                 </h2>
-                <p className="text-lg text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
+                <p className="text-base text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
                   Institutional intelligence ready. I have indexed <span className="text-foreground font-bold">{indexedAssets} assets</span>.
                   How can I assist your compliance workflow today?
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                   {[
                     { label: "Analyze my latest evidence", desc: "Gap detection", icon: ShieldAlert },
                     { label: "Draft a compliance report", desc: "Standard 4.2", icon: FileText },

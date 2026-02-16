@@ -114,7 +114,14 @@
 
 /* Light variant for the platform shell only (does NOT affect landing page) */
 /* Light variant for the platform shell only (does NOT affect landing page) */
+/* Light variant for the platform shell only (does NOT affect landing page) */
 [data-section="platform"] [data-platform-theme="light"] {
+
+  /* Hide noise in light mode for cleaner look */
+  .bg-noise {
+    background-image: none !important;
+  }
+
   /* 1️⃣ SEMANTIC LAYER TOKENS (Light Mode) */
   --layer-0: #F8FAFC;
   /* App Background */
@@ -238,18 +245,16 @@
   pointer-events: none;
 }
 
-/* Light mode: Warm "Sunset" Ambient Background */
+/* Light mode: Clean "Sunset" Ambient Background - Softer & Lighter */
 [data-section="platform"] [data-platform-theme="light"] .cinematic-bg {
   background:
-    /* Top-right warm glow */
-    radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 50%),
-    /* Bottom-left soft orange */
-    radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
-    /* Center wash */
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, transparent 100%),
-    /* Base gradient */
-    linear-gradient(to bottom, #FFF7ED, #F1F5F9);
-  filter: blur(60px);
+    /* Top-right warm glow (Subtle) */
+    radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.08) 0%, transparent 60%),
+    /* Bottom-left soft orange (Subtle) */
+    radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.05) 0%, transparent 60%),
+    /* Base clean gradient */
+    linear-gradient(to bottom, #FFFFFF, #F8FAFC);
+  filter: blur(80px);
   opacity: 1;
 }
 
@@ -796,6 +801,10 @@
 }
 
 /* ─── Shadow color adjustments for light mode ──────────────────────────────── */
+[data-section="platform"] [data-platform-theme="light"] .shadow-sm {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
 [data-section="platform"] [data-platform-theme="light"] .shadow-xl {
   --tw-shadow-color: rgba(15, 23, 42, 0.08);
 }

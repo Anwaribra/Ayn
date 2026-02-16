@@ -80,7 +80,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
   }
 
   return (
-    <div className={cn("glass-panel rounded-[32px] p-6 border-[var(--border-subtle)] dark:border-slate-800", className)}>
+    <div className={cn("glass-layer-2 rounded-[32px] p-6 border-transparent", className)}>
       {showHeader && (
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

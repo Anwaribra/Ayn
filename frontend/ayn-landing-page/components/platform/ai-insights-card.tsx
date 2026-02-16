@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion"
 import { Sparkles, TrendingUp, AlertCircle, Lightbulb, ArrowRight, Loader2 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -45,7 +46,8 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+      >
+        <GlassCard className="border-border shadow-sm overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
@@ -64,7 +66,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </motion.div>
     )
   }
@@ -76,7 +78,8 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+      >
+        <GlassCard className="border-border shadow-sm overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
@@ -96,9 +99,9 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
                 Start using the platform to get personalized AI insights
               </p>
               <Link href="/platform/horus-ai">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="mt-2 text-xs gap-1 text-[var(--brand)] hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
                 >
                   Chat with Horus AI
@@ -107,7 +110,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
               </Link>
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </motion.div>
     )
   }
@@ -118,7 +121,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
-      <Card className="border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
+      <GlassCard className="border-border shadow-sm overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
@@ -136,7 +139,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
           {insights.map((insight, index) => {
             const Icon = insightIcons[insight.type]
             const colors = insightColors[insight.type]
-            
+
             return (
               <motion.div
                 key={insight.id}
@@ -160,9 +163,9 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
                   </p>
                   {insight.action && (
                     <Link href={insight.action.href}>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 mt-2 px-2 text-xs gap-1 text-[var(--brand)] hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
                       >
                         {insight.action.label}
@@ -175,7 +178,7 @@ export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps
             )
           })}
         </CardContent>
-      </Card>
+      </GlassCard>
     </motion.div>
   )
 }

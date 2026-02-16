@@ -461,7 +461,7 @@ export function CommandPalette() {
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="fixed left-1/2 top-[15%] z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2"
           >
-            <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/95 shadow-2xl backdrop-blur-xl">
+            <div className="overflow-hidden rounded-2xl border border-glass-border glass-layer-3 shadow-2xl">
               {/* Search Header */}
               <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3">
                 <Search className="h-5 w-5 shrink-0 text-muted-foreground" />

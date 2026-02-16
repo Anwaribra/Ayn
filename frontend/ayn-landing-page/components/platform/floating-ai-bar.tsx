@@ -189,7 +189,7 @@ export default function FloatingAIBar() {
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: 10, height: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="mb-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-card/95 shadow-2xl shadow-black/20 backdrop-blur-xl"
+            className="mb-2 overflow-hidden rounded-2xl glass-layer-3"
           >
             {/* Response header */}
             <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
@@ -257,10 +257,10 @@ export default function FloatingAIBar() {
       <motion.div
         layout
         className={cn(
-          "flex items-center gap-2 rounded-2xl border bg-layer-2/80 px-4 py-2.5 shadow-lg backdrop-blur-xl transition-all duration-300",
+          "flex items-center gap-2 rounded-2xl px-4 py-2.5 transition-all duration-300 glass-layer-2",
           isFocused || isOpen
             ? "border-primary/30 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
-            : "border-border shadow-sm",
+            : "border-glass-border shadow-sm",
         )}
       >
         {/* Bot icon */}

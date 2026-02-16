@@ -58,20 +58,22 @@ function SettingsContent() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sections.map((item, i) => (
-          <Link key={i} href={item.href} className="glass-panel p-6 rounded-[32px] group cursor-pointer hover:bg-[var(--surface)] transition-all flex items-center gap-6 border-[var(--border-subtle)]">
-            <div className={`w-12 h-12 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center ${item.color} group-hover:scale-105 transition-transform`}>
-              <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+          <Link key={i} href={item.href}>
+            <div className="glass-layer-2 p-6 rounded-[32px] group cursor-pointer hover:bg-layer-2/80 transition-all flex items-center gap-6 border-glass-border">
+              <div className={`w-12 h-12 rounded-2xl bg-white/[0.02] border border-glass-border flex items-center justify-center ${item.color} group-hover:scale-105 transition-transform`}>
+                <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-[var(--text-primary)] mb-0.5">{item.label}</h3>
+                <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-tight">{item.desc}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-[var(--text-primary)] mb-0.5">{item.label}</h3>
-              <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-tight">{item.desc}</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
           </Link>
         ))}
       </div>
 
-      <div className="mt-16 p-8 rounded-[32px] border border-[#B94A4A]/20 bg-[var(--surface-card)] relative overflow-hidden group transition-colors">
+      <div className="mt-16 p-8 rounded-[32px] glass-layer-2 border-glass-border relative overflow-hidden group transition-colors">
         <div className="absolute top-0 right-0 p-8 opacity-[0.06] group-hover:opacity-[0.10] transition-opacity">
           <Shield className="w-32 h-32 text-[#B94A4A]" />
         </div>
@@ -127,7 +129,7 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
         role="dialog"
         aria-modal="true"
         aria-label="Confirm vault purge"
-        className="modal-container z-[70] bg-[var(--surface-modal)] rounded-2xl p-10 max-w-[520px] w-full border border-[var(--border-light)] relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
+        className="modal-container z-[70] glass-layer-3 rounded-2xl p-10 max-w-[520px] w-full border border-glass-border relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

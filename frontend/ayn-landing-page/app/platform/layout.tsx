@@ -19,11 +19,16 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       <CommandPaletteProvider>
         <AuthGuard>
           <HorusProvider>
-            <div data-section="platform">
-              <a href="#main-content" className="skip-to-content">
+            <div data-section="platform" className="relative min-h-screen">
+              {/* Global Gradient Background */}
+              <div className="fixed inset-0 z-0 bg-gradient-to-br from-indigo-950/40 via-teal-950/30 to-slate-950 dark:from-gray-950 dark:to-slate-950 pointer-events-none" />
+
+              <a href="#main-content" className="skip-to-content relative z-50">
                 Skip to Content
               </a>
-              <PlatformShell>{children}</PlatformShell>
+              <div className="relative z-10">
+                <PlatformShell>{children}</PlatformShell>
+              </div>
               <Toaster />
             </div>
           </HorusProvider>

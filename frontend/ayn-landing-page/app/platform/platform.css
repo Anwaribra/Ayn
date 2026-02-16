@@ -20,13 +20,24 @@
   /* Toasts / Tooltips */
 
   /* 2️⃣ GLASS SYSTEM TOKENS (Dark) */
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(30, 40, 60, 0.25);
+  /* Range: 0.18-0.35 */
+  --glass-border: rgba(255, 255, 255, 0.10);
+  /* dark:border-white/10 */
   /* Subtle 1px border */
-  --glass-blur: 20px;
-  /* 16px - 24px range */
-  --glass-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --glass-blur: 12px;
+  /* Mobile default */
+  --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
+  /* dark:shadow-black/25 */
   --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  @media (min-width: 768px) {
+    --glass-blur: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    --glass-blur: 20px;
+  }
 
   /* Core surfaces (Mapped to Layers) */
   --bg-deep: var(--layer-0);
@@ -102,21 +113,33 @@
   /* 1️⃣ SEMANTIC LAYER TOKENS (Light Mode) */
   --layer-0: #F8FAFC;
   /* App Background */
-  --layer-1: rgba(255, 255, 255, 0.75);
+  --layer-1: rgba(255, 255, 255, 0.20);
+  /* Range: 0.15-0.25 */
   /* Sidebar */
-  --layer-2: rgba(255, 255, 255, 0.65);
+  --layer-2: rgba(255, 255, 255, 0.25);
   /* Cards */
-  --layer-3: rgba(255, 255, 255, 0.90);
+  --layer-3: rgba(255, 255, 255, 0.60);
   /* Modals */
   --layer-4: #0F172A;
   /* Tooltips (Inverse) */
 
   /* 2️⃣ GLASS SYSTEM TOKENS (Light) */
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border: rgba(226, 232, 240, 0.6);
-  --glass-blur: 24px;
-  --glass-shadow-soft: 0 4px 20px -2px rgba(148, 163, 184, 0.15);
-  --glass-shadow-strong: 0 12px 40px -4px rgba(148, 163, 184, 0.25);
+  --glass-bg: rgba(255, 255, 255, 0.20);
+  /* Range: 0.15-0.25 */
+  --glass-border: rgba(255, 255, 255, 0.12);
+  /* border: 1px solid rgba(255,255,255,0.12) */
+  --glass-blur: 12px;
+  /* Mobile default */
+  --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.08);
+  --glass-shadow-strong: 0 12px 40px -4px rgba(148, 163, 184, 0.15);
+
+  @media (min-width: 768px) {
+    --glass-blur: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    --glass-blur: 20px;
+  }
 
   /* Core surfaces mapped */
   --bg-deep: var(--layer-0);
@@ -167,7 +190,7 @@
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   will-change: backdrop-filter;
-  border-right: 1px solid var(--glass-border);
+  border-inline-end: 1px solid var(--glass-border);
 }
 
 [data-section="platform"] .glass-layer-2 {

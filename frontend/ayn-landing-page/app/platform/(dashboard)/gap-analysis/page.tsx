@@ -19,6 +19,8 @@ import {
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
+import { StatusTiles } from "@/components/platform/status-tiles"
+import { GlassCard } from "@/components/ui/glass-card"
 
 export default function GapAnalysisPage() {
   return (
@@ -224,23 +226,15 @@ function GapAnalysisContent() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 px-4">
-            {[
-              { label: "Identified Gaps", val: String(activeGapCount).padStart(2, "0"), icon: Zap, color: "text-red-500" },
-              { label: "Total Scans", val: String(reports?.length ?? 0), icon: Radio, color: "text-amber-500" },
-              { label: "Remediation Rate", val: `${remediationRate}%`, icon: Activity, color: "text-blue-500" },
-              { label: "Alignment Index", val: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, color: "text-emerald-500" },
-            ].map((s, i) => (
-              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-5 border-[var(--border-subtle)] animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'forwards' }}>
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)]">
-                  <s.icon className={`w-4 h-4 ${s.color}`} />
-                </div>
-                <div>
-                  <div className="mono text-xl font-bold text-[var(--text-primary)]">{s.val}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">{s.label}</div>
-                </div>
-              </div>
-            ))}
+          <div className="mb-12 px-4">
+            <StatusTiles
+              stats={[
+                { label: "Identified Gaps", value: String(activeGapCount).padStart(2, "0"), icon: Zap, trend: "+2", status: "critical" },
+                { label: "Total Scans", value: String(reports?.length ?? 0), icon: Radio, status: "neutral" },
+                { label: "Remediation Rate", value: `${remediationRate}%`, icon: Activity, status: "success" },
+                { label: "Alignment Index", value: overallScore !== null ? `${Math.round(overallScore)}%` : "Optimal", icon: Target, status: "success" },
+              ]}
+            />
           </div>
 
           {/* Gap List */}
@@ -298,18 +292,21 @@ function GapAnalysisContent() {
               </div>
               <div className="space-y-3">
                 {reports.map((report) => (
-                  <div
+                  <GlassCard
                     key={report.id}
-                    className="glass-panel p-5 rounded-2xl flex items-center justify-between hover:bg-white/[0.03] transition-all border-[var(--border-subtle)] group cursor-pointer"
+                    variant={2}
+                    hoverEffect
+                    shine
+                    className="flex items-center justify-between cursor-pointer p-5"
                     onClick={() => handleViewReport(report.id)}
                   >
                     <div className="flex items-center gap-5">
-                      <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-[var(--border-subtle)] flex items-center justify-center">
-                        <span className="mono text-[10px] font-bold text-zinc-500">{Math.round(report.overallScore)}%</span>
+                      <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-center">
+                        <span className="mono text-[10px] font-bold text-muted-foreground">{Math.round(report.overallScore)}%</span>
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-zinc-100">{report.standardTitle}</h4>
-                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+                        <h4 className="text-sm font-bold text-foreground">{report.standardTitle}</h4>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
                           {new Date(report.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -317,13 +314,13 @@ function GapAnalysisContent() {
                     <div className="flex items-center gap-4">
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
-                        className="text-[10px] font-bold text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        className="text-[10px] font-bold text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                       >
                         Delete
                       </button>
-                      <Play className="w-4 h-4 text-zinc-700 group-hover:text-blue-500 transition-colors" />
+                      <Play className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
                     </div>
-                  </div>
+                  </GlassCard>
                 ))}
               </div>
             </section>

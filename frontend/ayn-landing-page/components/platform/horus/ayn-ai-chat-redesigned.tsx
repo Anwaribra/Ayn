@@ -370,7 +370,7 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input Area ─── */}
-        <div className="flex-shrink-0 p-6 bg-gradient-to-t from-layer-0 via-layer-0/90 to-transparent">
+        <div className="flex-shrink-0 p-6 bg-gradient-to-t from-[#05070A]/90 via-[#05070A]/60 to-transparent z-20">
           <div className="max-w-3xl mx-auto relative">
             {/* Attached Files Preview */}
             {attachedFiles.length > 0 && (

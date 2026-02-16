@@ -439,7 +439,7 @@ export default function PromptInputDynamicGrow({
             {menuOptions.length > 0 && (
               <MenuButton
                 toggleMenu={toggleMenu}
-                menuRef={menuRef}
+                menuRef={menuRef as React.RefObject<HTMLDivElement>}
                 isMenuOpen={isMenuOpen}
                 onSelectOption={selectOption}
                 textColor={textColor}

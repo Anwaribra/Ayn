@@ -147,7 +147,7 @@ export function HorusAIWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]"
           >
-            <div className="glass-panel rounded-3xl border-[var(--border-light)] overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.6)] backdrop-blur-[10px]">
+            <div className="glass rounded-3xl overflow-hidden shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-white/[0.02]">
                 <div className="flex items-center gap-3">
@@ -195,8 +195,8 @@ export function HorusAIWidget() {
                     <div className={cn(
                       "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed",
                       msg.role === "assistant"
-                        ? "bg-[var(--surface)] text-zinc-200 rounded-tl-sm"
-                        : "bg-blue-600 text-white rounded-tr-sm"
+                        ? "bg-white/40 backdrop-blur-md border border-white/20 text-foreground rounded-tl-sm shadow-sm dark:bg-white/10 dark:border-white/10 dark:text-zinc-200"
+                        : "bg-blue-600/80 backdrop-blur-md text-white border border-blue-500/30 rounded-tr-sm shadow-sm"
                     )}>
                       {msg.content}
                     </div>

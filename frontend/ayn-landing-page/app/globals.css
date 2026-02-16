@@ -23,6 +23,14 @@
   --spacing-section-lg: 6rem;
   --spacing-content: 1.5rem;
 
+  /* Glassmorphism System - Light Mode (Default) */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-border-subtle: rgba(255, 255, 255, 0.4);
+  --glass-blur: 20px;
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.1);
+
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);
   /* App Background */
@@ -76,6 +84,13 @@
 }
 
 .dark {
+  /* Glassmorphism System - Dark Mode */
+  --glass-bg: rgba(30, 40, 60, 0.40);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-subtle: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
+
   /* Enterprise Dark Theme - Layer System */
   --layer-0: oklch(0.10 0.03 245);
   /* App Background */
@@ -175,9 +190,17 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(0.40 0.18 255 / 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(0.55 0.15 150 / 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+      linear-gradient(to right bottom, #f8fafc, #ffffff, #e0f2fe);
     background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at 0% 0%, oklch(0.40 0.18 255 / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, oklch(0.55 0.15 150 / 0.08) 0%, transparent 50%),
+      linear-gradient(135deg, #0f0f14, #1a1a2e, #2a1a3e);
   }
 
   h1,
@@ -190,6 +213,30 @@
   }
 }
 
+/* ─── Glassmorphism Utilities ─── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card {
+  @apply rounded-3xl transition-all duration-300;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-subtle);
+}
+
 /* ─── Typography Utils ─── */
 .font-arabic {
   font-family: "Noto Sans Arabic", "Arial", sans-serif;
@@ -197,7 +244,7 @@
 
 /* ─── Component Utilities ─── */
 
-/* Glass Panels */
+/* Glass Panels (Legacy - Keeping for compatibility but prefer new utilities) */
 .glass-panel {
   @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all duration-300 dark:bg-slate-900/70 dark:border-slate-800;
 }

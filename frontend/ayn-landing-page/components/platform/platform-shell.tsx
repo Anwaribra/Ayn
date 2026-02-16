@@ -150,8 +150,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         platformTheme === "dark" && "dark"
       )}
     >
-      {/* 🌌 Cinematic Background Layer */}
-      <div className="cinematic-bg" />
+      {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
+      {/* <div className="cinematic-bg" /> */}
 
       {/* Mobile Backdrop */}
       <div
@@ -170,7 +170,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       />
 
       <main className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden">
-        <header className="h-16 border-b border-border bg-layer-1/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300">
+        <header className="h-16 border-b border-white/10 bg-white/30 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 transition-colors duration-300 dark:bg-black/20">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -209,7 +209,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-layer-2 hover:bg-layer-3 border border-border text-muted-foreground text-sm transition-all group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-muted-foreground text-sm transition-all group dark:bg-white/5 dark:hover:bg-white/10"
             >
               <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
@@ -296,6 +296,21 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             </div>
 
 
+
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setPlatformTheme(prev => (prev === "dark" ? "light" : "dark"))}
+              className={cn(
+                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
+                platformTheme === "light"
+                  ? "text-muted-foreground hover:text-foreground hover:bg-layer-2"
+                  : "text-muted-foreground hover:text-foreground hover:bg-layer-2",
+              )}
+              title={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {platformTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
 
             <div className="w-px h-4 bg-border" />
           </div>

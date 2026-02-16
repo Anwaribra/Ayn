@@ -24,12 +24,12 @@ import { api } from "@/lib/api"
 import { useCommandPaletteContext } from "@/components/platform/command-palette-provider"
 import { useCommandPalette } from "@/hooks/use-command-palette"
 import type { Notification } from "@/types"
+import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [platformTheme, setPlatformTheme] = useState<"dark" | "light">("dark")
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated } = useAuth()
@@ -38,20 +38,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette()
 
-  // Load saved platform theme (light/dark) on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const stored = window.localStorage.getItem("platform-theme")
-    if (stored === "light" || stored === "dark") {
-      setPlatformTheme(stored)
-    }
-  }, [])
+  const { setTheme, theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  // Persist theme choice
+  // Avoid hydration mismatch
   useEffect(() => {
-    if (typeof window === "undefined") return
-    window.localStorage.setItem("platform-theme", platformTheme)
-  }, [platformTheme])
+    setMounted(true)
+  }, [])
 
   // Auto-close sidebar on small screens  
   useEffect(() => {
@@ -144,10 +137,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
   return (
     <div
-      data-platform-theme={platformTheme}
       className={cn(
-        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground",
-        platformTheme === "dark" && "dark"
+        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground"
       )}
     >
       {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
@@ -299,17 +290,17 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
             {/* Theme Toggle */}
             <button
-              onClick={() => setPlatformTheme(prev => (prev === "dark" ? "light" : "dark"))}
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
               className={cn(
                 "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
-                platformTheme === "light"
+                resolvedTheme === "light"
                   ? "text-muted-foreground hover:text-foreground hover:bg-layer-2"
                   : "text-muted-foreground hover:text-foreground hover:bg-layer-2",
               )}
-              title={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              aria-label={platformTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {platformTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {mounted && (resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
             </button>
 
             <div className="w-px h-4 bg-border" />

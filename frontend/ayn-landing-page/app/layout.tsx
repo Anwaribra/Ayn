@@ -5,6 +5,7 @@ import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display } from "next/font
 import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const geist = Geist({
@@ -79,8 +80,10 @@ export default function RootLayout({
       </head>
       <body className={`font-sans antialiased ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <AuthProvider>
-          {children}
-          <Toaster richColors position="top-right" />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            {children}
+            <Toaster richColors position="top-right" />
+          </ThemeProvider>
         </AuthProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>

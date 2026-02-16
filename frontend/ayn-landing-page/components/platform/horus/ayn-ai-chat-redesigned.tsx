@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import {
-  Send,
   Paperclip,
   Bot,
   User,
@@ -29,6 +28,7 @@ import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
 import { Component as AILoader } from "@/components/ui/ai-loader"
+import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface AttachedFile {
@@ -111,7 +111,6 @@ export default function HorusAIChat() {
     loadChat
   } = useHorus()
 
-  const [input, setInput] = useState("")
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -152,15 +151,10 @@ export default function HorusAIChat() {
     if (e.target) e.target.value = ""
   }
 
-  const handleSendMessage = async () => {
-    const text = input.trim()
-    if (!text && attachedFiles.length === 0) return
-
-    setInput("")
-    const filesToUpload = attachedFiles.map(af => af.file)
+  const handleSendMessage = async (text: string, files?: File[]) => {
+    const filesToUpload = files ?? attachedFiles.map((af) => af.file)
+    await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
     setAttachedFiles([])
-
-    await sendMessage(text, filesToUpload)
     mutateHistory()
   }
 
@@ -328,56 +322,47 @@ export default function HorusAIChat() {
           </div>
         </div>
 
-        {/* ─── Input: compact bar (matches platform dark background) ─── */}
+        {/* ─── Input: dynamic grow prompt input ─── */}
         <div className="flex-shrink-0 p-4 md:p-5 border-t border-[var(--border-subtle)] bg-[var(--layer-0)] z-20">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto space-y-2">
             {attachedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {attachedFiles.map(file => (
-                  <FilePreview key={file.id} file={file} onRemove={() => setAttachedFiles(prev => prev.filter(p => p.id !== file.id))} />
+              <div className="flex flex-wrap gap-2">
+                {attachedFiles.map((file) => (
+                  <FilePreview
+                    key={file.id}
+                    file={file}
+                    onRemove={() => setAttachedFiles((prev) => prev.filter((p) => p.id !== file.id))}
+                  />
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-2xl bg-muted/60 border border-[var(--border-subtle)] focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all p-1.5 pl-4">
-              <label className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
-                <input type="file" className="hidden" multiple onChange={handleFileSelect} />
-                <Paperclip className="w-4 h-4" />
-              </label>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault()
-                    if (isProcessing) stopGeneration()
-                    else handleSendMessage()
-                  }
-                }}
-                placeholder={status === "searching" ? "Scanning…" : status === "generating" ? "Generating…" : "Message Horus…"}
-                disabled={isProcessing}
-                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-foreground placeholder:text-muted-foreground py-2.5 max-h-28 resize-none text-sm leading-relaxed disabled:opacity-50 min-h-[40px]"
-                rows={1}
-              />
-              {isProcessing ? (
-                <Button type="button" onClick={stopGeneration} size="icon" className="rounded-xl h-9 w-9 shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  <StopCircle className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleSendMessage}
-                  disabled={!input.trim() && attachedFiles.length === 0}
-                  size="icon"
-                  className={cn(
-                    "rounded-xl h-9 w-9 shrink-0",
-                    (!input.trim() && attachedFiles.length === 0) ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90"
-                  )}
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2 text-center">Horus can make mistakes. Verify important data.</p>
+            <PromptInputDynamicGrow
+              placeholder={status === "searching" ? "Scanning…" : status === "generating" ? "Generating…" : "Message Horus…"}
+              disabled={isProcessing}
+              onSubmit={(text) => handleSendMessage(text, attachedFiles.map((af) => af.file))}
+              showEffects={true}
+              menuOptions={[]}
+              leftSlot={
+                <label className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0 flex items-center justify-center">
+                  <input type="file" className="hidden" multiple onChange={handleFileSelect} />
+                  <Paperclip className="w-4 h-4" />
+                </label>
+              }
+              rightSlot={
+                isProcessing ? (
+                  <Button
+                    type="button"
+                    onClick={stopGeneration}
+                    size="icon"
+                    variant="destructive"
+                    className="rounded-full h-8 w-8 shrink-0 ml-1"
+                  >
+                    <StopCircle className="w-4 h-4" />
+                  </Button>
+                ) : null
+              }
+            />
+            <p className="text-[10px] text-muted-foreground text-center">Horus can make mistakes. Verify important data.</p>
           </div>
         </div>
       </div>

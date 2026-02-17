@@ -40,7 +40,7 @@ type NavItemConfig = {
   label: string
   href: string
 }
-
+// Grouped Menu Items for better visual hierarchy
 const MAIN_MENU: NavItemConfig[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
   { id: "horus-ai", icon: BrainCircuit, label: "Horus AI", href: "/platform/horus-ai" },

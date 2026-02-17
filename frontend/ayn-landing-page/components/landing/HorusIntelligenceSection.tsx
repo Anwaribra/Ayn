@@ -50,8 +50,8 @@ const NodeCard = ({
           <div className="absolute -inset-4 bg-[radial-gradient(circle,rgba(99,102,241,0.15)_0%,transparent_70%)] blur-2xl" />
           <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/30 to-blue-500/30 rounded-3xl opacity-50" />
 
-          {/* Card Body - Dark Theme */}
-          <div className="relative rounded-3xl bg-card p-12 shadow-2xl border border-border/50 backdrop-blur-xl">
+          {/* Card Body - Glass effect (light theme) */}
+          <div className="relative rounded-3xl glass-card p-12 shadow-2xl border border-[var(--glass-border)]">
             {/* Solid icon container */}
             <div className="relative w-28 h-28 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(99,102,241,0.1)] group">
               <Brain className="w-14 h-14 text-primary drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
@@ -72,8 +72,8 @@ const NodeCard = ({
           </div>
         </motion.div>
       ) : (
-        /* Side nodes - Dark Theme Glassmorphism */
-        <div className="relative rounded-2xl border border-border/50 bg-card/40 p-6 hover:bg-card/60 hover:border-primary/30 transition-all duration-300 group backdrop-blur-sm">
+        /* Side nodes - Glass effect (light theme) */
+        <div className="relative rounded-2xl glass-card border border-[var(--glass-border)] p-6 hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
           {/* Simple icon */}
           <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center mb-4 border border-primary/10 group-hover:scale-110 transition-transform">
             <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -273,7 +273,7 @@ export function HorusIntelligenceSection() {
             {/* Subtle glow for mobile */}
             <div className="absolute -inset-2 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-2xl blur-lg" />
 
-            <div className="relative rounded-2xl border border-border/50 bg-card/90 p-6 shadow-2xl backdrop-blur-sm">
+            <div className="relative rounded-2xl glass-card border border-[var(--glass-border)] p-6 shadow-2xl">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                   <Brain className="w-8 h-8 text-primary drop-shadow-sm" />
@@ -298,7 +298,7 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <div className="h-full rounded-xl border border-border/50 bg-card/40 p-4 hover:bg-card/60 transition-all">
+              <div className="h-full rounded-xl glass-card border border-[var(--glass-border)] p-4 hover:shadow-lg transition-all">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -315,7 +315,7 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <div className="h-full rounded-xl border border-border/50 bg-card/40 p-4 hover:bg-card/60 transition-all">
+              <div className="h-full rounded-xl glass-card border border-[var(--glass-border)] p-4 hover:shadow-lg transition-all">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <Shield className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -334,7 +334,7 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
             >
-              <div className="h-full rounded-xl border border-border/50 bg-card/40 p-4 hover:bg-card/60 transition-all">
+              <div className="h-full rounded-xl glass-card border border-[var(--glass-border)] p-4 hover:shadow-lg transition-all">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <BarChart3 className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -353,7 +353,7 @@ export function HorusIntelligenceSection() {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
-              <div className="h-full rounded-xl border border-border/50 bg-card/40 p-4 hover:bg-card/60 transition-all">
+              <div className="h-full rounded-xl glass-card border border-[var(--glass-border)] p-4 hover:shadow-lg transition-all">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <Sparkles className="w-4 h-4 text-muted-foreground" />
                 </div>

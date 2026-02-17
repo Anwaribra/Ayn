@@ -348,8 +348,8 @@ export function FeatureShowcase() {
                   className={cn(
                     "w-full text-left p-4 rounded-xl border transition-all duration-300",
                     isActive
-                      ? "border-[var(--brand)]/30 bg-[var(--brand)]/5 shadow-sm"
-                      : "border-border/50 hover:border-border hover:bg-accent/50"
+                      ? "border-[var(--brand)]/30 bg-[var(--brand)]/5 shadow-sm glass-card border-[var(--glass-border)]"
+                      : "border-border/50 hover:border-border hover:bg-accent/50 hover:shadow-sm"
                   )}
                 >
                   <div className="flex items-start gap-4">
@@ -417,7 +417,7 @@ export function FeatureShowcase() {
                       activeFeature.color
                     )}
                   />
-                  <div className="relative bg-background rounded-xl p-1">
+                  <div className="relative glass-card rounded-xl p-1 border border-[var(--glass-border)]">
                     {activeFeature.preview}
                   </div>
                 </div>

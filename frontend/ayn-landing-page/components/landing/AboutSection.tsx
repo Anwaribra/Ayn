@@ -56,7 +56,7 @@ export function AboutSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg text-center"
+              className="group relative p-8 rounded-2xl glass-card border border-[var(--glass-border)] hover:border-primary/30 transition-all duration-300 hover:shadow-lg text-center"
             >
               <div className="mb-5 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
                 <item.icon className="w-7 h-7 text-primary" />

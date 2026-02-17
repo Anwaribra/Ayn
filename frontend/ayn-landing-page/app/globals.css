@@ -56,6 +56,9 @@
   --popover-foreground: oklch(0.12 0.02 240);
 
   /* Brand Colors */
+  --brand: #3B6FD9;
+  --brand-foreground: #ffffff;
+  --brand-muted: #5B8FE8;
   --primary: oklch(0.40 0.18 255);
   --primary-foreground: oklch(1 0 0);
 
@@ -115,6 +118,9 @@
   --popover: var(--layer-3);
   --popover-foreground: oklch(0.98 0.01 240);
 
+  --brand: #3B6FD9;
+  --brand-foreground: #ffffff;
+  --brand-muted: #5B8FE8;
   --primary: oklch(0.40 0.18 255);
   --primary-foreground: oklch(1 0 0);
 

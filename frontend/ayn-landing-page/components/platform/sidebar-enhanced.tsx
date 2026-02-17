@@ -15,7 +15,7 @@ import {
   Settings,
   UserCircle2,
   LogOut,
-  ChevronLeft,
+  PanelLeft,
   ShieldCheck,
   Layers,
 } from "lucide-react"
@@ -98,11 +98,15 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         )}
       >
         {active && (
-          <motion.div
-            layoutId="active-indicator"
-            className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-primary"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
+          <>
+            <motion.div
+              layoutId="active-indicator"
+              className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-primary/80 shadow-[0_0_12px_rgba(59,111,217,0.75)]"
+              transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            />
+            {/* Subtle glow effect */}
+            <div className="absolute inset-0 rounded-2xl bg-primary/5 pointer-events-none" />
+          </>
         )}
 
         <item.icon
@@ -136,38 +140,64 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     <aside
       className={cn(
         "fixed inset-y-0 left-0 z-50 flex flex-col",
-        "border-r border-[var(--sidebar-border)]",
-        "bg-[var(--sidebar-bg)]/95 backdrop-blur-md",
-        "transition-all duration-200 ease-in-out",
+        "border-r border-white/10 dark:border-white/10",
+        "bg-white/15 dark:bg-slate-800/30 backdrop-blur-md",
+        "rounded-r-2xl shadow-lg dark:shadow-black/30",
+        "transition-all duration-250 ease-in-out",
         "h-[100dvh]",
         // Mobile drawer
         "w-64 max-w-[85vw]",
         open ? "translate-x-0" : "-translate-x-full",
-        "md:translate-x-0",
+        "md:translate-x-0 md:rounded-none md:shadow-none",
         // Desktop collapse widths
-        open ? "md:w-64" : "md:w-[72px]"
+        open ? "md:w-64" : "md:w-[72px]",
+        // Desktop: static positioning to prevent overlap
+        "md:static"
       )}
     >
-      {/* Floating Toggle (desktop only) */}
-      <button
-        onClick={onToggle}
-        className="absolute -right-3 top-6 hidden md:flex h-8 w-8 items-center justify-center
-                   rounded-full border border-white/20 bg-[rgba(255,255,255,0.15)]
-                   backdrop-blur-lg shadow-lg transition-all hover:scale-105"
-      >
-        <ChevronLeft
+      {/* Header: Logo + Toggle */}
+      <div className="flex items-center justify-between px-4 py-5 border-b border-white/10 dark:border-white/10">
+        <Link 
+          href="/" 
           className={cn(
-            "h-4 w-4 transition-transform duration-300",
-            open ? "" : "rotate-180"
+            "inline-flex items-center transition-all duration-200 overflow-hidden",
+            isCollapsed ? "md:w-0 md:opacity-0" : "md:w-auto md:opacity-100"
           )}
-        />
-      </button>
-
-      {/* Logo (links to marketing / landing homepage) */}
-      <div className="flex items-center px-4 py-5">
-        <Link href="/" className="inline-flex items-center">
+          title="Go to homepage"
+        >
           <AynLogo size="sm" withGlow={false} heroStyle />
         </Link>
+        
+        {/* Show logo icon when collapsed (desktop only) */}
+        {isCollapsed && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link 
+                href="/" 
+                className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
+                title="Go to homepage"
+              >
+                <span className="text-lg font-bold text-foreground">A</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Go to homepage</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Toggle Button - Always visible, clean panel icon */}
+        <button
+          onClick={onToggle}
+          type="button"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 dark:border-white/10 bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <PanelLeft
+            className={cn(
+              "h-4 w-4 transition-transform duration-200",
+              open ? "" : "rotate-180"
+            )}
+          />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -202,7 +232,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-white/10 p-3 space-y-3">
+      <div className="border-t border-white/10 dark:border-white/10 p-3 space-y-3">
         <SidebarItem
           item={{
             id: "settings",

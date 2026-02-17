@@ -265,19 +265,19 @@ function StandardsContent() {
             )}
           </div>
 
-          <div className="glass-panel rounded-[32px] p-8 bg-layer-4 text-layer-0 flex flex-col relative overflow-hidden group">
+          <div className="glass-layer-2 rounded-[32px] p-8 flex flex-col relative overflow-hidden group border border-[var(--glass-border)]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 rounded-lg bg-white/10">
-                  <Shield className="w-5 h-5 text-primary-foreground" />
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <Shield className="w-5 h-5 text-primary" />
                 </div>
-                <h4 className="text-[10px] font-bold text-primary-foreground/60 uppercase tracking-widest">Intelligence Summary</h4>
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Intelligence Summary</h4>
               </div>
 
-              <p className="text-lg font-medium leading-relaxed mb-8 text-primary-foreground/80">
-                Current institutional framework contains <span className="text-primary-foreground font-bold text-2xl">{collections.length}</span> active standards.
+              <p className="text-lg font-medium leading-relaxed mb-8 text-foreground">
+                Current institutional framework contains <span className="text-primary font-bold text-2xl">{collections.length}</span> active standards.
                 {(() => {
                   const needsReview = (standards ?? []).find((s) => getStandardStatus(s.id) === "WARNING")
                   return needsReview
@@ -286,14 +286,14 @@ function StandardsContent() {
                 })()}
               </p>
 
-              <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-primary-foreground text-primary font-bold hover:bg-primary-foreground/90 transition-all text-center block shadow-lg active:scale-95">
+              <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all text-center block shadow-lg shadow-primary/20 active:scale-95">
                 Generate Compliance Briefing
               </Link>
             </div>
 
-            <div className="mt-auto pt-8 border-t border-primary-foreground/20 flex items-center gap-4 relative z-10">
+            <div className="mt-auto pt-8 border-t border-[var(--glass-border)] flex items-center gap-4 relative z-10">
               <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
-              <span className="text-[10px] font-bold text-primary-foreground/40 uppercase tracking-widest">Ayn Core Live Sync</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ayn Core Live Sync</span>
             </div>
           </div>
         </div>

@@ -40,8 +40,8 @@ function DemoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
         </button>
         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
           <div className="text-center">
-            <div className="w-20 h-20 rounded-2xl bg-[var(--brand)]/10 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-10 h-10 text-[var(--brand)]" />
+            <div className="w-20 h-20 rounded-2xl bg-muted/80 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-10 h-10 text-foreground" />
             </div>
             <h3 className="text-2xl font-bold mb-2">Interactive Demo Coming Soon</h3>
             <p className="text-muted-foreground mb-6">Experience the full platform with our guided tour</p>

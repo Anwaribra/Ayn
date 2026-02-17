@@ -440,6 +440,50 @@
   background: rgba(15, 23, 42, 0.08);
 }
 
+/* ─── Sidebar Glass Blue Gradient ───────────────────────────────────────── */
+[data-section="platform"] aside {
+  position: relative;
+  background: var(--layer-1);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-inline-end: 1px solid var(--glass-border);
+}
+
+/* Glass blue gradient overlay - intensifies towards bottom */
+[data-section="platform"] aside::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(59, 111, 217, 0.03) 30%,
+    rgba(59, 111, 217, 0.06) 60%,
+    rgba(59, 111, 217, 0.10) 85%,
+    rgba(59, 111, 217, 0.15) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above gradient */
+[data-section="platform"] aside > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Light mode glass blue gradient */
+[data-section="platform"] [data-platform-theme="light"] aside::before {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(37, 99, 235, 0.02) 30%,
+    rgba(37, 99, 235, 0.04) 60%,
+    rgba(37, 99, 235, 0.08) 85%,
+    rgba(37, 99, 235, 0.12) 100%
+  );
+}
+
 /* ─── Mobile Sidebar Optimizations ───────────────────────────────────────── */
 @media (max-width: 767px) {
   [data-section="platform"] aside {

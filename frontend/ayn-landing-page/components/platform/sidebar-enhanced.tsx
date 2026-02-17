@@ -142,8 +142,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     <aside
       className={cn(
         "fixed inset-y-0 left-0 z-50 flex flex-col",
-        "border-r border-white/10 dark:border-white/10",
-        "bg-white/15 dark:bg-slate-800/30 backdrop-blur-md",
+        "glass-layer-1",
         "rounded-r-2xl shadow-lg dark:shadow-black/30",
         "transition-all duration-250 ease-in-out",
         "h-[100dvh]",
@@ -160,7 +159,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       {/* Header: Logo when expanded, toggle always (centered when collapsed) */}
       <div
         className={cn(
-          "flex items-center border-b border-white/10 dark:border-white/10 py-4",
+          "flex items-center border-b border-[var(--glass-border)] py-4",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
@@ -172,7 +171,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 dark:border-white/10 bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -229,7 +228,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-white/10 dark:border-white/10 p-3 space-y-3">
+      <div className="border-t border-[var(--glass-border)] p-3 space-y-3">
         <SidebarItem
           item={{
             id: "settings",

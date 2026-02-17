@@ -1,10 +1,20 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* 🛑 PROHIBITION RULE ADHERED 🛑
-  - No hardcoded hex colors in components or utilities.
-  - All colors are semantic (layer-*, primary, success, warning, etc).
-  - Animations and Gradients now reference CSS variables.
+/* 
+  🛑 PROHIBITION RULE 🛑
+  Hardcoded color classes (e.g. bg-white, text-zinc-900, border-slate-200) are PROHIBITED.
+  You MUST use semantic layer tokens:
+  - --layer-0 (App Background)
+  - --layer-1 (Sidebar/Surface)
+  - --layer-2 (Cards)
+  - --layer-3 (Modals)
+  - --layer-4 (Tooltips/Inverse)
+  
+  And semantic text tokens:
+  - text-foreground
+  - text-muted-foreground
+  - text-primary
 */
 
 /* Enterprise Theme - Clean, Professional, Trustworthy */
@@ -13,24 +23,31 @@
   --spacing-section-lg: 6rem;
   --spacing-content: 1.5rem;
 
-  /* Glassmorphism System - Light Mode */
+  /* Glassmorphism System - Light Mode (Default) */
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.6);
   --glass-border-subtle: rgba(255, 255, 255, 0.3);
   --glass-blur: 16px;
+  /* Shadow includes a subtle 1px ring for contrast against light backgrounds */
   --glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --glass-shadow-hover: 0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   /* Enterprise Light Theme - Layer System */
-  --layer-0: oklch(0.985 0.002 240); /* App Background */
-  --layer-1: oklch(0.985 0.002 240); /* Sidebar/Nav/Surface */
-  --layer-2: oklch(1 0 0);           /* Cards/Widgets */
-  --layer-3: oklch(0.995 0.002 240); /* Modals/Dropdowns */
-  --layer-4: oklch(0.12 0.02 240);   /* Tooltips/Inverse */
+  --layer-0: oklch(0.985 0.002 240);  
+  /* App Background */
+  --layer-1: oklch(0.985 0.002 240);
+  /* Sidebar/Nav/Surface */
+  --layer-2: oklch(1 0 0);
+  /* Cards/Widgets */
+  --layer-3: oklch(0.995 0.002 240);
+  /* Modals/Dropdowns */
+  --layer-4: oklch(0.12 0.02 240);
+  /* Tooltips/Inverse */
 
   /* Semantic Roles */
   --background: var(--layer-0);
   --foreground: oklch(0.12 0.02 240);
+
 
   --card: var(--layer-2);
   --card-foreground: oklch(0.12 0.02 240);
@@ -53,16 +70,6 @@
 
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-
-  /* Status Colors (New - For Badges & Alerts) */
-  --success: oklch(0.623 0.17 145); /* Emerald-ish */
-  --success-foreground: oklch(0.985 0 0);
-  
-  --warning: oklch(0.75 0.15 85);   /* Amber-ish */
-  --warning-foreground: oklch(0.2 0.05 85);
-  
-  --info: oklch(0.6 0.15 250);      /* Blue-ish */
-  --info-foreground: oklch(0.985 0 0);
 
   --border: oklch(0.88 0.006 240);
   --input: oklch(0.88 0.006 240);
@@ -87,11 +94,16 @@
   --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
 
   /* Enterprise Dark Theme - Layer System */
-  --layer-0: oklch(0.10 0.03 245); /* App Background */
-  --layer-1: oklch(0.13 0.03 245); /* Sidebar/Nav */
-  --layer-2: oklch(0.15 0.04 245); /* Cards */
-  --layer-3: oklch(0.18 0.04 245); /* Modals */
-  --layer-4: oklch(0.25 0.05 245); /* Tooltips */
+  --layer-0: oklch(0.10 0.03 245);
+  /* App Background */
+  --layer-1: oklch(0.13 0.03 245);
+  /* Sidebar/Nav */
+  --layer-2: oklch(0.15 0.04 245);
+  /* Cards */
+  --layer-3: oklch(0.18 0.04 245);
+  /* Modals */
+  --layer-4: oklch(0.25 0.05 245);
+  /* Tooltips */
 
   /* Semantic Roles */
   --background: var(--layer-0);
@@ -117,16 +129,6 @@
 
   --destructive: oklch(0.3 0.15 25);
   --destructive-foreground: oklch(0.98 0 0);
-
-  /* Status Colors (Dark Mode) */
-  --success: oklch(0.5 0.15 145);
-  --success-foreground: oklch(0.98 0 0);
-
-  --warning: oklch(0.65 0.13 85);
-  --warning-foreground: oklch(0.1 0.05 85);
-
-  --info: oklch(0.5 0.13 250);
-  --info-foreground: oklch(0.98 0 0);
 
   --border: oklch(0.18 0.04 245);
   --input: oklch(0.18 0.04 245);
@@ -157,7 +159,6 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -168,19 +169,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  
-  /* Status Colors Exposure */
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -200,23 +191,26 @@
 
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
-    /* Semantic Background Gradient */
     background-image:
-      radial-gradient(circle at 10% 20%, oklch(from var(--primary) l c h / 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, oklch(from var(--info) l c h / 0.05) 0%, transparent 40%),
-      linear-gradient(to right bottom, var(--layer-0), var(--layer-1));
+      radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+      linear-gradient(to right bottom, #f8fafc, #ffffff, #e0f2fe);
     background-attachment: fixed;
   }
 
   .dark body {
-    /* Semantic Dark Background Gradient */
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(from var(--primary) l c h / 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(from var(--secondary) l c h / 0.08) 0%, transparent 50%),
-      linear-gradient(135deg, var(--layer-0), var(--layer-1));
+      radial-gradient(circle at 0% 0%, oklch(0.40 0.18 255 / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, oklch(0.55 0.15 150 / 0.08) 0%, transparent 50%),
+      linear-gradient(135deg, #0f0f14, #1a1a2e, #2a1a3e);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply tracking-tight font-bold text-foreground;
   }
 }
@@ -252,57 +246,65 @@
 
 /* ─── Component Utilities ─── */
 
-/* Glass Panels */
+/* Glass Panels (Legacy - Keeping for compatibility but prefer new utilities) */
 .glass-panel {
-  @apply bg-background/70 backdrop-blur-xl border border-border/20 shadow-sm transition-all duration-300;
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all duration-300 dark:bg-slate-900/70 dark:border-slate-800;
 }
 
 .glass-panel:hover {
-  @apply bg-background/80 shadow-md border-border/40;
+  @apply bg-white/80 shadow-md border-white/40 dark:bg-slate-900/80 dark:border-slate-700;
 }
 
 /* Card Elevation System */
 .card-elevation-1 {
   box-shadow:
-    0 1px 2px 0 oklch(from var(--foreground) l c h / 0.05),
-    0 0 0 1px oklch(from var(--foreground) l c h / 0.02);
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .card-elevation-2 {
   box-shadow:
-    0 4px 6px -1px oklch(from var(--foreground) l c h / 0.05),
-    0 2px 4px -1px oklch(from var(--foreground) l c h / 0.03),
-    0 0 0 1px oklch(from var(--foreground) l c h / 0.02);
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .card-elevation-3 {
   box-shadow:
-    0 10px 15px -3px oklch(from var(--foreground) l c h / 0.05),
-    0 4px 6px -2px oklch(from var(--foreground) l c h / 0.025),
-    0 0 0 1px oklch(from var(--foreground) l c h / 0.02);
+    0 10px 15px -3px rgba(0, 0, 0, 0.05),
+    0 4px 6px -2px rgba(0, 0, 0, 0.025),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
+/* Enterprise Status Badges */
 /* Enterprise Status Badges - Semantic & Adaptive */
 .badge-verified {
-  @apply bg-success/10 text-success border border-success/20;
+  @apply bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30;
 }
 
 .badge-analyzed {
-  @apply bg-info/10 text-info border border-info/20;
+  @apply bg-blue-500/10 text-blue-700 border border-blue-500/20 dark:text-blue-400 dark:border-blue-500/30;
 }
 
 .badge-pending {
-  @apply bg-warning/10 text-warning border border-warning/20;
+  @apply bg-amber-500/10 text-amber-700 border border-amber-500/20 dark:text-amber-400 dark:border-amber-500/30;
 }
 
 .badge-failed {
-  @apply bg-destructive/10 text-destructive border border-destructive/20;
+  @apply bg-red-500/10 text-red-700 border border-red-500/20 dark:text-red-400 dark:border-red-500/30;
 }
 
 /* Animations */
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in-up {
@@ -310,19 +312,29 @@
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+  from {
+    transform: rotate(0deg);
+  }
 
-@media (prefers-reduced-motion: no-preference) {
-  .animate-spin-slow {
-    animation: spin-slow 12s linear infinite;
+  to {
+    transform: rotate(360deg);
   }
 }
 
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .animate-pulse-subtle {
@@ -347,7 +359,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 hover:bg-muted-foreground/40 rounded-full transition-colors;
+  @apply bg-zinc-200 hover:bg-zinc-300 rounded-full transition-colors;
 }
 
 /* Skip Link */
@@ -355,49 +367,66 @@
   @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:shadow-lg focus:rounded-md;
 }
 
-/* AI Loader keyframes - Refactored to use Semantic Variables */
+/* AI Loader keyframes (used by components/ui/ai-loader.tsx) */
 @keyframes loader-circle {
   0% {
     transform: rotate(90deg);
     box-shadow:
-      0 6px 12px 0 var(--primary) inset,
-      0 12px 18px 0 var(--chart-1) inset,
-      0 36px 36px 0 var(--chart-2) inset,
-      0 0 3px 1.2px oklch(from var(--primary) l c h / 0.3),
-      0 0 6px 1.8px oklch(from var(--chart-1) l c h / 0.2);
+      0 6px 12px 0 #38bdf8 inset,
+      0 12px 18px 0 #005dff inset,
+      0 36px 36px 0 #1e40af inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2);
   }
   50% {
     transform: rotate(270deg);
     box-shadow:
-      0 6px 12px 0 var(--info) inset,
-      0 12px 6px 0 var(--primary) inset,
-      0 24px 36px 0 var(--chart-1) inset,
-      0 0 3px 1.2px oklch(from var(--info) l c h / 0.3),
-      0 0 6px 1.8px oklch(from var(--primary) l c h / 0.2);
+      0 6px 12px 0 #60a5fa inset,
+      0 12px 6px 0 #0284c7 inset,
+      0 24px 36px 0 #005dff inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2);
   }
   100% {
     transform: rotate(450deg);
     box-shadow:
-      0 6px 12px 0 var(--accent) inset,
-      0 12px 18px 0 var(--primary) inset,
-      0 36px 36px 0 var(--chart-1) inset,
-      0 0 3px 1.2px oklch(from var(--accent) l c h / 0.3),
-      0 0 6px 1.8px oklch(from var(--primary) l c h / 0.2);
+      0 6px 12px 0 #4dc8fd inset,
+      0 12px 18px 0 #005dff inset,
+      0 36px 36px 0 #1e40af inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2);
   }
 }
 
 @keyframes loader-letter {
-  0%, 100% { opacity: 0.4; transform: translateY(0); }
-  20% { opacity: 1; transform: scale(1.15); }
-  40% { opacity: 0.7; transform: translateY(0); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  40% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .animate-loader-circle {
-    animation: loader-circle 5s linear infinite;
-  }
+.animate-loader-circle {
+  animation: loader-circle 5s linear infinite;
+}
 
-  .animate-loader-letter {
-    animation: loader-letter 3s infinite;
-  }
+.animate-loader-letter {
+  animation: loader-letter 3s infinite;
+}
+
+.dark .animate-loader-circle {
+  box-shadow:
+    0 6px 12px 0 #4b5563 inset,
+    0 12px 18px 0 #6b7280 inset,
+    0 36px 36px 0 #9ca3af inset,
+    0 0 3px 1.2px rgba(107, 114, 128, 0.3),
+    0 0 6px 1.8px rgba(156, 163, 175, 0.2);
 }

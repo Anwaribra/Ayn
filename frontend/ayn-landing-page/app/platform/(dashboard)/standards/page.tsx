@@ -270,8 +270,8 @@ function StandardsContent() {
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                  <Shield className="w-5 h-5 text-primary" />
+                <div className="p-2 rounded-lg bg-muted/80 border border-[var(--glass-border)]">
+                  <Shield className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Intelligence Summary</h4>
               </div>

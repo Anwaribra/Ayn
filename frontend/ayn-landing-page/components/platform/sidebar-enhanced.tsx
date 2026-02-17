@@ -18,6 +18,7 @@ import {
   PanelLeft,
   ShieldCheck,
   Layers,
+  History,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -229,6 +230,18 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             <SidebarItem key={item.id} item={item} />
           ))}
         </div>
+
+        {/* Archive – last navigation item inside nav */}
+        <div className="space-y-2">
+          <SidebarItem
+            item={{
+              id: "archive",
+              icon: History,
+              label: "Archive",
+              href: "/platform/archive",
+            }}
+          />
+        </div>
       </nav>
 
       {/* Bottom Section */}
@@ -237,26 +250,38 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           item={{
             id: "settings",
             icon: Settings,
-            label: "Platform Settings",
+            label: "Settings",
             href: "/platform/settings",
           }}
         />
 
         <div className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/5 transition">
-          <UserCircle2 className="h-6 w-6 text-muted-foreground" />
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">
-                {user?.name ?? "System User"}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                Enterprise Admin
-              </p>
-            </div>
-          )}
+          {/* Profile navigation area */}
+          <Link
+            href="/platform/settings/profile"
+            className="flex items-center gap-3 flex-1 min-w-0"
+          >
+            <UserCircle2 className="h-6 w-6 text-muted-foreground" />
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  {user?.name ?? "System User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.institutionId ? "Enterprise Admin" : "System User"}
+                </p>
+              </div>
+            )}
+          </Link>
+
+          {/* Logout: separate action on far right */}
           <button
-            onClick={handleLogout}
-            className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+            onClick={(e) => {
+              e.preventDefault()
+              handleLogout()
+            }}
+            className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+            aria-label="Sign out"
           >
             <LogOut className="h-4 w-4" />
           </button>

@@ -9,11 +9,9 @@ import {
   ArrowRight,
   Search,
   Bell,
-  PanelLeft,
   Sun,
   Moon,
   X,
-  History,
 } from "lucide-react"
 import PlatformSidebar from "@/components/platform/sidebar-enhanced"
 import FloatingAIBar from "@/components/platform/floating-ai-bar"
@@ -170,41 +168,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden md:ml-0">
         <header className="h-16 border-b border-[var(--border-subtle)] bg-[var(--layer-0)] flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <PanelLeft className="w-5 h-5" />
-            </button>
-
-            {/* Desktop Sidebar Toggle & Navigation */}
-            <div className="hidden md:flex items-center gap-1.5 mr-2">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-layer-2 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all active:scale-95"
-                title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
-              >
-                <PanelLeft className="w-4 h-4" />
-              </button>
-
-              <div className="w-px h-4 bg-border mx-1" />
-
-              <button
-                onClick={() => router.back()}
-                className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-layer-2 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all active:scale-95"
-                title="Go Back"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => router.forward()}
-                className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-layer-2 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all active:scale-95"
-                title="Go Forward"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
+            {/* Navigation / Command Palette */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-muted-foreground text-sm transition-all group dark:bg-white/5 dark:hover:bg-white/10"
@@ -218,15 +182,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
-            {/* Archive Shortcut */}
-            <button
-              onClick={() => router.push('/platform/archive')}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-layer-2 transition-all"
-              title="Archive"
-            >
-              <History className="w-5 h-5" />
-            </button>
-
             {/* Notifications */}
             <div className="relative notification-dropdown-container">
               <button

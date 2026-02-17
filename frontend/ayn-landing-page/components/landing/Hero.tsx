@@ -1,40 +1,100 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Brain, ChevronDown, FileCheck, Lock, Shield, Sparkles, Play, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ShinyButton } from "./landing-utils"
 import { useRotatingTypewriter } from "@/hooks/use-typewriter"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 
 function scrollToFeatures() {
   document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
 }
 
-// Interactive Demo Modal
-function DemoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  if (!isOpen) return null
+const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])"
+
+// Interactive Demo Modal – with focus trap, Escape, exit animation, focus return
+function DemoModal({ onClose, returnFocusRef }: { onClose: () => void; returnFocusRef?: React.RefObject<HTMLElement | null> }) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const getFocusables = useCallback(() => {
+    const el = panelRef.current
+    if (!el) return []
+    return Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+      (node) => !node.hasAttribute("disabled") && node.getAttribute("aria-hidden") !== "true"
+    )
+  }, [])
+
+  useEffect(() => {
+    const focusables = getFocusables()
+    const first = focusables[0]
+    if (first) {
+      requestAnimationFrame(() => first.focus())
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        returnFocusRef?.current?.focus()
+        onClose()
+        return
+      }
+      if (e.key !== "Tab") return
+      const list = getFocusables()
+      if (list.length === 0) return
+      const current = document.activeElement as HTMLElement | null
+      const idx = list.indexOf(current as HTMLElement)
+      if (idx === -1) return
+      if (e.shiftKey) {
+        if (idx === 0) {
+          e.preventDefault()
+          list[list.length - 1].focus()
+        }
+      } else {
+        if (idx === list.length - 1) {
+          e.preventDefault()
+          list[0].focus()
+        }
+      }
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [onClose, getFocusables, returnFocusRef])
+
+  const handleClose = useCallback(() => {
+    returnFocusRef?.current?.focus()
+    onClose()
+  }, [onClose, returnFocusRef])
 
   return (
     <motion.div
+      ref={overlayRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="demo-modal-title"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className="relative w-full max-w-5xl aspect-video glass-card border border-[var(--glass-border)] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-[var(--glass-bg)]/80 backdrop-blur-sm border border-[var(--glass-border)] hover:bg-[var(--glass-bg)] transition-colors"
+          type="button"
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-[var(--glass-bg)]/80 backdrop-blur-sm border border-[var(--glass-border)] hover:bg-[var(--glass-bg)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
@@ -43,7 +103,7 @@ function DemoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             <div className="w-20 h-20 rounded-2xl glass-card border border-[var(--glass-border)] flex items-center justify-center mx-auto mb-4 shadow-sm">
               <Sparkles className="w-10 h-10 text-foreground" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Interactive Demo Coming Soon</h3>
+            <h3 id="demo-modal-title" className="text-2xl font-bold mb-2">Interactive Demo Coming Soon</h3>
             <p className="text-muted-foreground mb-6">Experience the full platform with our guided tour</p>
             <Link href="/login">
               <Button className="gap-2">
@@ -79,9 +139,9 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
         transition={{ duration: 0.4 }}
       />
 
-      {/* Browser mockup - Glass Effect like Intelligence Summary */}
+      {/* Browser mockup - Glass Effect; no-lift to avoid double transform with motion */}
       <motion.div
-        className="relative z-10 rounded-xl overflow-hidden glass-card border border-[var(--glass-border)] shadow-xl"
+        className="relative z-10 rounded-xl overflow-hidden glass-card glass-card-no-lift border border-[var(--glass-border)] shadow-xl"
         animate={{
           y: isHovered ? -8 : 0,
           scale: isHovered ? 1.02 : 1,
@@ -89,14 +149,14 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
         {/* Browser header - glass */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-white/60 backdrop-blur-sm border-b border-[var(--glass-border)]">
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--glass-bg)]/60 backdrop-blur-sm border-b border-[var(--glass-border)]">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-400/80" />
             <div className="w-3 h-3 rounded-full bg-amber-400/80" />
             <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="px-3 py-1 rounded-md bg-white/70 backdrop-blur-sm text-[10px] text-muted-foreground border border-[var(--glass-border)]">
+            <div className="px-3 py-1 rounded-md bg-[var(--glass-bg)]/70 backdrop-blur-sm text-[10px] text-muted-foreground border border-[var(--glass-border)]">
               app.aynplatform.com
             </div>
           </div>
@@ -165,6 +225,7 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
 
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
+  const demoTriggerRef = useRef<HTMLDivElement>(null)
 
   const { displayedText, currentText } = useRotatingTypewriter({
     texts: [
@@ -237,8 +298,8 @@ export function Hero() {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <ShinyButton
-                  href="/login" // Ideally this should point to signup if available, but login is fine for now
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
+                  href="/signup"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto min-h-[44px] shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-glow-hover)]"
                 >
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -247,7 +308,7 @@ export function Hero() {
                   size="lg"
                   variant="outline"
                   onClick={scrollToFeatures}
-                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto"
+                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto min-h-[44px]"
                 >
                   Explore Platform
                 </Button>
@@ -282,14 +343,27 @@ export function Hero() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <InteractiveDemoPreview onClick={() => setDemoOpen(true)} />
+              <div
+                ref={demoTriggerRef}
+                tabIndex={0}
+                role="button"
+                aria-label="Open interactive demo modal"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setDemoOpen(true)
+                  }
+                }}
+              >
+                <InteractiveDemoPreview onClick={() => setDemoOpen(true)} />
+              </div>
             </motion.div>
 
             {/* Mobile fallback */}
             <div className="relative flex md:hidden justify-center mt-8">
               <Link
-                href="/login"
-                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all"
+                href="/signup"
+                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all min-h-[44px]"
               >
                 <div className="w-14 h-14 rounded-xl bg-muted border border-border flex items-center justify-center">
                   <Lock className="w-7 h-7 text-primary/80" />
@@ -314,8 +388,16 @@ export function Hero() {
         </div>
       </section>
 
-      {/* Demo Modal */}
-      <DemoModal isOpen={demoOpen} onClose={() => setDemoOpen(false)} />
+      {/* Demo Modal – exit animation and focus return via AnimatePresence */}
+      <AnimatePresence mode="wait">
+        {demoOpen && (
+          <DemoModal
+            key="demo-modal"
+            onClose={() => setDemoOpen(false)}
+            returnFocusRef={demoTriggerRef}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }

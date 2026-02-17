@@ -31,6 +31,8 @@
   /* Shadow includes a subtle 1px ring for contrast against light backgrounds */
   --glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --glass-shadow-hover: 0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(59, 111, 217, 0.3);
+  --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
 
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);  
@@ -95,6 +97,8 @@
   --glass-border-subtle: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(59, 111, 217, 0.35);
+  --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
 
   /* Enterprise Dark Theme - Layer System */
   --layer-0: oklch(0.10 0.03 245);
@@ -245,6 +249,10 @@
   border-color: var(--glass-border-subtle);
 }
 
+.glass-card-no-lift:hover {
+  transform: none;
+}
+
 /* ─── Typography Utils ─── */
 .font-arabic {
   font-family: "Noto Sans Arabic", "Arial", sans-serif;
@@ -252,13 +260,20 @@
 
 /* ─── Component Utilities ─── */
 
-/* Glass Panels (Legacy - Keeping for compatibility but prefer new utilities) */
+/* Glass Panels (Legacy - uses semantic glass tokens) */
 .glass-panel {
-  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm transition-all duration-300 dark:bg-slate-900/70 dark:border-slate-800;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s ease;
 }
 
 .glass-panel:hover {
-  @apply bg-white/80 shadow-md border-white/40 dark:bg-slate-900/80 dark:border-slate-700;
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-subtle);
 }
 
 /* Card Elevation System */

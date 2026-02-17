@@ -145,12 +145,11 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         "glass-layer-1",
         "rounded-r-2xl transition-all duration-250 ease-in-out",
         "h-[100dvh]",
-        // Mobile / tablet: drawer overlay – closed = fully off-screen, no shadow bleed
-        "w-64 max-w-[85vw]",
-        open ? "translate-x-0 shadow-lg dark:shadow-black/30" : "-translate-x-full shadow-none",
-        !open && "max-lg:pointer-events-none",
+        // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
+        open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
+        open ? "translate-x-0 shadow-lg dark:shadow-black/30" : "max-lg:pointer-events-none",
         // Desktop (lg+ only): static + collapse width so main sits beside sidebar
-        "lg:translate-x-0 lg:rounded-none lg:shadow-none",
+        "lg:translate-x-0 lg:rounded-none lg:shadow-none lg:visible",
         open ? "lg:w-64" : "lg:w-[72px]",
         "lg:static"
       )}

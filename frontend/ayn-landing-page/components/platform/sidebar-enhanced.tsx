@@ -160,43 +160,45 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       {/* Header: Logo + Toggle */}
       <div
         className={cn(
-          "flex items-center border-b border-white/10 dark:border-white/10 py-5",
-          isCollapsed
-            ? "justify-center px-2"
-            : "justify-between px-4"
+          "relative flex items-center border-b border-white/10 dark:border-white/10 py-5",
+          isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
-
+        {/* Logo Wrapper */}
         <Link
           href="/"
-          className={cn(
-            "inline-flex items-center transition-all duration-200 overflow-hidden",
-            isCollapsed
-              ? "md:w-0 md:opacity-0 md:pointer-events-none"
-              : "md:w-auto md:opacity-100"
-          )}
+          className="relative flex items-center justify-center h-8"
           title="Go to homepage"
         >
-          <AynLogo size="sm" withGlow={false} heroStyle />
+          {/* Full Logo (expanded) */}
+          <AynLogo
+            size="sm"
+            withGlow={false}
+            heroStyle
+            className={cn(
+              "absolute left-0 transition-all duration-300 origin-left",
+              isCollapsed
+                ? "opacity-0 scale-90 pointer-events-none"
+                : "opacity-100 scale-100"
+            )}
+          />
+
+          {/* Collapsed Logo Icon */}
+          <div
+            className={cn(
+              "absolute flex items-center justify-center transition-all duration-300",
+              isCollapsed
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-90 pointer-events-none"
+            )}
+          >
+            <div className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 dark:bg-white/5 font-semibold text-foreground">
+              A
+            </div>
+          </div>
         </Link>
 
-        {/* Show logo icon when collapsed (desktop only) */}
-        {isCollapsed && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
-                title="Go to homepage"
-              >
-                <span className="text-lg font-bold text-foreground">A</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Go to homepage</TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Toggle Button - Always visible, clean panel icon */}
+        {/* Toggle Button */}
         <button
           onClick={onToggle}
           type="button"
@@ -211,6 +213,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           />
         </button>
       </div>
+
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 space-y-6">
@@ -248,7 +251,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             item={{
               id: "archive",
               icon: ArchiveIcon,
-              label: "Compliance Archive",
+              label: "Archive",
               href: "/platform/archive",
             }}
           />
@@ -291,7 +294,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {user?.institutionId
-                    ? "Enterprise Admin"
+                    ? "User"
                     : "System User"}
                 </p>
               </div>

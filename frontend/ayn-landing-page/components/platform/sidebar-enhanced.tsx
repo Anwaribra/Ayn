@@ -157,29 +157,22 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         "md:static"
       )}
     >
-      {/* Header: Logo (expanded only) + Toggle */}
+      {/* Header: Logo when expanded, toggle always (centered when collapsed) */}
       <div
         className={cn(
-          "flex items-center justify-between border-b border-white/10 dark:border-white/10 py-5 px-4",
+          "flex items-center border-b border-white/10 dark:border-white/10 py-4",
+          isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
-        {/* Logo: يظهر فقط عندما يكون السايدبار مفتوح */}
-        <Link
-          href="/"
-          className={cn(
-            "inline-flex items-center transition-opacity duration-200",
-            isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-          )}
-          title="Go to homepage"
-        >
-          <AynLogo size="sm" withGlow={false} heroStyle />
-        </Link>
-
-        {/* Toggle Button */}
+        {!isCollapsed && (
+          <Link href="/" className="inline-flex items-center" title="Go to homepage">
+            <AynLogo size="sm" withGlow={false} heroStyle />
+          </Link>
+        )}
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 dark:border-white/10 bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 dark:border-white/10 bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft

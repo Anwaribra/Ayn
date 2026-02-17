@@ -5,7 +5,7 @@ import useSWR from "swr"
 import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 
-import PlatformSidebar from "./PlatformSidebar"
+import PlatformSidebar from "./sidebar-enhanced"
 import { Bell, Menu } from "lucide-react"
 
 /* -------------------------------------------------------------------------- */
@@ -109,7 +109,8 @@ export default function PlatformShell({
 
       <PlatformSidebar
         open={sidebarOpen}
-        setOpen={setSidebarOpen}
+        onToggle={() => setSidebarOpen((prev) => !prev)}
+        notificationCount={notifications.length}
       />
 
       {/* ------------------------------------------------------------------ */}

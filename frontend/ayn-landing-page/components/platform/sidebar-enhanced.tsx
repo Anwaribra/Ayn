@@ -159,7 +159,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       {/* Header: Logo when expanded, toggle always (centered when collapsed) */}
       <div
         className={cn(
-          "flex items-center border-b border-[var(--glass-border)] py-4",
+          "flex items-center py-4",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
@@ -228,7 +228,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-[var(--glass-border)] p-3 space-y-3">
+      <div className="p-3 space-y-3">
         <SidebarItem
           item={{
             id: "settings",

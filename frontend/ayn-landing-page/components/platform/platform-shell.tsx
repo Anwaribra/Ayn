@@ -167,7 +167,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       />
 
       <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden md:ml-0">
-        <header className="h-16 border-b border-[var(--border-subtle)] bg-[var(--layer-0)] flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
+        <header className="h-16 bg-[var(--layer-0)] flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
           <div className="flex items-center gap-4">
             {/* Mobile: open sidebar toggle */}
             <button

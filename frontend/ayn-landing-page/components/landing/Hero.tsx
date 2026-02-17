@@ -69,89 +69,89 @@ function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
       onHoverEnd={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {/* Glow effect */}
+      {/* Glow - subtle so glass reads well */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-[var(--brand)]/20 via-primary/10 to-[var(--brand)]/20 blur-3xl scale-110"
+        className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 blur-3xl scale-110"
         animate={{
-          opacity: isHovered ? 0.8 : 0.5,
+          opacity: isHovered ? 0.6 : 0.4,
           scale: isHovered ? 1.15 : 1.1,
         }}
         transition={{ duration: 0.4 }}
       />
 
-      {/* Browser mockup */}
+      {/* Browser mockup - Glass Effect like Intelligence Summary */}
       <motion.div
-        className="relative z-10 rounded-xl overflow-hidden border border-border/50 bg-card shadow-2xl"
+        className="relative z-10 rounded-xl overflow-hidden glass-card border border-[var(--glass-border)] shadow-xl"
         animate={{
           y: isHovered ? -8 : 0,
           scale: isHovered ? 1.02 : 1,
         }}
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        {/* Browser header */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 border-b border-border/50">
+        {/* Browser header - glass */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-white/60 backdrop-blur-sm border-b border-[var(--glass-border)]">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+            <div className="w-3 h-3 rounded-full bg-red-400/80" />
+            <div className="w-3 h-3 rounded-full bg-amber-400/80" />
+            <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="px-3 py-1 rounded-md bg-background/50 text-[10px] text-muted-foreground">
+            <div className="px-3 py-1 rounded-md bg-white/70 backdrop-blur-sm text-[10px] text-muted-foreground border border-[var(--glass-border)]">
               app.aynplatform.com
             </div>
           </div>
         </div>
 
-        {/* Demo content */}
-        <div className="relative aspect-[16/10] bg-gradient-to-br from-background to-muted/30 p-6">
-          {/* Mock Dashboard UI */}
+        {/* Demo content - glass background */}
+        <div className="relative aspect-[16/10] bg-[var(--glass-bg)] backdrop-blur-sm p-6 border-t-0">
+          {/* Mock Dashboard UI - inner glass cards */}
           <div className="grid grid-cols-3 gap-4 h-full">
             {/* Sidebar mock */}
             <div className="col-span-1 space-y-3">
-              <div className="h-8 w-8 rounded-lg bg-[var(--brand)]/10 flex items-center justify-center">
-                <span className="text-sm font-bold text-[var(--brand)]">A</span>
+              <div className="h-8 w-8 rounded-lg glass-card border border-[var(--glass-border)] flex items-center justify-center shadow-sm">
+                <span className="text-sm font-bold text-foreground">A</span>
               </div>
               <div className="space-y-2">
-                <div className="h-2 w-full rounded bg-muted" />
-                <div className="h-2 w-3/4 rounded bg-muted" />
-                <div className="h-2 w-1/2 rounded bg-muted" />
+                <div className="h-2 w-full rounded bg-muted/80" />
+                <div className="h-2 w-3/4 rounded bg-muted/70" />
+                <div className="h-2 w-1/2 rounded bg-muted/60" />
               </div>
             </div>
             {/* Main content mock */}
             <div className="col-span-2 space-y-4">
               <div className="flex gap-4">
-                <div className="flex-1 h-16 rounded-lg bg-card border border-border/50 p-3">
-                  <div className="h-2 w-12 rounded bg-muted mb-2" />
-                  <div className="h-4 w-8 rounded bg-[var(--brand)]/20" />
+                <div className="flex-1 h-16 rounded-lg glass-card border border-[var(--glass-border)] p-3 shadow-sm">
+                  <div className="h-2 w-12 rounded bg-muted/70 mb-2" />
+                  <div className="h-4 w-8 rounded bg-primary/20" />
                 </div>
-                <div className="flex-1 h-16 rounded-lg bg-card border border-border/50 p-3">
-                  <div className="h-2 w-12 rounded bg-muted mb-2" />
+                <div className="flex-1 h-16 rounded-lg glass-card border border-[var(--glass-border)] p-3 shadow-sm">
+                  <div className="h-2 w-12 rounded bg-muted/70 mb-2" />
                   <div className="h-4 w-8 rounded bg-emerald-500/20" />
                 </div>
               </div>
-              <div className="h-32 rounded-lg bg-card border border-border/50 p-4">
-                <div className="h-2 w-24 rounded bg-muted mb-4" />
+              <div className="h-32 rounded-lg glass-card border border-[var(--glass-border)] p-4 shadow-sm">
+                <div className="h-2 w-24 rounded bg-muted/60 mb-4" />
                 <div className="flex items-end gap-2 h-16">
-                  <div className="flex-1 h-8 rounded-t bg-[var(--brand)]/30" />
-                  <div className="flex-1 h-12 rounded-t bg-[var(--brand)]/50" />
-                  <div className="flex-1 h-10 rounded-t bg-[var(--brand)]/40" />
+                  <div className="flex-1 h-8 rounded-t bg-primary/30" />
+                  <div className="flex-1 h-12 rounded-t bg-primary/50" />
+                  <div className="flex-1 h-10 rounded-t bg-primary/40" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Play button overlay */}
+          {/* Play button overlay - glass circle */}
           <motion.div
-            className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px]"
+            className="absolute inset-0 flex items-center justify-center bg-[var(--glass-bg)]/30 backdrop-blur-[2px]"
             animate={{ opacity: isHovered ? 1 : 0 }}
             transition={{ duration: 0.3 }}
           >
             <motion.div
-              className="w-16 h-16 rounded-full bg-[var(--brand)] flex items-center justify-center shadow-lg"
+              className="w-16 h-16 rounded-full glass-card border-2 border-[var(--glass-border)] flex items-center justify-center shadow-lg"
               animate={{ scale: isHovered ? 1.1 : 1 }}
               transition={{ duration: 0.3 }}
             >
-              <Play className="w-6 h-6 text-[var(--brand-foreground)] ml-1" />
+              <Play className="w-6 h-6 text-primary ml-1 fill-primary" />
             </motion.div>
           </motion.div>
         </div>

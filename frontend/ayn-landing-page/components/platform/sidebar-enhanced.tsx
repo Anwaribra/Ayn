@@ -23,8 +23,11 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 import { AynLogo } from "@/components/ayn-logo"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 interface SidebarProps {
   open: boolean
   onToggle: () => void

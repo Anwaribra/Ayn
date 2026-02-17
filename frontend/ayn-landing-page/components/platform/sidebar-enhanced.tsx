@@ -157,45 +157,22 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         "md:static"
       )}
     >
-      {/* Header: Logo + Toggle */}
+      {/* Header: Logo (expanded only) + Toggle */}
       <div
         className={cn(
-          "relative flex items-center border-b border-white/10 dark:border-white/10 py-5",
-          isCollapsed ? "justify-center px-2" : "justify-between px-4"
+          "flex items-center justify-between border-b border-white/10 dark:border-white/10 py-5 px-4",
         )}
       >
-        {/* Logo Wrapper */}
+        {/* Logo: يظهر فقط عندما يكون السايدبار مفتوح */}
         <Link
           href="/"
-          className="relative flex items-center justify-center h-8"
+          className={cn(
+            "inline-flex items-center transition-opacity duration-200",
+            isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+          )}
           title="Go to homepage"
         >
-          {/* Full Logo (expanded) */}
-          <AynLogo
-            size="sm"
-            withGlow={false}
-            heroStyle
-            className={cn(
-              "absolute left-0 transition-all duration-300 origin-left",
-              isCollapsed
-                ? "opacity-0 scale-90 pointer-events-none"
-                : "opacity-100 scale-100"
-            )}
-          />
-
-          {/* Collapsed Logo Icon */}
-          <div
-            className={cn(
-              "absolute flex items-center justify-center transition-all duration-300",
-              isCollapsed
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-90 pointer-events-none"
-            )}
-          >
-            <div className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 dark:bg-white/5 font-semibold text-foreground">
-              A
-            </div>
-          </div>
+          <AynLogo size="sm" withGlow={false} heroStyle />
         </Link>
 
         {/* Toggle Button */}

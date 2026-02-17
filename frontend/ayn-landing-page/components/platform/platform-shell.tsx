@@ -26,7 +26,8 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Start closed so mobile never shows sidebar taking space on first paint
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const router = useRouter()
   const pathname = usePathname()

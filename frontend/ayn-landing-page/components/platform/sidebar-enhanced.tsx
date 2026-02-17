@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Layers,
   History,
+  ArchiveIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -158,8 +159,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     >
       {/* Header: Logo + Toggle */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-white/10 dark:border-white/10">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className={cn(
             "inline-flex items-center transition-all duration-200 overflow-hidden",
             isCollapsed ? "md:w-0 md:opacity-0" : "md:w-auto md:opacity-100"
@@ -168,13 +169,13 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         >
           <AynLogo size="sm" withGlow={false} heroStyle />
         </Link>
-        
+
         {/* Show logo icon when collapsed (desktop only) */}
         {isCollapsed && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
                 title="Go to homepage"
               >
@@ -236,8 +237,8 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           <SidebarItem
             item={{
               id: "archive",
-              icon: History,
-              label: "Archive",
+              icon: ArchiveIcon,
+              label: "Compliance Archive",
               href: "/platform/archive",
             }}
           />
@@ -255,38 +256,44 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           }}
         />
 
-        <div className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/5 transition">
-          {/* Profile navigation area */}
+        {/* User Row */}
+        <div className="group flex items-center justify-between rounded-2xl p-2 hover:bg-white/5 transition">
+
+          {/* Profile clickable area */}
           <Link
-            href="/platform/settings/profile"
+            href="/platform/settings/account/"
             className="flex items-center gap-3 flex-1 min-w-0"
           >
-            <UserCircle2 className="h-6 w-6 text-muted-foreground" />
+            <UserCircle2 className="h-6 w-6 text-muted-foreground shrink-0" />
+
             {!isCollapsed && (
-              <div className="flex-1 min-w-0">
+              <div className="flex flex-col justify-center min-w-0 leading-tight">
                 <p className="text-sm font-semibold truncate">
                   {user?.name ?? "System User"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.institutionId ? "Enterprise Admin" : "System User"}
+                  {user?.institutionId
+                    ? "Enterprise Admin"
+                    : "System User"}
                 </p>
               </div>
             )}
           </Link>
 
-          {/* Logout: separate action on far right */}
+          {/* Logout button (isolated action) */}
           <button
             onClick={(e) => {
-              e.preventDefault()
+              e.stopPropagation()
               handleLogout()
             }}
-            className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+            className="ml-2 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
             aria-label="Sign out"
           >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>
+
     </aside>
   )
 }

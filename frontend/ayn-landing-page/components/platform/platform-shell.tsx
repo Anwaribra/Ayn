@@ -167,12 +167,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       />
 
       <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden md:ml-0">
-        <header className="h-16 bg-[var(--layer-0)] flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
+        <header className="h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
           <div className="flex items-center gap-4">
             {/* Mobile: open sidebar toggle */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-layer-2 transition-colors"
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
               aria-label="Open sidebar"
             >
               <PanelLeft className="w-5 h-5" />
@@ -181,11 +181,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Navigation / Command Palette */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-muted-foreground text-sm transition-all group dark:bg-white/5 dark:hover:bg-white/10"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-[var(--glass-border)] text-muted-foreground text-sm transition-all group"
             >
               <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
-              <kbd className="hidden md:flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-layer-1 border border-border text-[10px] font-mono text-muted-foreground">
+              <kbd className="hidden md:flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-layer-2 border border-[var(--glass-border)] text-[10px] font-mono text-muted-foreground">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </button>
@@ -196,7 +196,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <div className="relative notification-dropdown-container">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-layer-2 transition-all"
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
               >
                 <Bell className="w-5 h-5" />
                 {notificationCount > 0 && (
@@ -265,9 +265,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
               className={cn(
                 "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
-                resolvedTheme === "light"
-                  ? "text-muted-foreground hover:text-foreground hover:bg-layer-2"
-                  : "text-muted-foreground hover:text-foreground hover:bg-layer-2",
+                "text-muted-foreground hover:text-foreground hover:bg-white/5",
               )}
               title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -275,7 +273,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               {mounted && (resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
             </button>
 
-            <div className="w-px h-4 bg-border" />
+            <div className="w-px h-4 bg-[var(--glass-border)]" />
           </div>
         </header>
 

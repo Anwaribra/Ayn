@@ -1011,3 +1011,17 @@
 [data-section="platform"] [data-platform-theme="light"] .rounded-full.bg-zinc-900 {
   background-color: #CBD5E1;
 }
+
+/* ─── Platform Header Glass Effect ──────────────────────────────────────────── */
+[data-section="platform"] .platform-header {
+  background: var(--layer-1);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Light mode header */
+[data-section="platform"] [data-platform-theme="light"] .platform-header {
+  background: var(--layer-1);
+  border-bottom-color: var(--glass-border);
+}

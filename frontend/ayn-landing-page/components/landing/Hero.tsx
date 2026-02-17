@@ -29,18 +29,18 @@ function DemoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-5xl aspect-video bg-card rounded-2xl overflow-hidden shadow-2xl"
+        className="relative w-full max-w-5xl aspect-video glass-card border border-[var(--glass-border)] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/80 hover:bg-background transition-colors"
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-[var(--glass-bg)]/80 backdrop-blur-sm border border-[var(--glass-border)] hover:bg-[var(--glass-bg)] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+        <div className="w-full h-full flex items-center justify-center bg-[var(--glass-bg)]/50 backdrop-blur-sm border-t-0">
           <div className="text-center">
-            <div className="w-20 h-20 rounded-2xl bg-muted/80 flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 rounded-2xl glass-card border border-[var(--glass-border)] flex items-center justify-center mx-auto mb-4 shadow-sm">
               <Sparkles className="w-10 h-10 text-foreground" />
             </div>
             <h3 className="text-2xl font-bold mb-2">Interactive Demo Coming Soon</h3>

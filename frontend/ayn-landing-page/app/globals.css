@@ -35,7 +35,7 @@
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);  
   /* App Background */
-  --layer-1: oklch(0.998 0.001 240);
+  --layer-1: oklch(0.985 0.002 240);
   /* Sidebar/Nav/Surface */
   --layer-2: oklch(1 0 0);
   /* Cards/Widgets */

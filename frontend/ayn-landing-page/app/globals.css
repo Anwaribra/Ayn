@@ -33,13 +33,13 @@
   --glass-shadow-hover: 0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   /* Enterprise Light Theme - Layer System */
-  --layer-0: oklch(0.985 0.002 240);
+  --layer-0: oklch(0.985 0.002 240);  
   /* App Background */
-  --layer-1: oklch(1 0 0);
+  --layer-1: oklch(0.998 0.001 240);
   /* Sidebar/Nav/Surface */
   --layer-2: oklch(1 0 0);
   /* Cards/Widgets */
-  --layer-3: oklch(1 0 0);
+  --layer-3: oklch(0.995 0.002 240);
   /* Modals/Dropdowns */
   --layer-4: oklch(0.12 0.02 240);
   /* Tooltips/Inverse */
@@ -62,8 +62,8 @@
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 240);
 
-  --muted: oklch(0.96 0.002 240);
-  --muted-foreground: oklch(0.45 0.02 240);
+  --muted: oklch(0.94 0.03 240);
+  --muted-foreground: oklch(0.42 0.02 240);
 
   --accent: oklch(0.96 0.01 255);
   --accent-foreground: oklch(0.20 0.05 255);
@@ -71,8 +71,8 @@
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.90 0.005 240);
-  --input: oklch(0.90 0.005 240);
+  --border: oklch(0.88 0.006 240);
+  --input: oklch(0.88 0.006 240);
   --ring: oklch(0.40 0.18 255);
 
   /* Chart Colors */

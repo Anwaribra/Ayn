@@ -135,22 +135,20 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex flex-col",
-        "border-r border-white/10",
-        "bg-[rgba(30,40,60,0.25)] backdrop-blur-xl",
-        "transition-all duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 z-50 flex flex-col",
+        "border-r border-[var(--sidebar-border)]",
+        "bg-[var(--sidebar-bg)]/95 backdrop-blur-md",
+        "transition-all duration-200 ease-in-out",
         "h-[100dvh]",
-
-        // Mobile
+        // Mobile drawer
         "w-64 max-w-[85vw]",
         open ? "translate-x-0" : "-translate-x-full",
         "md:translate-x-0",
-
-        // Desktop collapse
+        // Desktop collapse widths
         open ? "md:w-64" : "md:w-[72px]"
       )}
     >
-      {/* Floating Toggle */}
+      {/* Floating Toggle (desktop only) */}
       <button
         onClick={onToggle}
         className="absolute -right-3 top-6 hidden md:flex h-8 w-8 items-center justify-center
@@ -165,9 +163,11 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         />
       </button>
 
-      {/* Logo */}
+      {/* Logo (links to marketing / landing homepage) */}
       <div className="flex items-center px-4 py-5">
-        {!isCollapsed && <AynLogo size="sm" />}
+        <Link href="/" className="inline-flex items-center">
+          <AynLogo size="sm" withGlow={false} heroStyle />
+        </Link>
       </div>
 
       {/* Navigation */}

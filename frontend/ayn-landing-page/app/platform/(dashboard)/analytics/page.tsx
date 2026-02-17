@@ -71,7 +71,7 @@ function AnalyticsContent() {
           </button>
           <button
             onClick={() => toast.info('Export formatted reports from the Insight Hub below')}
-            className="flex items-center gap-2 px-5 py-2 bg-primary-foreground text-primary rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
           >
             Export Intelligence
           </button>

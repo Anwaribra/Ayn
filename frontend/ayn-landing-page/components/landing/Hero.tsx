@@ -301,7 +301,7 @@ export function Hero() {
                   href="/signup"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto min-h-[44px] shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-glow-hover)]"
                 >
-                  Get Started Free
+                  Get Started 
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </ShinyButton>
                 <Button

@@ -75,7 +75,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
   }
 
   const handleNavClick = () => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
       onToggle()
     }
   }
@@ -146,14 +146,13 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         "rounded-r-2xl shadow-lg dark:shadow-black/30",
         "transition-all duration-250 ease-in-out",
         "h-[100dvh]",
-        // Mobile drawer
+        // Mobile / tablet: drawer overlay – closed = fully off-screen, no width taken
         "w-64 max-w-[85vw]",
         open ? "translate-x-0" : "-translate-x-full",
-        "md:translate-x-0 md:rounded-none md:shadow-none",
-        // Desktop collapse widths
-        open ? "md:w-64" : "md:w-[72px]",
-        // Desktop: static positioning to prevent overlap
-        "md:static"
+        // Desktop (lg+ only): static + collapse width so main sits beside sidebar
+        "lg:translate-x-0 lg:rounded-none lg:shadow-none",
+        open ? "lg:w-64" : "lg:w-[72px]",
+        "lg:static"
       )}
     >
       {/* Header: Logo when expanded, toggle always (centered when collapsed) */}

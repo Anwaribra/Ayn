@@ -44,10 +44,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Auto-close sidebar on small screens  
+  // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) setSidebarOpen(false)
+      if (window.innerWidth < 1024) setSidebarOpen(false)
       else setSidebarOpen(true)
     }
     handleResize()
@@ -150,10 +150,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
       {/* <div className="cinematic-bg" /> */}
 
-      {/* Mobile Backdrop */}
+      {/* Backdrop when sidebar is overlay (below lg) */}
       <div
         className={cn(
-          "fixed inset-0 bg-black/50 z-[45] md:hidden backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 bg-black/50 z-[45] lg:hidden backdrop-blur-sm transition-opacity duration-300",
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={() => setSidebarOpen(false)}
@@ -166,13 +166,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         notificationCount={notificationCount}
       />
 
-      <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden md:ml-0">
+      <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0">
         <header className="h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
           <div className="flex items-center gap-4">
-            {/* Mobile: open sidebar toggle */}
+            {/* Open sidebar when it's overlay (below lg) */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
               aria-label="Open sidebar"
             >
               <PanelLeft className="w-5 h-5" />

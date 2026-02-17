@@ -158,12 +158,22 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       )}
     >
       {/* Header: Logo + Toggle */}
-      <div className="flex items-center justify-between px-4 py-5 border-b border-white/10 dark:border-white/10">
+      <div
+        className={cn(
+          "flex items-center border-b border-white/10 dark:border-white/10 py-5",
+          isCollapsed
+            ? "justify-center px-2"
+            : "justify-between px-4"
+        )}
+      >
+
         <Link
           href="/"
           className={cn(
             "inline-flex items-center transition-all duration-200 overflow-hidden",
-            isCollapsed ? "md:w-0 md:opacity-0" : "md:w-auto md:opacity-100"
+            isCollapsed
+              ? "md:w-0 md:opacity-0 md:pointer-events-none"
+              : "md:w-auto md:opacity-100"
           )}
           title="Go to homepage"
         >
@@ -257,12 +267,20 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         />
 
         {/* User Row */}
-        <div className="group flex items-center justify-between rounded-2xl p-2 hover:bg-white/5 transition">
-
+        <div
+          className={cn(
+            "group flex items-center rounded-2xl p-2 hover:bg-white/5 transition",
+            isCollapsed ? "justify-center" : "justify-between"
+          )}
+        >
           {/* Profile clickable area */}
           <Link
             href="/platform/settings/account/"
-            className="flex items-center gap-3 flex-1 min-w-0"
+            className={cn(
+              "flex items-center gap-3 flex-1 min-w-0",
+              isCollapsed && "justify-center"
+            )}
+            title="Go to profile"
           >
             <UserCircle2 className="h-6 w-6 text-muted-foreground shrink-0" />
 
@@ -281,16 +299,18 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           </Link>
 
           {/* Logout button (isolated action) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              handleLogout()
-            }}
-            className="ml-2 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          {!isCollapsed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleLogout()
+              }}
+              className="ml-2 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 

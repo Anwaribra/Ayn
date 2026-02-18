@@ -36,24 +36,26 @@
 
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);
-  /* App Background */
   --layer-1: oklch(0.972 0.004 240);
-  /* Sidebar/Nav/Surface — slightly darker for visual separation */
   --layer-2: oklch(1 0 0);
-  /* Cards/Widgets */
   --layer-3: oklch(0.995 0.002 240);
-  /* Modals/Dropdowns */
   --layer-4: oklch(0.12 0.02 240);
-  /* Tooltips/Inverse */
+
+  /* Standards Redesign Semantic Tokens - Light */
+  --bg-primary: var(--layer-0);
+  --bg-secondary: var(--layer-1);
+  --card-bg: var(--layer-2);
+  --text-primary: oklch(0.12 0.02 240);
+  --text-secondary: oklch(0.42 0.02 240);
+  --border-color: oklch(0.88 0.006 240);
+  --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
 
   /* Semantic Roles */
   --background: var(--layer-0);
   --foreground: oklch(0.12 0.02 240);
-
-
   --card: var(--layer-2);
   --card-foreground: oklch(0.12 0.02 240);
-
   --popover: var(--layer-3);
   --popover-foreground: oklch(0.12 0.02 240);
 
@@ -63,19 +65,14 @@
   --brand-muted: #5B8FE8;
   --primary: oklch(0.40 0.18 255);
   --primary-foreground: oklch(1 0 0);
-
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 240);
-
   --muted: oklch(0.94 0.03 240);
   --muted-foreground: oklch(0.42 0.02 240);
-
   --accent: oklch(0.96 0.01 255);
   --accent-foreground: oklch(0.20 0.05 255);
-
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-
   --border: oklch(0.88 0.006 240);
   --input: oklch(0.88 0.006 240);
   --ring: oklch(0.40 0.18 255);
@@ -102,23 +99,26 @@
 
   /* Enterprise Dark Theme - Layer System */
   --layer-0: oklch(0.10 0.03 245);
-  /* App Background */
   --layer-1: oklch(0.13 0.03 245);
-  /* Sidebar/Nav */
   --layer-2: oklch(0.15 0.04 245);
-  /* Cards */
   --layer-3: oklch(0.18 0.04 245);
-  /* Modals */
   --layer-4: oklch(0.25 0.05 245);
-  /* Tooltips */
+
+  /* Standards Redesign Semantic Tokens - Dark */
+  --bg-primary: var(--layer-0);
+  --bg-secondary: var(--layer-1);
+  --card-bg: var(--layer-2);
+  --text-primary: oklch(0.98 0.01 240);
+  --text-secondary: oklch(0.65 0.05 240);
+  --border-color: oklch(0.18 0.04 245);
+  --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
 
   /* Semantic Roles */
   --background: var(--layer-0);
   --foreground: oklch(0.98 0.01 240);
-
   --card: var(--layer-2);
   --card-foreground: oklch(0.98 0.01 240);
-
   --popover: var(--layer-3);
   --popover-foreground: oklch(0.98 0.01 240);
 
@@ -127,19 +127,14 @@
   --brand-muted: #5B8FE8;
   --primary: oklch(0.40 0.18 255);
   --primary-foreground: oklch(1 0 0);
-
   --secondary: oklch(0.18 0.04 245);
   --secondary-foreground: oklch(0.98 0.01 240);
-
   --muted: oklch(0.18 0.04 245);
   --muted-foreground: oklch(0.65 0.05 240);
-
   --accent: oklch(0.18 0.04 245);
   --accent-foreground: oklch(0.98 0.01 240);
-
   --destructive: oklch(0.3 0.15 25);
   --destructive-foreground: oklch(0.98 0 0);
-
   --border: oklch(0.18 0.04 245);
   --input: oklch(0.18 0.04 245);
   --ring: oklch(0.40 0.18 255);

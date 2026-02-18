@@ -165,10 +165,19 @@ export default function FloatingAIBar() {
     setAnswer("")
 
     try {
-      const response = await api.chat([
-        { role: "user", content: trimmed },
-      ])
-      setAnswer(response.result || "No response.")
+      let accumulated = ""
+      await api.horusChatStream(
+        trimmed,
+        undefined,
+        undefined,
+        (chunk: string) => {
+          // Filter out the internal chat_id prefix line
+          if (chunk.startsWith("__CHAT_ID__:")) return
+          accumulated += chunk
+          setAnswer(accumulated)
+        }
+      )
+      if (!accumulated) setAnswer("No response.")
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to get response",
@@ -255,13 +264,18 @@ export default function FloatingAIBar() {
             {/* Response body */}
             <ScrollArea className="max-h-[280px]">
               <div className="px-4 py-3">
-                {isLoading ? (
+                {!answer && isLoading ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin text-[var(--brand)]" />
                     <span>Thinking...</span>
                   </div>
                 ) : (
-                  <InlineMarkdown content={answer} />
+                  <>
+                    <InlineMarkdown content={answer} />
+                    {isLoading && (
+                      <span className="inline-block h-3 w-0.5 ml-0.5 bg-[var(--brand)] animate-pulse rounded-full" />
+                    )}
+                  </>
                 )}
               </div>
             </ScrollArea>

@@ -1,5 +1,4 @@
 """AI router - Fast & Simple."""
-import asyncio
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Request
 from typing import List
 from app.auth.dependencies import require_roles
@@ -26,7 +25,7 @@ async def chat(
     """Multi-turn chat with Horus AI."""
     client = get_gemini_client()
     messages_dicts = [{"role": m.role, "content": m.content} for m in body.messages]
-    result = await asyncio.to_thread(client.chat, messages=messages_dicts, context=body.context)
+    result = await client.chat(messages=messages_dicts, context=body.context)
     return AIResponse(raw_text=result, model="gemini-2.0-flash")
 
 
@@ -96,7 +95,7 @@ async def chat_with_files(
     
     raw_result = ""
     try:
-        raw_result = await asyncio.to_thread(client.chat_with_files, message=full_message, files=file_contents)
+        raw_result = await client.chat_with_files(message=full_message, files=file_contents)
         
         # Robust Parsing Strategy
         import re

@@ -1,6 +1,7 @@
 """Standards router."""
 from fastapi import APIRouter, status, Depends
 from typing import List
+from pydantic import BaseModel
 from app.core.middlewares import get_current_user
 from app.auth.dependencies import require_admin
 from app.standards.models import (

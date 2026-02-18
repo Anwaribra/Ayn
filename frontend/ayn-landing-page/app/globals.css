@@ -49,7 +49,7 @@
   --text-secondary: oklch(0.42 0.02 240);
   --border-color: oklch(0.88 0.006 240);
   --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   /* Semantic Roles */
   --background: var(--layer-0);
@@ -112,7 +112,7 @@
   --text-secondary: oklch(0.65 0.05 240);
   --border-color: oklch(0.18 0.04 245);
   --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.3);
 
   /* Semantic Roles */
   --background: var(--layer-0);

@@ -101,8 +101,8 @@ export default function StandardsPage() {
 
         <div className="w-full">
           {/* 1. HERO SECTION (Full Width) */}
-          <section className="w-full py-16 px-6 md:px-12 lg:px-20 relative overflow-hidden transition-all duration-300"
-            style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
+          <section className="w-full py-16 px-6 md:px-12 lg:px-20 relative z-10 overflow-hidden transition-all duration-300"
+            style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', boxShadow: 'none' }}>
             <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-500/[0.03] dark:bg-blue-500/[0.05] rounded-full blur-[160px] -z-10" />
 
             <div className="max-w-7xl mx-auto space-y-10">
@@ -134,7 +134,7 @@ export default function StandardsPage() {
                 </div>
                 <Button
                   onClick={() => setIsPDFModalOpen(true)}
-                  className="h-16 px-8 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-500/20"
+                  className="h-16 px-8 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-500/10"
                 >
                   <FileUp className="w-5 h-5 text-white" />
                   <span className="text-lg">Import Framework</span>
@@ -167,11 +167,11 @@ export default function StandardsPage() {
               ))}
             </div>
 
-            {/* 3. STANDARD GRID (2 Large Cards per Row) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* 3. STANDARD GRID (2 Large Cards per Row - Responsive) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-[1]">
               {isLoading ? (
                 Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="h-[280px] animate-pulse rounded-[40px] border"
+                  <div key={i} className="h-[320px] animate-pulse rounded-[48px] border"
                     style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }} />
                 ))
               ) : filteredStandards && filteredStandards.length > 0 ? (
@@ -179,7 +179,7 @@ export default function StandardsPage() {
                   <motion.div
                     key={standard.id}
                     whileHover={{ y: -10, scale: 1.01 }}
-                    className="group flex flex-col p-12 border rounded-[48px] transition-all duration-500 min-h-[320px] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] hover:shadow-2xl hover:shadow-blue-500/10"
+                    className="group flex flex-col p-12 border rounded-[48px] transition-all duration-500 min-h-[320px] relative z-[5]"
                     style={{
                       backgroundColor: 'var(--card-bg)',
                       borderColor: 'var(--border-color)',
@@ -191,9 +191,9 @@ export default function StandardsPage() {
                       <div className="flex items-start justify-between gap-6">
                         <div className="flex items-start gap-6">
                           <div className={cn(
-                            "w-16 h-16 rounded-[24px] flex items-center justify-center text-white shrink-0 shadow-lg",
+                            "w-16 h-16 rounded-[24px] flex items-center justify-center text-white shrink-0",
                             standard.color || "bg-[#1E3A8A]"
-                          )}>
+                          )} style={{ boxShadow: 'var(--shadow-light)' }}>
                             <GraduationCap className="w-9 h-9 text-white" />
                           </div>
                           <div className="space-y-1">
@@ -244,7 +244,7 @@ export default function StandardsPage() {
                         </Button>
                         <Button
                           onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                          className="h-14 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                          className="h-14 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2 transition-all active:scale-95"
                         >
                           <Activity className="w-5 h-5 text-white" />
                           <span>Start Analysis</span>

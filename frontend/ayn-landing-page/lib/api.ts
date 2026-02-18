@@ -192,7 +192,17 @@ class ApiClient {
     return this.request<import("./types").Standard>(`/standards/${id}`)
   }
 
-  async createStandard(data: { title: string; description?: string }) {
+  async createStandard(data: {
+    title: string;
+    description?: string;
+    code?: string;
+    category?: string;
+    region?: string;
+    icon?: string;
+    color?: string;
+    features?: string[];
+    estimatedSetup?: string;
+  }) {
     return this.request<import("./types").Standard>("/standards", {
       method: "POST",
       body: JSON.stringify(data),
@@ -202,6 +212,13 @@ class ApiClient {
   async updateStandard(id: string, data: { title?: string; description?: string }) {
     return this.request<import("./types").Standard>(`/standards/${id}`, {
       method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async importStandardFromDocument(data: { text: string }) {
+    return this.request<import("./types").Standard>("/standards/import", {
+      method: "POST",
       body: JSON.stringify(data),
     })
   }

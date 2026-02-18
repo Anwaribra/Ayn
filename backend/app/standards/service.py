@@ -11,6 +11,8 @@ from app.standards.models import (
     CriterionResponse
 )
 import logging
+import json
+from app.ai.service import get_gemini_client
 
 logger = logging.getLogger(__name__)
 
@@ -190,4 +192,77 @@ class StandardService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update criterion"
+            )
+
+    @staticmethod
+    async def import_standard_from_document(text: str, admin_email: str) -> StandardResponse:
+        """
+        Use AI to import a standard and its criteria from a document text.
+        """
+        ai = get_gemini_client()
+        prompt = f"""
+        Analyze the following text from an accreditation or quality standard document.
+        Extract the standard's basic information and a hierarchical list of its criteria.
+        
+        Guidelines:
+        - Title: The official name of the standard (e.g., ISO 21001:2018).
+        - Code: Official abbreviation or code (e.g., ISO-21001).
+        - Category: Type of standard (e.g., International, Higher Ed, Healthcare).
+        - Criteria: A list of requirements. Each requirement MUST have a 'title' (like 'Clause 4.1' or 'Standard 1') and a 'description' (the actual requirement text).
+        
+        Return ONLY a JSON object in this format:
+        {{
+            "title": "...",
+            "code": "...",
+            "category": "...",
+            "description": "...",
+            "criteria": [
+                {{ "title": "...", "description": "..." }},
+                ...
+            ]
+        }}
+        
+        DOCUMENT TEXT:
+        {text[:10000]}
+        """
+        
+        try:
+            response_text = await ai.generate_text(prompt)
+            # Clean JSON response (strip markdown blocks if present)
+            json_str = response_text.replace("```json", "").replace("```", "").strip()
+            data = json.loads(json_str)
+            
+            db = get_db()
+            # Create the Standard
+            standard = await db.standard.create(
+                data={
+                    "title": data["title"],
+                    "code": data.get("code"),
+                    "category": data.get("category", "Imported"),
+                    "description": data.get("description"),
+                    "icon": "FileCheck",
+                    "color": "from-indigo-600 to-purple-600",
+                }
+            )
+            
+            # Create Criteria in bulk
+            for crit in data.get("criteria", []):
+                await db.criterion.create(
+                    data={
+                        "standardId": standard.id,
+                        "title": crit["title"],
+                        "description": crit["description"],
+                    }
+                )
+            
+            logger.info(f"Admin {admin_email} imported standard {standard.id} from document using AI")
+            
+            # Fetch with criteria for response
+            return await StandardService.get_standard(standard.id)
+            
+        except Exception as e:
+            logger.error(f"AI Import Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to import standard using AI: {str(e)}"
             )

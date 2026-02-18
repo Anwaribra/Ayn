@@ -65,6 +65,20 @@ async def get_standard(
     return await StandardService.get_standard(standard_id)
 
 
+class ImportRequest(BaseModel):
+    text: str
+
+@router.post("/import", response_model=StandardResponse)
+async def import_standard(
+    request: ImportRequest,
+    current_user: dict = Depends(require_admin)
+):
+    """
+    Import a standard from document text (AI-assisted).
+    """
+    return await StandardService.import_standard_from_document(request.text, current_user["email"])
+
+
 # ==================== Criteria Endpoints ====================
 
 @router.get("/{standard_id}/criteria", response_model=List[CriterionResponse])

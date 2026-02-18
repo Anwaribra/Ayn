@@ -6,300 +6,321 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Header } from "@/components/platform/header"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Book,
   Shield,
-  ArrowUpRight,
   Target,
   Layers,
   Activity,
-  Play,
   Plus,
   Sparkles,
+  FileCheck,
+  GraduationCap,
+  Globe,
+  X,
+  Loader2,
 } from "lucide-react"
-import type { Standard, GapAnalysisListItem } from "@/types"
-import { EmptyState } from "@/components/platform/empty-state"
-import { StandardsGridSkeleton } from "@/components/platform/skeleton-loader"
-import { StandardsTemplatesButton, Template } from "@/components/platform/standards-templates"
+import type { Standard } from "@/types"
+import { StandardsTemplatesButton } from "@/components/platform/standards-templates"
 import { WorkflowTimeline } from "@/components/platform/standards/workflow-timeline"
 
 export default function StandardsPage() {
-  return (
-    <ProtectedRoute>
-      <StandardsContent />
-    </ProtectedRoute>
-  )
-}
-
-const CARD_COLORS = ["bg-[var(--status-info-bg)]", "bg-[var(--status-success-bg)]", "bg-[var(--status-warning-bg)]", "bg-[var(--status-info-bg)]", "bg-[var(--status-critical-bg)]", "bg-[var(--status-info-bg)]"]
-const CARD_ICONS = [Shield, Target, Layers, Activity, Book, Shield]
-
-function StandardsContent() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<"database" | "mapping">("database")
-
-  const { data: standards, isLoading, error, mutate } = useSWR<Standard[]>(
+  const router = useRouter()
+  const { data: standards, isLoading, mutate } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
   )
-  const { data: gapAnalyses } = useSWR<GapAnalysisListItem[]>(
-    user ? "gap-analyses" : null,
-    () => api.getGapAnalyses(),
-  )
-  const { data: evidence } = useSWR(
-    user ? "evidence" : null,
-    () => api.getEvidence(),
-  )
 
-  const collections = (standards ?? []).map((s: Standard, i: number) => {
-    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === s.title)
-    const equilibrium = report ? Math.round(report.overallScore) : 0
-    return {
-      id: s.id,
-      title: s.title,
-      code: s.id.slice(0, 8).toUpperCase(),
-      color: CARD_COLORS[i % CARD_COLORS.length],
-      equilibrium,
+  // State for the Import Standard from Document Modal
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importText, setImportText] = useState("")
+  const [isImporting, setIsImporting] = useState(false)
+
+  const handleImport = async () => {
+    if (!importText.trim()) return
+    setIsImporting(true)
+    try {
+      const newStandard = await api.importStandardFromDocument({ text: importText })
+      toast.success("Standard imported successfully!")
+      mutate() // Refresh standards list
+      setIsImportModalOpen(false)
+      setImportText("")
+      router.push(`/platform/standards/${newStandard.id}`)
+    } catch (err) {
+      toast.error("Failed to import standard")
+    } finally {
+      setIsImporting(false)
     }
-  })
-
-  // Determine current lifecycle step based on data
-  const lifecycleStep = useMemo(() => {
-    if (!standards || standards.length === 0) return 0 // Definition
-    if (!gapAnalyses || gapAnalyses.length === 0) return 1 // Analysis
-    if (!evidence || evidence.length === 0) return 2 // Evidence
-    return 3 // Audit Ready
-  }, [standards, gapAnalyses, evidence])
-
-  const steps = [
-    { id: "1", label: "Framework Definition", status: lifecycleStep > 0 ? "completed" : "current", date: "System Config" },
-    { id: "2", label: "Gap Analysis", status: lifecycleStep > 1 ? "completed" : lifecycleStep === 1 ? "current" : "pending" },
-    { id: "3", label: "Evidence Mapping", status: lifecycleStep > 2 ? "completed" : lifecycleStep === 2 ? "current" : "pending" },
-    { id: "4", label: "Audit Readiness", status: lifecycleStep > 3 ? "completed" : lifecycleStep === 3 ? "current" : "pending" },
-  ] as any
-
-  const getStandardStatus = (stdId: string) => {
-    const std = (standards ?? []).find((s) => s.id === stdId)
-    if (!std) return null
-    const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
-    if (!report) return null
-    return report.overallScore >= 80 ? "OPTIMAL" : "WARNING"
   }
 
-  const evidenceCountByStandard = useMemo(() => {
-    const map: Record<string, number> = {}
-      ; (evidence ?? []).forEach((e: { criterionId: string | null; criterion?: { standardId: string } }) => {
-        if (e.criterionId && e.criterion?.standardId) {
-          map[e.criterion.standardId] = (map[e.criterion.standardId] ?? 0) + 1
-        }
-      })
-    return map
-  }, [evidence])
+  const lifecycleSteps = [
+    { id: "1", label: "Framework Definition", status: standards && standards.length > 0 ? "completed" : "current", date: "System Config" },
+    { id: "2", label: "Gap Analysis", status: "pending" },
+    { id: "3", label: "Evidence Mapping", status: "pending" },
+    { id: "4", label: "Audit Readiness", status: "pending" },
+  ] as any
 
   return (
-    <div className="animate-fade-in-up pb-20 space-y-8">
-      <header className="pt-6 px-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 mb-2">
-              <button
-                onClick={() => setActiveTab("database")}
-                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "database"
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                  : "bg-layer-2 text-muted-foreground hover:bg-layer-3 hover:text-foreground"}`}
-              >
-                Regulatory Database
-              </button>
-              <button
-                onClick={() => setActiveTab("mapping")}
-                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === "mapping"
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                  : "bg-layer-2 text-muted-foreground hover:bg-layer-3 hover:text-foreground"}`}
-              >
-                Compliance Mapping
-              </button>
-            </div>
-            <h1 className="text-4xl font-black tracking-tight text-foreground">
-              Standards <span className="text-muted-foreground font-light">Hub</span>
-            </h1>
-            <p className="text-muted-foreground font-medium">Manage and map your institutional compliance frameworks.</p>
-          </div>
+    <ProtectedRoute>
+      <div className="min-h-screen">
+        <Header
+          title="Standards Hub"
+          description="Populate your institutional compliance framework"
+          breadcrumbs={[
+            { label: "Dashboard", href: "/platform/dashboard" },
+            { label: "Standards" },
+          ]}
+        />
 
-          <div className="w-full md:w-1/2 lg:w-1/3">
-            <WorkflowTimeline steps={steps} />
+        <div className="p-4 md:p-[var(--spacing-content)] space-y-8">
+          {/* Workflow Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">Accreditation Lifecycle</h2>
+                  <p className="text-xs text-muted-foreground">Strategic milestones for current fiscal cycle</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card/30 backdrop-blur-sm border border-border rounded-2xl p-6">
+              <WorkflowTimeline steps={lifecycleSteps} />
+            </div>
+          </section>
+
+          {/* Standard Selection Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Grid: Standard Cards */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-md font-bold text-foreground">Active Frameworks</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all bg-muted border border-border hover:bg-muted/80 text-foreground"
+                  >
+                    <FileCheck className="w-3.5 h-3.5 mr-2" />
+                    Import from Document
+                  </button>
+                  <StandardsTemplatesButton onSelect={(template) => {
+                    toast.info(`Importing ${template.name}...`)
+                    api.createStandard({
+                      title: template.name,
+                      description: template.description,
+                      code: template.code,
+                      category: template.category,
+                      region: template.region,
+                      icon: "GraduationCap",
+                      color: template.color,
+                      features: template.features,
+                      estimatedSetup: template.estimatedSetup
+                    }).then(() => {
+                      toast.success(`${template.name} added to library`)
+                      mutate()
+                    }).catch(() => {
+                      toast.error("Failed to add standard")
+                    })
+                  }} />
+                  <Link href="/platform/standards/new">
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-9">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Manual Create
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isLoading ? (
+                  Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="h-40 bg-muted/20 animate-pulse rounded-2xl border border-border" />
+                  ))
+                ) : (standards && standards.length > 0) ? (
+                  standards.map((standard: any) => (
+                    <Link key={standard.id} href={`/platform/standards/${standard.id}`}>
+                      <motion.div
+                        whileHover={{ y: -4 }}
+                        className="group relative p-6 bg-card/30 backdrop-blur-sm border border-border rounded-2xl hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
+                      >
+                        {/* Decorative background element */}
+                        <div className={cn(
+                          "absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 blur-2xl transition-transform group-hover:scale-150",
+                          standard.color || "bg-primary"
+                        )} />
+
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className={cn(
+                            "p-3 rounded-xl bg-gradient-to-br text-white shadow-lg",
+                            standard.color || "from-blue-600 to-indigo-600"
+                          )}>
+                            <GraduationCap className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                              {standard.title}
+                            </h4>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                              {standard.code || "Standard"} • {standard.category || "General"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-foreground">{standard.criteriaCount || 0}</span>
+                            <span className="text-[9px] uppercase text-muted-foreground font-bold">Criteria</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                              <span className="text-[10px] font-bold">In Progress</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="col-span-full py-12 text-center border-2 border-dashed border-border rounded-2xl bg-muted/10">
+                    <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <h4 className="text-md font-bold text-foreground px-10">No Standards Loaded</h4>
+                    <p className="text-sm text-muted-foreground mt-2">Choose a template or import a document to get started.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sidebar: Framework Topology / Intelligence Summary */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                  <Target className="w-5 h-5" />
+                </div>
+                <h3 className="text-md font-bold text-foreground">Framework Topology</h3>
+              </div>
+
+              <div className="bg-card/40 backdrop-blur-md border border-border rounded-2xl p-6 overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -z-10" />
+
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-purple-500/30 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Intelligence Summary</p>
+                    <h4 className="text-sm font-bold text-foreground">Compliance Health</h4>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Your institution is currently aligning with <span className="text-foreground font-bold">{standards?.length || 0} frameworks</span>.
+                    Recent activity highlights that <span className="text-foreground font-bold">Gap Analysis</span> is the primary bottleneck for {standards && standards.length > 0 ? standards[0]?.title : 'active standards'}.
+                  </p>
+
+                  <div className="pt-4 space-y-3">
+                    <div className="flex justify-between items-center text-[10px] uppercase font-bold text-muted-foreground">
+                      <span>Collection Status</span>
+                      <span className="text-primary">64%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: '64%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
-
-      {/* Grid Collections */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
-        {error ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-border bg-muted/30">
-            <p className="text-muted-foreground text-center mb-4">Failed to load standards.</p>
-            <button
-              type="button"
-              onClick={() => mutate()}
-              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        ) : isLoading ? (
-          <StandardsGridSkeleton count={4} />
-        ) : collections.length === 0 ? (
-          <div className="col-span-full">
-            <EmptyState type="standards" />
-            <div className="flex justify-center gap-4 mt-8">
-              <StandardsTemplatesButton onSelect={(template: Template) => {
-                // Handle template selection - redirect to create page with template data
-                window.location.href = `/platform/standards/new?template=${template.id}`
-              }} />
-              <Link href="/platform/standards/new">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Custom
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          collections.map((c, i) => (
-            <Link
-              key={c.id}
-              href={`/platform/standards/${c.id}`}
-              className="group glass-panel rounded-[32px] p-6 bg-layer-2 border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[220px] animate-fade-in-up"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="flex justify-between items-start">
-                <div className={`w-12 h-12 rounded-2xl ${c.color} border border-border flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}>
-                  {(() => { const Icon = CARD_ICONS[i % CARD_ICONS.length]; return <Icon className="w-6 h-6 text-foreground/80 group-hover:text-foreground transition-colors" /> })()}
-                </div>
-                <div className="w-8 h-8 rounded-full bg-layer-2 border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0">
-                  <ArrowUpRight className="w-4 h-4 text-foreground" />
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">{c.code}</span>
-                <h3 className="text-xl font-bold text-foreground mb-4 leading-tight group-hover:text-primary transition-colors">{c.title}</h3>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    <span>Alignment Score</span>
-                    <span style={{ color: c.equilibrium >= 80 ? "var(--status-success)" : "var(--status-warning)" }}>{c.equilibrium}%</span>
-                  </div>
-                  <div className="h-1.5 bg-layer-3 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${c.equilibrium ?? 0}%`, backgroundColor: c.equilibrium >= 80 ? "var(--status-success)" : "var(--status-warning)" }} />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))
-        )}
       </div>
 
-      {/* Framework Topology Explorer */}
-      <section className="px-4 pt-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-black italic text-foreground">Framework Topology</h2>
-            <div className="h-px w-16 bg-border" />
-          </div>
-          <Link href="/platform/gap-analysis" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
-            Run Alignment Analysis <ArrowUpRight className="w-3 h-3" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {(standards ?? []).slice(0, 4).map((std: Standard, i: number) => {
-              const Icon = CARD_ICONS[i % CARD_ICONS.length]
-              const report = (gapAnalyses ?? []).find((g) => g.standardTitle === std.title)
-              const status = getStandardStatus(std.id)
-              const evidenceNodes = evidenceCountByStandard[std.id] ?? 0
-              return (
-                <Link
-                  key={std.id}
-                  href={`/platform/standards/${std.id}`}
-                  className="glass-panel p-5 rounded-[24px] bg-layer-2 border-border hover:border-primary/50 flex items-center justify-between hover:bg-layer-2 hover:shadow-lg hover:shadow-primary/5 transition-all group cursor-pointer animate-fade-in-up"
-                  style={{ animationDelay: `${(i + 4) * 60}ms` }}
+      {/* AI Import Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg bg-card border border-border shadow-2xl rounded-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-border bg-muted/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center text-white">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">AI Standards Importer</h3>
+                    <p className="text-[10px] text-muted-foreground">Paste standard contents to generate framework</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsImportModalOpen(false)} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Document Text</Label>
+                  <Textarea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    placeholder="Paste the text from your accreditation guidelines or standard PDF here..."
+                    className="h-64 bg-muted/30 border-border text-foreground font-mono text-xs resize-none"
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  <Shield className="w-3 h-3 inline mr-1" />
+                  Horus will analyze the text and extract the title, code, and individual criteria automatically.
+                </p>
+              </div>
+              <div className="p-6 border-t border-border bg-muted/40 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="flex-1 border-border text-foreground"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-2xl bg-layer-3 border border-border flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
-                      <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{std.title}</h4>
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-                        <span>Last Audit: {report ? new Date(report.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase() : "—"}</span>
-                        <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                        <span>{evidenceNodes} Evidence Assets</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {status && (
-                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full border ${status === "OPTIMAL" ? "badge-verified" : "badge-pending"}`}>
-                        {status}
-                      </span>
-                    )}
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center bg-layer-3 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                      <Play className="w-3 h-3 fill-current" />
-                    </button>
-                  </div>
-                </Link>
-              )
-            })}
-
-            {(standards ?? []).length === 0 && !isLoading && (
-              <div className="col-span-full">
-                <div className="glass-panel rounded-3xl p-12 text-center border-dashed border-2 border-border bg-layer-2/50">
-                  <Target className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground font-medium mb-6">No standards available for topology mapping.</p>
-                  <StandardsTemplatesButton onSelect={(template: Template) => {
-                    window.location.href = `/platform/standards/new?template=${template.id}`
-                  }} />
-                </div>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={isImporting || !importText.trim()}
+                  className="flex-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Import with AI
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
+            </motion.div>
           </div>
-
-          <div className="glass-layer-2 rounded-[32px] p-8 flex flex-col relative overflow-hidden group border border-[var(--glass-border)]">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 rounded-lg bg-muted/80 border border-[var(--glass-border)]">
-                  <Shield className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Intelligence Summary</h4>
-              </div>
-
-              <p className="text-lg font-medium leading-relaxed mb-8 text-foreground">
-                Current institutional framework contains <span className="text-primary font-bold text-2xl">{collections.length}</span> active standards.
-                {(() => {
-                  const needsReview = (standards ?? []).find((s) => getStandardStatus(s.id) === "WARNING")
-                  return needsReview
-                    ? <> Horus recommends a compliance review of the <span className="font-bold border-b border-[var(--status-warning)]" style={{ color: "var(--status-warning)" }}>{needsReview.title}</span> framework.</>
-                    : " All frameworks are within compliance targets."
-                })()}
-              </p>
-
-              <Link href="/platform/gap-analysis" className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all text-center block shadow-lg shadow-primary/20 active:scale-95">
-                Generate Compliance Briefing
-              </Link>
-            </div>
-
-            <div className="mt-auto pt-8 border-t border-[var(--glass-border)] flex items-center gap-4 relative z-10">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ayn Core Live Sync</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+        )}
+      </AnimatePresence>
+    </ProtectedRoute>
   )
 }
-
-

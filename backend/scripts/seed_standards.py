@@ -97,6 +97,43 @@ async def main():
         }
     ]
 
+    # Real Criteria Data
+    real_criteria = {
+        "iso21001": [
+            {"title": "Clause 4", "description": "Context of the organization: Understanding the organization and its context, needs and expectations of interested parties."},
+            {"title": "Clause 5", "description": "Leadership: Leadership and commitment, policy, organizational roles, responsibilities and authorities."},
+            {"title": "Clause 6", "description": "Planning: Actions to address risks and opportunities, educational organization objectives and planning to achieve them."},
+            {"title": "Clause 7", "description": "Support: Resources, competence, awareness, communication, documented information."},
+            {"title": "Clause 8", "description": "Operation: Operational planning and control, requirements for educational products and services, design and development."},
+            {"title": "Clause 9", "description": "Performance evaluation: Monitoring, measurement, analysis and evaluation, internal audit, management review."},
+            {"title": "Clause 10", "description": "Improvement: Nonconformity and corrective action, continual improvement."}
+        ],
+        "ncaaa": [
+            {"title": "Standard 1", "description": "Mission, Vision, and Strategic Planning"},
+            {"title": "Standard 2", "description": "Governance, Leadership, and Management"},
+            {"title": "Standard 3", "description": "Teaching and Learning"},
+            {"title": "Standard 4", "description": "Students"},
+            {"title": "Standard 5", "description": "Faculty and Staff"},
+            {"title": "Standard 6", "description": "Institutional Resources"},
+            {"title": "Standard 7", "description": "Research and Innovation"},
+            {"title": "Standard 8", "description": "Community Partnership"},
+            {"title": "Standard 9", "description": "Quality Assurance"},
+            {"title": "Standard 10", "description": "Scientific Integrity and Ethics"},
+            {"title": "Standard 11", "description": "Financial Management"}
+        ],
+        "naqaa": [
+            {"title": "Domain 1", "description": "Strategic Planning"},
+            {"title": "Domain 2", "description": "Governance and Leadership"},
+            {"title": "Domain 3", "description": "Management of Quality Assurance"},
+            {"title": "Domain 4", "description": "Academic Programs"},
+            {"title": "Domain 5", "description": "Students and Graduates"},
+            {"title": "Domain 6", "description": "Faculty Members"},
+            {"title": "Domain 7", "description": "Scientific Research and Other Scholarly Activities"},
+            {"title": "Domain 8", "description": "Community Involvement"},
+            {"title": "Domain 9", "description": "Educational Resources"}
+        ]
+    }
+
     for s in standards_data:
         print(f"Seeding {s['title']}...")
         standard = await db.standard.create(
@@ -114,15 +151,28 @@ async def main():
             }
         )
         
-        # Create dummy criteria based on count
-        for i in range(1, s["criteria_count"] + 1):
-            await db.criterion.create(
-                data={
-                    "standardId": standard.id,
-                    "title": f"Criterion {i}",
-                    "description": f"Detailed requirement for {s['title']} Criterion {i}"
-                }
-            )
+        # Use real criteria if available, otherwise fallback to dummy
+        criteria_to_add = real_criteria.get(s["id"])
+        
+        if criteria_to_add:
+            for c in criteria_to_add:
+                await db.criterion.create(
+                    data={
+                        "standardId": standard.id,
+                        "title": c["title"],
+                        "description": c["description"]
+                    }
+                )
+        else:
+            # Fallback for others
+            for i in range(1, s.get("criteria_count", 5) + 1):
+                await db.criterion.create(
+                    data={
+                        "standardId": standard.id,
+                        "title": f"Criterion {i}",
+                        "description": f"Requirement for {s['title']} Criterion {i}"
+                    }
+                )
 
     await db.disconnect()
     print("Seeding completed successfully!")

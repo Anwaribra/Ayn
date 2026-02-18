@@ -342,20 +342,20 @@ class EvidenceService:
             except Exception:
                 pass
 
-
-async def _notify_error(user_id: str, evidence_id: str, message: str):
-    """Helper to send an error notification without raising."""
-    try:
-        await NotificationService.create_notification(NotificationCreateRequest(
-            userId=user_id,
-            type="error",
-            title="Analysis Failed",
-            message=message,
-            relatedEntityId=evidence_id,
-            relatedEntityType="evidence"
-        ))
-    except Exception:
-        pass
+    @staticmethod
+    async def _notify_error(user_id: str, evidence_id: str, message: str):
+        """Helper to send an error notification without raising."""
+        try:
+            await NotificationService.create_notification(NotificationCreateRequest(
+                userId=user_id,
+                type="error",
+                title="Analysis Failed",
+                message=message,
+                relatedEntityId=evidence_id,
+                relatedEntityType="evidence"
+            ))
+        except Exception:
+            pass
 
     @staticmethod
     async def delete_evidence(evidence_id: str, current_user: dict):

@@ -35,10 +35,10 @@
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
 
   /* Enterprise Light Theme - Layer System */
-  --layer-0: oklch(0.985 0.002 240);  
+  --layer-0: oklch(0.985 0.002 240);
   /* App Background */
-  --layer-1: oklch(0.985 0.002 240);
-  /* Sidebar/Nav/Surface */
+  --layer-1: oklch(0.972 0.004 240);
+  /* Sidebar/Nav/Surface — slightly darker for visual separation */
   --layer-2: oklch(1 0 0);
   /* Cards/Widgets */
   --layer-3: oklch(0.995 0.002 240);
@@ -399,6 +399,7 @@
       0 0 3px 1.2px rgba(56, 189, 248, 0.3),
       0 0 6px 1.8px rgba(0, 93, 255, 0.2);
   }
+
   50% {
     transform: rotate(270deg);
     box-shadow:
@@ -408,6 +409,7 @@
       0 0 3px 1.2px rgba(56, 189, 248, 0.3),
       0 0 6px 1.8px rgba(0, 93, 255, 0.2);
   }
+
   100% {
     transform: rotate(450deg);
     box-shadow:
@@ -420,15 +422,18 @@
 }
 
 @keyframes loader-letter {
+
   0%,
   100% {
     opacity: 0.4;
     transform: translateY(0);
   }
+
   20% {
     opacity: 1;
     transform: scale(1.15);
   }
+
   40% {
     opacity: 0.7;
     transform: translateY(0);

@@ -160,6 +160,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
       />
+      {/* Body scroll lock when mobile sidebar is open */}
+      {sidebarOpen && (
+        <style>{`@media (max-width: 1023px) { body { overflow: hidden; } }`}</style>
+      )}
 
       <PlatformSidebar
         open={sidebarOpen}
@@ -198,6 +202,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
+                aria-haspopup="true"
+                aria-expanded={showNotifications}
               >
                 <Bell className="w-5 h-5" />
                 {notificationCount > 0 && (

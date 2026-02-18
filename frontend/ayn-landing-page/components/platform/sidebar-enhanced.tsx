@@ -214,6 +214,11 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         {/* Archive – last navigation item inside nav */}
         <div className="space-y-2">
+          {!isCollapsed && (
+            <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
+              Storage
+            </p>
+          )}
           <SidebarItem
             item={{
               id: "archive",
@@ -260,9 +265,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
                   {user?.name ?? "System User"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.institutionId
-                    ? "User"
-                    : "System User"}
+                  {user?.email ?? "System User"}
                 </p>
               </div>
             )}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { Bot, ArrowUpIcon, X, Expand, Sparkles, Loader2 } from "lucide-react"
+import { Bot, ArrowUpIcon, X, Expand, Sparkles, Loader2, BrainCircuit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -102,34 +102,46 @@ export default function FloatingAIBar() {
   const [isLoading, setIsLoading] = useState(false)
   const [answer, setAnswer] = useState("")
   const [isFocused, setIsFocused] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
 
   // Don't show on the Horus AI page (it has its own full chat)
   const isHorusPage = pathname?.includes("/horus-ai")
 
-  // Ctrl+I shortcut to focus
+  // Show onboarding tooltip once on first mount
+  useEffect(() => {
+    const seen = sessionStorage.getItem("horus-bar-seen")
+    if (!seen) {
+      const timer = setTimeout(() => {
+        setShowTooltip(true)
+        sessionStorage.setItem("horus-bar-seen", "1")
+        setTimeout(() => setShowTooltip(false), 4000)
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  // Ctrl+I shortcut to focus — fixed: no stale closure on isFocused
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "i") {
         e.preventDefault()
-        if (isHorusPage) {
-          // On Horus AI page, just focus the main chat input
-          return
-        }
+        if (isHorusPage) return
         inputRef.current?.focus()
         setIsFocused(true)
+        setShowTooltip(false)
       }
-      // Escape to close
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
         setIsOpen(false)
         setAnswer("")
+        setIsFocused(false)
         inputRef.current?.blur()
       }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isHorusPage, isOpen])
+  }, [isHorusPage]) // removed isOpen from deps — Escape always works now
 
   // Close when clicking outside
   useEffect(() => {
@@ -168,7 +180,6 @@ export default function FloatingAIBar() {
   }, [query, isLoading])
 
   const handleOpenFull = () => {
-    // Navigate to full Horus AI page with the query pre-filled
     router.push("/platform/horus-ai")
     setIsOpen(false)
     setAnswer("")
@@ -182,6 +193,21 @@ export default function FloatingAIBar() {
       ref={barRef}
       className="fixed bottom-5 left-1/2 z-30 w-full max-w-xl -translate-x-1/2 px-4 shadow-sm"
     >
+      {/* Onboarding tooltip */}
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl glass-layer-3 px-3 py-1.5 text-xs font-medium text-foreground/80 border border-border shadow-lg pointer-events-none"
+          >
+            <span className="text-[var(--brand)] font-bold">Horus AI</span> — ask anything about your compliance
+            <span className="ml-2 opacity-50 font-mono text-[10px]">Ctrl+I</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isOpen && answer && (
           <motion.div
@@ -195,11 +221,12 @@ export default function FloatingAIBar() {
             <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[var(--brand)]/10">
-                  <Bot className="h-3 w-3 text-[var(--brand)]" />
+                  <BrainCircuit className="h-3 w-3 text-[var(--brand)]" />
                 </div>
-                <span className="text-xs font-medium text-foreground/70">
+                <span className="text-xs font-semibold text-foreground/80">
                   Horus AI
                 </span>
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <div className="flex items-center gap-1">
                 <Button
@@ -257,22 +284,22 @@ export default function FloatingAIBar() {
       <motion.div
         layout
         className={cn(
-          "flex items-center gap-2 rounded-2xl px-4 py-2.5 transition-all duration-300 glass-layer-2",
+          "flex items-center gap-2 rounded-2xl px-3 py-2 transition-all duration-300 glass-layer-2",
           isFocused || isOpen
             ? "border-primary/30 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
             : "border-glass-border shadow-sm",
         )}
       >
-        {/* Bot icon */}
+        {/* Horus AI identity badge */}
         <div
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+            "flex items-center gap-1.5 shrink-0 rounded-lg px-2 py-1 transition-all",
             isFocused || isOpen
-              ? "bg-[var(--brand)]/15"
-              : "bg-muted/50",
+              ? "bg-[var(--brand)]/10"
+              : "bg-muted/40",
           )}
         >
-          <Sparkles
+          <BrainCircuit
             className={cn(
               "h-3.5 w-3.5 transition-colors",
               isFocused || isOpen
@@ -280,7 +307,20 @@ export default function FloatingAIBar() {
                 : "text-muted-foreground/60",
             )}
           />
+          <span
+            className={cn(
+              "text-[10px] font-bold tracking-wide transition-colors hidden sm:block",
+              isFocused || isOpen
+                ? "text-[var(--brand)]"
+                : "text-muted-foreground/50",
+            )}
+          >
+            Horus
+          </span>
         </div>
+
+        {/* Divider */}
+        <div className="h-4 w-px bg-border/50 shrink-0" />
 
         {/* Input */}
         <input
@@ -288,16 +328,18 @@ export default function FloatingAIBar() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => { setIsFocused(true); setShowTooltip(false) }}
+          onBlur={() => { if (!isOpen) setIsFocused(false) }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
               handleSend()
             }
           }}
-          placeholder="Ask Horus AI a question..."
+          placeholder="Ask Horus AI anything about compliance..."
           className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
           disabled={isLoading}
+          aria-label="Ask Horus AI"
         />
 
         {/* Shortcut hint or send button */}

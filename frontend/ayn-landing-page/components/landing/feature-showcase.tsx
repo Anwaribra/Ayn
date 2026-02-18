@@ -348,7 +348,7 @@ export function FeatureShowcase() {
                   className={cn(
                     "w-full text-left p-4 rounded-xl border transition-all duration-300",
                     isActive
-                      ? "border-[var(--brand)]/30 bg-[var(--brand)]/5 shadow-sm glass-card border-[var(--glass-border)]"
+                      ? "border-[var(--brand)]/30 bg-[var(--brand)]/5 shadow-sm glass-card"
                       : "border-border/50 hover:border-border hover:bg-accent/50 hover:shadow-sm"
                   )}
                 >

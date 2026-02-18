@@ -41,7 +41,7 @@ export function LandingNavbar() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+      if (currentScrollY > lastScrollY.current && currentScrollY > 250) {
         setHidden(true)
       } else {
         setHidden(false)

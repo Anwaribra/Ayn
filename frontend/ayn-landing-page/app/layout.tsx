@@ -40,7 +40,7 @@ export const viewport = {
 export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
-  generator: "v0.app",
+  generator: "Next.js",
   openGraph: {
     title: siteTitle,
     description: siteDescription,
@@ -76,7 +76,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#05070A" media="(prefers-color-scheme: dark)" />
       </head>
       <body className={`font-sans antialiased ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <AuthProvider>

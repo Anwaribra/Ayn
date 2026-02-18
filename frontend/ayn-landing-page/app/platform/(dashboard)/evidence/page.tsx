@@ -25,6 +25,7 @@ function EvidenceContent() {
   const { user } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const { data: evidenceList, isLoading, error, mutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
@@ -61,8 +62,40 @@ function EvidenceContent() {
     e.target.value = ""
   }
 
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    try {
+      await api.uploadEvidence(file)
+      toast.success("Evidence uploaded successfully", {
+        description: "Horus is analyzing the document for compliance standards."
+      })
+      mutate()
+    } catch {
+      toast.error("Upload failed", { description: "Please try again." })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   return (
-    <div className="animate-fade-in-up pb-20 space-y-8 relative">
+    <div
+      className="animate-fade-in-up pb-20 space-y-8 relative"
+      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+    >
+      {isDragOver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary/40 rounded-none pointer-events-none">
+          <div className="text-center">
+            <UploadCloud className="w-16 h-16 text-primary mx-auto mb-3" />
+            <p className="text-xl font-bold text-primary">Drop to upload evidence</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -206,8 +239,8 @@ function EvidenceContent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-muted/50 border border-border">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Impact Score</div>
-                  <div className="text-2xl font-black text-foreground">High</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
+                  <div className="text-xl font-black text-foreground capitalize">{selectedEvidence.status}</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Confidence</div>

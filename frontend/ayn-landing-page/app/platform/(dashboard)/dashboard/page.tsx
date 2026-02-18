@@ -31,6 +31,7 @@ import { CircularGauge } from "@/components/ui/circular-gauge"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { ActivityChart } from "@/components/platform/activity-graph"
 import { Cpu, Zap } from "lucide-react"
+import { useEffect, useState } from "react"
 
 function DashboardContent() {
   const { user } = useAuth()
@@ -63,6 +64,22 @@ function DashboardContent() {
   const alignmentScore = metrics?.alignmentPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0
 
+  // Measure real AI latency on mount
+  const [aiLatency, setAiLatency] = useState<number | null>(null)
+  useEffect(() => {
+    const start = performance.now()
+    api.chat([{ role: "user", content: "ping" }])
+      .then(() => setAiLatency(Math.round(performance.now() - start)))
+      .catch(() => setAiLatency(null))
+  }, [])
+
+  const greeting = (() => {
+    const h = new Date().getHours()
+    if (h < 12) return "Good morning"
+    if (h < 18) return "Good afternoon"
+    return "Good evening"
+  })()
+
   return (
     <div className="animate-fade-in-up space-y-8 pb-20">
       {/* Header Section with Gauges */}
@@ -79,8 +96,8 @@ function DashboardContent() {
               <span className="text-[10px] font-bold uppercase tracking-widest">Ayn Brain Live</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
-              Institutional <br />
-              <span className="text-muted-foreground">Intelligence.</span>
+              {greeting}, <br />
+              <span className="text-muted-foreground font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
             </h1>
             <p className="text-muted-foreground font-medium max-w-md">
               Horus is active. Your compliance framework is mapped with <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span> accuracy.
@@ -98,9 +115,18 @@ function DashboardContent() {
             </div>
           </div>
           <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 min-w-[280px]">
-            <CircularGauge value={24} max={100} label="AI Latency" sublabel="ms" icon={<Zap className="w-5 h-5" />} color="#10B981" />
+            <CircularGauge
+              value={aiLatency !== null ? Math.min(aiLatency, 2000) : 0}
+              max={2000}
+              label="AI Latency"
+              sublabel="ms"
+              icon={<Zap className="w-5 h-5" />}
+              color="#10B981"
+            />
             <div className="flex flex-col justify-center">
-              <span className="text-2xl font-bold tracking-tight">24ms</span>
+              <span className="text-2xl font-bold tracking-tight">
+                {aiLatency !== null ? `${aiLatency}ms` : "—"}
+              </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Horus Response</span>
             </div>
           </div>

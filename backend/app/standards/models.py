@@ -60,6 +60,8 @@ class StandardResponse(BaseModel):
     color: Optional[str] = None
     features: List[str] = []
     estimatedSetup: Optional[str] = None
+    isPublic: bool = True
+    source: Optional[str] = "seeded"
     criteriaCount: int = 0
 
     class Config:

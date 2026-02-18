@@ -1,5 +1,4 @@
-"""Standards router."""
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, File, UploadFile
 from typing import List
 from pydantic import BaseModel
 from app.core.middlewares import get_current_user
@@ -78,6 +77,16 @@ async def import_standard(
     Import a standard from document text (AI-assisted).
     """
     return await StandardService.import_standard_from_document(request.text, current_user["email"])
+
+@router.post("/import-pdf", response_model=StandardResponse)
+async def import_standard_pdf(
+    file: UploadFile = File(...)
+):
+    """
+    Import a standard from a PDF file (AI-assisted, Public).
+    """
+    file_bytes = await file.read()
+    return await StandardService.import_standard_from_pdf(file_bytes, file.filename)
 
 
 # ==================== Criteria Endpoints ====================

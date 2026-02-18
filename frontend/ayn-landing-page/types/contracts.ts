@@ -324,7 +324,10 @@ export interface StandardResponse {
   color: string | null;
   features: string[];
   estimatedSetup: string | null;
+  isPublic: boolean;
+  source: string | null;
   criteriaCount: number;
+  criteria?: CriterionResponse[];
 }
 
 export interface StandardUpdateRequest {

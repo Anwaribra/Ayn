@@ -88,6 +88,8 @@ model Standard {
   icon           String?  @default("GraduationCap")
   color          String?  @default("from-blue-600 to-indigo-600")
   features       String[] @default([])
+  isPublic       Boolean  @default(true)
+  source         String?  // "seeded" or "imported-pdf"
   estimatedSetup String?
 
   criteria     Criterion[]

@@ -266,3 +266,83 @@ class StandardService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to import standard using AI: {str(e)}"
             )
+
+    @staticmethod
+    async def import_standard_from_pdf(file_bytes: bytes, filename: str) -> StandardResponse:
+        """
+        Use AI to extract standard name and hierarchical criteria list from a PDF.
+        """
+        ai = get_gemini_client()
+        import base64
+        
+        # Prepare file for Gemini
+        file_data = {
+            "type": "document",
+            "mime_type": "application/pdf",
+            "data": base64.b64encode(file_bytes).decode("utf-8"),
+            "filename": filename
+        }
+        
+        prompt = """
+        Analyze the provided PDF document which contains an accreditation or quality standard.
+        Extract the standard's basic information and a hierarchical list of its criteria.
+        
+        Guidelines:
+        - Title: The official name of the standard (e.g., ISO 21001:2018).
+        - Code: Official abbreviation or code (e.g., ISO-21001).
+        - Category: Type of standard (e.g., International, Higher Ed).
+        - Criteria: A list of requirements. Each MUST have a 'title' and a 'description'.
+        
+        Return ONLY a JSON object in this format:
+        {
+            "title": "...",
+            "code": "...",
+            "category": "...",
+            "description": "...",
+            "criteria": [
+                { "title": "...", "description": "..." },
+                ...
+            ]
+        }
+        """
+        
+        try:
+            response_text = await ai.chat_with_files(prompt, [file_data])
+            # Clean JSON response
+            json_str = response_text.replace("```json", "").replace("```", "").strip()
+            data = json.loads(json_str)
+            
+            db = get_db()
+            # Create the Standard as PUBLIC
+            standard = await db.standard.create(
+                data={
+                    "title": data["title"],
+                    "code": data.get("code"),
+                    "category": data.get("category", "Imported"),
+                    "description": data.get("description"),
+                    "icon": "FileText",
+                    "color": "from-teal-600 to-cyan-600",
+                    "isPublic": True,
+                    "source": "imported-pdf",
+                }
+            )
+            
+            # Create Criteria
+            for crit in data.get("criteria", []):
+                await db.criterion.create(
+                    data={
+                        "standardId": standard.id,
+                        "title": crit["title"],
+                        "description": crit["description"],
+                    }
+                )
+            
+            logger.info(f"New standard {standard.id} imported from PDF: {filename}")
+            return await StandardService.get_standard(standard.id)
+            
+        except Exception as e:
+            logger.error(f"PDF AI Import Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to extract standard from PDF: {str(e)}"
+            )

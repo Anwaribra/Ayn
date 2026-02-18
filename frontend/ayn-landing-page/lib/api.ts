@@ -223,6 +223,23 @@ class ApiClient {
     })
   }
 
+  async importStandardPDF(file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await fetch(`${API_BASE_URL}/standards/import-pdf`, {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "PDF Import failed" }))
+      throw new Error(error.detail || "PDF Import failed")
+    }
+
+    return response.json()
+  }
+
   // Criteria
   async getCriteria(standardId: string) {
     return this.request<import("./types").Criterion[]>(`/standards/${standardId}/criteria`)
@@ -666,6 +683,25 @@ class ApiClient {
 
   async getArchivedGapAnalyses() {
     return this.request<import("./types").GapAnalysisListItem[]>("/gap-analysis/archived/list")
+  }
+
+  async downloadGapAnalysisReport(id: string) {
+    const token = this.getToken()
+    const response = await fetch(`${API_BASE_URL}/gap-analysis/${id}/export`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    if (!response.ok) throw new Error("Download failed")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `gap-analysis-${id.slice(0, 8)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   }
 
 }

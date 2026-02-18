@@ -225,9 +225,26 @@ class HorusService:
         
         full_response = ""
         if file_results:
+            # yield "🔍 **Processing Brain Mode...**\n"
+            # yield "Analyzing evidence, measuring gaps, and updating dashboard.\n\n"
+            
+            # 3. RUN THE FULL BRAIN PIPELINE
+            # We await this for "Brain Mode" to get immediate results for the AI
+            brain_results = await self._execute_brain_pipeline(
+                user_id=user_id,
+                current_user=current_user,
+                file_results=file_results,
+                db=db
+            )
+            
+            # 4. Refresh State Summary after pipeline
+            summary = await self.state_manager.get_state_summary(user_id)
+            context = self._prepare_context_sync(summary, recent_activities, brain_results)
+            
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
-                files=file_results
+                files=file_results,
+                context=context # Pass the enriched brain context
             ):
                 if chunk:
                     full_response += chunk
@@ -249,17 +266,114 @@ class HorusService:
         elif full_response:
              await ChatService.save_message(chat_id, user_id, "assistant", full_response)
 
-        # P2.1: If files were uploaded, schedule auto gap analysis in background
-        if file_results and background_tasks:
-            background_tasks.add_task(
-                self._trigger_gap_analysis_after_upload,
-                user_id=user_id,
-                current_user=current_user,
-                db=db
-            )
+    async def _execute_brain_pipeline(self, user_id, current_user, file_results, db):
+        """
+        Executes the full processor pipeline: OCR -> Evidence Analysis -> Gap Analysis.
+        Returns the findings for AI injection.
+        """
+        results = {
+            "files_analyzed": len(file_results),
+            "gap_reports": [],
+            "dashboard_updated": True
+        }
+        
+        # 1. Evidence Analysis (Synchronous for Brain Mode)
+        for res in file_results:
+            try:
+                # We reuse the background logic but await it directly
+                # Res already contains data and mime_type
+                # filename, data, mime_type
+                content = base64.b64decode(res["data"])
+                await EvidenceService.analyze_evidence_task(
+                    evidence_id=res["evidenceId"],
+                    file_content=content,
+                    filename=res["filename"],
+                    mime_type=res["mime_type"],
+                    user_id=user_id
+                )
+            except Exception as e:
+                logger.error(f"Brain Pipeline Step 1 (Evidence) failed: {e}")
 
-    def _prepare_context_sync(self, summary, recent_activities) -> str:
+        # 2. Gap Analysis Trigger
+        try:
+            # Find the user's institution
+            from app.core.db import db as prisma_client
+            user = await prisma_client.user.find_unique(
+                where={"id": user_id},
+                include={"institution": True}
+            )
+            
+            if user and user.institution:
+                institution_id = user.institution.id
+                
+                # Fetch standard to analyze (latest or most comprehensive)
+                # For now, we analyze against ALL standards linked to the institution
+                standards = await prisma_client.standard.find_many(
+                    where={
+                        "criteria": {
+                            "some": {
+                                "evidenceCriteria": {
+                                    "some": {
+                                        "evidence": {
+                                            "institutionId": institution_id
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+                
+                gap_service = GapAnalysisService()
+                fake_user = {
+                    "id": user_id,
+                    "institutionId": institution_id,
+                    "role": "USER",
+                    "email": getattr(user, "email", "unknown"),
+                }
+                
+                for standard in standards:
+                    try:
+                        report = await gap_service.generate_report(GapAnalysisRequest(standardId=standard.id), fake_user)
+                        results["gap_reports"].append({
+                            "id": report.id,
+                            "title": standard.title,
+                            "score": report.overallScore,
+                            "gaps": [g.criterionTitle for g in report.gaps[:3]] # Just top 3 gaps for context
+                        })
+                    except Exception as e:
+                        logger.error(f"Brain Pipeline Step 2 (Gap) failed for {standard.title}: {e}")
+        except Exception as e:
+            logger.error(f"Brain Pipeline Step 2 (Gap) outer failed: {e}")
+
+        return results
+
+    def _prepare_context_sync(self, summary, recent_activities, brain_results=None) -> str:
         """Faster context preparation without extra DB calls."""
+        brain_context = ""
+        if brain_results:
+            reports_text = []
+            for r in brain_results["gap_reports"]:
+                gaps = ", ".join(r["gaps"])
+                reports_text.append(f"- {r['title']}: Score {r['score']}% | Gaps: {gaps} | ReportID: {r['id']}")
+            
+            brain_context = f"""
+            === RECENT BRAIN ANALYSIS RESULTS ===
+            Files Analyzed: {brain_results['files_analyzed']}
+            Gap Reports Generated:
+            {" ".join(reports_text) if reports_text else "No standards affected."}
+            Dashboard Metrics: Synchronized
+            
+            MANDATORY RESPONSE TEMPLATE FOR FILE UPLOADS:
+            ✅ File analyzed
+            📊 Overall score: [Score]%
+            ⚠️ Gaps: [Summarize critical gaps]
+            📈 Dashboard updated
+            📄 [Download Report](ACTION:gap_report:{brain_results['gap_reports'][0]['id'] if brain_results['gap_reports'] else 'none'}) | [View Reports](/platform/gap-analysis)
+            
+            Note: Use the actual data above.
+            """
+
         return f"""
         Current Platform State Summary:
         - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
@@ -267,19 +381,16 @@ class HorusService:
         - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
         - Global Compliance Score: {summary.total_score}%
         
+        {brain_context}
+        
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
         
-        Critical Pending Gaps:
-        {self._format_gaps(summary.addressable_gaps)}
-        
         Instructions for Horus Brain:
         - You are the central intelligence of the Ayn Platform.
-        - You have access to all platform modules (Evidence, Standards, Gap Analysis, Dashboard).
-        - You should help the user navigate, analyze their compliance status, and suggest actions.
-        - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
-        - If gaps are high, suggest specific evidence uploads.
-        - You are not just a chatbot; you are a platform assistant.
+        - You process compliance data, analyze evidence, and manage gaps.
+        - When files are uploaded, ALWAYS use the brain results provided above.
+        - Be concise, professional, and data-driven.
         """
 
     async def _prepare_context(self, user_id: str, summary) -> str:

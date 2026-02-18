@@ -26,37 +26,36 @@ export function WorkflowTimeline({ steps: customSteps, className }: WorkflowTime
     const steps = customSteps || defaultSteps
 
     return (
-        <div className={cn("w-full py-6", className)}>
-            <div className="relative flex items-center justify-between">
+        <div className={cn("w-full py-2 min-h-[100px]", className)}>
+            <div className="relative flex items-center justify-between px-4">
                 {/* Connector Line */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-muted -z-10" />
+                <div className="absolute left-10 right-10 top-5 h-[1px] bg-slate-200 -z-0" />
 
                 {steps.map((step, index) => (
-                    <div key={step.id} className="relative flex flex-col items-center group cursor-pointer">
+                    <div key={step.id} className="relative flex flex-col items-center group cursor-pointer z-10">
                         <div
                             className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 relative z-10",
-                                step.status === "completed" && "text-primary-foreground",
-                                step.status === "current" && "bg-card border-primary text-primary shadow-lg scale-110",
-                                step.status === "pending" && "bg-muted border-border text-muted-foreground"
+                                "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300",
+                                step.status === "completed" && "bg-emerald-500 border-white text-white shadow-sm",
+                                step.status === "current" && "bg-white border-blue-600 text-blue-600 shadow-md scale-110",
+                                step.status === "pending" && "bg-slate-100 border-slate-200 text-slate-400"
                             )}
-                            style={step.status === "completed" ? { backgroundColor: "var(--status-success)", borderColor: "var(--status-success-border)" } : undefined}
                         >
                             {step.status === "completed" && <CheckCircle2 className="w-5 h-5" />}
                             {step.status === "current" && <Clock className="w-5 h-5 animate-pulse" />}
                             {step.status === "pending" && <Circle className="w-5 h-5" />}
                         </div>
 
-                        <div className="absolute top-12 flex flex-col items-center w-32 text-center">
+                        <div className="absolute top-12 flex flex-col items-center w-24 text-center">
                             <span className={cn(
-                                "text-xs font-bold transition-colors",
-                                step.status === "current" ? "text-primary" :
-                                    step.status === "completed" ? "text-foreground" : "text-muted-foreground"
+                                "text-[9px] font-black uppercase tracking-tighter transition-colors",
+                                step.status === "current" ? "text-blue-600" :
+                                    step.status === "completed" ? "text-slate-900" : "text-slate-400"
                             )}>
                                 {step.label}
                             </span>
                             {step.date && (
-                                <span className="text-[10px] text-muted-foreground font-medium mt-0.5">{step.date}</span>
+                                <span className="text-[8px] font-bold text-slate-400 mt-0.5 leading-none">{step.date}</span>
                             )}
                         </div>
                     </div>

@@ -84,56 +84,65 @@ export default function StandardsPage() {
           ]}
         />
 
-        <div className="p-4 md:p-8 space-y-8">
-          {/* Global Library Banner */}
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/40 via-indigo-950/40 to-slate-900/40 border border-blue-500/20 p-8">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10 animate-pulse" />
-            <div className="flex flex-col md:flex-row items-center gap-8 justify-between relative z-10">
-              <div className="space-y-4 max-w-2xl text-center md:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-bold uppercase tracking-wider">
-                  <Globe className="w-3 h-3" />
-                  Public Frameworks Enabled
+        <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
+          {/* Main Hero Banner */}
+          <section className="relative overflow-hidden rounded-[40px] bg-slate-100 border border-slate-200 p-10 md:p-14 shadow-sm">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -z-10" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center relative z-10">
+              <div className="lg:col-span-3 space-y-8">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-700">
+                    Ayn Intelligence Framework v4.0
+                  </span>
                 </div>
-                <h2 className="text-3xl font-black text-white leading-tight">
-                  Accelerate your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Accreditation</span> journey.
+
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                  Accelerate your <br />
+                  <span className="text-blue-600">Accreditation</span> journey.
                 </h2>
-                <p className="text-blue-100/70 text-sm leading-relaxed">
+
+                <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-xl">
                   Browse a curated global library of real-world standards. Use our AI tools to analyze your institutional evidence against these frameworks instantly.
                 </p>
-                <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
+
+                <div className="flex flex-wrap items-center gap-4 pt-4">
                   <Button
                     onClick={() => setIsPDFModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl px-6"
+                    className="h-14 bg-[#1E3A8A] hover:bg-blue-900 text-white font-bold rounded-2xl px-8 shadow-lg shadow-blue-900/20 flex items-center gap-3 transition-all active:scale-95"
                   >
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Import PDF Standard
+                    <FileUp className="w-5 h-5" />
+                    <span className="text-base">Import PDF Standard</span>
                   </Button>
+
                   <Button
                     variant="outline"
-                    className="border-slate-700 bg-slate-800/50 text-white hover:bg-slate-700 font-bold rounded-xl"
+                    className="h-14 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold rounded-2xl px-8 shadow-sm flex items-center gap-3"
                   >
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse Library
+                    <Search className="w-5 h-5" />
+                    <span className="text-base font-black uppercase tracking-wider text-xs">Browse Library</span>
                   </Button>
                 </div>
               </div>
-              <div className="hidden lg:block">
-                <WorkflowTimeline steps={lifecycleSteps} />
+
+              <div className="lg:col-span-2 flex justify-center lg:justify-end">
+                <div className="bg-white/50 backdrop-blur-sm border border-slate-200 p-8 rounded-[32px] shadow-sm w-full max-w-sm">
+                  <WorkflowTimeline steps={lifecycleSteps} />
+                </div>
               </div>
             </div>
           </section>
 
-          {/* Standards Grid */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black">
-                  <Shield className="w-5 h-5" />
+          {/* Standards Grid Section */}
+          <div className="space-y-8 pt-6">
+            <div className="flex items-center justify-between px-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Standards Intelligence</h3>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Global Standards</h3>
-                  <p className="text-xs text-slate-400">Available for cross-institutional analysis</p>
-                </div>
+                <h4 className="text-2xl font-black text-slate-900">Institutional Frameworks</h4>
               </div>
             </div>
 
@@ -147,70 +156,65 @@ export default function StandardsPage() {
                   <motion.div
                     key={standard.id}
                     whileHover={{ y: -5 }}
-                    className="group relative flex flex-col p-6 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl hover:border-blue-500/30 transition-all duration-300"
+                    className="group relative flex flex-col pt-10 pb-6 px-10 bg-white border border-slate-200 rounded-[40px] shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500"
                   >
-                    {/* Background glow */}
-                    <div className={cn(
-                      "absolute -right-4 -top-4 w-32 h-32 rounded-full opacity-0 blur-3xl transition-opacity group-hover:opacity-20",
-                      standard.color || "bg-blue-600"
-                    )} />
-
-                    <div className="flex items-start gap-4 mb-6 relative">
-                      <div className={cn(
-                        "p-4 rounded-2xl shadow-xl text-white bg-gradient-to-br",
-                        standard.color || "from-blue-600 to-indigo-600"
-                      )}>
-                        <GraduationCap className="w-8 h-8" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-black uppercase tracking-tighter text-blue-400 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20">
-                            {standard.code || "STD"}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-500 truncate">
-                            {standard.category}
-                          </span>
+                    <div className="flex flex-col h-full">
+                      {/* Header Segment */}
+                      <div className="flex items-start gap-4 mb-8">
+                        <div className={cn(
+                          "w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3",
+                          standard.color || "bg-blue-600 shadow-blue-500/20"
+                        )}>
+                          <GraduationCap className="w-8 h-8" />
                         </div>
-                        <h4 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                          {standard.title}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-400 text-xs mb-8 line-clamp-3 leading-relaxed">
-                      {standard.description || "Standard guidelines for educational excellence and operational performance."}
-                    </p>
-
-                    <div className="mt-auto space-y-4">
-                      <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/40 border border-white/5">
-                        <div className="flex flex-col">
-                          <span className="text-lg font-black text-white leading-none">{standard.criteria?.length || 0}</span>
-                          <span className="text-[10px] font-bold uppercase text-slate-500">Criteria Points</span>
+                        <div className="space-y-1 overflow-hidden">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">
+                            {standard.code || "Standard Library"}
+                          </h3>
+                          <h4 className="text-2xl font-black text-slate-900 leading-tight truncate">
+                            {standard.title}
+                          </h4>
                         </div>
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500/50" />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Content Segment */}
+                      <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10 line-clamp-3">
+                        {standard.description || "Comprehensive accreditation standards and institutional frameworks for quality assurance and performance monitoring."}
+                      </p>
+
+                      {/* Action Segment */}
+                      <div className="space-y-4 mb-10">
                         <Button
-                          variant="outline"
+                          onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
+                          className="w-full h-14 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-base shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          Generate Compliance Briefing
+                        </Button>
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => {
                             setSelectedStandard(standard)
                             setIsDetailsOpen(true)
                           }}
-                          className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold"
+                          className="w-full text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 font-bold uppercase text-[10px] tracking-widest h-8"
                         >
-                          <Eye className="w-3.5 h-3.5 mr-2" />
-                          Details
+                          View Framework Details
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                          className="rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
-                        >
-                          <Activity className="w-3.5 h-3.5 mr-2" />
-                          Analyze
-                        </Button>
+                      </div>
+
+                      {/* Status Segment */}
+                      <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            AYN CORE LIVE SYNC
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-base font-black text-blue-600 leading-none">{standard.criteria?.length || 0}</span>
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Active Criteria</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -335,9 +339,9 @@ export default function StandardsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-700 shadow-2xl rounded-[32px] overflow-hidden flex flex-col"
+              className="w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 shadow-2xl rounded-[40px] overflow-hidden flex flex-col"
             >
-              <div className="p-8 border-b border-slate-800 bg-slate-900 flex items-center justify-between">
+              <div className="p-10 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <div className={cn(
                     "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3",
@@ -346,42 +350,40 @@ export default function StandardsPage() {
                     <GraduationCap className="w-10 h-10" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white">{selectedStandard.title}</h3>
+                    <h3 className="text-3xl font-black text-slate-900">{selectedStandard.title}</h3>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{selectedStandard.code}</span>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
-                      <span className="text-xs font-bold text-slate-500">{selectedStandard.category}</span>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
-                      <span className="text-xs font-bold text-slate-500">{selectedStandard.region}</span>
+                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{selectedStandard.code}</span>
+                      <div className="w-1 h-1 rounded-full bg-slate-200" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedStandard.category}</span>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsDetailsOpen(false)}
-                  className="p-3 hover:bg-slate-800 rounded-2xl transition-all"
+                  className="p-3 hover:bg-slate-200 rounded-2xl transition-all"
                 >
-                  <X className="w-6 h-6 text-slate-500" />
+                  <X className="w-6 h-6 text-slate-400" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-2 space-y-6">
-                    <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                      <Target className="w-4 h-4 text-blue-500" />
+                  <div className="lg:col-span-2 space-y-8">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <Target className="w-4 h-4 text-blue-600" />
                       Criteria Evidence Framework
                     </h4>
                     <div className="space-y-4">
                       {selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
                         selectedStandard.criteria.map((crit: Criterion) => (
-                          <div key={crit.id} className="p-6 rounded-[24px] bg-slate-800/40 border border-white/5 hover:border-blue-500/20 transition-all">
-                            <div className="flex items-start gap-4">
-                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 font-black text-[10px] flex-shrink-0">
+                          <div key={crit.id} className="p-8 rounded-[32px] bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all group">
+                            <div className="flex items-start gap-6">
+                              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-600 font-black text-xs flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                                 {crit.title.split(' ')[0]}
                               </div>
-                              <div>
-                                <h5 className="text-md font-bold text-white mb-2">{crit.title}</h5>
-                                <p className="text-sm text-slate-400 leading-relaxed font-medium">
+                              <div className="space-y-2">
+                                <h5 className="text-lg font-black text-slate-900">{crit.title}</h5>
+                                <p className="text-slate-500 text-sm font-medium leading-relaxed">
                                   {crit.description}
                                 </p>
                               </div>
@@ -397,33 +399,33 @@ export default function StandardsPage() {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="p-6 rounded-[28px] bg-blue-600/10 border border-blue-500/20 space-y-4 shadow-inner">
-                      <h5 className="text-sm font-black text-white uppercase flex items-center gap-2">
+                    <div className="p-8 rounded-[32px] bg-blue-600 text-white space-y-4 shadow-xl shadow-blue-500/20">
+                      <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 opacity-80">
                         <Sparkles className="w-4 h-4" />
                         Ayn Intelligence
                       </h5>
-                      <p className="text-xs text-blue-100/60 leading-relaxed">
-                        This framework is fully compatible with our <span className="text-white font-black">Multi-Modal Gap Analysis</span> engine.
+                      <p className="text-base font-medium leading-relaxed">
+                        This framework is fully compatible with our <span className="font-black underline decoration-white/30">Multi-Modal Gap Analysis</span> engine.
                       </p>
                       <Button
                         onClick={() => {
                           setIsDetailsOpen(false)
                           router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`)
                         }}
-                        className="w-full rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold py-6 text-sm"
+                        className="w-full h-14 rounded-2xl bg-white text-blue-600 hover:bg-slate-50 font-black text-sm uppercase tracking-wider"
                       >
                         Analyze Now
                       </Button>
                     </div>
 
-                    <div className="p-6 rounded-[28px] bg-slate-800/40 border border-white/5 space-y-4">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Standard Coverage</p>
+                    <div className="p-8 rounded-[32px] bg-slate-50 border border-slate-200 space-y-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Standard Coverage</p>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-white">Full Compatibility</span>
-                          <span className="text-xs font-black text-emerald-400">100%</span>
+                          <span className="text-xs font-black text-slate-900 uppercase">Framework Match</span>
+                          <span className="text-xs font-black text-emerald-600">PASSED</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                           <div className="h-full bg-emerald-500" style={{ width: '100%' }} />
                         </div>
                       </div>

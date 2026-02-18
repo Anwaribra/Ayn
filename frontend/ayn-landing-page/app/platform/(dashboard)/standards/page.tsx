@@ -49,6 +49,20 @@ export default function StandardsPage() {
   const [selectedStandard, setSelectedStandard] = useState<Standard | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState("all") // all, popular, recent
+
+  const filteredStandards = standards?.filter((s: Standard) => {
+    const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.code?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    if (activeTab === "all") return matchesSearch && s.isPublic
+    if (activeTab === "popular") return matchesSearch && s.isPublic && (s.criteria?.length || 0) > 30
+    if (activeTab === "recent") return matchesSearch && s.isPublic // Simplified for now
+    return matchesSearch
+  })
+
   const handlePDFUpload = async () => {
     if (!selectedFile) return
     setIsImporting(true)
@@ -84,146 +98,143 @@ export default function StandardsPage() {
           ]}
         />
 
-        <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
-          {/* Main Hero Banner */}
-          <section className="relative overflow-hidden rounded-[40px] bg-slate-100 border border-slate-200 p-10 md:p-14 shadow-sm">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -z-10" />
+        <div className="w-full">
+          {/* 1. HERO SECTION (Full Width) */}
+          <section className="w-full bg-white border-b border-slate-200 py-16 px-6 md:px-12 lg:px-20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px] -z-10" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center relative z-10">
-              <div className="lg:col-span-3 space-y-8">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-700">
-                    Ayn Intelligence Framework v4.0
-                  </span>
-                </div>
-
-                <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
-                  Accelerate your <br />
-                  <span className="text-blue-600">Accreditation</span> journey.
-                </h2>
-
-                <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-xl">
-                  Browse a curated global library of real-world standards. Use our AI tools to analyze your institutional evidence against these frameworks instantly.
+            <div className="max-w-7xl mx-auto space-y-10">
+              <div className="space-y-4">
+                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                  Standards Hub <span className="text-slate-400 font-light">—</span> <span className="text-blue-600">Global Quality Library</span>
+                </h1>
+                <p className="text-slate-500 text-xl font-medium max-w-2xl">
+                  AI-powered accreditation frameworks from around the world. Streamline your institutional compliance with automated mapping.
                 </p>
-
-                <div className="flex flex-wrap items-center gap-4 pt-4">
-                  <Button
-                    onClick={() => setIsPDFModalOpen(true)}
-                    className="h-14 bg-[#1E3A8A] hover:bg-blue-900 text-white font-bold rounded-2xl px-8 shadow-lg shadow-blue-900/20 flex items-center gap-3 transition-all active:scale-95"
-                  >
-                    <FileUp className="w-5 h-5" />
-                    <span className="text-base">Import PDF Standard</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-14 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold rounded-2xl px-8 shadow-sm flex items-center gap-3"
-                  >
-                    <Search className="w-5 h-5" />
-                    <span className="text-base font-black uppercase tracking-wider text-xs">Browse Library</span>
-                  </Button>
-                </div>
               </div>
 
-              <div className="lg:col-span-2 flex justify-center lg:justify-end">
-                <div className="bg-white/50 backdrop-blur-sm border border-slate-200 p-8 rounded-[32px] shadow-sm w-full max-w-sm">
-                  <WorkflowTimeline steps={lifecycleSteps} />
+              <div className="flex flex-col md:flex-row items-center gap-4 max-w-4xl">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search standards by name, code or category..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-16 pl-12 pr-6 rounded-2xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-700"
+                  />
                 </div>
+                <Button
+                  onClick={() => setIsPDFModalOpen(true)}
+                  className="h-16 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                >
+                  <FileUp className="w-5 h-5" />
+                  <span className="text-lg">Import Framework</span>
+                </Button>
               </div>
             </div>
           </section>
 
-          {/* Standards Grid Section */}
-          <div className="space-y-8 pt-6">
-            <div className="flex items-center justify-between px-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Standards Intelligence</h3>
-                </div>
-                <h4 className="text-2xl font-black text-slate-900">Institutional Frameworks</h4>
-              </div>
+          <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-12 space-y-12">
+            {/* 2. TABS SECTION */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-2">
+              {[
+                { id: "popular", label: "Popular" },
+                { id: "all", label: "All Frameworks" },
+                { id: "recent", label: "Recently Added" }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "px-6 py-3 rounded-t-xl font-bold uppercase text-[11px] tracking-widest transition-all relative",
+                    activeTab === tab.id
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
+                      : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 3. STANDARD GRID (2 Large Cards per Row) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {isLoading ? (
-                Array(6).fill(0).map((_, i) => (
-                  <div key={i} className="h-64 bg-slate-800/20 animate-pulse rounded-3xl border border-white/5" />
+                Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="h-[280px] bg-slate-50 animate-pulse rounded-[40px] border border-slate-100" />
                 ))
-              ) : standards && standards.length > 0 ? (
-                standards.filter((s: Standard) => s.isPublic).map((standard: Standard) => (
+              ) : filteredStandards && filteredStandards.length > 0 ? (
+                filteredStandards.map((standard: Standard) => (
                   <motion.div
                     key={standard.id}
-                    whileHover={{ y: -5 }}
-                    className="group relative flex flex-col pt-10 pb-6 px-10 bg-white border border-slate-200 rounded-[40px] shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500"
+                    whileHover={{ y: -8, boxShadow: "0 20px 40px -15px rgba(30, 58, 138, 0.1)" }}
+                    className="group flex flex-col p-10 bg-white border border-slate-200 rounded-[44px] transition-all duration-500 min-h-[300px]"
                   >
-                    <div className="flex flex-col h-full">
-                      {/* Header Segment */}
-                      <div className="flex items-start gap-4 mb-8">
-                        <div className={cn(
-                          "w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3",
-                          standard.color || "bg-blue-600 shadow-blue-500/20"
-                        )}>
-                          <GraduationCap className="w-8 h-8" />
+                    <div className="flex-1 flex flex-col space-y-6">
+                      {/* Top Segment: Icon + Name (24px) + Criteria */}
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-start gap-5">
+                          <div className={cn(
+                            "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shrink-0 shadow-lg",
+                            standard.color || "bg-[#1E3A8A]"
+                          )}>
+                            <GraduationCap className="w-9 h-9" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-[24px] font-black text-slate-900 leading-[1.1] group-hover:text-blue-600 transition-colors">
+                              {standard.title}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{standard.code || "STD-LIB"}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{standard.criteria?.length || 0} Criteria Points</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1 overflow-hidden">
-                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">
-                            {standard.code || "Standard Library"}
-                          </h3>
-                          <h4 className="text-2xl font-black text-slate-900 leading-tight truncate">
-                            {standard.title}
-                          </h4>
+                        <div className="hidden sm:block">
+                          <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[9px] font-black text-emerald-600 uppercase tracking-tighter">
+                            Live Framework
+                          </div>
                         </div>
                       </div>
 
-                      {/* Content Segment */}
-                      <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10 line-clamp-3">
-                        {standard.description || "Comprehensive accreditation standards and institutional frameworks for quality assurance and performance monitoring."}
+                      {/* Middle Segment: Description (2 lines max) */}
+                      <p className="text-slate-500 text-lg font-medium leading-relaxed line-clamp-2 pr-4">
+                        {standard.description || "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
                       </p>
 
-                      {/* Action Segment */}
-                      <div className="space-y-4 mb-10">
+                      {/* Bottom Segment: Buttons */}
+                      <div className="grid grid-cols-2 gap-4 pt-6 mt-auto">
                         <Button
-                          onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                          className="w-full h-14 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-base shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
-                        >
-                          Generate Compliance Briefing
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                          variant="outline"
                           onClick={() => {
                             setSelectedStandard(standard)
                             setIsDetailsOpen(true)
                           }}
-                          className="w-full text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 font-bold uppercase text-[10px] tracking-widest h-8"
+                          className="h-14 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold rounded-2xl flex items-center justify-center gap-2"
                         >
-                          View Framework Details
+                          <Eye className="w-5 h-5 text-slate-400" />
+                          <span>View Details</span>
                         </Button>
-                      </div>
-
-                      {/* Status Segment */}
-                      <div className="pt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            AYN CORE LIVE SYNC
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-base font-black text-blue-600 leading-none">{standard.criteria?.length || 0}</span>
-                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Active Criteria</span>
-                        </div>
+                        <Button
+                          onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
+                          className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          <Activity className="w-5 h-5" />
+                          <span>Start Analysis</span>
+                        </Button>
                       </div>
                     </div>
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-3xl bg-slate-900/20">
-                  <Search className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <h4 className="text-xl font-bold text-white">No standards available</h4>
-                  <p className="text-slate-500 mt-2 max-w-sm mx-auto">The global library is currently being updated. Check back shortly.</p>
+                <div className="col-span-full py-32 text-center bg-slate-50/50 rounded-[44px] border-2 border-dashed border-slate-200">
+                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6">
+                    <Search className="w-10 h-10 text-slate-300" />
+                  </div>
+                  <h4 className="text-2xl font-black text-slate-900">No frameworks found</h4>
+                  <p className="text-slate-500 mt-2 max-w-sm mx-auto font-medium">Try adjusting your search query or switching tabs to find what you're looking for.</p>
                 </div>
               )}
             </div>

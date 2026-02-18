@@ -54,6 +54,17 @@ async def update_standard(
     return await StandardService.update_standard(standard_id, request, current_user["email"])
 
 
+@router.get("/{standard_id}", response_model=StandardResponse)
+async def get_standard(
+    standard_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get a standard by ID.
+    """
+    return await StandardService.get_standard(standard_id)
+
+
 # ==================== Criteria Endpoints ====================
 
 @router.get("/{standard_id}/criteria", response_model=List[CriterionResponse])

@@ -110,10 +110,10 @@ class PlatformStateManager:
         try:
             # Try to query one of the tables
             if hasattr(self.db, 'platformfile'): # Prisma Python often creates lowercase usage
-                 await self.db.platformfile.find_first(take=1)
+                 await self.db.platformfile.find_first()
                  self._tables_exist = True
             elif hasattr(self.db, 'platform_files'): # Fallback depending on naming
-                await self.db.platform_files.find_first(take=1)
+                await self.db.platform_files.find_first()
                 self._tables_exist = True
             else:
                 # Attempt to determine via introspection or similar if needed, 

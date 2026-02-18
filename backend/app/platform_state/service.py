@@ -145,7 +145,7 @@ class StateService:
         })
         
         # Notify only on SIGNIFICANT score changes/updates that actually changed the value
-        if ("alignment" in name.lower() or "score" in name.lower()):
+        if metric and ("alignment" in name.lower() or "score" in name.lower()):
             has_changed = (metric.previous_value is None) or (abs(metric.value - metric.previous_value) > 0.001)
             
             if has_changed:

@@ -12,10 +12,24 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> dict:
     """Get the current authenticated user from JWT token."""
-    token = credentials.credentials
+    token = None
+    if credentials:
+        token = credentials.credentials
+    
+    # Fallback for SSE/EventSource which doesn't support headers
+    if not token:
+        token = request.query_params.get("token")
+        
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     payload = decode_access_token(token)
     if payload is None:

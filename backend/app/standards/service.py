@@ -38,6 +38,24 @@ class StandardService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch standards"
             )
+        
+    @staticmethod
+    async def get_standard(standard_id: str) -> StandardResponse:
+        """Get a standard by ID."""
+        db = get_db()
+        standard = await db.standard.find_unique(
+            where={"id": standard_id},
+            include={"criteria": True}
+        )
+        if not standard:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Standard not found"
+            )
+        
+        data = StandardResponse.model_validate(standard)
+        data.criteriaCount = len(standard.criteria) if standard.criteria else 0
+        return data
 
     @staticmethod
     async def create_standard(request: StandardCreateRequest, admin_email: str) -> StandardResponse:

@@ -63,7 +63,10 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user) return
 
-        const eventSource = new EventSource("/api/horus/events")
+        // Establish SSE Connection for real-time events
+        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+        const sseUrl = `/api/horus/events${token ? `?token=${token}` : ''}`;
+        const eventSource = new EventSource(sseUrl)
 
         eventSource.onmessage = (e) => {
             try {

@@ -52,7 +52,11 @@ class GapAnalysisService:
         db = get_db()
         institution_id = current_user.get("institutionId")
         if not institution_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institution required")
+            logger.warning(f"User {current_user.get('email')} attempted to generate report without institutionId")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Your account is not associated with an institution. Please contact your administrator."
+            )
 
         standard = await db.standard.find_unique(where={"id": request.standardId})
         if not standard:

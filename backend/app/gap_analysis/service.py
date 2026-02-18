@@ -60,9 +60,27 @@ class GapAnalysisService:
 
         criteria = await db.criterion.find_many(where={"standardId": request.standardId})
 
-        # Get evidence
+        # FIX P1.3: Use the EvidenceCriterion join table (many-to-many) instead of the
+        # deprecated single criterionId FK. Include evidence from both paths for backward compat.
         criterion_ids = [c.id for c in criteria]
-        evidence = await db.evidence.find_many(where={"criterionId": {"in": criterion_ids}}) if criterion_ids else []
+        evidence = []
+        if criterion_ids:
+            # New path: evidence linked via EvidenceCriterion join table
+            evidence_criteria = await db.evidencecriterion.find_many(
+                where={"criterionId": {"in": criterion_ids}},
+                include={"evidence": True}
+            )
+            seen_ids = set()
+            for ec in evidence_criteria:
+                if ec.evidence and ec.evidence.id not in seen_ids:
+                    evidence.append(ec.evidence)
+                    seen_ids.add(ec.evidence.id)
+
+            # Legacy path: evidence still using the old single FK (not yet re-analyzed)
+            legacy_evidence = await db.evidence.find_many(
+                where={"criterionId": {"in": criterion_ids}, "id": {"notIn": list(seen_ids)}}
+            )
+            evidence.extend(legacy_evidence)
 
         try:
             result = await ai_generate_gap_analysis(standard, criteria, evidence)

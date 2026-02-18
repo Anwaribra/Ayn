@@ -18,6 +18,8 @@ from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.chat.service import ChatService
 from app.activity.service import ActivityService
+from app.gap_analysis.service import GapAnalysisService
+from app.gap_analysis.models import GapAnalysisRequest
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +249,15 @@ class HorusService:
         elif full_response:
              await ChatService.save_message(chat_id, user_id, "assistant", full_response)
 
+        # P2.1: If files were uploaded, schedule auto gap analysis in background
+        if file_results and background_tasks:
+            background_tasks.add_task(
+                self._trigger_gap_analysis_after_upload,
+                user_id=user_id,
+                current_user=current_user,
+                db=db
+            )
+
     def _prepare_context_sync(self, summary, recent_activities) -> str:
         """Faster context preparation without extra DB calls."""
         return f"""
@@ -318,3 +329,88 @@ class HorusService:
 
     def _hash_state(self, summary) -> str:
         return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.utcnow().strftime('%Y%m%d%H')}"
+
+    async def _trigger_gap_analysis_after_upload(
+        self,
+        user_id: str,
+        current_user: Any,
+        db: Any
+    ):
+        """
+        P2.1: Auto-trigger gap analysis after files are uploaded via Horus chat.
+        Waits briefly for the evidence analysis background task to complete,
+        then runs gap analysis for all standards the institution has evidence for.
+        """
+        import asyncio as _asyncio
+        # Wait for evidence analysis background task to process the file
+        await _asyncio.sleep(30)
+
+        try:
+            from app.core.db import db as prisma_client
+
+            # Find the user's institution
+            user = await prisma_client.user.find_unique(
+                where={"id": user_id},
+                include={"institution": True}
+            )
+            if not user or not user.institution:
+                logger.warning(f"Horus gap trigger: No institution found for user {user_id}")
+                return
+
+            institution_id = user.institution.id
+
+            # Find all standards that have evidence linked to this institution
+            standards_with_evidence = await prisma_client.standard.find_many(
+                where={
+                    "criteria": {
+                        "some": {
+                            "evidenceCriteria": {
+                                "some": {
+                                    "evidence": {
+                                        "institutionId": institution_id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+
+            if not standards_with_evidence:
+                logger.info(f"Horus gap trigger: No standards with evidence for institution {institution_id}")
+                return
+
+            logger.info(f"Horus gap trigger: Running gap analysis for {len(standards_with_evidence)} standard(s)")
+
+            gap_service = GapAnalysisService()
+            for standard in standards_with_evidence:
+                try:
+                    request = GapAnalysisRequest(
+                        standardId=standard.id,
+                    )
+                    # B1 FIX: Build a plain dict — GapAnalysisService.generate_report()
+                    # expects a dict with .get() calls, not a Prisma model object.
+                    fake_user = {
+                        "id": user_id,
+                        "institutionId": institution_id,
+                        "role": "USER",
+                        "email": getattr(user, "email", "unknown"),
+                    }
+                    report = await gap_service.generate_report(request, fake_user)
+                    logger.info(f"Horus gap trigger: Gap analysis complete for standard '{standard.title}' — score: {report.overallScore}%")
+
+                    # Notify the user
+                    await NotificationService.create_notification(NotificationCreateRequest(
+                        userId=user_id,
+                        type="info",
+                        title="Gap Analysis Updated",
+                        message=f"Horus auto-ran gap analysis for '{standard.title}' after your file upload. Score: {report.overallScore:.0f}%.",
+                        relatedEntityId=report.id,
+                        relatedEntityType="gap_analysis"
+                    ))
+
+                except Exception as e:
+                    logger.error(f"Horus gap trigger: Failed for standard '{standard.title}': {e}")
+
+        except Exception as e:
+            logger.error(f"Horus gap trigger: Unexpected error for user {user_id}: {e}", exc_info=True)

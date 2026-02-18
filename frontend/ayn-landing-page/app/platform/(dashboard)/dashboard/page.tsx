@@ -64,14 +64,7 @@ function DashboardContent() {
   const alignmentScore = metrics?.alignmentPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0
 
-  // Measure real AI latency on mount
-  const [aiLatency, setAiLatency] = useState<number | null>(null)
-  useEffect(() => {
-    const start = performance.now()
-    api.chat([{ role: "user", content: "ping" }])
-      .then(() => setAiLatency(Math.round(performance.now() - start)))
-      .catch(() => setAiLatency(null))
-  }, [])
+  // ─── No AI latency ping — removed (was wasting tokens on every mount)
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -116,18 +109,17 @@ function DashboardContent() {
           </div>
           <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 min-w-[280px]">
             <CircularGauge
-              value={aiLatency !== null ? Math.min(aiLatency, 2000) : 0}
-              max={2000}
-              label="AI Latency"
-              sublabel="ms"
+              value={metrics?.totalGapAnalyses ?? 0}
+              max={20}
+              label="Gap Analyses"
               icon={<Zap className="w-5 h-5" />}
               color="#10B981"
             />
             <div className="flex flex-col justify-center">
               <span className="text-2xl font-bold tracking-tight">
-                {aiLatency !== null ? `${aiLatency}ms` : "—"}
+                {metrics?.totalGapAnalyses ?? 0}
               </span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Horus Response</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Reports</span>
             </div>
           </div>
         </div>
@@ -138,7 +130,7 @@ function DashboardContent() {
         <StatusTiles
           stats={[
             {
-              label: "Pending Evidence",
+              label: "Total Evidence",
               value: metrics?.evidenceCount?.toString() || "0",
               icon: FileText,
               status: "warning"
@@ -168,7 +160,7 @@ function DashboardContent() {
       {/* Activity Graph & Logs */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <ActivityChart data={[]} />
+          <ActivityChart data={metrics?.recentScores ?? []} />
 
           {/* Recent Evidence List */}
           <div className="glass-layer-2 p-8 rounded-[40px]">

@@ -1,5 +1,7 @@
 """Gap analysis router - AI-powered gap report generation and management."""
+import io
 from fastapi import APIRouter, status, Depends
+from fastapi.responses import StreamingResponse
 from typing import List
 import logging
 from app.core.middlewares import get_current_user
@@ -10,6 +12,7 @@ from app.gap_analysis.models import (
     ArchiveRequest,
 )
 from app.gap_analysis.service import GapAnalysisService
+from app.gap_analysis.pdf_export import generate_pdf_report
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,25 @@ async def list_archived_gap_analyses(
 ):
     """List all archived gap analysis reports for the user's institution."""
     return await GapAnalysisService.list_reports(current_user, archived=True)
+
+
+@router.get("/{gap_analysis_id}/export")
+async def export_gap_analysis_pdf(
+    gap_analysis_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Export a gap analysis report as a downloadable PDF.
+    Returns a StreamingResponse with Content-Disposition: attachment.
+    """
+    report = await GapAnalysisService.get_report(gap_analysis_id, current_user)
+    pdf_bytes = generate_pdf_report(report)
+    filename = f"gap-analysis-{gap_analysis_id[:8]}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{gap_analysis_id}", response_model=GapAnalysisResponse)

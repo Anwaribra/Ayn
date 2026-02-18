@@ -249,9 +249,7 @@ if settings.DEBUG:
             from app.ai.service import get_gemini_client
             client = get_gemini_client()
             
-            import asyncio
-            result = await asyncio.to_thread(
-                client.chat,
+            result = await client.chat(
                 messages=[{"role": m["role"], "content": m["content"]} for m in messages],
                 context=body.get("context"),
             )

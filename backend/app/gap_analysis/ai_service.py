@@ -74,14 +74,25 @@ def _format_criteria(criteria: list) -> str:
 
 
 def _format_evidence(evidence: list) -> str:
-    """Format evidence list for the prompt."""
+    """Format evidence list for the prompt — includes AI-generated summaries for quality analysis."""
     if not evidence:
-        return "No evidence files uploaded."
+        return "No evidence files uploaded or linked to this standard's criteria."
     lines = []
     for e in evidence:
-        criterion_info = f" (linked to criterion {e.criterionId})" if e.criterionId else " (not linked to any criterion)"
-        lines.append(f"  - File: {e.fileUrl}{criterion_info}")
+        doc_type = getattr(e, "documentType", None) or "Document"
+        title = getattr(e, "title", None) or getattr(e, "originalFilename", None) or "Untitled"
+        summary = getattr(e, "summary", None) or "No summary available."
+        confidence = getattr(e, "confidenceScore", None)
+        criterion_id = getattr(e, "criterionId", None)
+
+        confidence_str = f" | Confidence: {confidence:.0f}%" if confidence is not None else ""
+        criterion_str = f" | Linked to criterion: {criterion_id}" if criterion_id else ""
+        lines.append(
+            f"  - [{doc_type}] {title}{confidence_str}{criterion_str}\n"
+            f"    Summary: {summary}"
+        )
     return "\n".join(lines)
+
 
 
 def _parse_gap_response(response_text: str) -> dict:

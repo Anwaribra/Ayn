@@ -152,7 +152,17 @@ function GapAnalysisContent() {
 
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
     const priorityMap: Record<string, string> = { high: "High", medium: "Med", low: "Low" }
-    const statusMap: Record<string, string> = { not_met: "Critical", no_evidence: "Critical", partially_met: "Warning", met: "Verified" }
+    const statusMap: Record<string, string> = {
+      // Backend actual values (from gap_analysis/models.py)
+      aligned: "Verified",
+      partially_aligned: "Warning",
+      needs_improvement: "Critical",
+      no_evidence: "Critical",
+      // Legacy values (backward compat)
+      not_met: "Critical",
+      partially_met: "Warning",
+      met: "Verified",
+    }
     const p = priorityMap[item.priority] ?? "Med"
     const s = statusMap[item.status] ?? "Warning"
     const statusClass = p === "High" ? "status-critical" : p === "Med" ? "status-warning" : "status-success"
@@ -336,6 +346,16 @@ function GapAnalysisContent() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      <a
+                        href={`/api/gap-analysis/${report.id}/export`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        title="Download PDF Report"
+                      >
+                        Export PDF
+                      </a>
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
                         className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"

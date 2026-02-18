@@ -1,4 +1,8 @@
 """Evidence service."""
+import base64
+import json
+import re
+from datetime import datetime
 from fastapi import HTTPException, status, UploadFile, BackgroundTasks
 from typing import List
 from app.core.db import get_db
@@ -129,39 +133,31 @@ class EvidenceService:
     async def analyze_evidence_task(evidence_id: str, file_content: bytes, filename: str, mime_type: str, user_id: str):
         """
         Background task: Analyze evidence using AI and update state.
-        Never throws exceptions to the caller.
+        Never throws exceptions to the caller — all errors are caught and logged.
         """
-        import asyncio
         from app.ai.service import get_gemini_client
         from app.platform_state.service import StateService
-        # Re-get DB session for background task
-        # Note: get_db() yields, so we need to use it as context manager or similar mechanism if tailored for bg tasks.
-        # But typically for simple scripts we can instantiate Prisma or use logic that handles its own connection.
-        # However, `StateService` expects a `db` object (Prisma client).
-        # We need a fresh DB session for the background task context.
         from app.core.db import db as prisma_client
 
         logger.info(f"Starting background analysis for {evidence_id}")
-        
+
         try:
-             # Connect if not connected (Prisma client is singleton mostly)
+            # Ensure DB is connected (singleton, usually already connected)
             if not prisma_client.is_connected():
                 await prisma_client.connect()
 
             # 1. AI Analysis
             client = get_gemini_client()
-            
-            # Prepare prompt
-            # Prepare prompt with structured output enforcement
+
             prompt = """
             Analyze this uploaded evidence file for educational accreditation compliance (ISO 21001 / NAQAAE).
-            
+
             Identify:
             1. Document Type (e.g., Policy, Meeting Minutes, Strategic Plan, Student Record)
             2. Specific Standards & Clauses it likely supports.
             3. A confidence score (0-100) based on content relevance.
             4. A clear, concise summary of the document content.
-            
+
             CRITICAL: Return ONLY valid JSON. No markdown. No code blocks.
             Format:
             {
@@ -174,9 +170,7 @@ class EvidenceService:
                "title": "Suggested Title (e.g. 'Strategic Plan 2024')"
             }
             """
-            
-            # Prepare file payload
-            import base64
+
             b64_data = base64.b64encode(file_content).decode("utf-8")
             files_payload = [{
                 "type": "image" if mime_type.startswith("image") else "text",
@@ -184,250 +178,184 @@ class EvidenceService:
                 "data": b64_data,
                 "filename": filename
             }]
-            
-            # Call AI
-            raw_response = await asyncio.to_thread(
-                client.chat_with_files, 
-                message=prompt, 
-                files=files_payload
-            )
-            
-            # Parse Response
-            import json
-            import re
-            
-            # Extract JSON
+
+            # FIX P1.1: chat_with_files is async — await it directly, never wrap in asyncio.to_thread
+            raw_response = await client.chat_with_files(message=prompt, files=files_payload)
+
+            # 2. Parse Response
             match = re.search(r'(\{.*\}|\[.*\])', raw_response, re.DOTALL)
-            if match:
-                try:
-                    parsed = json.loads(match.group(1))
-                    
-                    # Validate fields
-                    doc_type = parsed.get("document_type", "Unknown")
-                    summary = parsed.get("summary", "No summary provided.")
-                    title = parsed.get("title", filename)
-                    confidence = float(parsed.get("confidence", 0))
-                    
-                    # 2. Update Evidence Record
-                    # We use the prisma client passed from the caller or re-instantiated
-                    await prisma_client.evidence.update(
-                        where={"id": evidence_id},
-                        data={
-                            "title": title,
-                            "summary": summary,
-                            "documentType": doc_type,
-                            "confidenceScore": confidence,
-                            "status": "analyzed",
-                            "updatedAt": datetime.utcnow()
-                        }
-                    )
-                    
-                    # 3. Handle Criteria Mapping
-                    mapped_codes = parsed.get("mapped_criteria", [])
-                    standard_name = parsed.get("related_standard", "")
-                    
-                    mapping_status = "unmapped"
-                    
-                    if mapped_codes:
-                        # Try to find standard first
-                        standard = None
-                        if standard_name:
-                            # Loose match for standard title
-                            standards = await prisma_client.standard.find_many(
-                                where={"title": {"contains": standard_name, "mode": "insensitive"}}
-                            )
-                            if standards:
-                                standard = standards[0]
-                        
-                        # Find matching criteria
-                        matched_criteria_ids = []
-                        
-                        # If we found a standard, scope search to it
-                        criteria_query = {"standardId": standard.id} if standard else {}
-                        
-                        all_criteria = await prisma_client.criterion.find_many(where=criteria_query)
-                        
-                        for code in mapped_codes:
-                            # Match if criterion title starts with code (e.g. "8.1")
-                            # Normalize code and title for comparison
-                            norm_code = str(code).strip().lower()
-                            for crit in all_criteria:
-                                if crit.title and crit.title.strip().lower().startswith(norm_code):
-                                    matched_criteria_ids.append(crit.id)
-                                    break # Mapping to first match per code
-                        
-                        # Create mappings
-                        if matched_criteria_ids:
-                            mapping_status = "analyzed"
-                            for crit_id in set(matched_criteria_ids):
-                                try:
-                                    await prisma_client.evidencecriterion.create(
-                                        data={
-                                            "evidenceId": evidence_id,
-                                            "criterionId": crit_id
-                                        }
-                                    )
-                                except Exception:
-                                    pass # Ignore duplicates
-                        else:
-                            mapping_status = "unmapped"
-                    else:
-                        mapping_status = "unmapped"
-
-                    # Update status
-                    await prisma_client.evidence.update(
-                        where={"id": evidence_id},
-                        data={"status": mapping_status}
-                    )
-                    
-                    # Log activity
-                    await ActivityService.log_activity(
-                        user_id=user_id,
-                        type="analysis_finished",
-                        title="AI Analysis Complete",
-                        description=f"Evidence '{title}' has been analyzed and mapped.",
-                        entity_id=evidence_id,
-                        entity_type="evidence",
-                        metadata={"confidence": confidence, "docType": doc_type}
-                    )
-                    
-                    if mapping_status == "analyzed":
-                        logger.info(f"Evidence {evidence_id} mapped to {len(matched_criteria_ids)} criteria.")
-                    else:
-                        logger.warning(f"Evidence {evidence_id} analyzed but unmapped (Codes: {mapped_codes})")
-                    
-                    # 4. Gap Analysis Integration
-                    state_service = StateService(prisma_client)
-                    gaps_addressed = 0
-                    
-                    if standard_name and mapped_codes:
-                        for code in mapped_codes:
-                            matching_gaps = await state_service.find_open_gaps_for_evidence(
-                                user_id=user_id,
-                                standard_name=standard_name, # e.g. "ISO 21001"
-                                clause_code=code # e.g. "8.3"
-                            )
-                            
-                            for gap in matching_gaps:
-                                await state_service.record_gap_addressed(gap.id, evidence_id)
-                                gaps_addressed += 1
-                                logger.info(f"Gap {gap.id} addressed by evidence {evidence_id}")
-
-                    # 5. Update Metrics
-                    await state_service.record_metric_update(
-                        user_id=user_id,
-                        metric_id="evidence_processed",
-                        name="Evidence Processed",
-                        value=1,
-                        source_module="ai_worker"
-                    )
-                    
-                    if gaps_addressed > 0:
-                        await state_service.record_metric_update(
-                            user_id=user_id,
-                            metric_id="gaps_addressed_by_ai",
-                            name="Gaps Auto-Addressed",
-                            value=gaps_addressed,
-                            source_module="ai_worker"
-                        )
-
-                        # Notify Gap Closure
-                        try:
-                            await NotificationService.create_notification(NotificationCreateRequest(
-                                userId=user_id,
-                                type="success",
-                                title="Gap Addressed",
-                                message=f"{gaps_addressed} gap(s) were addressed by '{title}'.",
-                                relatedEntityId=evidence_id,
-                                relatedEntityType="gap"
-                            ))
-                        except Exception: pass
-
-                    # Notify Analysis Success
-                    try:
-                        await NotificationService.create_notification(NotificationCreateRequest(
-                            userId=user_id,
-                            type="success",
-                            title="Analysis Complete",
-                            message=f"Evidence '{title}' analyzed successfully.",
-                            relatedEntityId=evidence_id,
-                            relatedEntityType="evidence"
-                        ))
-                    except Exception: pass
-
-                except json.JSONDecodeError:
-                    logger.error(f"AI returned invalid JSON for {evidence_id}")
-                    await prisma_client.evidence.update(
-                        where={"id": evidence_id},
-                        data={"status": "failed"}
-                    )
-                    try:
-                        await NotificationService.create_notification(NotificationCreateRequest(
-                            userId=user_id,
-                            type="error",
-                            title="Analysis Failed",
-                            message=f"AI could not analyze '{filename}'. Invalid response format.",
-                            relatedEntityId=evidence_id,
-                            relatedEntityType="evidence"
-                        ))
-                    except: pass
-
-                except Exception as ex:
-                    logger.error(f"Error parsing AI response: {ex}")
-                    await prisma_client.evidence.update(
-                         where={"id": evidence_id},
-                         data={"status": "failed"}
-                    )
-                    try:
-                        await NotificationService.create_notification(NotificationCreateRequest(
-                            userId=user_id,
-                            type="error",
-                            title="Analysis Failed",
-                            message=f"Analysis failed for '{filename}'.",
-                            relatedEntityId=evidence_id,
-                            relatedEntityType="evidence"
-                        ))
-                    except: pass
-            else:
+            if not match:
                 logger.warning(f"No JSON found in AI response for {evidence_id}")
-                await prisma_client.evidence.update(
-                    where={"id": evidence_id},
-                    data={"status": "failed"}
+                await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
+                await _notify_error(user_id, evidence_id, f"AI could not extract data from '{filename}'.")
+                return
+
+            try:
+                parsed = json.loads(match.group(1))
+            except json.JSONDecodeError:
+                logger.error(f"AI returned invalid JSON for {evidence_id}")
+                await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
+                await _notify_error(user_id, evidence_id, f"AI could not analyze '{filename}'. Invalid response format.")
+                return
+
+            doc_type = parsed.get("document_type", "Unknown")
+            summary = parsed.get("summary", "No summary provided.")
+            title = parsed.get("title", filename)
+            confidence = float(parsed.get("confidence", 0))
+
+            # 3. Update Evidence Record with AI results
+            await prisma_client.evidence.update(
+                where={"id": evidence_id},
+                data={
+                    "title": title,
+                    "summary": summary,
+                    "documentType": doc_type,
+                    "confidenceScore": confidence,
+                    "status": "analyzed",
+                    "updatedAt": datetime.utcnow()
+                }
+            )
+
+            # 4. Criteria Mapping
+            mapped_codes = parsed.get("mapped_criteria", [])
+            standard_name = parsed.get("related_standard", "")
+            mapping_status = "unmapped"
+            matched_criteria_ids = []
+
+            if mapped_codes:
+                standard = None
+                if standard_name:
+                    standards = await prisma_client.standard.find_many(
+                        where={"title": {"contains": standard_name, "mode": "insensitive"}}
+                    )
+                    if standards:
+                        standard = standards[0]
+
+                criteria_query = {"standardId": standard.id} if standard else {}
+                all_criteria = await prisma_client.criterion.find_many(where=criteria_query)
+
+                for code in mapped_codes:
+                    norm_code = str(code).strip().lower()
+                    for crit in all_criteria:
+                        if crit.title and crit.title.strip().lower().startswith(norm_code):
+                            matched_criteria_ids.append(crit.id)
+                            break
+
+                if matched_criteria_ids:
+                    mapping_status = "analyzed"
+                    for crit_id in set(matched_criteria_ids):
+                        try:
+                            await prisma_client.evidencecriterion.create(
+                                data={"evidenceId": evidence_id, "criterionId": crit_id}
+                            )
+                        except Exception:
+                            pass  # Ignore duplicates
+
+            await prisma_client.evidence.update(
+                where={"id": evidence_id},
+                data={"status": mapping_status}
+            )
+
+            await ActivityService.log_activity(
+                user_id=user_id,
+                type="analysis_finished",
+                title="AI Analysis Complete",
+                description=f"Evidence '{title}' analyzed and mapped to {len(matched_criteria_ids)} criteria.",
+                entity_id=evidence_id,
+                entity_type="evidence",
+                metadata={"confidence": confidence, "docType": doc_type, "criteriaCount": len(matched_criteria_ids)}
+            )
+
+            if mapping_status == "analyzed":
+                logger.info(f"Evidence {evidence_id} mapped to {len(matched_criteria_ids)} criteria.")
+            else:
+                logger.warning(f"Evidence {evidence_id} analyzed but unmapped (codes: {mapped_codes})")
+
+            # 5. Auto-address matching open gaps
+            state_service = StateService(prisma_client)
+            gaps_addressed = 0
+
+            if standard_name and mapped_codes:
+                for code in mapped_codes:
+                    matching_gaps = await state_service.find_open_gaps_for_evidence(
+                        user_id=user_id,
+                        standard_name=standard_name,
+                        clause_code=code
+                    )
+                    for gap in matching_gaps:
+                        await state_service.record_gap_addressed(gap.id, evidence_id)
+                        gaps_addressed += 1
+                        logger.info(f"Gap {gap.id} addressed by evidence {evidence_id}")
+
+            # 6. Update Metrics
+            await state_service.record_metric_update(
+                user_id=user_id,
+                metric_id="evidence_processed",
+                name="Evidence Processed",
+                value=1,
+                source_module="ai_worker"
+            )
+
+            if gaps_addressed > 0:
+                await state_service.record_metric_update(
+                    user_id=user_id,
+                    metric_id="gaps_addressed_by_ai",
+                    name="Gaps Auto-Addressed",
+                    value=gaps_addressed,
+                    source_module="ai_worker"
                 )
                 try:
                     await NotificationService.create_notification(NotificationCreateRequest(
                         userId=user_id,
-                        type="error",
-                        title="Analysis Failed",
-                        message=f"AI could not extract data from '{filename}'.",
+                        type="success",
+                        title="Gap Addressed",
+                        message=f"{gaps_addressed} gap(s) were addressed by '{title}'.",
                         relatedEntityId=evidence_id,
-                        relatedEntityType="evidence"
+                        relatedEntityType="gap"
                     ))
-                except: pass
+                except Exception:
+                    pass
+
+            # 7. Notify success
+            try:
+                await NotificationService.create_notification(NotificationCreateRequest(
+                    userId=user_id,
+                    type="success",
+                    title="Analysis Complete",
+                    message=f"'{title}' analyzed successfully. Confidence: {confidence:.0f}%.",
+                    relatedEntityId=evidence_id,
+                    relatedEntityType="evidence"
+                ))
+            except Exception:
+                pass
 
         except Exception as e:
-            logger.error(f"Background analysis failed for {evidence_id}: {e}")
+            # Top-level safety net — never crash the background worker
+            logger.error(f"Background analysis failed for {evidence_id}: {e}", exc_info=True)
             try:
                 if prisma_client.is_connected():
                     await prisma_client.evidence.update(
                         where={"id": evidence_id},
                         data={"status": "failed"}
                     )
-                    await NotificationService.create_notification(NotificationCreateRequest(
-                        userId=user_id,
-                        type="error",
-                        title="System Error",
-                        message=f"System error while processing '{filename}'.",
-                        relatedEntityId=evidence_id,
-                        relatedEntityType="evidence"
-                    ))
-            except:
+                    await _notify_error(user_id, evidence_id, f"System error while processing '{filename}'.")
+            except Exception:
                 pass
 
 
-        except Exception as e:
-            # Swallow error to keep worker alive
-            logger.error(f"Background analysis failed for {evidence_id}: {e}")
+async def _notify_error(user_id: str, evidence_id: str, message: str):
+    """Helper to send an error notification without raising."""
+    try:
+        await NotificationService.create_notification(NotificationCreateRequest(
+            userId=user_id,
+            type="error",
+            title="Analysis Failed",
+            message=message,
+            relatedEntityId=evidence_id,
+            relatedEntityType="evidence"
+        ))
+    except Exception:
+        pass
 
     @staticmethod
     async def delete_evidence(evidence_id: str, current_user: dict):

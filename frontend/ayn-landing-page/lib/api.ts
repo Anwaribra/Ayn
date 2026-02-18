@@ -492,7 +492,8 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      throw new Error("Streaming failed")
+      const errBody = await response.json().catch(() => ({ detail: "Streaming failed" }))
+      throw new Error(errBody.detail || `Streaming failed (${response.status})`)
     }
 
     const reader = response.body?.getReader()

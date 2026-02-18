@@ -202,9 +202,11 @@ function EvidenceContent() {
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
-                      selectedEvidence.status === 'linked'
+                      ['linked', 'analyzed'].includes(selectedEvidence.status)
                         ? "status-success"
-                        : "bg-muted text-muted-foreground border-border"
+                        : selectedEvidence.status === 'processing'
+                          ? "status-warning"
+                          : "bg-muted text-muted-foreground border-border"
                     )}>
                       {selectedEvidence.status}
                     </span>
@@ -245,7 +247,11 @@ function EvidenceContent() {
                 <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Confidence</div>
                   <div className="text-2xl font-black" style={{ color: "var(--status-success)" }}>
-                    {selectedEvidence.confidenceScore ? `${Math.round(selectedEvidence.confidenceScore * 100)}%` : "N/A"}
+                    {selectedEvidence.confidenceScore
+                      ? `${selectedEvidence.confidenceScore > 1
+                        ? Math.round(selectedEvidence.confidenceScore)
+                        : Math.round(selectedEvidence.confidenceScore * 100)}%`
+                      : "N/A"}
                   </div>
                 </div>
               </div>
@@ -264,7 +270,7 @@ function EvidenceContent() {
                 href={selectedEvidence.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-6 py-2 bg-primary text-primary-foreground font-bold rounded-xl text-sm hover:bg-primary/90 transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                className="px-6 py-2 bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open File

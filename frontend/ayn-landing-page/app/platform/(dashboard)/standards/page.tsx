@@ -100,36 +100,36 @@ export default function StandardsPage() {
 
         <div className="w-full">
           {/* 1. HERO SECTION (Full Width) */}
-          <section className="w-full bg-white border-b border-slate-200 py-16 px-6 md:px-12 lg:px-20 relative overflow-hidden">
+          <section className="w-full bg-white dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 py-16 px-6 md:px-12 lg:px-20 relative overflow-hidden transition-colors">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px] -z-10" />
 
             <div className="max-w-7xl mx-auto space-y-10">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                  Standards Hub <span className="text-slate-400 font-light">—</span> <span className="text-blue-600">Global Quality Library</span>
+                <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Standards Hub <span className="text-slate-400 dark:text-slate-600 font-light">—</span> <span className="text-blue-600 dark:text-blue-500">Global Quality Library</span>
                 </h1>
-                <p className="text-slate-500 text-xl font-medium max-w-2xl">
+                <p className="text-slate-500 dark:text-slate-400 text-xl font-medium max-w-2xl">
                   AI-powered accreditation frameworks from around the world. Streamline your institutional compliance with automated mapping.
                 </p>
               </div>
 
               <div className="flex flex-col md:flex-row items-center gap-4 max-w-4xl">
-                <div className="relative flex-1 w-full">
+                <div className="relative flex-1 w-full text-foreground">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search standards by name, code or category..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-16 pl-12 pr-6 rounded-2xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-700"
+                    className="w-full h-16 pl-12 pr-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-900 dark:text-white placeholder:text-slate-400"
                   />
                 </div>
                 <Button
                   onClick={() => setIsPDFModalOpen(true)}
-                  className="h-16 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                  className="h-16 px-8 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                 >
                   <FileUp className="w-5 h-5" />
-                  <span className="text-lg">Import Framework</span>
+                  <span className="text-lg text-white">Import Framework</span>
                 </Button>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function StandardsPage() {
 
           <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-12 space-y-12">
             {/* 2. TABS SECTION */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-2">
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
               {[
                 { id: "popular", label: "Popular" },
                 { id: "all", label: "All Frameworks" },
@@ -149,8 +149,8 @@ export default function StandardsPage() {
                   className={cn(
                     "px-6 py-3 rounded-t-xl font-bold uppercase text-[11px] tracking-widest transition-all relative",
                     activeTab === tab.id
-                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/10"
+                      : "text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400"
                   )}
                 >
                   {tab.label}
@@ -162,14 +162,14 @@ export default function StandardsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {isLoading ? (
                 Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="h-[280px] bg-slate-50 animate-pulse rounded-[40px] border border-slate-100" />
+                  <div key={i} className="h-[280px] bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-[40px] border border-slate-100 dark:border-slate-800" />
                 ))
               ) : filteredStandards && filteredStandards.length > 0 ? (
                 filteredStandards.map((standard: Standard) => (
                   <motion.div
                     key={standard.id}
-                    whileHover={{ y: -8, boxShadow: "0 20px 40px -15px rgba(30, 58, 138, 0.1)" }}
-                    className="group flex flex-col p-10 bg-white border border-slate-200 rounded-[44px] transition-all duration-500 min-h-[300px]"
+                    whileHover={{ y: -8, boxShadow: "0 20px 40px -15px rgba(30, 58, 138, 0.2)" }}
+                    className="group flex flex-col p-10 bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-[44px] transition-all duration-500 min-h-[300px]"
                   >
                     <div className="flex-1 flex flex-col space-y-6">
                       {/* Top Segment: Icon + Name (24px) + Criteria */}
@@ -179,28 +179,28 @@ export default function StandardsPage() {
                             "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shrink-0 shadow-lg",
                             standard.color || "bg-[#1E3A8A]"
                           )}>
-                            <GraduationCap className="w-9 h-9" />
+                            <GraduationCap className="w-9 h-9 text-white" />
                           </div>
                           <div className="space-y-1">
-                            <h3 className="text-[24px] font-black text-slate-900 leading-[1.1] group-hover:text-blue-600 transition-colors">
+                            <h3 className="text-[24px] font-black text-slate-900 dark:text-white leading-[1.1] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {standard.title}
                             </h3>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{standard.code || "STD-LIB"}</span>
-                              <span className="text-slate-300">•</span>
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{standard.criteria?.length || 0} Criteria Points</span>
+                              <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{standard.code || "STD-LIB"}</span>
+                              <span className="text-slate-300 dark:text-slate-700">•</span>
+                              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{standard.criteria?.length || 0} Criteria Points</span>
                             </div>
                           </div>
                         </div>
                         <div className="hidden sm:block">
-                          <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[9px] font-black text-emerald-600 uppercase tracking-tighter">
+                          <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">
                             Live Framework
                           </div>
                         </div>
                       </div>
 
                       {/* Middle Segment: Description (2 lines max) */}
-                      <p className="text-slate-500 text-lg font-medium leading-relaxed line-clamp-2 pr-4">
+                      <p className="text-slate-500 dark:text-slate-400 text-lg font-medium leading-relaxed line-clamp-2 pr-4">
                         {standard.description || "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
                       </p>
 
@@ -212,29 +212,29 @@ export default function StandardsPage() {
                             setSelectedStandard(standard)
                             setIsDetailsOpen(true)
                           }}
-                          className="h-14 border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold rounded-2xl flex items-center justify-center gap-2"
+                          className="h-14 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold rounded-2xl flex items-center justify-center gap-2"
                         >
                           <Eye className="w-5 h-5 text-slate-400" />
-                          <span>View Details</span>
+                          <span className="text-slate-600 dark:text-slate-300">View Details</span>
                         </Button>
                         <Button
                           onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                          className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+                          className="h-14 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
                         >
-                          <Activity className="w-5 h-5" />
-                          <span>Start Analysis</span>
+                          <Activity className="w-5 h-5 text-white" />
+                          <span className="text-white">Start Analysis</span>
                         </Button>
                       </div>
                     </div>
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-full py-32 text-center bg-slate-50/50 rounded-[44px] border-2 border-dashed border-slate-200">
-                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6">
-                    <Search className="w-10 h-10 text-slate-300" />
+                <div className="col-span-full py-32 text-center bg-slate-50/50 dark:bg-slate-900/20 rounded-[44px] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                  <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6 border border-slate-200 dark:border-slate-700">
+                    <Search className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                   </div>
-                  <h4 className="text-2xl font-black text-slate-900">No frameworks found</h4>
-                  <p className="text-slate-500 mt-2 max-w-sm mx-auto font-medium">Try adjusting your search query or switching tabs to find what you're looking for.</p>
+                  <h4 className="text-2xl font-black text-slate-900 dark:text-white">No frameworks found</h4>
+                  <p className="text-slate-500 dark:text-slate-500 mt-2 max-w-sm mx-auto font-medium">Try adjusting your search query or switching tabs to find what you're looking for.</p>
                 </div>
               )}
             </div>
@@ -350,9 +350,9 @@ export default function StandardsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-5xl max-h-[90vh] bg-white border border-slate-200 shadow-2xl rounded-[40px] overflow-hidden flex flex-col"
+              className="w-full max-w-5xl max-h-[90vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-[40px] overflow-hidden flex flex-col"
             >
-              <div className="p-10 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+              <div className="p-10 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <div className={cn(
                     "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3",
@@ -361,40 +361,40 @@ export default function StandardsPage() {
                     <GraduationCap className="w-10 h-10" />
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black text-slate-900">{selectedStandard.title}</h3>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">{selectedStandard.title}</h3>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{selectedStandard.code}</span>
-                      <div className="w-1 h-1 rounded-full bg-slate-200" />
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedStandard.category}</span>
+                      <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">{selectedStandard.code}</span>
+                      <div className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800" />
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{selectedStandard.category}</span>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsDetailsOpen(false)}
-                  className="p-3 hover:bg-slate-200 rounded-2xl transition-all"
+                  className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl transition-all"
                 >
-                  <X className="w-6 h-6 text-slate-400" />
+                  <X className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar dark:bg-slate-900/40">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-8">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                      <Target className="w-4 h-4 text-blue-600" />
+                    <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                      <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       Criteria Evidence Framework
                     </h4>
                     <div className="space-y-4">
                       {selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
                         selectedStandard.criteria.map((crit: Criterion) => (
-                          <div key={crit.id} className="p-8 rounded-[32px] bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all group">
+                          <div key={crit.id} className="p-8 rounded-[32px] bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all group">
                             <div className="flex items-start gap-6">
-                              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-600 font-black text-xs flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                              <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                                 {crit.title.split(' ')[0]}
                               </div>
                               <div className="space-y-2">
-                                <h5 className="text-lg font-black text-slate-900">{crit.title}</h5>
-                                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                                <h5 className="text-lg font-black text-slate-900 dark:text-white">{crit.title}</h5>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">
                                   {crit.description}
                                 </p>
                               </div>
@@ -429,15 +429,15 @@ export default function StandardsPage() {
                       </Button>
                     </div>
 
-                    <div className="p-8 rounded-[32px] bg-slate-50 border border-slate-200 space-y-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Standard Coverage</p>
+                    <div className="p-8 rounded-[32px] bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 space-y-4">
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none">Standard Coverage</p>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-black text-slate-900 uppercase">Framework Match</span>
-                          <span className="text-xs font-black text-emerald-600">PASSED</span>
+                          <span className="text-xs font-black text-slate-900 dark:text-white uppercase">Framework Match</span>
+                          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">PASSED</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500" style={{ width: '100%' }} />
+                        <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 dark:bg-emerald-600" style={{ width: '100%' }} />
                         </div>
                       </div>
                     </div>

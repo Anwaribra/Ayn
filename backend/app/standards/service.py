@@ -346,3 +346,42 @@ class StandardService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to extract standard from PDF: {str(e)}"
             )
+
+    @staticmethod
+    async def get_coverage(standard_id: str, current_user: dict) -> dict:
+        """
+        Return criteria vs evidence coverage for a standard.
+        Counts criteria that have at least one evidence item linked via EvidenceCriterion.
+        """
+        db = get_db()
+        standard = await db.standard.find_unique(
+            where={"id": standard_id},
+            include={"criteria": True}
+        )
+        if not standard:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Standard not found")
+
+        all_criteria = standard.criteria or []
+        total = len(all_criteria)
+        covered = 0
+
+        for criterion in all_criteria:
+            try:
+                links = await db.evidencecriterion.find_many(
+                    where={"criterionId": criterion.id},
+                    take=1  # Only need to know if at least one exists
+                )
+                if links:
+                    covered += 1
+            except Exception:
+                pass  # Table may not exist yet in dev environments
+
+        coverage_pct = round((covered / total) * 100, 1) if total > 0 else 0.0
+        logger.info(f"Coverage for standard {standard_id}: {covered}/{total} ({coverage_pct}%)")
+
+        return {
+            "standardId": standard_id,
+            "totalCriteria": total,
+            "coveredCriteria": covered,
+            "coveragePct": coverage_pct,
+        }

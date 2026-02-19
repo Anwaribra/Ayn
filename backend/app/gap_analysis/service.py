@@ -47,14 +47,16 @@ class GapAnalysisService:
         )
 
     @staticmethod
-    async def generate_report(request: GapAnalysisRequest, current_user: dict) -> GapAnalysisResponse:
-        """Generate a new AI-powered gap analysis report."""
+    async def queue_report(request: GapAnalysisRequest, current_user: dict) -> dict:
+        """
+        Create a stub GapAnalysis record immediately and return the job ID.
+        The actual AI analysis runs as a background task.
+        """
         db = get_db()
         institution_id = current_user.get("institutionId")
         if not institution_id:
-            logger.warning(f"User {current_user.get('email')} attempted to generate report without institutionId")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Your account is not associated with an institution. Please contact your administrator."
             )
 
@@ -62,61 +64,114 @@ class GapAnalysisService:
         if not standard:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Standard not found")
 
-        criteria = await db.criterion.find_many(where={"standardId": request.standardId})
+        # Create a stub record — the background task will update it
+        record = await db.gapanalysis.create(
+            data={
+                "institutionId": institution_id,
+                "standardId": request.standardId,
+                "overallScore": 0.0,           # Sentinel: 0.0 = queued/processing
+                "summary": "queued",            # Sentinel: "queued" = in progress
+                "gapsJson": "[]",
+                "recommendationsJson": "[]",
+            }
+        )
+        logger.info(f"Queued gap analysis job {record.id} for user {current_user.get('email')}")
+        return {"jobId": record.id, "status": "queued"}
 
-        # FIX P1.3: Use the EvidenceCriterion join table (many-to-many) instead of the
-        # deprecated single criterionId FK. Include evidence from both paths for backward compat.
-        criterion_ids = [c.id for c in criteria]
-        evidence = []
-        if criterion_ids:
-            # New path: evidence linked via EvidenceCriterion join table
-            evidence_criteria = await db.evidencecriterion.find_many(
-                where={"criterionId": {"in": criterion_ids}},
-                include={"evidence": True}
-            )
-            seen_ids = set()
-            for ec in evidence_criteria:
-                if ec.evidence and ec.evidence.id not in seen_ids:
-                    evidence.append(ec.evidence)
-                    seen_ids.add(ec.evidence.id)
+    @staticmethod
+    async def run_report_background(
+        job_id: str,
+        user_id: str,
+        institution_id: str,
+        standard_id: str,
+        current_user: dict,
+    ) -> None:
+        """
+        Background task: run the AI gap analysis and update the stub record.
+        Never raises — all errors are caught, logged, and stored in the record.
+        """
+        from app.core.db import db as prisma_client
+        db = prisma_client
 
-            # Legacy path: evidence still using the old single FK (not yet re-analyzed)
-            legacy_evidence = await db.evidence.find_many(
-                where={"criterionId": {"in": criterion_ids}, "id": {"notIn": list(seen_ids)}}
-            )
-            evidence.extend(legacy_evidence)
-
+        logger.info(f"Starting background gap analysis for job {job_id}")
         try:
+            # Ensure DB is connected (singleton, usually already connected)
+            if not db.is_connected():
+                await db.connect()
+
+            standard = await db.standard.find_unique(where={"id": standard_id})
+            if not standard:
+                logger.error(f"Standard {standard_id} not found for job {job_id}")
+                await db.gapanalysis.update(
+                    where={"id": job_id},
+                    data={"summary": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                )
+                return
+
+            criteria = await db.criterion.find_many(where={"standardId": standard_id})
+            criterion_ids = [c.id for c in criteria]
+            evidence = []
+            if criterion_ids:
+                evidence_criteria = await db.evidencecriterion.find_many(
+                    where={"criterionId": {"in": criterion_ids}},
+                    include={"evidence": True}
+                )
+                seen_ids = set()
+                for ec in evidence_criteria:
+                    if ec.evidence and ec.evidence.id not in seen_ids:
+                        evidence.append(ec.evidence)
+                        seen_ids.add(ec.evidence.id)
+                legacy_evidence = await db.evidence.find_many(
+                    where={"criterionId": {"in": criterion_ids}, "id": {"notIn": list(seen_ids)}}
+                )
+                evidence.extend(legacy_evidence)
+
             result = await ai_generate_gap_analysis(standard, criteria, evidence)
-            record = await db.gapanalysis.create(
+
+            # Update the stub record with real results
+            await db.gapanalysis.update(
+                where={"id": job_id},
                 data={
-                    "institutionId": institution_id,
-                    "standardId": request.standardId,
                     "overallScore": result["overallScore"],
                     "summary": result["summary"],
                     "gapsJson": json.dumps(result["gaps"]),
                     "recommendationsJson": json.dumps(result["recommendations"]),
                 }
             )
-            
-            # Trigger Notification
+
+            # Notify the user so the SSE stream / notification bell picks it up
             try:
                 await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=current_user["id"],
+                    userId=user_id,
                     type="success",
-                    title="Report Generated",
-                    message=f"Gap analysis for '{standard.title}' is ready.",
-                    relatedEntityId=record.id,
+                    title="Gap Analysis Ready",
+                    message=f"Gap analysis for '{standard.title}' is complete. Click to view.",
+                    relatedEntityId=job_id,
                     relatedEntityType="report"
                 ))
-            except Exception as e:
-                logger.error(f"Failed to send notification: {e}")
-                
-            logger.info(f"User {current_user.get('email', 'unknown')} generated gap analysis {record.id}")
-            return GapAnalysisService._build_response(record, standard.title)
+            except Exception as notify_err:
+                logger.error(f"Failed to send completion notification: {notify_err}")
+
+            logger.info(f"Background gap analysis {job_id} completed successfully.")
+
         except Exception as e:
-            logger.error(f"Generation error: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            logger.error(f"Background gap analysis {job_id} failed: {e}", exc_info=True)
+            try:
+                await db.gapanalysis.update(
+                    where={"id": job_id},
+                    data={"summary": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                )
+                await NotificationService.create_notification(NotificationCreateRequest(
+                    userId=user_id,
+                    type="error",
+                    title="Gap Analysis Failed",
+                    message="The gap analysis could not be completed. Please try again.",
+                    relatedEntityId=job_id,
+                    relatedEntityType="report"
+                ))
+            except Exception:
+                pass  # Last resort — never crash the background worker
+
 
     @staticmethod
     async def list_reports(current_user: dict, archived: bool = False) -> List[GapAnalysisListItem]:

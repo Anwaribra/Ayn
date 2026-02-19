@@ -28,6 +28,7 @@ import type { Standard, Criterion } from "@/types"
 import { AmbientBackground } from "@/components/ui/ambient-background"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
+import { CoverageBar } from "@/components/platform/coverage-bar"
 
 export default function StandardsPage() {
   const { user } = useAuth()
@@ -50,15 +51,21 @@ export default function StandardsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all") // all, popular, recent
 
-  const filteredStandards = standards?.filter((s: Standard) => {
-    const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStandards = (() => {
+    const base = standards?.filter((s: Standard) => {
+      const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.code?.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchesSearch && s.isPublic
+    }) ?? []
 
-    if (activeTab === "all") return matchesSearch && s.isPublic
-    if (activeTab === "popular") return matchesSearch && s.isPublic && (s.criteria?.length || 0) > 30
-    if (activeTab === "recent") return matchesSearch && s.isPublic // Simplified for now
-    return matchesSearch
-  })
+    if (activeTab === "popular") return base.filter((s: Standard) => (s.criteria?.length || 0) > 30)
+    if (activeTab === "recent") {
+      return [...base].sort((a, b) =>
+        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+      ).slice(0, 10)
+    }
+    return base
+  })()
 
   const handlePDFUpload = async () => {
     if (!selectedFile) return
@@ -204,6 +211,9 @@ export default function StandardsPage() {
                           {standard.description || "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
                         </p>
 
+                        {/* Coverage Bar */}
+                        <CoverageBar standardId={standard.id} className="pt-2" />
+
                         {/* Bottom Segment */}
                         <div className="grid grid-cols-2 gap-5 pt-8 mt-auto">
                           <Button
@@ -261,26 +271,33 @@ export default function StandardsPage() {
                     <p className="font-medium text-muted-foreground">Upload your framework PDF for AI analysis.</p>
                   </div>
 
-                  <div className="w-full p-8 border-2 border-dashed rounded-[32px] transition-colors group cursor-pointer hover:bg-muted/50 border-border">
+                  <label className="relative w-full p-8 border-2 border-dashed rounded-[32px] transition-colors group cursor-pointer hover:bg-muted/50 border-border flex flex-col items-center">
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
                     {selectedFile ? (
                       <>
                         <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
                         <p className="text-sm font-bold text-foreground truncate max-w-xs mx-auto">{selectedFile.name}</p>
-                        <button onClick={() => setSelectedFile(null)} className="text-[10px] text-destructive font-bold mt-2 uppercase underline underline-offset-4">Change File</button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setSelectedFile(null) }}
+                          className="text-[10px] text-destructive font-bold mt-2 uppercase underline underline-offset-4 relative z-10"
+                        >
+                          Change File
+                        </button>
                       </>
                     ) : (
                       <>
                         <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-4 group-hover:text-primary transition-colors" />
                         <p className="text-sm font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary">Select PDF File</p>
+                        <p className="text-xs text-muted-foreground mt-1">or drag and drop here</p>
                       </>
                     )}
-                  </div>
+                  </label>
 
                   <div className="flex gap-4 w-full pt-4">
                     <Button variant="outline" onClick={() => { setIsPDFModalOpen(false); setSelectedFile(null); }}
@@ -383,15 +400,23 @@ export default function StandardsPage() {
                       </div>
 
                       <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-white/10" hoverEffect>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Standard Coverage</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-xs font-black uppercase text-foreground">Framework Match</span>
-                            <span className="text-xs font-black text-emerald-500">PASSED</span>
+                            <span className="text-xs font-black uppercase text-foreground">Total Criteria</span>
+                            <span className="text-xs font-black text-primary">{selectedStandard.criteria?.length ?? 0}</span>
                           </div>
                           <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted">
-                            <div className="h-full bg-emerald-500" style={{ width: '100%' }} />
+                            <div
+                              className="h-full bg-primary transition-all duration-700"
+                              style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
+                            />
                           </div>
+                          <p className="text-[10px] text-muted-foreground font-medium">
+                            {selectedStandard.criteria && selectedStandard.criteria.length > 0
+                              ? `${selectedStandard.criteria.length} evidence criteria mapped`
+                              : "No criteria mapped yet — run Gap Analysis to populate"}
+                          </p>
                         </div>
                       </GlassPanel>
                     </div>

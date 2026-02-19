@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, UploadFile, File, Request, BackgroundTasks
+from fastapi import APIRouter, status, Depends, UploadFile, File, Request, BackgroundTasks, Query
 from typing import List
 from app.core.middlewares import get_current_user
 from app.core.rate_limit import limiter
@@ -66,9 +66,11 @@ async def get_evidence(
 
 @router.get("", response_model=List[EvidenceResponse])
 async def list_evidence(
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (max 100)")
 ):
     """
-    List evidence files.
+    List evidence files with pagination.
     """
-    return await EvidenceService.list_evidence(current_user)
+    return await EvidenceService.list_evidence(current_user, page=page, limit=limit)

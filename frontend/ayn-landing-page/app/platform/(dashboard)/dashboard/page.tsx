@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -10,14 +11,21 @@ import {
   Activity,
   ArrowUpRight,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  ShieldCheck,
+  TrendingUp
 } from "lucide-react"
-import type { DashboardMetrics } from "@/types"
+import { Cpu, Zap } from "lucide-react"
+import type { DashboardMetrics, Standard } from "@/types"
 import { EmptyState } from "@/components/platform/empty-state"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { CircularGauge } from "@/components/ui/circular-gauge"
+import { StatusTiles } from "@/components/platform/status-tiles"
+import { ActivityChart } from "@/components/platform/activity-graph"
+import { CoverageBar } from "@/components/platform/coverage-bar"
 
 export default function DashboardPage() {
   return (
@@ -27,12 +35,6 @@ export default function DashboardPage() {
   )
 }
 
-import { CircularGauge } from "@/components/ui/circular-gauge"
-import { StatusTiles } from "@/components/platform/status-tiles"
-import { ActivityChart } from "@/components/platform/activity-graph"
-import { Cpu, Zap } from "lucide-react"
-import { useEffect, useState } from "react"
-
 function DashboardContent() {
   const { user } = useAuth()
 
@@ -40,6 +42,12 @@ function DashboardContent() {
     user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
     { refreshInterval: 30000 }
+  )
+
+  const { data: standards } = useSWR<Standard[]>(
+    user ? [`standards-dashboard`, user.id] : null,
+    () => api.getStandards(),
+    { revalidateOnFocus: false }
   )
 
   if (isLoading) {
@@ -64,14 +72,14 @@ function DashboardContent() {
   const alignmentScore = metrics?.alignmentPercentage ?? 0
   const evidenceCount = metrics?.evidenceCount ?? 0
 
-  // ─── No AI latency ping — removed (was wasting tokens on every mount)
-
   const greeting = (() => {
     const h = new Date().getHours()
     if (h < 12) return "Good morning"
     if (h < 18) return "Good afternoon"
     return "Good evening"
   })()
+
+  const publicStandards = standards?.filter((s: Standard) => s.isPublic) ?? []
 
   return (
     <div className="animate-fade-in-up space-y-8 pb-20">
@@ -156,6 +164,56 @@ function DashboardContent() {
           ]}
         />
       </section>
+
+      {/* ─── Standards Progress ─── */}
+      {publicStandards.length > 0 && (
+        <section className="glass-layer-2 p-8 rounded-[40px]">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Standards Progress</h3>
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Criteria coverage by evidence</p>
+              </div>
+            </div>
+            <Link
+              href="/platform/standards"
+              className="flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+            >
+              View All <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-5">
+            {publicStandards.slice(0, 6).map((standard: Standard) => (
+              <div key={standard.id} className="group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate mr-4">
+                    {standard.title}
+                  </span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">
+                    {standard.code ?? standard.category ?? "Standard"}
+                  </span>
+                </div>
+                <CoverageBar standardId={standard.id} compact />
+              </div>
+            ))}
+          </div>
+
+          {publicStandards.length > 6 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <Link
+                href="/platform/standards"
+                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+              >
+                +{publicStandards.length - 6} more standards →
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Activity Graph & Logs */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -417,8 +417,8 @@ class EvidenceService:
         return EvidenceResponse.model_validate(evidence)
 
     @staticmethod
-    async def list_evidence(current_user: dict) -> List[EvidenceResponse]:
-        """List evidence with isolation."""
+    async def list_evidence(current_user: dict, page: int = 1, limit: int = 20) -> List[EvidenceResponse]:
+        """List evidence with isolation and pagination."""
         db = get_db()
         try:
             # Isolation: Admin sees all, User sees their own or their institution's
@@ -430,13 +430,17 @@ class EvidenceService:
                     where = {"OR": [{"uploadedById": current_user["id"]}, {"ownerId": institution_id}]}
                 else:
                     where = {"uploadedById": current_user["id"]}
-            
+
+            skip = (page - 1) * limit
             evidence_list = await db.evidence.find_many(
-                where=where, 
+                where=where,
                 order={"createdAt": "desc"},
-                include={"criteria": True}
+                include={"criteria": True},
+                skip=skip,
+                take=limit
             )
             return [EvidenceResponse.model_validate(ev) for ev in evidence_list]
         except Exception as e:
             logger.error(f"List error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="List failed")
+

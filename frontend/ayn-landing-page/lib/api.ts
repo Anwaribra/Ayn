@@ -192,6 +192,15 @@ class ApiClient {
     return this.request<import("./types").Standard>(`/standards/${id}`)
   }
 
+  async getStandardCoverage(standardId: string) {
+    return this.request<{
+      standardId: string
+      totalCriteria: number
+      coveredCriteria: number
+      coveragePct: number
+    }>(`/standards/${standardId}/coverage`)
+  }
+
   async createStandard(data: {
     title: string;
     description?: string;
@@ -656,7 +665,7 @@ class ApiClient {
 
   // Gap Analysis
   async generateGapAnalysis(standardId: string, assessmentId?: string) {
-    return this.request<import("./types").GapAnalysis>("/gap-analysis/generate", {
+    return this.request<{ jobId: string; status: string }>("/gap-analysis/generate", {
       method: "POST",
       body: JSON.stringify({ standardId, assessmentId }),
     })

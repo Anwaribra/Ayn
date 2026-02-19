@@ -80,10 +80,11 @@ async def import_standard(
 
 @router.post("/import-pdf", response_model=StandardResponse)
 async def import_standard_pdf(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user: dict = Depends(require_admin)
 ):
     """
-    Import a standard from a PDF file (AI-assisted, Public).
+    Import a standard from a PDF file (AI-assisted, Admin only).
     """
     file_bytes = await file.read()
     return await StandardService.import_standard_from_pdf(file_bytes, file.filename)
@@ -124,3 +125,22 @@ async def update_criterion(
     Update a criterion.
     """
     return await StandardService.update_criterion(criterion_id, request, current_user["email"])
+
+
+class CoverageResponse(BaseModel):
+    standardId: str
+    totalCriteria: int
+    coveredCriteria: int
+    coveragePct: float
+
+
+@router.get("/{standard_id}/coverage", response_model=CoverageResponse)
+async def get_standard_coverage(
+    standard_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get criteria vs. evidence coverage for a standard.
+    Returns the number of criteria that have at least one evidence item linked.
+    """
+    return await StandardService.get_coverage(standard_id, current_user)

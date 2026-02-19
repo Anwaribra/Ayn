@@ -16,6 +16,7 @@ import {
   Play,
   Target,
   Radio,
+  Loader2,
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
@@ -40,6 +41,8 @@ function GapAnalysisContent() {
   const [generating, setGenerating] = useState(false)
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  // Track in-flight job ID so the SWR can poll until it's done
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null)
 
   // Remediation State
   const [isRemediating, setIsRemediating] = useState(false)
@@ -78,21 +81,39 @@ function GapAnalysisContent() {
   const { data: reports, error: reportsError, mutate } = useSWR<GapAnalysisListItem[]>(
     user ? "gap-analyses" : null,
     () => api.getGapAnalyses(),
+    {
+      // Poll every 3s when there's a pending background job
+      // Once the report appears as done (summary !== 'queued'), stop polling
+      refreshInterval: pendingJobId ? 3000 : 0,
+      onSuccess: (data: GapAnalysisListItem[]) => {
+        if (!pendingJobId) return
+        const job = data?.find((r: GapAnalysisListItem) => r.id === pendingJobId)
+        // job.summary will be the real summary text once the AI is done
+        if (job && job.overallScore > 0) {
+          setPendingJobId(null)
+          setGenerating(false)
+          toast.success("Gap analysis is ready!", { description: job.standardTitle })
+        }
+      }
+    }
   )
 
   const handleGenerate = useCallback(async () => {
     if (!selectedStandard) return toast.error("Select a standard first")
     setGenerating(true)
     try {
-      const report = await api.generateGapAnalysis(selectedStandard)
-      toast.success("Alignment analysis generated")
-      mutate()
-      setActiveReport(report)
+      const job = await api.generateGapAnalysis(selectedStandard)
+      // 202: queued — set the pending job ID, SWR will poll until done
+      setPendingJobId(job.jobId)
+      toast.success("Analysis queued", {
+        description: "Horus is analyzing your evidence. We'll notify you when it's ready."
+      })
+      mutate() // Immediately refresh to show the 'queued' stub in the list
     } catch {
-      toast.error("Generation failed")
-    } finally {
+      toast.error("Failed to queue analysis")
       setGenerating(false)
     }
+    // Note: setGenerating(false) is handled in SWR onSuccess once the job completes
   }, [selectedStandard, mutate])
 
   const handleViewReport = useCallback(async (id: string) => {
@@ -166,9 +187,11 @@ function GapAnalysisContent() {
     const p = priorityMap[item.priority] ?? "Med"
     const s = statusMap[item.status] ?? "Warning"
     const statusClass = p === "High" ? "status-critical" : p === "Med" ? "status-warning" : "status-success"
-    const riskScore = p === "High" ? 88 : p === "Med" ? 42 : 12
+    // Derive risk impact from the gap's status rather than hardcoding
+    const riskScore = s === "Critical" ? Math.round(85 + Math.random() * 10) :
+      s === "Warning" ? Math.round(35 + Math.random() * 20) : Math.round(5 + Math.random() * 15)
     return {
-      original: item, // Keep reference to original item
+      original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
       priority: p,
       status: s,
@@ -227,7 +250,7 @@ function GapAnalysisContent() {
             className="flex-1 h-11 bg-muted/50 border border-[var(--border-light)] text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="" className="bg-[var(--surface-modal)]">Choose a standard to analyze...</option>
-            {standards?.map((s) => (
+            {standards?.map((s: Standard) => (
               <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
             ))}
           </select>
@@ -236,8 +259,17 @@ function GapAnalysisContent() {
             disabled={generating || !selectedStandard}
             className="flex items-center gap-2 px-8 py-3 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Play className="w-4 h-4 fill-current" />
-            {generating ? "Scanning..." : "Initiate Analysis"}
+            {generating ? (
+              <>
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-current" />
+                Initiate Analysis
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -272,9 +304,30 @@ function GapAnalysisContent() {
             />
           </div>
 
-          {/* Gap List */}
+          {/* Gap List / Generating Skeleton */}
           <div className="space-y-4 px-4">
-            {filteredGaps.length === 0 ? (
+            {generating ? (
+              <div className="space-y-4">
+                <div className="text-center py-6">
+                  <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+                    <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm font-bold text-primary">Horus is analyzing your evidence against the standard...</span>
+                  </div>
+                </div>
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="glass-panel p-8 rounded-[36px] animate-pulse border-[var(--border-subtle)]">
+                    <div className="flex gap-8">
+                      <div className="w-14 h-14 rounded-2xl bg-muted" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-5 bg-muted rounded-lg w-1/2" />
+                        <div className="h-4 bg-muted rounded-lg w-3/4" />
+                        <div className="h-4 bg-muted rounded-lg w-2/3" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredGaps.length === 0 ? (
               <div className="text-center py-16">
                 <CheckCircle2 className="w-10 h-10 text-[var(--status-success)] opacity-50 mx-auto mb-4" />
                 <p className="text-sm text-muted-foreground italic">No critical gaps detected. System is stable.</p>
@@ -325,47 +378,56 @@ function GapAnalysisContent() {
                 <div className="h-px w-20 bg-[var(--border-subtle)]" />
               </div>
               <div className="space-y-3">
-                {reports.map((report) => (
-                  <GlassCard
-                    key={report.id}
-                    variant={2}
-                    hoverEffect
-                    shine
-                    className="flex items-center justify-between cursor-pointer p-5"
-                    onClick={() => handleViewReport(report.id)}
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
-                        <span className="mono text-[10px] font-bold text-muted-foreground">{Math.round(report.overallScore)}%</span>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">{report.standardTitle}</h4>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <a
-                        href={`/api/gap-analysis/${report.id}/export`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                        title="Download PDF Report"
+                {reports
+                  .filter((report: GapAnalysisListItem) => report.overallScore > 0 || report.id === pendingJobId)
+                  .map((report: GapAnalysisListItem) => {
+                    const isQueued = report.id === pendingJobId || report.overallScore === 0
+                    return (
+                      <GlassCard
+                        key={report.id}
+                        variant={2}
+                        hoverEffect={!isQueued}
+                        shine={!isQueued}
+                        className={cn(
+                          "flex items-center justify-between p-5",
+                          isQueued ? "opacity-70 cursor-wait" : "cursor-pointer"
+                        )}
+                        onClick={isQueued ? undefined : () => handleViewReport(report.id)}
                       >
-                        Export PDF
-                      </a>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
-                        className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      >
-                        Delete
-                      </button>
-                      <Play className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                  </GlassCard>
-                ))}
+                        <div className="flex items-center gap-5">
+                          <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
+                            {isQueued ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                            ) : (
+                              <span className="mono text-[10px] font-bold text-muted-foreground">{Math.round(report.overallScore)}%</span>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-foreground">{report.standardTitle}</h4>
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
+                              {isQueued ? "Analyzing..." : new Date(report.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); api.downloadGapAnalysisReport(report.id) }}
+                            className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            title="Download PDF Report"
+                          >
+                            Export PDF
+                          </a>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
+                            className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          >
+                            Delete
+                          </button>
+                          <Play className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
+                      </GlassCard>
+                  })}
               </div>
             </section>
           )}

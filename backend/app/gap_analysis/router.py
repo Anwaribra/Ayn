@@ -1,7 +1,7 @@
 """Gap analysis router - AI-powered gap report generation and management."""
 import io
-from fastapi import APIRouter, status, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, status, Depends, BackgroundTasks
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import List
 import logging
 from app.core.middlewares import get_current_user
@@ -19,15 +19,27 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/generate", response_model=GapAnalysisResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/generate", status_code=status.HTTP_202_ACCEPTED)
 async def generate_gap_analysis_report(
     request: GapAnalysisRequest,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Generate a new AI-powered gap analysis report.
+    Queue a new AI-powered gap analysis report.
+    Returns 202 immediately with a jobId.
+    The analysis runs in the background and notifies the user when done.
     """
-    return await GapAnalysisService.generate_report(request, current_user)
+    job = await GapAnalysisService.queue_report(request, current_user)
+    background_tasks.add_task(
+        GapAnalysisService.run_report_background,
+        job_id=job["jobId"],
+        user_id=current_user["id"],
+        institution_id=current_user.get("institutionId"),
+        standard_id=request.standardId,
+        current_user=current_user,
+    )
+    return JSONResponse(status_code=202, content=job)
 
 
 @router.get("", response_model=List[GapAnalysisListItem])

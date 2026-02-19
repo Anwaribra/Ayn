@@ -1,12 +1,35 @@
 """Database connection and Prisma client setup."""
 from prisma import Prisma
 from app.core.config import settings
+import os
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Global Prisma client instance
-prisma = Prisma()
+
+def _build_database_url() -> str | None:
+    """
+    Return DATABASE_URL with connection pool params injected.
+
+    Supabase's transaction-mode PgBouncer URL defaults Prisma to
+    connection_limit=1, which causes pool timeouts under parallel load
+    (e.g. dashboard firing 7+ concurrent requests).  We append:
+      connection_limit=10   — allows up to 10 concurrent connections
+      pool_timeout=30       — wait up to 30 s before giving up
+
+    Safe to call even when DATABASE_URL already has query params.
+    """
+    url = os.environ.get("DATABASE_URL", "")
+    if not url:
+        return None
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}connection_limit=10&pool_timeout=30"
+
+
+_db_url = _build_database_url()
+
+# Global Prisma client instance — datasource_url overrides schema's DATABASE_URL
+prisma = Prisma(datasource={"url": _db_url} if _db_url else None)
 
 
 async def connect_db() -> None:

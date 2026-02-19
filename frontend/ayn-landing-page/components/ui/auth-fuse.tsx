@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useId } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Shield, Brain, FileCheck, BarChart3, Zap, Users, ArrowLeft, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield, Brain, FileCheck, BarChart3, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,13 @@ import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { log } from "@/lib/logger";
 import { toast } from "sonner";
-import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 // Password Input with visibility toggle
 export interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -70,73 +76,31 @@ const GoogleIcon = (props: React.ComponentProps<"svg">) => (
     </svg>
 );
 
-// Timeline Data
-const horusTimelineData = [
+// Static benefit cards data for right panel
+const benefits = [
     {
-        id: 1,
-        title: "AI Analysis",
-        date: "Core Feature",
-        content: "Intelligent assessment and gap analysis using Horus AI engine.",
-        category: "Intelligence",
-        icon: Brain,
-        relatedIds: [2, 5],
-        status: "completed" as const,
-        energy: 100,
-    },
-    {
-        id: 2,
-        title: "Compliance",
-        date: "Standards",
-        content: "Full compliance with ISO 21001 & NAQAAE education standards.",
-        category: "Standards",
         icon: FileCheck,
-        relatedIds: [1, 3],
-        status: "completed" as const,
-        energy: 95,
+        title: "115+ Real Standards",
+        description: "ISO 21001, NCAAA, NAQAAE, ABET and more — fully mapped and ready to use.",
+        color: "text-emerald-600",
+        bg: "bg-emerald-500/10",
+        border: "border-emerald-500/20",
     },
     {
-        id: 3,
-        title: "Evidence",
-        date: "Management",
-        content: "Centralized document repository with smart evidence mapping.",
-        category: "Operations",
-        icon: Shield,
-        relatedIds: [2, 4],
-        status: "completed" as const,
-        energy: 90,
-    },
-    {
-        id: 4,
-        title: "Analytics",
-        date: "Reporting",
-        content: "Track progress and performance insights in real-time.",
-        category: "Output",
         icon: BarChart3,
-        relatedIds: [3, 5],
-        status: "in-progress" as const,
-        energy: 75,
+        title: "AI-Powered Gap Analysis",
+        description: "Instant compliance insights that identify exactly where you stand — and what to fix first.",
+        color: "text-blue-600",
+        bg: "bg-blue-500/10",
+        border: "border-blue-500/20",
     },
     {
-        id: 5,
-        title: "Flows",
-        date: "Automation",
-        content: "Streamlined review processes and automated notification systems.",
-        category: "Efficiency",
-        icon: Zap,
-        relatedIds: [1, 4, 6],
-        status: "in-progress" as const,
-        energy: 60,
-    },
-    {
-        id: 6,
-        title: "Team",
-        date: "Collaboration",
-        content: "Role-based access control and seamless department collaboration.",
-        category: "Users",
-        icon: Users,
-        relatedIds: [5],
-        status: "pending" as const,
-        energy: 40,
+        icon: Brain,
+        title: "Horus Brain Mode",
+        description: "One conversation triggers evidence mapping, report generation, and compliance scoring.",
+        color: "text-primary",
+        bg: "bg-primary/10",
+        border: "border-primary/20",
     },
 ];
 
@@ -189,23 +153,27 @@ function SignInForm(props: {
                 </div>
             )}
 
+            {/* Google OAuth — First for lowest friction */}
+            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Continue with Google
+            </Button>
+
+            <div className="relative text-center text-xs">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                </div>
+                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or sign in with email</span>
+            </div>
+
+            {/* Email / Password fields */}
             <div className="grid gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
                     <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
                 </div>
                 <div className="grid gap-2">
-                    <div className="flex items-center justify-between">
-                        <Label className="text-xs text-muted-foreground">Password</Label>
-                        <button
-                            type="button"
-                            className="text-[10px] text-muted-foreground hover:text-foreground"
-                            onClick={() => toast.info("Password reset coming soon")}
-                            aria-label="Forgot password (coming soon)"
-                        >
-                            Forgot password?
-                        </button>
-                    </div>
+                    <Label className="text-xs text-muted-foreground">Password</Label>
                     <PasswordInput name="password" required placeholder="Password" aria-invalid={!!props.err} />
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
@@ -224,18 +192,6 @@ function SignInForm(props: {
                     Create account
                 </button>
             </div>
-
-            <div className="relative text-center text-xs">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                </div>
-                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or continue with</span>
-            </div>
-
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continue with Google
-            </Button>
         </motion.form>
     );
 }
@@ -249,16 +205,16 @@ function SignUpForm(props: {
 }) {
     const nameId = useId();
     const emailId = useId();
-    const roleId = useId();
+    const [selectedRole, setSelectedRole] = useState<string>("");
+
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const email = data.get("email") as string;
         const password = data.get("password") as string;
-        const role = data.get("role") as string;
         if (name && email && password) {
-            props.handleEmail(name, email, password, role || undefined);
+            props.handleEmail(name, email, password, selectedRole || undefined);
         }
     };
 
@@ -292,6 +248,19 @@ function SignUpForm(props: {
                 </div>
             )}
 
+            {/* Google OAuth — First */}
+            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Continue with Google
+            </Button>
+
+            <div className="relative text-center text-xs">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                </div>
+                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or create with email</span>
+            </div>
+
             <div className="grid gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor={nameId} className="text-xs text-muted-foreground">Full Name</Label>
@@ -306,19 +275,19 @@ function SignUpForm(props: {
                     <PasswordInput name="password" required placeholder="Password" minLength={8} aria-invalid={!!props.err} />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor={roleId} className="text-xs text-muted-foreground">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
-                    <select
-                        id={roleId}
-                        name="role"
-                        className="h-11 rounded-lg border border-border bg-card text-foreground px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                    >
-                        <option value="">Select a role...</option>
-                        <option value="STUDENT">Student</option>
-                        <option value="UNIVERSITY">University</option>
-                        <option value="INSTITUTION">Institution</option>
-                        <option value="TEACHER">Teacher</option>
-                        <option value="OTHER">Other</option>
-                    </select>
+                    <Label className="text-xs text-muted-foreground">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                        <SelectTrigger className="h-11 rounded-lg border-border bg-card text-foreground focus:border-primary focus:ring-1 focus:ring-primary">
+                            <SelectValue placeholder="Select a role..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="STUDENT">Student</SelectItem>
+                            <SelectItem value="UNIVERSITY">University</SelectItem>
+                            <SelectItem value="INSTITUTION">Institution</SelectItem>
+                            <SelectItem value="TEACHER">Teacher</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (
@@ -336,18 +305,6 @@ function SignUpForm(props: {
                     Sign in
                 </button>
             </div>
-
-            <div className="relative text-center text-xs">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                </div>
-                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or continue with</span>
-            </div>
-
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continue with Google
-            </Button>
         </motion.form>
     );
 }
@@ -359,7 +316,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     // Listen for Supabase auth state changes (handles OAuth redirects)
     React.useEffect(() => {
-        let hasProcessed = false; // Prevent multiple syncs
+        let hasProcessed = false;
 
         log('[Auth] Setting up auth state listener...');
 
@@ -367,7 +324,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             log('[Auth] Auth state changed:', event, session?.user?.email);
 
             if (event === 'SIGNED_IN' && session?.access_token && !hasProcessed) {
-                hasProcessed = true; // Mark as processed
+                hasProcessed = true;
                 log('[Auth] User signed in via OAuth, syncing with backend...');
                 setIsLoading(true);
                 setError(null);
@@ -376,7 +333,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     await api.syncWithSupabase(session.access_token);
                     log('[Auth] Sync successful, clearing Supabase session...');
                     await supabase.auth.signOut();
-                    // Check for redirect path
                     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                     sessionStorage.removeItem("redirectAfterLogin");
                     log('[Auth] Redirecting to:', redirectPath || "/platform/dashboard");
@@ -385,7 +341,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     console.error('[Auth] Sync failed:', err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
                     setIsLoading(false);
-                    hasProcessed = false; // Allow retry on error
+                    hasProcessed = false;
                 }
             }
         });
@@ -416,7 +372,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             }
 
             log('[Auth] Redirecting to Google...');
-            // Supabase will handle the redirect automatically
         } catch (err) {
             console.error('[Auth] Google Sign-In failed:', err);
             setError(err instanceof Error ? err.message : "Google sign-in failed");
@@ -428,16 +383,12 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setError(null);
         setIsLoading(true);
         try {
-            // Use AuthContext login to update user state
             const response = await api.login(email, password);
             log('[Auth] Email login successful:', response.user.email);
-            // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
-            // Check for redirect path
             const redirectPath = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
-            // Use window.location to force page reload and context update
             window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed - Connection Error");
@@ -450,16 +401,12 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setError(null);
         setIsLoading(true);
         try {
-            // Use AuthContext register to update user state
             const response = await api.register({ name, email, password, role });
             log('[Auth] Email signup successful:', response.user.email);
-            // Manually update localStorage since we're not using context here
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
-            // Check for redirect path
             const redirectPath = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
-            // Use window.location to force page reload and context update
             window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Signup failed - Connection Error");
@@ -470,6 +417,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     return (
         <div className="fixed inset-0 z-50 flex bg-background">
+            {/* Left — Form */}
             <div className="flex w-full items-center justify-center p-6 md:w-1/2 md:p-[var(--spacing-content)] overflow-y-auto">
                 <div className="w-full max-w-[400px]">
                     {isSignIn ? (
@@ -492,17 +440,48 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 </div>
             </div>
 
-            <div className="relative hidden w-1/2 bg-muted/30 md:flex flex-col justify-center p-12 lg:p-16 border-l border-border overflow-hidden">
-                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_center,hsla(var(--primary)/0.05)_0%,transparent_70%)]" />
-                <div className="relative z-10 w-full h-full flex flex-col">
-                    <div className="mb-8 text-center pt-8">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-                            <Sparkles className="w-3.5 h-3.5 text-primary" />
-                            <p className="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Horus Quality Engine</p>
+            {/* Right — Static Benefit Cards (Liquid Glass) */}
+            <div className="relative hidden w-1/2 md:flex flex-col justify-center p-12 lg:p-16 border-l border-border overflow-hidden bg-muted/20">
+                {/* Subtle background glow */}
+                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)] pointer-events-none" />
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+
+                <div className="relative z-10">
+                    {/* Header */}
+                    <div className="mb-10">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
+                            <Shield className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Ayn Platform</span>
                         </div>
+                        <h2 className="text-2xl font-bold text-foreground mb-2">
+                            Quality compliance,<br />
+                            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">powered by AI.</span>
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Join institutions already using Ayn to streamline their accreditation journey.
+                        </p>
                     </div>
-                    <div className="flex-1 -mx-12">
-                        <RadialOrbitalTimeline timelineData={horusTimelineData} />
+
+                    {/* 3 Static Benefit Cards — Liquid Glass */}
+                    <div className="space-y-4">
+                        {benefits.map((benefit, i) => (
+                            <motion.div
+                                key={benefit.title}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.4, delay: i * 0.1 }}
+                                className="group flex items-start gap-4 p-5 rounded-2xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg hover:shadow-xl hover:scale-[1.01] hover:border-white/60 transition-all duration-300"
+                            >
+                                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border", benefit.bg, benefit.border)}>
+                                    <benefit.icon className={cn("w-5 h-5", benefit.color)} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-foreground mb-1">{benefit.title}</h3>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">{benefit.description}</p>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
             </div>

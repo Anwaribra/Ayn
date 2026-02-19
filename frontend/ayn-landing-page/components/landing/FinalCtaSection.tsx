@@ -39,10 +39,10 @@ export function FinalCtaSection() {
         </motion.p>
         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
           <ShinyButton
-            href="/login"
+            href="/signup"
             className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-medium shadow-xl shadow-primary/20"
           >
-            Talk to Horus AI
+            Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
           </ShinyButton>
           <Link href="#features">

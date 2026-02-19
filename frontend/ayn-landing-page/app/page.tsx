@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { api } from "@/lib/api"
 import { log } from "@/lib/logger"
-import { CursorGlow, SectionDivider } from "@/components/landing/landing-utils"
+import { CursorGlow } from "@/components/landing/landing-utils"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { Hero } from "@/components/landing/Hero"
 import { HorusIntelligenceSection } from "@/components/landing/HorusIntelligenceSection"
@@ -49,13 +49,9 @@ export default function Home() {
       <CursorGlow />
       <LandingNavbar />
       <Hero />
-      <SectionDivider />
       <HorusIntelligenceSection />
-      <SectionDivider />
       <FeatureShowcase />
-      <SectionDivider />
       <AboutSection />
-      <SectionDivider />
       <FinalCtaSection />
     </div>
   )

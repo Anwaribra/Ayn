@@ -307,7 +307,7 @@ export function FeatureShowcase() {
   const [activeFeature, setActiveFeature] = useState(features[0])
 
   return (
-    <section id="features" className="py-[var(--spacing-section)] px-[var(--spacing-content)]">
+    <section id="features" className="py-[var(--spacing-section)] px-[var(--spacing-content)] bg-muted/10">
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <motion.div
@@ -346,10 +346,10 @@ export function FeatureShowcase() {
                   transition={{ delay: index * 0.1 }}
                   onClick={() => setActiveFeature(feature)}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl border transition-all duration-300",
+                    "w-full text-left p-4 rounded-xl border transition-all duration-300 group",
                     isActive
-                      ? "border-[var(--brand)]/30 bg-[var(--brand)]/5 shadow-sm glass-card"
-                      : "border-border/50 hover:border-border hover:bg-accent/50 hover:shadow-sm"
+                      ? "border-white/40 bg-white/60 backdrop-blur-[16px] shadow-lg scale-[1.01]"
+                      : "border-border/50 hover:border-white/40 hover:bg-white/40 hover:backdrop-blur-[8px] hover:shadow-md hover:scale-[1.005]"
                   )}
                 >
                   <div className="flex items-start gap-4">
@@ -417,7 +417,7 @@ export function FeatureShowcase() {
                       activeFeature.color
                     )}
                   />
-                  <div className="relative glass-card rounded-xl p-1 border border-[var(--glass-border)]">
+                  <div className="relative glass-card rounded-xl p-1 border border-white/40 bg-white/60 backdrop-blur-[16px] shadow-lg">
                     {activeFeature.preview}
                   </div>
                 </div>
@@ -444,7 +444,7 @@ export function FeatureShowcase() {
                 </div>
 
                 {/* CTA */}
-                <Link href="/login">
+                <Link href="/signup">
                   <Button className="w-full gap-2">
                     Try {activeFeature.title}
                     <ArrowRight className="w-4 h-4" />

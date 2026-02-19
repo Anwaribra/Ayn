@@ -60,9 +60,7 @@ export default function StandardsPage() {
 
     if (activeTab === "popular") return base.filter((s: Standard) => (s.criteria?.length || 0) > 30)
     if (activeTab === "recent") {
-      return [...base].sort((a, b) =>
-        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-      ).slice(0, 10)
+      return base.slice(0, 10)
     }
     return base
   })()

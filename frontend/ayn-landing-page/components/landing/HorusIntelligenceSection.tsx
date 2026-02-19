@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { motion } from "framer-motion"
-import { Brain, FileText, BarChart3, Shield, Sparkles } from "lucide-react"
+import { BrainCircuit, FolderLock, GitCompare, ShieldCheck, Sparkles } from "lucide-react"
 import { AnimatedBeam } from "@/components/ui/animated-beam"
 import { cn } from "@/lib/utils"
 
@@ -46,7 +46,7 @@ const NodeCard = ({
           {/* Center card — Liquid Glass */}
           <div className="relative rounded-3xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-12">
             <div className="relative w-28 h-28 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group">
-              <Brain className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
+              <BrainCircuit className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
               <div className="absolute inset-0 rounded-2xl border border-primary/30 animate-ping opacity-20" />
             </div>
             <div className="relative z-10 text-center">
@@ -111,7 +111,7 @@ export function HorusIntelligenceSection() {
             transition={{ delay: 0.1 }}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-4"
           >
-            <Brain className="w-3.5 h-3.5" />
+            <BrainCircuit className="w-3.5 h-3.5" />
             Central Intelligence
           </motion.div>
           <motion.h2
@@ -194,7 +194,7 @@ export function HorusIntelligenceSection() {
             <div className="col-start-1 row-start-1">
               <NodeCard
                 nodeRef={leftTop}
-                icon={FileText}
+                icon={FolderLock}
                 title="Evidence"
                 description="Documents, policies, and records"
                 position="left"
@@ -203,7 +203,7 @@ export function HorusIntelligenceSection() {
             <div className="col-start-1 row-start-2">
               <NodeCard
                 nodeRef={leftBottom}
-                icon={Shield}
+                icon={ShieldCheck}
                 title="Standards"
                 description="Compliance frameworks and criteria"
                 position="left"
@@ -214,7 +214,7 @@ export function HorusIntelligenceSection() {
             <div className="col-start-2 col-span-2 row-start-1 row-span-2 flex items-center justify-center">
               <NodeCard
                 nodeRef={centerRef}
-                icon={Brain}
+                icon={BrainCircuit}
                 title="Horus AI"
                 description=""
                 position="center"
@@ -224,7 +224,7 @@ export function HorusIntelligenceSection() {
             <div className="col-start-4 row-start-1">
               <NodeCard
                 nodeRef={rightTop}
-                icon={BarChart3}
+                icon={GitCompare}
                 title="Gap Analysis"
                 description="Identify compliance gaps and risks"
                 position="right"
@@ -254,7 +254,7 @@ export function HorusIntelligenceSection() {
             <div className="relative rounded-2xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Brain className="w-8 h-8 text-primary" />
+                  <BrainCircuit className="w-8 h-8 text-primary" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">
@@ -268,9 +268,9 @@ export function HorusIntelligenceSection() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { icon: FileText, title: "Evidence", desc: "Documents, policies, and records" },
-              { icon: Shield, title: "Standards", desc: "Compliance frameworks and criteria" },
-              { icon: BarChart3, title: "Gap Analysis", desc: "Identify compliance gaps and risks" },
+              { icon: FolderLock, title: "Evidence", desc: "Documents, policies, and records" },
+              { icon: ShieldCheck, title: "Standards", desc: "Compliance frameworks and criteria" },
+              { icon: GitCompare, title: "Gap Analysis", desc: "Identify compliance gaps and risks" },
               { icon: Sparkles, title: "Insights", desc: "Actionable recommendations and reports" },
             ].map((item, i) => (
               <motion.div

@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Bot,
-  FileText,
-  BarChart3,
-  Shield,
-  Zap,
+  BrainCircuit,
+  FolderLock,
+  GitCompare,
+  LibraryBig,
+  Layers,
   CheckCircle2,
   ArrowRight
 } from "lucide-react"
@@ -28,7 +28,7 @@ interface Feature {
 const features: Feature[] = [
   {
     id: "ai",
-    icon: Bot,
+    icon: BrainCircuit,
     title: "Horus AI",
     description: "Your central intelligence for education quality. Horus AI understands your entire institution—evidence, compliance, gaps, and progress—providing insights across every module.",
     benefits: [
@@ -45,7 +45,7 @@ const features: Feature[] = [
           <div className="flex items-center gap-2">
             <div className="relative">
               <div className="w-8 h-8 rounded-full bg-[var(--brand)]/10 flex items-center justify-center border border-[var(--brand)]/20">
-                <Bot className="w-4 h-4 text-[var(--brand)]" />
+                <BrainCircuit className="w-4 h-4 text-[var(--brand)]" />
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-card rounded-full" />
             </div>
@@ -72,7 +72,7 @@ const features: Feature[] = [
           {/* AI Message */}
           <div className="flex gap-3 max-w-[90%]">
             <div className="w-6 h-6 rounded-full bg-[var(--brand)]/10 flex items-center justify-center border border-[var(--brand)]/20 text-[var(--brand)] shrink-0 mt-1">
-              <Bot className="w-3 h-3" />
+              <BrainCircuit className="w-3 h-3" />
             </div>
             <div className="space-y-2">
               <div className="bg-card border border-border/50 px-4 py-3 rounded-2xl rounded-tl-none text-xs text-foreground shadow-sm">
@@ -86,7 +86,7 @@ const features: Feature[] = [
               {/* Simulated file attachment suggestion */}
               <div className="flex gap-2">
                 <div className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border/50 text-[10px] text-muted-foreground flex items-center gap-1.5 hover:bg-muted transition-colors cursor-pointer">
-                  <Zap className="w-3 h-3 text-amber-500" />
+                  <CheckCircle2 className="w-3 h-3 text-amber-500" />
                   Auto-generate Matrix
                 </div>
               </div>
@@ -108,7 +108,7 @@ const features: Feature[] = [
   },
   {
     id: "evidence",
-    icon: FileText,
+    icon: FolderLock,
     title: "Evidence Management",
     description: "Upload documents and let Horus AI organize them. Ask questions like 'What evidence do I need for communication policies?' and get instant guidance.",
     benefits: [
@@ -123,7 +123,7 @@ const features: Feature[] = [
         {/* Toolbar */}
         <div className="p-3 border-b border-border/50 flex justify-between items-center bg-muted/20">
           <div className="text-xs font-bold text-foreground flex items-center gap-2">
-            <div className="p-1 bg-emerald-500/10 rounded-md text-emerald-500"><FileText className="w-3.5 h-3.5" /></div>
+            <div className="p-1 bg-emerald-500/10 rounded-md text-emerald-500"><FolderLock className="w-3.5 h-3.5" /></div>
             Evidence Vault
           </div>
           <div className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-md">
@@ -169,7 +169,7 @@ const features: Feature[] = [
   },
   {
     id: "gap",
-    icon: BarChart3,
+    icon: GitCompare,
     title: "Gap Analysis",
     description: "Ask Horus AI 'Where are my compliance gaps?' and get detailed analysis with prioritized recommendations for every standard.",
     benefits: [
@@ -198,7 +198,7 @@ const features: Feature[] = [
           {/* Metric Cards */}
           <div className="bg-card border border-border/50 p-3 rounded-xl flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start">
-              <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500"><Zap className="w-3.5 h-3.5" /></div>
+              <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500"><GitCompare className="w-3.5 h-3.5" /></div>
               <span className="text-[10px] font-bold text-red-500 uppercase">Critical</span>
             </div>
             <div>
@@ -209,7 +209,7 @@ const features: Feature[] = [
 
           <div className="bg-card border border-border/50 p-3 rounded-xl flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-start">
-              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500"><Shield className="w-3.5 h-3.5" /></div>
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500"><CheckCircle2 className="w-3.5 h-3.5" /></div>
               <span className="text-[10px] font-bold text-amber-500 uppercase">Warning</span>
             </div>
             <div>
@@ -241,7 +241,7 @@ const features: Feature[] = [
   },
   {
     id: "standards",
-    icon: Shield,
+    icon: LibraryBig,
     title: "Standards Hub",
     description: "Ask Horus AI about any quality standard or accreditation requirement. Get guidance and implementation steps in plain language — no technical jargon.",
     benefits: [
@@ -317,7 +317,7 @@ export function FeatureShowcase() {
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--brand)]/10 border border-[var(--brand)]/20 text-[var(--brand)] text-xs font-medium mb-4">
-            <Zap className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5" />
             Platform Features
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-3">

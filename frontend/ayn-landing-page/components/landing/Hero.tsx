@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Brain, ChevronDown, FileCheck, Lock, Shield, Sparkles, Play, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ShinyButton } from "./landing-utils"
-import { useRotatingTypewriter } from "@/hooks/use-typewriter"
+
 import { useState, useEffect, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 
@@ -224,16 +224,7 @@ export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
   const demoTriggerRef = useRef<HTMLDivElement>(null)
 
-  const { displayedText } = useRotatingTypewriter({
-    texts: [
-      "Ask me about quality compliance",
-      "Upload evidence, I'll organize it",
-      "Generate reports on demand",
-    ],
-    typingSpeed: 60,
-    deletingSpeed: 40,
-    pauseAtEnd: 2000,
-  })
+
 
   return (
     <>
@@ -282,18 +273,7 @@ export function Hero() {
                 AI-powered compliance platform that maps your evidence to ISO, NCAAA, and global frameworks — instantly.
               </motion.p>
 
-              {/* Typewriter hint */}
-              <motion.div
-                className="h-7 mb-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.25 }}
-              >
-                <span className="text-sm text-[var(--brand)] font-medium">
-                  {displayedText}
-                  <span className="inline-block w-[2px] h-4 bg-[var(--brand)] ml-0.5 animate-pulse" />
-                </span>
-              </motion.div>
+
 
               {/* CTAs */}
               <motion.div

@@ -427,6 +427,7 @@ function GapAnalysisContent() {
                           <Play className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                       </GlassCard>
+                    )
                   })}
               </div>
             </section>

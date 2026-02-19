@@ -76,15 +76,6 @@ const GoogleIcon = (props: React.ComponentProps<"svg">) => (
     </svg>
 );
 
-// Microsoft Icon
-const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" {...props}>
-        <rect x="1" y="1" width="9" height="9" fill="#F25022" />
-        <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
-        <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
-        <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
-    </svg>
-);
 
 // Static benefit cards data for right panel
 const benefits = [
@@ -117,7 +108,6 @@ const benefits = [
 // Sign In Form
 function SignInForm(props: {
     handleGoogle: () => void;
-    handleMicrosoft: () => void;
     handleEmail: (email: string, password: string) => void;
     loading: boolean;
     err: string | null;
@@ -164,16 +154,10 @@ function SignInForm(props: {
                 </div>
             )}
 
-            {/* Google OAuth */}
+            {/* Google OAuth — First for lowest friction */}
             <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
-            </Button>
-
-            {/* Microsoft OAuth */}
-            <Button variant="outline" type="button" onClick={props.handleMicrosoft} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
-                <MicrosoftIcon className="mr-2 h-4 w-4" />
-                Continue with Microsoft
             </Button>
 
             <div className="relative text-center text-xs">
@@ -215,7 +199,6 @@ function SignInForm(props: {
 
 function SignUpForm(props: {
     handleGoogle: () => void;
-    handleMicrosoft: () => void;
     handleEmail: (name: string, email: string, password: string, role?: string) => void;
     loading: boolean;
     err: string | null;
@@ -266,16 +249,10 @@ function SignUpForm(props: {
                 </div>
             )}
 
-            {/* Google OAuth */}
+            {/* Google OAuth — First */}
             <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
-            </Button>
-
-            {/* Microsoft OAuth */}
-            <Button variant="outline" type="button" onClick={props.handleMicrosoft} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
-                <MicrosoftIcon className="mr-2 h-4 w-4" />
-                Continue with Microsoft
             </Button>
 
             <div className="relative text-center text-xs">
@@ -403,33 +380,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         }
     };
 
-    const handleMicrosoftSignIn = async () => {
-        setError(null);
-        setIsLoading(true);
-        log('[Auth] Starting Supabase Microsoft (Azure) OAuth...');
-
-        try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'azure',
-                options: {
-                    redirectTo: `${window.location.origin}/login`,
-                    scopes: 'email',
-                }
-            });
-
-            if (error) {
-                console.error('[Auth] Supabase Microsoft OAuth error:', error);
-                throw error;
-            }
-
-            log('[Auth] Redirecting to Microsoft...');
-        } catch (err) {
-            console.error('[Auth] Microsoft Sign-In failed:', err);
-            setError(err instanceof Error ? err.message : "Microsoft sign-in failed");
-            setIsLoading(false);
-        }
-    };
-
     const onEmailSignIn = async (email: string, password: string) => {
         setError(null);
         setIsLoading(true);
@@ -474,7 +424,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     {isSignIn ? (
                         <SignInForm
                             handleGoogle={handleGoogleSignIn}
-                            handleMicrosoft={handleMicrosoftSignIn}
                             handleEmail={onEmailSignIn}
                             loading={isLoading}
                             err={error}
@@ -483,7 +432,6 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     ) : (
                         <SignUpForm
                             handleGoogle={handleGoogleSignIn}
-                            handleMicrosoft={handleMicrosoftSignIn}
                             handleEmail={onEmailSignUp}
                             loading={isLoading}
                             err={error}

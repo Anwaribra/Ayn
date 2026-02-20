@@ -177,7 +177,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Open sidebar when it's overlay (below lg) */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
+              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
               aria-label="Open sidebar"
             >
               <PanelLeft className="w-5 h-5" />
@@ -186,12 +186,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Navigation / Command Palette */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-[var(--glass-border)] text-muted-foreground text-sm transition-all group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group"
             >
               <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
-              <kbd className="hidden md:flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-layer-2 border border-[var(--glass-border)] text-[10px] font-mono text-muted-foreground">
-                <span className="text-xs">⌘</span>K
+              <kbd className="hidden md:flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-muted border border-border text-xs font-mono text-muted-foreground">
+                <span className="text-sm">⌘</span>K
               </kbd>
             </button>
           </div>
@@ -201,7 +201,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <div className="relative notification-dropdown-container">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                 aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                 aria-haspopup="true"
                 aria-expanded={showNotifications}
@@ -224,7 +224,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                   <div className="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {!notifications || notifications.length === 0 ? (
-                      <p className="text-center py-8 text-muted-foreground italic text-sm">Quiet for now.</p>
+                      <div className="flex flex-col items-center justify-center py-10 opacity-60">
+                        <Bell className="w-8 h-8 text-muted-foreground mb-3" />
+                        <p className="text-center text-muted-foreground italic text-sm">Quiet for now.</p>
+                      </div>
                     ) : (
                       notifications.slice(0, 8).map((n: Notification) => (
                         <div
@@ -273,7 +276,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
               className={cn(
                 "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
-                "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
               title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}

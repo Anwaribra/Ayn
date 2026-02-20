@@ -228,7 +228,13 @@ function DashboardContent() {
             </div>
             <div className="space-y-3">
               {(metrics?.recentEvidence?.length ?? 0) === 0 ? (
-                <p className="text-center py-8 text-muted-foreground text-sm">No evidence uploaded yet.</p>
+                <div className="text-center py-10 border-2 border-dashed border-border rounded-3xl bg-muted/20">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground text-sm font-medium">No recent evidence</p>
+                  <Link href="/platform/evidence" className="inline-block mt-4 px-5 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-bold rounded-xl uppercase tracking-widest">
+                    Upload to Vault
+                  </Link>
+                </div>
               ) : (
                 metrics?.recentEvidence?.map((ev: any) => (
                   <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl glass-layer-3 hover:bg-muted/50 transition-all group cursor-pointer">

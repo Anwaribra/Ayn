@@ -212,26 +212,18 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           ))}
         </div>
 
-        {/* Archive – last navigation item inside nav */}
-        <div className="space-y-2">
-          {!isCollapsed && (
-            <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
-              Storage
-            </p>
-          )}
-          <SidebarItem
-            item={{
-              id: "archive",
-              icon: ArchiveIcon,
-              label: "Archive",
-              href: "/platform/archive",
-            }}
-          />
-        </div>
       </nav>
 
       {/* Bottom Section */}
       <div className="p-3 space-y-3">
+        <SidebarItem
+          item={{
+            id: "archive",
+            icon: ArchiveIcon,
+            label: "Archive",
+            href: "/platform/archive",
+          }}
+        />
         <SidebarItem
           item={{
             id: "settings",

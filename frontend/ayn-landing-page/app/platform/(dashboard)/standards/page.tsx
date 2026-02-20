@@ -42,6 +42,18 @@ export default function StandardsPage() {
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type === "application/pdf") {
+      setSelectedFile(file)
+    } else if (file) {
+      toast.error("Please upload a PDF file.")
+    }
+  }
 
   // Details Modal State
   const [selectedStandard, setSelectedStandard] = useState<Standard | null>(null)
@@ -100,7 +112,7 @@ export default function StandardsPage() {
             {/* 1. HERO SECTION (Translucent Glass) */}
             <section className="w-full py-16 px-6 md:px-12 lg:px-20 relative z-10 transition-all duration-300">
               <div className="max-w-7xl mx-auto">
-                <div className="glass-card p-10 md:p-16 rounded-[48px] border-white/20 dark:border-white/10 relative overflow-hidden">
+                <div className="glass-card p-10 md:p-16 rounded-[48px] border-border relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse-subtle" />
 
                   <div className="space-y-10">
@@ -174,7 +186,7 @@ export default function StandardsPage() {
                       variant={2}
                       hoverEffect
                       shine
-                      className="group border-white/20 dark:border-white/10 rounded-[48px] min-h-[320px] p-12"
+                      className="group border-border rounded-[48px] min-h-[320px] p-12"
                     >
                       <div className="flex-1 flex flex-col space-y-8 relative z-10">
                         {/* Top Segment */}
@@ -253,10 +265,18 @@ export default function StandardsPage() {
         {/* PDF Import Modal */}
         <AnimatePresence>
           {isPDFModalOpen && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+            <div
+              className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md transition-colors"
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false) }}
+              onDrop={handleDrop}
+            >
               <GlassCard
                 variant={3}
-                className="w-full max-w-lg p-10 border-white/20 dark:border-white/10 rounded-[40px] relative overflow-hidden shadow-2xl"
+                className={cn(
+                  "w-full max-w-lg p-10 border-border rounded-[40px] relative overflow-hidden shadow-2xl transition-all duration-300",
+                  isDragOver && "scale-[1.02] border-primary/50 shadow-primary/20 ring-4 ring-primary/20"
+                )}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
 
@@ -269,7 +289,12 @@ export default function StandardsPage() {
                     <p className="font-medium text-muted-foreground">Upload your framework PDF for AI analysis.</p>
                   </div>
 
-                  <label className="relative w-full p-8 border-2 border-dashed rounded-[32px] transition-colors group cursor-pointer hover:bg-muted/50 border-border flex flex-col items-center">
+                  <label
+                    className={cn(
+                      "relative w-full p-8 border-2 border-dashed rounded-[32px] transition-all duration-300 group cursor-pointer flex flex-col items-center",
+                      isDragOver ? "bg-primary/5 border-primary/50" : "border-border hover:bg-muted/50"
+                    )}
+                  >
                     <input
                       type="file"
                       accept=".pdf"
@@ -326,7 +351,7 @@ export default function StandardsPage() {
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
               <GlassCard
                 variant={4}
-                className="w-full max-w-5xl max-h-[90vh] shadow-2xl rounded-[40px] overflow-hidden flex flex-col border-white/20 dark:border-white/10"
+                className="w-full max-w-5xl max-h-[90vh] shadow-2xl rounded-[40px] overflow-hidden flex flex-col border-border"
               >
                 <div className="p-10 border-b flex items-center justify-between border-border bg-background/30 backdrop-blur-md">
                   <div className="flex items-center gap-6">
@@ -360,7 +385,7 @@ export default function StandardsPage() {
                       <div className="space-y-4">
                         {selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
                           selectedStandard.criteria.map((crit: Criterion) => (
-                            <GlassPanel key={crit.id} className="p-8 rounded-[32px] border-white/10 hover:border-primary/30 transition-all group" hoverEffect>
+                            <GlassPanel key={crit.id} className="p-8 rounded-[32px] border-border hover:border-primary/30 transition-all group" hoverEffect>
                               <div className="flex items-start gap-6 relative z-10">
                                 <div className="w-10 h-10 rounded-xl border flex items-center justify-center text-primary font-black text-xs flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform bg-background/50 border-border">
                                   {crit.title.split(' ')[0]}
@@ -397,7 +422,7 @@ export default function StandardsPage() {
                         </Button>
                       </div>
 
-                      <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-white/10" hoverEffect>
+                      <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">

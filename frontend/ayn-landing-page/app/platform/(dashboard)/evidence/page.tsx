@@ -246,7 +246,12 @@ function EvidenceContent() {
                 </div>
                 <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Confidence</div>
-                  <div className="text-2xl font-black" style={{ color: "var(--status-success)" }}>
+                  <div className={cn(
+                    "text-2xl font-black",
+                    selectedEvidence.confidenceScore === undefined || selectedEvidence.confidenceScore === null ? "text-muted-foreground" :
+                      (selectedEvidence.confidenceScore > 1 ? selectedEvidence.confidenceScore : selectedEvidence.confidenceScore * 100) > 80 ? "text-emerald-500" :
+                        (selectedEvidence.confidenceScore > 1 ? selectedEvidence.confidenceScore : selectedEvidence.confidenceScore * 100) > 40 ? "text-amber-500" : "text-destructive"
+                  )}>
                     {selectedEvidence.confidenceScore
                       ? `${selectedEvidence.confidenceScore > 1
                         ? Math.round(selectedEvidence.confidenceScore)

@@ -155,15 +155,6 @@ export default function HorusAIChat() {
     }
   }, [messages, status])
 
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];

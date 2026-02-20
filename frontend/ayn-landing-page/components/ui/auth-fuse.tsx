@@ -149,7 +149,7 @@ function SignInForm(props: {
             </div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-[#A83B42]/40 bg-[#A83B42]/10 p-3 text-sm text-[#C9424A]">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                     {props.err}
                 </div>
             )}
@@ -171,11 +171,11 @@ function SignInForm(props: {
             <div className="grid gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
                     <Label className="text-xs text-muted-foreground">Password</Label>
-                    <PasswordInput name="password" required placeholder="Password" aria-invalid={!!props.err} />
+                    <PasswordInput name="password" required placeholder="Password" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (
@@ -207,6 +207,7 @@ function SignUpForm(props: {
     const nameId = useId();
     const emailId = useId();
     const [selectedRole, setSelectedRole] = useState<string>("");
+    const [password, setPassword] = useState("");
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -244,7 +245,7 @@ function SignUpForm(props: {
             </div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-[#A83B42]/40 bg-[#A83B42]/10 p-3 text-sm text-[#C9424A]">
+                <div id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                     {props.err}
                 </div>
             )}
@@ -265,30 +266,73 @@ function SignUpForm(props: {
             <div className="grid gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor={nameId} className="text-xs text-muted-foreground">Full Name</Label>
-                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
+                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} />
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Password <span className="text-muted-foreground/70 font-normal">(min 8 characters)</span></Label>
-                    <PasswordInput name="password" required placeholder="Password" minLength={8} aria-invalid={!!props.err} />
+                    <Label className="text-xs text-muted-foreground">Password</Label>
+                    <PasswordInput
+                        name="password"
+                        required
+                        placeholder="Password"
+                        minLength={8}
+                        aria-invalid={!!props.err}
+                        disabled={props.loading}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    {password.length > 0 && (
+                        <div className="flex flex-col gap-1 mt-1">
+                            <div className="flex items-center gap-2 text-xs">
+                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                    {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                </div>
+                                <span className={password.length >= 8 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>At least 8 characters</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                    {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                </div>
+                                <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-medium" : "text-muted-foreground"}>One uppercase letter</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                    {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                </div>
+                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-600 font-medium" : "text-muted-foreground"}>One special character</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="grid gap-2">
                     <Label className="text-xs text-muted-foreground">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
-                    <Select value={selectedRole} onValueChange={setSelectedRole}>
-                        <SelectTrigger className="h-11 rounded-lg border-border bg-card text-foreground focus:border-primary focus:ring-1 focus:ring-primary">
-                            <SelectValue placeholder="Select a role..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="STUDENT">Student</SelectItem>
-                            <SelectItem value="UNIVERSITY">University</SelectItem>
-                            <SelectItem value="INSTITUTION">Institution</SelectItem>
-                            <SelectItem value="TEACHER">Teacher</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { value: "STUDENT", label: "Student" },
+                            { value: "UNIVERSITY", label: "University" },
+                            { value: "INSTITUTION", label: "Institution" },
+                            { value: "TEACHER", label: "Teacher" },
+                            { value: "OTHER", label: "Other" },
+                        ].map((role) => (
+                            <button
+                                key={role.value}
+                                type="button"
+                                disabled={props.loading}
+                                onClick={() => setSelectedRole(role.value === selectedRole ? "" : role.value)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                                    selectedRole === role.value
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                                )}
+                            >
+                                {role.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
                     {props.loading ? (

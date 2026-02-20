@@ -94,6 +94,15 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
         return () => eventSource.close()
     }, [user])
 
+    // 3. Cleanup effect to stop phantom streams on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+        }
+    }, [])
+
     const stopGeneration = () => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()

@@ -19,7 +19,7 @@ from app.notifications.models import NotificationCreateRequest
 from app.chat.service import ChatService
 from app.activity.service import ActivityService
 from app.gap_analysis.service import GapAnalysisService
-from app.gap_analysis.models import GapAnalysisRequest
+from app.gap_analysis.models import GapAnalysisRequest, UserDTO
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class HorusService:
 
         # 5. AI Interaction
         client = get_gemini_client()
-        context = await self._prepare_context(user_id, summary)
+        context = await self._prepare_context(user_id, summary, message)
         
         if file_references:
             ai_response = await client.chat_with_files(
@@ -221,25 +221,26 @@ class HorusService:
 
         # 3. AI Interaction (Streaming)
         client = get_gemini_client()
-        context = self._prepare_context_sync(summary, recent_activities)
+        context = self._prepare_context_sync(summary, recent_activities, message=message)
         
         full_response = ""
         if file_results:
-            # yield "🔍 **Processing Brain Mode...**\n"
-            # yield "Analyzing evidence, measuring gaps, and updating dashboard.\n\n"
+            if background_tasks:
+                background_tasks.add_task(
+                    self._execute_brain_pipeline,
+                    user_id,
+                    current_user,
+                    file_results,
+                    db
+                )
+            else:
+                asyncio.create_task(
+                    self._execute_brain_pipeline(user_id, current_user, file_results, db)
+                )
             
-            # 3. RUN THE FULL BRAIN PIPELINE
-            # We await this for "Brain Mode" to get immediate results for the AI
-            brain_results = await self._execute_brain_pipeline(
-                user_id=user_id,
-                current_user=current_user,
-                file_results=file_results,
-                db=db
-            )
+            yield 'data: {"type": "status", "content": "📄 Document received. Running gap analysis in background..."}\n'
             
-            # 4. Refresh State Summary after pipeline
-            summary = await self.state_manager.get_state_summary(user_id)
-            context = self._prepare_context_sync(summary, recent_activities, brain_results)
+            context = self._prepare_context_sync(summary, recent_activities, None, message=message)
             
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
@@ -325,16 +326,16 @@ class HorusService:
                 )
                 
                 gap_service = GapAnalysisService()
-                fake_user = {
-                    "id": user_id,
-                    "institutionId": institution_id,
-                    "role": "USER",
-                    "email": getattr(user, "email", "unknown"),
-                }
+                user_dto = UserDTO(
+                    id=user_id,
+                    institutionId=institution_id,
+                    role=getattr(user, "role", "USER"),
+                    email=getattr(user, "email", "unknown")
+                )
                 
                 for standard in standards:
                     try:
-                        report = await gap_service.generate_report(GapAnalysisRequest(standardId=standard.id), fake_user)
+                        report = await gap_service.generate_report(GapAnalysisRequest(standardId=standard.id), user_dto)
                         results["gap_reports"].append({
                             "id": report.id,
                             "title": standard.title,
@@ -348,7 +349,7 @@ class HorusService:
 
         return results
 
-    def _prepare_context_sync(self, summary, recent_activities, brain_results=None) -> str:
+    def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "") -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:
@@ -374,15 +375,28 @@ class HorusService:
             Note: Use the actual data above.
             """
 
-        return f"""
+        compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis"]
+        message_lower = (message or "").lower()
+        needs_heavy_context = any(kw.lower() in message_lower for kw in compliance_keywords)
+        
+        context_parts = []
+        
+        if needs_heavy_context:
+            context_parts.append(f"""
         Current Platform State Summary:
         - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
         - Evidence Vault: {summary.total_evidence} items ({summary.linked_evidence} mapped to criteria)
         - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
         - Global Compliance Score: {summary.total_score}%
-        
-        {brain_context}
-        
+        """)
+        else:
+            logger_msg = message[:20].replace('\n', ' ') if message else ""
+            logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~150 tokens.")
+            
+        if brain_context:
+            context_parts.append(brain_context)
+
+        context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
         
@@ -391,25 +405,38 @@ class HorusService:
         - You process compliance data, analyze evidence, and manage gaps.
         - When files are uploaded, ALWAYS use the brain results provided above.
         - Be concise, professional, and data-driven.
-        """
+        """)
+        return "\n".join(context_parts)
 
-    async def _prepare_context(self, user_id: str, summary) -> str:
+    async def _prepare_context(self, user_id: str, summary, message: str = "") -> str:
         """Prepare deep platform state context for AI."""
         # Fetch extra context
         recent_activities = await ActivityService.get_recent_activities(user_id, limit=5)
         
-        return f"""
+        compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis"]
+        message_lower = (message or "").lower()
+        needs_heavy_context = any(kw.lower() in message_lower for kw in compliance_keywords)
+        
+        context_parts = []
+        
+        if needs_heavy_context:
+            context_parts.append(f"""
         Current Platform State Summary:
         - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
         - Evidence Vault: {summary.total_evidence} items ({summary.linked_evidence} mapped to criteria)
         - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
         - Global Compliance Score: {summary.total_score}%
         
-        Recent Platform Activities:
-        {self._format_activities(recent_activities)}
-        
         Critical Pending Gaps:
         {self._format_gaps(summary.addressable_gaps)}
+        """)
+        else:
+            logger_msg = message[:20].replace('\n', ' ') if message else ""
+            logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~300 tokens.")
+        
+        context_parts.append(f"""
+        Recent Platform Activities:
+        {self._format_activities(recent_activities)}
         
         Instructions for Horus Brain:
         - You are the central intelligence of the Ayn Platform.
@@ -418,7 +445,8 @@ class HorusService:
         - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
         - If gaps are high, suggest specific evidence uploads.
         - You are not just a chatbot; you are a platform assistant.
-        """
+        """)
+        return "\n".join(context_parts)
 
     def _format_activities(self, activities) -> str:
         if not activities: return "No recent activity."
@@ -499,15 +527,13 @@ class HorusService:
                     request = GapAnalysisRequest(
                         standardId=standard.id,
                     )
-                    # B1 FIX: Build a plain dict — GapAnalysisService.generate_report()
-                    # expects a dict with .get() calls, not a Prisma model object.
-                    fake_user = {
-                        "id": user_id,
-                        "institutionId": institution_id,
-                        "role": "USER",
-                        "email": getattr(user, "email", "unknown"),
-                    }
-                    report = await gap_service.generate_report(request, fake_user)
+                    user_dto = UserDTO(
+                        id=user_id,
+                        institutionId=institution_id,
+                        role=getattr(user, "role", "USER"),
+                        email=getattr(user, "email", "unknown")
+                    )
+                    report = await gap_service.generate_report(request, user_dto)
                     logger.info(f"Horus gap trigger: Gap analysis complete for standard '{standard.title}' — score: {report.overallScore}%")
 
                     # Notify the user

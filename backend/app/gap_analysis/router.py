@@ -10,6 +10,7 @@ from app.gap_analysis.models import (
     GapAnalysisResponse,
     GapAnalysisListItem,
     ArchiveRequest,
+    UserDTO,
 )
 from app.gap_analysis.service import GapAnalysisService
 from app.gap_analysis.pdf_export import generate_pdf_report
@@ -30,14 +31,15 @@ async def generate_gap_analysis_report(
     Returns 202 immediately with a jobId.
     The analysis runs in the background and notifies the user when done.
     """
-    job = await GapAnalysisService.queue_report(request, current_user)
+    user_dto = UserDTO(**current_user)
+    job = await GapAnalysisService.queue_report(request, user_dto)
     background_tasks.add_task(
         GapAnalysisService.run_report_background,
         job_id=job["jobId"],
-        user_id=current_user["id"],
-        institution_id=current_user.get("institutionId"),
+        user_id=user_dto.id,
+        institution_id=user_dto.institutionId,
         standard_id=request.standardId,
-        current_user=current_user,
+        current_user=user_dto,
     )
     return JSONResponse(status_code=202, content=job)
 
@@ -47,7 +49,7 @@ async def list_gap_analyses(
     current_user: dict = Depends(get_current_user),
 ):
     """List all gap analysis reports for the user's institution."""
-    return await GapAnalysisService.list_reports(current_user, archived=False)
+    return await GapAnalysisService.list_reports(UserDTO(**current_user), archived=False)
 
 
 @router.get("/archived/list", response_model=List[GapAnalysisListItem])
@@ -55,7 +57,7 @@ async def list_archived_gap_analyses(
     current_user: dict = Depends(get_current_user),
 ):
     """List all archived gap analysis reports for the user's institution."""
-    return await GapAnalysisService.list_reports(current_user, archived=True)
+    return await GapAnalysisService.list_reports(UserDTO(**current_user), archived=True)
 
 
 @router.get("/{gap_analysis_id}/export")
@@ -67,7 +69,7 @@ async def export_gap_analysis_pdf(
     Export a gap analysis report as a downloadable PDF.
     Returns a StreamingResponse with Content-Disposition: attachment.
     """
-    report = await GapAnalysisService.get_report(gap_analysis_id, current_user)
+    report = await GapAnalysisService.get_report(gap_analysis_id, UserDTO(**current_user))
     pdf_bytes = generate_pdf_report(report)
     filename = f"gap-analysis-{gap_analysis_id[:8]}.pdf"
     return StreamingResponse(
@@ -83,7 +85,7 @@ async def get_gap_analysis(
     current_user: dict = Depends(get_current_user),
 ):
     """Get a specific gap analysis report by ID."""
-    return await GapAnalysisService.get_report(gap_analysis_id, current_user)
+    return await GapAnalysisService.get_report(gap_analysis_id, UserDTO(**current_user))
 
 
 @router.delete("/{gap_analysis_id}", status_code=status.HTTP_200_OK)
@@ -92,7 +94,7 @@ async def delete_gap_analysis(
     current_user: dict = Depends(get_current_user),
 ):
     """Delete a gap analysis report."""
-    await GapAnalysisService.delete_report(gap_analysis_id, current_user)
+    await GapAnalysisService.delete_report(gap_analysis_id, UserDTO(**current_user))
     return {"message": "Gap analysis deleted successfully"}
 
 
@@ -103,6 +105,6 @@ async def archive_gap_analysis(
     current_user: dict = Depends(get_current_user),
 ):
     """Archive or unarchive a gap analysis report."""
-    await GapAnalysisService.archive_report(gap_analysis_id, request.archived, current_user)
+    await GapAnalysisService.archive_report(gap_analysis_id, request.archived, UserDTO(**current_user))
     action = "archived" if request.archived else "unarchived"
     return {"message": f"Gap analysis {action} successfully"}

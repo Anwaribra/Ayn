@@ -3,8 +3,14 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-
 # ─── Request Models ───────────────────────────────────────────────────────────
+
+class UserDTO(BaseModel):
+    id: str
+    institutionId: Optional[str] = None
+    role: str
+    email: str
+
 
 class GapAnalysisRequest(BaseModel):
     """Request model for generating a gap analysis."""

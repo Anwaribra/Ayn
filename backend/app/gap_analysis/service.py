@@ -10,6 +10,7 @@ from app.gap_analysis.models import (
     GapAnalysisListItem,
     GapItem,
     ArchiveRequest,
+    UserDTO,
 )
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
@@ -47,13 +48,13 @@ class GapAnalysisService:
         )
 
     @staticmethod
-    async def queue_report(request: GapAnalysisRequest, current_user: dict) -> dict:
+    async def queue_report(request: GapAnalysisRequest, current_user: UserDTO) -> dict:
         """
         Create a stub GapAnalysis record immediately and return the job ID.
         The actual AI analysis runs as a background task.
         """
         db = get_db()
-        institution_id = current_user.get("institutionId")
+        institution_id = current_user.institutionId
         if not institution_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -75,7 +76,7 @@ class GapAnalysisService:
                 "recommendationsJson": "[]",
             }
         )
-        logger.info(f"Queued gap analysis job {record.id} for user {current_user.get('email')}")
+        logger.info(f"Queued gap analysis job {record.id} for user {current_user.email}")
         return {"jobId": record.id, "status": "queued"}
 
     @staticmethod
@@ -84,7 +85,7 @@ class GapAnalysisService:
         user_id: str,
         institution_id: str,
         standard_id: str,
-        current_user: dict,
+        current_user: UserDTO,
     ) -> None:
         """
         Background task: run the AI gap analysis and update the stub record.
@@ -174,10 +175,10 @@ class GapAnalysisService:
 
 
     @staticmethod
-    async def list_reports(current_user: dict, archived: bool = False) -> List[GapAnalysisListItem]:
+    async def list_reports(current_user: UserDTO, archived: bool = False) -> List[GapAnalysisListItem]:
         """List gap analysis reports."""
         db = get_db()
-        institution_id = current_user.get("institutionId")
+        institution_id = current_user.institutionId
         if not institution_id: return []
         
         records = await db.gapanalysis.find_many(
@@ -198,42 +199,42 @@ class GapAnalysisService:
         ]
 
     @staticmethod
-    async def get_report(gap_analysis_id: str, current_user: dict) -> GapAnalysisResponse:
+    async def get_report(gap_analysis_id: str, current_user: UserDTO) -> GapAnalysisResponse:
         """Get a specific report."""
         db = get_db()
         record = await db.gapanalysis.find_unique(where={"id": gap_analysis_id}, include={"standard": True})
         if not record:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
             
-        if current_user["role"] != "ADMIN" and record.institutionId != current_user.get("institutionId"):
+        if current_user.role != "ADMIN" and record.institutionId != current_user.institutionId:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         return GapAnalysisService._build_response(record, record.standard.title if record.standard else "Unknown")
 
     @staticmethod
-    async def delete_report(gap_analysis_id: str, current_user: dict):
+    async def delete_report(gap_analysis_id: str, current_user: UserDTO):
         """Delete a report."""
         db = get_db()
         record = await db.gapanalysis.find_unique(where={"id": gap_analysis_id})
         if not record:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
             
-        if current_user["role"] != "ADMIN" and record.institutionId != current_user.get("institutionId"):
+        if current_user.role != "ADMIN" and record.institutionId != current_user.institutionId:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         await db.gapanalysis.delete(where={"id": gap_analysis_id})
-        logger.info(f"User {current_user['email']} deleted gap analysis {gap_analysis_id}")
+        logger.info(f"User {current_user.email} deleted gap analysis {gap_analysis_id}")
 
     @staticmethod
-    async def archive_report(gap_analysis_id: str, archived: bool, current_user: dict):
+    async def archive_report(gap_analysis_id: str, archived: bool, current_user: UserDTO):
         """Archive or unarchive a report."""
         db = get_db()
         record = await db.gapanalysis.find_unique(where={"id": gap_analysis_id})
         if not record:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
             
-        if current_user["role"] != "ADMIN" and record.institutionId != current_user.get("institutionId"):
+        if current_user.role != "ADMIN" and record.institutionId != current_user.institutionId:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         await db.gapanalysis.update(where={"id": gap_analysis_id}, data={"archived": archived})
-        logger.info(f"User {current_user['email']} archived/unarchived {gap_analysis_id}")
+        logger.info(f"User {current_user.email} archived/unarchived {gap_analysis_id}")

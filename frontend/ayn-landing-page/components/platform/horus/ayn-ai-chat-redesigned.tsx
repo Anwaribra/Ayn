@@ -23,6 +23,7 @@ import {
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
@@ -50,6 +51,7 @@ export function MarkdownContent({
   return (
     <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:glass-layer-2 prose-pre:border prose-pre:border-glass-border prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-ul:list-disc prose-ul:pl-4 text-foreground">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h2: ({ children }: any) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
           h3: ({ children }: any) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
@@ -153,9 +155,35 @@ export default function HorusAIChat() {
     }
   }, [messages, status])
 
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+
     const files = Array.from(e.target.files || [])
-    const newFiles: AttachedFile[] = files.slice(0, 5 - attachedFiles.length).map((file) => ({
+
+    // Validate files
+    const validFiles = files.filter(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        return false;
+      }
+      if (!file.type.startsWith("image/") && !ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`File ${file.name} has an unsupported type.`);
+        return false;
+      }
+      return true;
+    });
+
+    const newFiles: AttachedFile[] = validFiles.slice(0, 5 - attachedFiles.length).map((file) => ({
       id: crypto.randomUUID(),
       file,
       type: file.type.startsWith("image/") ? "image" : "document",
@@ -345,7 +373,7 @@ export default function HorusAIChat() {
               menuOptions={[]}
               leftSlot={
                 <label className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0 flex items-center justify-center">
-                  <input type="file" className="hidden" multiple onChange={handleFileSelect} />
+                  <input type="file" className="hidden" multiple accept=".pdf,.docx,.txt,image/*" onChange={handleFileSelect} />
                   <Paperclip className="w-4 h-4" />
                 </label>
               }

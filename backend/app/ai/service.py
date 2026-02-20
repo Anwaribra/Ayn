@@ -247,7 +247,7 @@ class OpenRouterClient:
         prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
         return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
     
-    async def chat_with_files(self, message: str, files: List[Dict]) -> str:
+    async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
         """Multimodal chat with files."""
         content_parts = []
         text_content = message
@@ -271,10 +271,19 @@ class OpenRouterClient:
         else:
             user_message = {"role": "user", "content": text_content}
         
+        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
+        if context and any(k in context.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"]):
+            needs_deep_knowledge = True
+            
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        
+        if context:
+            system_instruction += f"\n\nAdditional context:\n{context}"
+        
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_instruction},
                 user_message,
             ],
         }
@@ -416,8 +425,17 @@ class GeminiClient:
         prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
         return await self.generate_text(prompt)
     
-    async def chat_with_files(self, message: str, files: List[Dict]) -> str:
+    async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
         """Multimodal chat with files."""
+        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
+        if context and any(k in context.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"]):
+            needs_deep_knowledge = True
+            
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        
+        if context:
+            system_instruction += f"\n\nAdditional context:\n{context}"
+        
         if USE_NEW_API:
             parts = [genai_types.Part.from_text(text=message)]
             for file_item in files:
@@ -430,7 +448,7 @@ class GeminiClient:
             
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
                 contents=genai_types.Content(role="user", parts=parts),
             )
             return response.text
@@ -444,8 +462,17 @@ class GeminiClient:
             full_prompt = f"{message}\n\n" + "\n\n".join(file_descriptions)
             return await self.generate_text(full_prompt)
 
-    async def stream_chat_with_files(self, message: str, files: List[Dict]):
+    async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
         """Streaming multimodal chat with files."""
+        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
+        if context and any(k in context.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"]):
+            needs_deep_knowledge = True
+            
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        
+        if context:
+            system_instruction += f"\n\nAdditional context:\n{context}"
+        
         if USE_NEW_API:
             parts = [genai_types.Part.from_text(text=message)]
             for file_item in files:
@@ -458,7 +485,7 @@ class GeminiClient:
             
             async for chunk in await self.client.aio.models.generate_content_stream(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
                 contents=genai_types.Content(role="user", parts=parts),
             ):
                 yield chunk.text
@@ -550,11 +577,11 @@ class HorusAIClient:
     async def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
         return await self._call_with_fallback("extract_evidence", text=text, criteria=criteria)
     
-    async def chat_with_files(self, message: str, files: List[Dict]) -> str:
-        return await self._call_with_fallback("chat_with_files", message=message, files=files)
+    async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
+        return await self._call_with_fallback("chat_with_files", message=message, files=files, context=context)
     
-    async def stream_chat_with_files(self, message: str, files: List[Dict]):
-        async for chunk in self._stream_with_fallback("stream_chat_with_files", message=message, files=files):
+    async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
+        async for chunk in self._stream_with_fallback("stream_chat_with_files", message=message, files=files, context=context):
             yield chunk
 
     @property

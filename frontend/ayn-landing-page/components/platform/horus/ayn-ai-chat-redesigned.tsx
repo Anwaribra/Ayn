@@ -29,79 +29,10 @@ import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
 import { Component as AILoader } from "@/components/ui/ai-loader"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
+import { AttachedFile } from "./types"
+import { HorusMarkdown } from "./horus-markdown"
 
-// ─── Types ──────────────────────────────────────────────────────────────────────
-interface AttachedFile {
-  id: string
-  file: File
-  preview?: string
-  type: "image" | "document"
-}
 
-// ─── Markdown Content ───────────────────────────────────────────────────────────
-export function MarkdownContent({
-  content,
-  onAction
-}: {
-  content: string;
-  onAction?: (action: string, payload: string) => void
-}) {
-  // Custom renderer to intercept specific headers and wrap them in styled blocks? 
-  // For now, we use standard prose with enhanced styling.
-  return (
-    <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:glass-layer-2 prose-pre:border prose-pre:border-glass-border prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-ul:list-disc prose-ul:pl-4 text-foreground">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h2: ({ children }: any) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
-          h3: ({ children }: any) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
-          p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</p>,
-          ul: ({ children }: any) => <ul className="mb-3 space-y-1 text-muted-foreground">{children}</ul>,
-          li: ({ children }: any) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
-          code: ({ inline, children }: any) =>
-            inline ? (
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border">{children}</code>
-            ) : (
-              <code className="block rounded-xl glass-layer-2 p-4 font-mono text-[12px] text-muted-foreground overflow-x-auto w-full border border-glass-border">
-                {children}
-              </code>
-            ),
-          blockquote: ({ children }: any) => (
-            <blockquote className="border-l-4 border-primary pl-4 py-1 my-4 bg-primary/5 rounded-r-lg italic text-muted-foreground">
-              {children}
-            </blockquote>
-          ),
-          a: ({ href, children }: any) => {
-            if (href?.startsWith('ACTION:')) {
-              const [_, type, payload] = href.split(':');
-              return (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onAction?.(type, payload)}
-                  className="mx-1 h-7 px-3 rounded-lg border-primary/30 bg-primary/5 text-primary hover:bg-primary/20 hover:text-primary font-black uppercase text-[10px] tracking-wider transition-all"
-                >
-                  {type === 'gap_report' ? <FileText className="w-3 h-3 mr-1.5" /> : null}
-                  {children}
-                </Button>
-              )
-            }
-            return (
-              <a
-                href={href}
-                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all"
-              >
-                {children}
-              </a>
-            )
-          }
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  )
-}
 
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
@@ -155,11 +86,22 @@ export default function HorusAIChat() {
     }
   }, [messages, status])
 
+  // Cleanup on unmount to prevent ghost streams
+  useEffect(() => {
+    return () => {
+      stopGeneration()
+    }
+  }, [])
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
 
     const files = Array.from(e.target.files || [])
+
+    if (files.length + attachedFiles.length > 5) {
+      toast.error("Maximum 5 files can be attached at once.")
+    }
 
     // Validate files
     const validFiles = files.filter(file => {
@@ -292,34 +234,54 @@ export default function HorusAIChat() {
         <div className="flex-1 w-full max-w-3xl overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
           <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
-              <div className="flex-1 min-h-[40vh] flex items-center justify-center w-full">
-                <AILoader variant="inline" text="Horus AI" size={180} />
+              <div className="flex-1 min-h-[40vh] flex flex-col items-center justify-center w-full space-y-4 px-4 text-center animate-in fade-in zoom-in-95">
+                <div className="w-16 h-16 rounded-2xl glass-layer-2 flex items-center justify-center text-primary shadow-lg border border-primary/20 bg-primary/5">
+                  <Bot className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-black text-foreground">How can I assist you?</h2>
+                <ul className="text-sm text-muted-foreground space-y-2 max-w-sm">
+                  <li className="flex items-center gap-2 justify-center font-medium">✨ Analyze your compliance documents</li>
+                  <li className="flex items-center gap-2 justify-center font-medium">🎯 Track missing evidence gaps</li>
+                  <li className="flex items-center gap-2 justify-center font-medium">📚 Explain standards requirements</li>
+                </ul>
               </div>
             ) : (
               <>
-                {messages.map((msg) => (
-                  <div key={msg.id} className={cn(
-                    "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200",
-                    msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                  )}>
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
+                {messages.slice(-30).map((msg) => {
+                  if (msg.role === "system") {
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
+                        <span className="text-[10px] bg-muted text-muted-foreground px-3 py-1 rounded-full uppercase tracking-wider font-bold border border-border">
+                          {msg.content}
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div key={msg.id} className={cn(
+                      "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200",
+                      msg.role === "user" ? "flex-row-reverse" : "flex-row"
                     )}>
-                      {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </div>
+                      <div className={cn(
+                        "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted/80 text-foreground rounded-bl-md border border-[var(--border-subtle)]"
+                      )}>
+                        <HorusMarkdown content={msg.content} onAction={handleAction} />
+                      </div>
                     </div>
-                    <div className={cn(
-                      "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted/80 text-foreground rounded-bl-md border border-[var(--border-subtle)]"
-                    )}>
-                      <MarkdownContent content={msg.content} onAction={handleAction} />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Typing indicator */}
                 {status !== "idle" && (

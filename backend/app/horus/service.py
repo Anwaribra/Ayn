@@ -109,7 +109,8 @@ class HorusService:
         if file_references:
             ai_response = await client.chat_with_files(
                 message=message or "Analyze these files.",
-                files=file_references
+                files=file_references,
+                context=context
             )
         else:
             # Load history for context
@@ -172,19 +173,16 @@ class HorusService:
         tasks = [
             self.state_manager.get_state_summary(user_id),
             ActivityService.get_recent_activities(user_id, limit=5),
-            ChatService.get_chat(chat_id, user_id, message_limit=10)
         ]
         
         # Add file processing tasks if any
         if files:
             tasks.extend([process_file(f) for f in files])
         
-        # Add background tasks for logging (don't block the gather if we want max speed, 
-        # but here we'll include the user message save in gather to ensure it's in history)
+        # Save user message in background to avoid blocking
         if message:
-            tasks.append(ChatService.save_message(chat_id, user_id, "user", message))
-            # Activity logging can definitely be backgrounded
             if background_tasks:
+                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
                 background_tasks.add_task(ActivityService.log_activity, 
                     user_id=user_id, 
                     type="chat_message", 
@@ -192,20 +190,20 @@ class HorusService:
                     entity_id=chat_id,
                     entity_type="chat"
                 )
+            else:
+                asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
 
         # EXECUTE EVERYTHING IN PARALLEL
         results = await asyncio.gather(*tasks)
         
         summary = results[0]
         recent_activities = results[1]
-        history = results[2]
         
-        # Handle dynamic results (files and message save)
-        offset = 3
+        # Handle dynamic results (files)
+        offset = 2
         file_results = []
         if files:
             file_results = [r for r in results[offset:offset+len(files)] if r is not None]
-            offset += len(files)
         
         # Log file uploads in background
         for res in file_results:
@@ -224,18 +222,26 @@ class HorusService:
         context = self._prepare_context_sync(summary, recent_activities, message=message)
         
         full_response = ""
+        
+        # Lazily fetch history without blocking initial file processing or state fetching
+        history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=5))
+
         if file_results:
+            compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis", "audit", "score", "evaluate"]
+            needs_analysis = any(kw.lower() in (message or "").lower() for kw in compliance_keywords)
+            
             if background_tasks:
                 background_tasks.add_task(
                     self._execute_brain_pipeline,
                     user_id,
                     current_user,
                     file_results,
-                    db
+                    db,
+                    needs_analysis
                 )
             else:
                 asyncio.create_task(
-                    self._execute_brain_pipeline(user_id, current_user, file_results, db)
+                    self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
             yield 'data: {"type": "status", "content": "📄 Document received. Running gap analysis in background..."}\n'
@@ -251,6 +257,7 @@ class HorusService:
                     full_response += chunk
                     yield chunk
         else:
+            history = await history_task
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
             # Ensure the current message is included if not already in history (race condition check)
             if message and not any(m["content"] == message for m in messages):
@@ -267,9 +274,10 @@ class HorusService:
         elif full_response:
              await ChatService.save_message(chat_id, user_id, "assistant", full_response)
 
-    async def _execute_brain_pipeline(self, user_id, current_user, file_results, db):
+    async def _execute_brain_pipeline(self, user_id, current_user, file_results, db, needs_analysis: bool = False):
         """
-        Executes the full processor pipeline: OCR -> Evidence Analysis -> Gap Analysis.
+        Executes the full processor pipeline: OCR -> Evidence Analysis.
+        Optionally runs Gap Analysis if requested.
         Returns the findings for AI injection.
         """
         results = {
@@ -294,6 +302,10 @@ class HorusService:
                 )
             except Exception as e:
                 logger.error(f"Brain Pipeline Step 1 (Evidence) failed: {e}")
+
+        if not needs_analysis:
+            logger.info("Skipping explicit Gap Analysis Trigger; user did not request analysis.")
+            return results
 
         # 2. Gap Analysis Trigger
         try:
@@ -396,6 +408,12 @@ class HorusService:
         if brain_context:
             context_parts.append(brain_context)
 
+        import re
+        message_clean = (message or "").replace(" ", "")
+        arabic_chars = len(re.findall(r'[\u0600-\u06FF]', message_clean))
+        is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
+        language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
+
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
@@ -405,6 +423,7 @@ class HorusService:
         - You process compliance data, analyze evidence, and manage gaps.
         - When files are uploaded, ALWAYS use the brain results provided above.
         - Be concise, professional, and data-driven.
+        {language_instruction}
         """)
         return "\n".join(context_parts)
 
@@ -434,6 +453,12 @@ class HorusService:
             logger_msg = message[:20].replace('\n', ' ') if message else ""
             logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~300 tokens.")
         
+        import re
+        message_clean = (message or "").replace(" ", "")
+        arabic_chars = len(re.findall(r'[\u0600-\u06FF]', message_clean))
+        is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
+        language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
+
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
@@ -445,6 +470,7 @@ class HorusService:
         - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
         - If gaps are high, suggest specific evidence uploads.
         - You are not just a chatbot; you are a platform assistant.
+        {language_instruction}
         """)
         return "\n".join(context_parts)
 

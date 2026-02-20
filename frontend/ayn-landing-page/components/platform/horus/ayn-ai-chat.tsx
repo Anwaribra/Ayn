@@ -24,6 +24,8 @@ import {
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
+import { AttachedFile } from "./types"
+import { HorusMarkdown } from "./horus-markdown"
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -31,13 +33,6 @@ interface Message {
   role: "user" | "assistant"
   content: string
   timestamp: number
-}
-
-interface AttachedFile {
-  id: string
-  file: File
-  preview?: string
-  type: "image" | "document"
 }
 
 // ─── Local Storage ──────────────────────────────────────────────────────────────
@@ -57,7 +52,7 @@ function saveHistory(messages: Message[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
-  } catch {}
+  } catch { }
 }
 
 // ─── Copy Button ────────────────────────────────────────────────────────────────
@@ -79,30 +74,6 @@ function CopyButton({ text }: { text: string }) {
     >
       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
     </Button>
-  )
-}
-
-// ─── Markdown Content ───────────────────────────────────────────────────────────
-export function MarkdownContent({ content }: { content: string }) {
-  return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
-      <ReactMarkdown
-        components={{
-          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-          ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
-          ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
-          li: ({ children }) => <li className="mb-1">{children}</li>,
-          code: ({ inline, children }: any) =>
-            inline ? (
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">{children}</code>
-            ) : (
-              <code className="block rounded-lg bg-muted p-3 font-mono text-sm overflow-x-auto">{children}</code>
-            ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
   )
 }
 
@@ -264,7 +235,7 @@ export default function HorusAIChat() {
                   <div className={cn("max-w-[80%] space-y-2", msg.role === "user" && "items-end")}>
                     <Card className={cn("p-4", msg.role === "user" && "bg-primary text-primary-foreground")}>
                       {msg.role === "assistant" ? (
-                        <MarkdownContent content={msg.content} />
+                        <HorusMarkdown content={msg.content} />
                       ) : (
                         <p className="text-sm">{msg.content}</p>
                       )}

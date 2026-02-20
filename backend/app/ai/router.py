@@ -1,5 +1,4 @@
-"""AI router - Fast & Simple."""
-from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Request
+from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Request, BackgroundTasks
 from typing import List
 from app.auth.dependencies import require_roles
 from app.ai.models import ChatRequest, AIResponse
@@ -33,6 +32,7 @@ async def chat(
 @limiter.limit("5/minute")
 async def chat_with_files(
     request: Request,
+    background_tasks: BackgroundTasks,
     message: str = Form(...),
     files: List[UploadFile] = File(...),
     db: Prisma = Depends(get_db),
@@ -124,48 +124,39 @@ async def chat_with_files(
                 if has_analysis or has_chat:
                     structured_data = parsed
                     
-                    # 4. Persistence (Stage 2)
-                    if has_analysis:
-                        try:
-                            # Lazy import to avoid circular dep issues at module level
-                            from app.gap_analysis.service import GapOneService
-                            from app.platform_state.service import StateService
-                            
-                            gap_service = GapOneService(db)
-                            
-                            # Create analysis record
-                            # We default standard_id to None or a detected one. 
-                            # For now, we assume this is an ad-hoc analysis.
-                            user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-                            
-                            record = await gap_service.create_analysis(
-                                user_id=user_id,
-                                standard_id=None, 
-                                score=float(parsed["score"]),
-                                gaps=parsed["gaps"],
-                                summary=parsed.get("summary", "AI Generated Analysis"),
-                                recommendations=parsed.get("recommendations", [])
-                            )
-                            analysis_id = record.id
-                            
-                            # 5. Metrics Update (Stage 3)
-                            state_service = StateService(db)
-                            await state_service.record_metric_update(
-                                user_id=user_id,
-                                metric_id="alignment_score",
-                                value=float(parsed["score"]),
-                                source_module="gap_analysis"
-                            )
-                            metrics_updated = True
-                            
-                        except Exception as db_err:
-                            import logging
-                            logging.getLogger(__name__).error(f"Persistence Failed: {db_err}")
-                            if structured_data:
-                                structured_data["persistence_error"] = True
-                                structured_data["db_error_detail"] = str(db_err)
-
-                else:
+                            # 4. Persistence (Stage 2)
+                            if has_analysis:
+                                async def process_analysis(parsed_data, usr_id):
+                                    try:
+                                        from app.gap_analysis.service import GapOneService
+                                        from app.platform_state.service import StateService
+                                        
+                                        gap_service = GapOneService(db)
+                                        state_service = StateService(db)
+                                        
+                                        await gap_service.create_analysis(
+                                            user_id=usr_id,
+                                            standard_id=None, 
+                                            score=float(parsed_data["score"]),
+                                            gaps=parsed_data["gaps"],
+                                            summary=parsed_data.get("summary", "AI Generated Analysis"),
+                                            recommendations=parsed_data.get("recommendations", [])
+                                        )
+                                        
+                                        await state_service.record_metric_update(
+                                            user_id=usr_id,
+                                            metric_id="alignment_score",
+                                            value=float(parsed_data["score"]),
+                                            source_module="gap_analysis"
+                                        )
+                                    except Exception as db_err:
+                                        import logging
+                                        logging.getLogger(__name__).error(f"Persistence Failed: {db_err}")
+                                
+                                user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+                                background_tasks.add_task(process_analysis, parsed, user_id)
+                                analysis_id = "background-processing"
+                                metrics_updated = True
                     error_msg = "json_structure_invalid"
             except json.JSONDecodeError:
                 error_msg = "json_parse_failed"

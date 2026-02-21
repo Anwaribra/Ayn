@@ -1,5 +1,5 @@
 """Authentication router."""
-from fastapi import APIRouter, status, Depends, Request
+from fastapi import APIRouter, status, Depends, Request, HTTPException
 from app.auth.models import (
     RegisterRequest,
     LoginRequest,
@@ -83,3 +83,33 @@ async def update_current_user(
     Update current user profile (name).
     """
     return await AuthService.update_user(current_user["id"], body)
+
+
+@router.post("/setup-institution", status_code=status.HTTP_200_OK)
+async def setup_institution(current_user: dict = Depends(get_current_user)):
+    """
+    Auto-setup a default institution for the logged-in user if they don't have one.
+    """
+    from app.core.db import get_db
+    db = get_db()
+    
+    user_id = current_user["id"]
+    user = await db.user.find_unique(where={"id": user_id}, include={"institution": True})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.institutionId:
+        return {"message": "Institution already setup", "institution": user.institution}
+        
+    default_institution = await db.institution.create(
+        data={
+            "name": f"{user.name}'s Institution",
+        }
+    )
+    user = await db.user.update(
+        where={"id": user.id},
+        data={"institutionId": default_institution.id}
+    )
+    
+    return {"message": "Institution created", "institution": default_institution}

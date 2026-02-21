@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -12,13 +13,35 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Store the current path for redirect after login
       if (pathname !== "/login") {
         sessionStorage.setItem("redirectAfterLogin", pathname)
       }
       router.replace("/login")
     }
   }, [isAuthenticated, isLoading, router, pathname])
+
+  useEffect(() => {
+    const setupInstitution = async () => {
+      if (!isLoading && isAuthenticated) {
+        // Check if user has an institutionId, if not, trigger setup
+        const userStr = localStorage.getItem("user")
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr)
+            if (!user.institutionId) {
+              await api.setupInstitution()
+              const freshUser = await api.getCurrentUser()
+              localStorage.setItem("user", JSON.stringify(freshUser))
+              // Optional: trigger a refresh or event
+            }
+          } catch (error) {
+            console.error("Failed to setup institution:", error)
+          }
+        }
+      }
+    }
+    setupInstitution()
+  }, [isAuthenticated, isLoading])
 
   if (isLoading) {
     return (

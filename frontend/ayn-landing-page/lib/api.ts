@@ -141,6 +141,12 @@ class ApiClient {
     })
   }
 
+  async setupInstitution() {
+    return this.request("/auth/setup-institution", {
+      method: "POST",
+    })
+  }
+
   // Dashboard
   async getDashboardMetrics() {
     return this.request<import("./types").DashboardMetrics>("/dashboard/metrics")

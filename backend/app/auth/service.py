@@ -64,6 +64,18 @@ class AuthService:
                 }
             )
             
+            # Auto-create default institution if none was provided
+            if not body.institutionId:
+                default_institution = await db.institution.create(
+                    data={
+                        "name": f"{user.name}'s Institution",
+                    }
+                )
+                user = await db.user.update(
+                    where={"id": user.id},
+                    data={"institutionId": default_institution.id}
+                )
+            
             # Create access token
             access_token = create_access_token(data={"sub": user.id, "role": user.role})
             
@@ -127,6 +139,16 @@ class AuthService:
                         "role": None,
                     }
                 )
+                
+                default_institution = await db.institution.create(
+                    data={
+                        "name": f"{user.name}'s Institution",
+                    }
+                )
+                user = await db.user.update(
+                    where={"id": user.id},
+                    data={"institutionId": default_institution.id}
+                )
             except Exception as e:
                 logger.error(f"Error creating Google user: {e}")
                 raise HTTPException(
@@ -187,6 +209,16 @@ class AuthService:
                         "password": placeholder_password,
                         "role": None,
                     }
+                )
+                
+                default_institution = await db.institution.create(
+                    data={
+                        "name": f"{user.name}'s Institution",
+                    }
+                )
+                user = await db.user.update(
+                    where={"id": user.id},
+                    data={"institutionId": default_institution.id}
                 )
                 logger.info(f"[Supabase Sync] User created successfully: {user.id}")
             except Exception as e:

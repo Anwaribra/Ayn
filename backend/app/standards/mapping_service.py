@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from typing import List, Optional
+from datetime import datetime, timedelta, timezone
 from app.core.db import get_db
 
 from app.ai.service import get_gemini_client, ISO_21001_KNOWLEDGE, NAQAAE_KNOWLEDGE
@@ -75,6 +76,91 @@ async def analyze_criterion_with_retry(gemini_client, prompt: str, max_retries: 
                     "ai_reasoning": "Failed to analyze due to AI service errors.",
                     "best_evidence_id": None
                 }
+                
+async def seed_standard_criteria(db, standard) -> list:
+    """Seeds criteria for a standard from predefined knowledge if it has none."""
+    knowledge_text = ""
+    if "ISO" in (standard.title or "") and "21001" in (standard.title or ""):
+        knowledge_text = ISO_21001_KNOWLEDGE
+    elif "NAQAAE" in (standard.title or "") or "NCAAA" in (standard.title or ""):
+        knowledge_text = NAQAAE_KNOWLEDGE
+    else:
+        knowledge_text = ISO_9001_KNOWLEDGE
+    
+    parsed_criteria = await parse_knowledge_to_criteria(knowledge_text)
+    criteria = []
+    
+    for c_data in parsed_criteria:
+        new_criterion = await db.criterion.create(
+            data={
+                "standardId": standard.id,
+                "title": f"[{c_data['code']}] {c_data['title']}",
+                "description": c_data['description']
+            }
+        )
+        criteria.append(new_criterion)
+        
+    return criteria
+                
+async def perform_batch_criteria_analysis(openrouter_client, criteria, evidence_text: str, standard_title: str) -> list:
+    """Evaluate ALL criteria against evidence in a single OpenRouter API call."""
+    
+    criteria_list_text = ""
+    for idx, c in enumerate(criteria, 1):
+        code = c.title.split(']')[0].replace('[', '') if '[' in c.title else c.title[:10]
+        title = c.title.split(']')[1].strip() if ']' in c.title else c.title
+        criteria_list_text += f"{idx}. {c.id} | {code} | {title} | {c.description or 'No description'}\n"
+        
+    prompt = f"""You are a compliance expert. Evaluate ALL criteria below against the available evidence in ONE response.
+
+STANDARD: {standard_title}
+
+CRITERIA:
+{criteria_list_text}
+
+EVIDENCE AVAILABLE:
+{evidence_text}
+
+For EACH criterion, evaluate if the available evidence satisfies it.
+Respond with ONLY a valid JSON array exactly matching this structure:
+[
+  {{
+    "criterion_id": "exact-uuid-here",
+    "status": "met" | "partial" | "gap",
+    "confidence_score": 0.0 to 1.0,
+    "ai_reasoning": "one sentence explanation",
+    "best_evidence_id": "uuid or null"
+  }}
+]
+Return ONLY a valid JSON array, no markdown formatting like ```json.
+"""
+    
+    # We call OpenRouter directly
+    max_retries = 3
+    base_wait = 2
+    for attempt in range(max_retries + 1):
+        try:
+            # We call the OpenRouter internal method via the generic _call mapping or directly via generate_text if available.
+            # Usually OpenRouterClient._call expects messages and system_prompt. We can construct it.
+            if hasattr(openrouter_client, "_call"):
+                response_text = await openrouter_client._call(
+                    messages=[{"role": "user", "content": prompt}],
+                    system_prompt="You are an expert compliance engine. You return strictly RAW valid JSON arrays without markdown wrappers."
+                )
+            else:
+                response_text = await openrouter_client.generate_text(prompt)
+                
+            response_text = response_text.replace("```json", "").replace("```", "").strip()
+            return json.loads(response_text)
+            
+        except Exception as e:
+            if attempt < max_retries:
+                wait_time = base_wait * (2 ** attempt)
+                logger.warning(f"Batch analysis rate limit/error hit. Retrying in {wait_time}s... (Attempt {attempt+1}): {e}")
+                await asyncio.sleep(wait_time)
+            else:
+                logger.error(f"Failed to batch analyze criteria after {max_retries} retries: {e}")
+                return []
 
 async def analyze_standard_criteria(standard_id: str, institution_id: str):
     """Background task to analyze standard criteria against evidence."""
@@ -99,33 +185,35 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
             # 2. If criteria count == 0, seed from knowledge constants
             if len(criteria) == 0:
                 logger.info(f"Criteria count is 0 for standard {standard_id}. Seeding...")
-                knowledge_text = ""
-                if "ISO" in (standard.title or "") and "21001" in (standard.title or ""):
-                    knowledge_text = ISO_21001_KNOWLEDGE
-                elif "NAQAAE" in (standard.title or "") or "NCAAA" in (standard.title or ""):
-                    knowledge_text = NAQAAE_KNOWLEDGE
-                else:
-                    # Fallback or general
-                    knowledge_text = ISO_9001_KNOWLEDGE
-                
-                parsed_criteria = await parse_knowledge_to_criteria(knowledge_text)
-                
-                # Insert parsed criteria as rows linked to standard
-                for c_data in parsed_criteria:
-                    new_criterion = await db.criterion.create(
-                        data={
-                            "standardId": standard_id,
-                            "title": f"[{c_data['code']}] {c_data['title']}",
-                            "description": c_data['description']
-                        }
-                    )
-                    criteria.append(new_criterion)
+                criteria = await seed_standard_criteria(db, standard)
                     
             if not criteria:
                 logger.warning(f"No criteria could be seeded or found for standard {standard_id}")
                 return
 
-            # 3. Fetch all evidence for this institution
+            # 3. Cache Check (Optimization 3)
+            # Check if mappings already exist and are less than 24 hours old
+            existing_mappings = await db.criteriamapping.find_many(
+                where={
+                    "standardId": standard_id,
+                    "institutionId": institution_id
+                }
+            )
+            
+            if existing_mappings:
+                # Find most recent date manually to avoid DB sort complexities
+                most_recent = max([m.updatedAt for m in existing_mappings if m.updatedAt] or [m.createdAt for m in existing_mappings])
+                
+                # Check if it was updated within the last 24 hours
+                now_utc = datetime.now(timezone.utc)
+                if most_recent.tzinfo is None:
+                    most_recent = most_recent.replace(tzinfo=timezone.utc)
+                    
+                if (now_utc - most_recent) < timedelta(hours=24):
+                    logger.info(f"Using cached standard criteria mappings for {standard_id} (Age: {now_utc - most_recent}). Skipping AI.")
+                    return existing_mappings
+
+            # 4. Fetch all evidence for this institution
             institution_users = await db.user.find_many(where={"institutionId": institution_id})
             user_ids = [u.id for u in institution_users]
             
@@ -147,10 +235,11 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
             
             evidence_text = "\n".join(evidence_context) if evidence_context else "No evidence available."
 
-            # Setup AI client
+            # Setup AI client - Specifically extract OpenRouter to save Gemini quota (Optimization 2)
             gemini_client = get_gemini_client()
+            openrouter_client = gemini_client.openrouter if hasattr(gemini_client, 'openrouter') and gemini_client.openrouter else gemini_client
 
-            # Prepare for mappings
+            # Prepare for fresh mappings (Delete old ones)
             await db.criteriamapping.delete_many(
                 where={
                     "standardId": standard_id,
@@ -158,72 +247,53 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
                 }
             )
 
-            # 4. Analyze each criterion
-            batch_size = 5
+            # 5. Analyze all criteria in ONE batch call (Optimization 1)
             total_criteria = len(criteria)
             mappings_to_create = []
             
-            async def process_criterion(criterion, index):
-                logger.info(f"Analyzing criterion {index + 1} of {total_criteria}: {criterion.title}")
+            logger.info(f"Running ONE batch analysis for {total_criteria} criteria using OpenRouter.")
+            batch_result_array = await perform_batch_criteria_analysis(openrouter_client, criteria, evidence_text, standard.title or "Standard")
+            
+            if not isinstance(batch_result_array, list):
+                logger.error("AI did not return a valid list for batch analysis. Using empty mapping.")
+                batch_result_array = []
                 
-                # The code prompt requires parsing the title for the "code" if not available separately in DB
-                code = criterion.title.split(']')[0].replace('[', '') if '[' in criterion.title else criterion.title[:10]
-                title = criterion.title.split(']')[1].strip() if ']' in criterion.title else criterion.title
+            # Zip results to db objects safely
+            valid_evidence_ids = {e.id for e in evidence_records}
+            
+            for index, criterion in enumerate(criteria):
+                # Try to find corresponding result by index or soft mapping since AI might mess up IDs
+                result_obj = batch_result_array[index] if index < len(batch_result_array) else {}
                 
-                prompt = f"""You are an educational quality compliance expert.
-                
-CRITERION: {code} - {title}
-DESCRIPTION: {criterion.description or 'No specific description provided'}
-
-AVAILABLE EVIDENCE:
-{evidence_text}
-
-Evaluate whether the available evidence satisfies this criterion.
-
-Respond ONLY with valid JSON exactly matching this structure:
-{{
-  "status": "met" | "partial" | "gap",
-  "confidence_score": 0.0 to 1.0,
-  "ai_reasoning": "1-2 sentence explanation",
-  "best_evidence_id": "uuid or null (use exact ID from the list, or null if none)"
-}}
-"""
-                
-                result = await analyze_criterion_with_retry(gemini_client, prompt)
-                
-                best_evidence_id = result.get("best_evidence_id")
-                # Validate if evidence id exists
-                if best_evidence_id and best_evidence_id not in [e.id for e in evidence_records]:
+                best_evidence_id = result_obj.get("best_evidence_id")
+                if best_evidence_id and best_evidence_id not in valid_evidence_ids:
                     best_evidence_id = None
                     
-                confidence_score = float(result.get("confidence_score", 0.0))
-                
-                return {
+                score = result_obj.get("confidence_score")
+                try:
+                    score = float(score) if score is not None else 0.0
+                except:
+                    score = 0.0
+                    
+                mappings_to_create.append({
                     "criterionId": criterion.id,
                     "evidenceId": best_evidence_id,
                     "institutionId": institution_id,
                     "standardId": standard_id,
-                    "status": result.get("status", "gap"),
-                    "confidenceScore": confidence_score,
-                    "aiReasoning": result.get("ai_reasoning", "No valid response generated.")
-                }
+                    "status": result_obj.get("status", "gap"),
+                    "confidenceScore": score,
+                    "aiReasoning": result_obj.get("ai_reasoning", "No valid reasoning provided by backend.")
+                })
 
-            # Gather in batches of 5 to avoid rate limits
-            for i in range(0, len(criteria), batch_size):
-                batch = criteria[i:i + batch_size]
-                batch_tasks = [process_criterion(c, i + j) for j, c in enumerate(batch)]
-                batch_results = await asyncio.gather(*batch_tasks)
-                mappings_to_create.extend(batch_results)
-                
-                if i + batch_size < len(criteria):
-                    await asyncio.sleep(2) # brief pause between batches just in case
-
-            # 5. Bulk insert mappings
+            # 6. Bulk insert mappings
             if mappings_to_create:
                 for mapping in mappings_to_create:
                     await db.criteriamapping.create(data=mapping)
+                logger.info(f"✅ Saved {len(mappings_to_create)} CriteriaMapping records for standard {standard_id}")
+            else:
+                logger.error(f"❌ Failed to save mappings: No valid mapping results generated by AI for standard {standard_id}.")
 
-            # 6. Create or update GapAnalysis
+            # 7. Create or update GapAnalysis
             met_count = sum(1 for m in mappings_to_create if m['status'] == 'met')
             overall_score = (met_count / total_criteria) * 100 if total_criteria > 0 else 0
             

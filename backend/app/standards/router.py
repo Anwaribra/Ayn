@@ -13,7 +13,7 @@ from app.standards.models import (
     CriterionResponse
 )
 from app.standards.service import StandardService
-from app.standards.mapping_service import analyze_standard_criteria
+from app.standards.mapping_service import analyze_standard_criteria, seed_standard_criteria
 import logging
 
 logger = logging.getLogger(__name__)
@@ -160,9 +160,26 @@ async def start_standard_analysis(
     if not institution_id:
         raise HTTPException(status_code=400, detail="User does not have an institution associated.")
         
-    # We ideally want to validate standard exists, but mapping_service will handle it.
-    background_tasks.add_task(analyze_standard_criteria, standard_id, institution_id)
-    return {"status": "analyzing", "message": "Analysis started"}
+    db = get_db()
+    for _ in [1]:
+        # Resolve standard by id or code
+        standard = await db.standard.find_first(
+            where={
+                "OR": [
+                    {"id": standard_id},
+                    {"code": standard_id},
+                    {"code": standard_id.upper()}
+                ]
+            }
+        )
+        if not standard:
+            raise HTTPException(status_code=404, detail=f"Standard '{standard_id}' not found")
+
+        resolved_uuid = standard.id
+        logger.info(f"Resolved standard_id '{standard_id}' -> '{resolved_uuid}' for analysis")
+
+        background_tasks.add_task(analyze_standard_criteria, resolved_uuid, institution_id)
+        return {"status": "analyzing", "message": "Analysis started"}
 
 @router.get("/{standard_id}/mappings")
 async def get_standard_mappings(
@@ -176,45 +193,68 @@ async def get_standard_mappings(
         
     db = get_db()
     for _ in [1]:
-        standard = await db.standard.find_unique(where={"id": standard_id}, include={"criteria": True})
+        # Handle UUID vs slug lookup
+        standard = await db.standard.find_first(
+            where={
+                "OR": [
+                    {"id": standard_id},
+                    {"code": standard_id},
+                    {"code": standard_id.upper()}
+                ]
+            },
+            include={"criteria": True}
+        )
         if not standard:
-            raise HTTPException(status_code=404, detail="Standard not found")
-            
+            raise HTTPException(status_code=404, detail=f"Standard '{standard_id}' not found")
+
+        resolved_uuid = standard.id
+        logger.info(f"Resolved standard_id '{standard_id}' -> '{resolved_uuid}'")
+
         mappings = await db.criteriamapping.find_many(
             where={
-                "standardId": standard_id,
+                "standardId": resolved_uuid,
                 "institutionId": institution_id
-            },
-            include={"criterion": True}
+            }
         )
         
-        total = len(standard.criteria) if standard.criteria else 0
+        all_criteria = standard.criteria or []
+        
+        # Check if criteria were never seeded
+        logger.info(f"Standard {resolved_uuid} has {len(all_criteria)} criteria in DB")
+        if len(all_criteria) == 0:
+            all_criteria = await seed_standard_criteria(db, standard)
+            logger.info(f"Seeded {len(all_criteria)} criteria for standard {resolved_uuid}")
+        
+        total = len(all_criteria)
         mapped_count = len(mappings)
         met = sum(1 for m in mappings if m.status == "met")
         partial = sum(1 for m in mappings if m.status == "partial")
         gap = sum(1 for m in mappings if m.status == "gap")
         
         mapping_results = []
-        for m in mappings:
-            # We already expect criteria title to contain code [code] title
-            code = m.criterion.title.split(']')[0].replace('[', '') if m.criterion and '[' in m.criterion.title else "N/A"
-            title = m.criterion.title.split(']')[1].strip() if m.criterion and ']' in m.criterion.title else (m.criterion.title if m.criterion else "")
+        for criterion in all_criteria:
+            # Code/Title parsing
+            code = criterion.title.split(']')[0].replace('[', '') if '[' in criterion.title else "N/A"
+            title = criterion.title.split(']')[1].strip() if ']' in criterion.title else criterion.title
+            
+            # Find matching mapping if it exists
+            mapping = next((m for m in mappings if m.criterionId == criterion.id), None)
             
             mapping_results.append({
-                "criterion_id": m.criterionId,
+                "criterion_id": criterion.id,
                 "criterion_code": code,
                 "criterion_title": title,
-                "status": m.status,
-                "confidence_score": m.confidenceScore,
-                "ai_reasoning": m.aiReasoning,
-                "evidence_id": m.evidenceId
+                "status": mapping.status if mapping else "not_analyzed",
+                "confidence_score": mapping.confidenceScore if mapping else None,
+                "ai_reasoning": mapping.aiReasoning if mapping else None,
+                "evidence_id": mapping.evidenceId if mapping else None
             })
             
         return {
             "standard_id": standard_id,
             "standard_name": standard.title,
             "total_criteria": total,
-            "mapped": mapped_count,
+            "analyzed": mapped_count,
             "met": met,
             "partial": partial,
             "gap": gap,

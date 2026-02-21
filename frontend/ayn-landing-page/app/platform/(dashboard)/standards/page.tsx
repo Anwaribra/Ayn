@@ -26,6 +26,7 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
+  Circle,
 } from "lucide-react"
 import type { Standard, Criterion } from "@/types"
 import { AmbientBackground } from "@/components/ui/ambient-background"
@@ -86,13 +87,14 @@ export default function StandardsPage() {
     setIsDetailsOpen(true)
     setMappingStatus("not_started")
     setMappingsData(null)
+
+    // Always fetch mappings to show criteria, regardless of analysis status
     try {
+      const data = await api.getStandardMappings(standard.id)
+      setMappingsData(data)
+
       const statusRes = await api.getStandardMappingsStatus(standard.id)
       setMappingStatus(statusRes.status as any)
-      if (statusRes.status === "complete") {
-        const data = await api.getStandardMappings(standard.id)
-        setMappingsData(data)
-      }
     } catch (err) {
       console.error(err)
     }
@@ -438,43 +440,40 @@ export default function StandardsPage() {
                             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
                             <p className="text-muted-foreground font-bold">Analysis in progress...</p>
                           </div>
-                        ) : mappingStatus === "complete" && mappingsData?.mappings?.length > 0 ? (
+                        ) : mappingsData?.mappings?.length > 0 ? (
                           mappingsData.mappings.map((m: any) => (
                             <div key={m.criterion_id} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card/50">
                               {m.status === "met" && <CheckCircle className="text-green-500 mt-0.5 shrink-0" size={18} />}
                               {m.status === "partial" && <AlertCircle className="text-yellow-500 mt-0.5 shrink-0" size={18} />}
                               {m.status === "gap" && <XCircle className="text-red-500 mt-0.5 shrink-0" size={18} />}
+                              {m.status === "not_analyzed" && <Circle className="text-muted-foreground mt-0.5 shrink-0" size={18} />}
 
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-sm text-foreground">
-                                    {m.criterion_code} — {m.criterion_title}
+                                  <span className="font-bold text-sm text-foreground flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase text-primary border border-primary/20 bg-primary/10 px-1.5 py-0.5 rounded truncate">
+                                      {m.criterion_code}
+                                    </span>
+                                    {m.criterion_title}
                                   </span>
-                                  <span className="text-xs font-black text-muted-foreground">
-                                    {Math.round(m.confidence_score * 100)}%
-                                  </span>
+                                  {m.status !== "not_analyzed" && m.confidence_score !== null && (
+                                    <span className="text-xs font-black text-muted-foreground">
+                                      {Math.round(m.confidence_score * 100)}%
+                                    </span>
+                                  )}
                                 </div>
-                                <p className="text-xs text-muted-foreground font-medium mt-1.5">{m.ai_reasoning}</p>
+                                {m.ai_reasoning ? (
+                                  <p className="text-xs text-muted-foreground font-medium mt-1.5">{m.ai_reasoning}</p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground/60 italic font-medium mt-1.5">Awaiting analysis against evidence...</p>
+                                )}
                               </div>
                             </div>
                           ))
-                        ) : selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
-                          selectedStandard.criteria.map((crit: Criterion) => (
-                            <GlassPanel key={crit.id} className="p-8 rounded-[32px] border-border hover:border-primary/30 transition-all group" hoverEffect>
-                              <div className="flex items-start gap-6 relative z-10">
-                                <div className="w-10 h-10 rounded-xl border flex items-center justify-center text-primary font-black text-xs flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform bg-background/50 border-border">
-                                  {crit.title.split(' ')[0]}
-                                </div>
-                                <div className="space-y-2">
-                                  <h5 className="text-lg font-black text-foreground">{crit.title}</h5>
-                                  <p className="text-sm font-medium leading-relaxed text-muted-foreground">{crit.description}</p>
-                                </div>
-                              </div>
-                            </GlassPanel>
-                          ))
                         ) : (
-                          <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border">
-                            <p className="text-muted-foreground font-bold">No mapped criteria points found.</p>
+                          <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border flex flex-col items-center justify-center">
+                            <Loader2 className="w-6 h-6 text-primary animate-spin mb-3 opacity-50" />
+                            <p className="text-muted-foreground font-bold">Loading criteria...</p>
                           </div>
                         )}
                       </div>
@@ -490,25 +489,29 @@ export default function StandardsPage() {
                           This framework is fully compatible with our <span className="font-black underline decoration-white/30">Multi-Modal Gap Analysis</span> engine.
                         </p>
 
-                        {mappingStatus === "not_started" ? (
-                          <Button
-                            onClick={handleAnalyzeNow}
-                            className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-                          >
-                            Analyze Now
-                          </Button>
-                        ) : mappingStatus === "analyzing" ? (
+                        {mappingStatus === "analyzing" ? (
                           <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Analyzing...
                           </Button>
                         ) : (
-                          <Button
-                            onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                            className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-                          >
-                            View Full Report
-                          </Button>
+                          <div className="space-y-3">
+                            <Button
+                              onClick={handleAnalyzeNow}
+                              className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+                            >
+                              Analyze Now
+                            </Button>
+
+                            {mappingStatus === "complete" && (
+                              <Button
+                                onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
+                                className="w-full h-14 rounded-2xl bg-white/10 text-white hover:bg-white/20 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-white/20"
+                              >
+                                View Full Report
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
 

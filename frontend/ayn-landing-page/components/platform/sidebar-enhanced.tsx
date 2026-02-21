@@ -96,7 +96,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           active
             ? "bg-primary/15 text-primary border border-primary/40 shadow-md shadow-primary/20"
-            : "text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-white/5"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/50"
         )}
       >
         {active && (
@@ -169,7 +169,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-white/10 dark:bg-white/5 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-white/20 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-muted/50 dark:bg-muted/50 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-muted dark:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -236,7 +236,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         {/* User Row */}
         <div
           className={cn(
-            "group flex items-center rounded-2xl p-2 hover:bg-white/5 transition",
+            "group flex items-center rounded-2xl p-2 hover:bg-muted/50 transition",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >

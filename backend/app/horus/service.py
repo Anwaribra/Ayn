@@ -180,6 +180,9 @@ class HorusService:
                 asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
 
         # EXECUTE EVERYTHING IN PARALLEL
+        if files:
+            yield 'data: {"type": "status", "content": "Processing attached files..."}\n'
+        
         results = await asyncio.gather(*tasks)
         
         summary = results[0]

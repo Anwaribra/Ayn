@@ -290,6 +290,9 @@ export default function StandardsPage() {
                   </div>
 
                   <label
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+                    onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false) }}
+                    onDrop={handleDrop}
                     className={cn(
                       "relative w-full p-8 border-2 border-dashed rounded-[32px] transition-all duration-300 group cursor-pointer flex flex-col items-center",
                       isDragOver ? "bg-primary/5 border-primary/50" : "border-border hover:bg-muted/50"

@@ -161,6 +161,7 @@ export const AIChatInput = ({
                             ref={fileInputRef}
                             type="file"
                             className="hidden"
+                            accept=".pdf,.docx,.txt,image/*"
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file && onFileAttach) onFileAttach(file);

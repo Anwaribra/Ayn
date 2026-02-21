@@ -11,7 +11,7 @@ import React, {
   useMemo,
 } from "react"
 import { Plus, Send } from "lucide-react"
-import { AnimatePresence, motion } from "motion/react"
+import { AnimatePresence, motion } from "framer-motion"
 
 // ===== TYPES =====
 

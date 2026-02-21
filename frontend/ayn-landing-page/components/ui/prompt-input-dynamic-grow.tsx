@@ -159,9 +159,9 @@ const SendButton = memo(({ isDisabled, textColor }: SendButtonProps) => (
     type="submit"
     aria-label="Send message"
     disabled={isDisabled}
-    className="ml-auto self-center h-8 w-8 flex items-center justify-center rounded-full border-0 p-0 transition-all z-20 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground bg-primary text-primary-foreground hover:opacity-100 cursor-pointer hover:shadow-lg"
+    className="ml-auto self-center w-9 h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-full transition-colors z-20 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg"
   >
-    <Send className="w-4 h-4" strokeWidth={2} />
+    <Send className="w-4 h-4 ml-[-2px]" strokeWidth={2} />
   </button>
 ))
 
@@ -275,7 +275,11 @@ const InputArea = memo(({
     const interval = setInterval(() => {
       setShowPlaceholder(false);
       setTimeout(() => {
-        setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        setPlaceholderIndex((prev) => {
+          const next = (prev + 1) % PLACEHOLDERS.length;
+          console.log("Cycling placeholderIndex:", next);
+          return next;
+        });
         setShowPlaceholder(true);
       }, 400);
     }, 3000);

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status, Depends, File, UploadFile
+from fastapi import APIRouter, status, Depends, File, UploadFile, BackgroundTasks, HTTPException
+from app.db.session import get_db
 from typing import List
 from pydantic import BaseModel
 from app.core.middlewares import get_current_user
@@ -12,6 +13,7 @@ from app.standards.models import (
     CriterionResponse
 )
 from app.standards.service import StandardService
+from app.standards.mapping_service import analyze_standard_criteria
 import logging
 
 logger = logging.getLogger(__name__)
@@ -144,3 +146,127 @@ async def get_standard_coverage(
     Returns the number of criteria that have at least one evidence item linked.
     """
     return await StandardService.get_coverage(standard_id, current_user)
+
+# ==================== Map / Analyze Endpoints ====================
+
+@router.post("/{standard_id}/analyze")
+async def start_standard_analysis(
+    standard_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user)
+):
+    """Start background AI analysis for criteria mapping."""
+    institution_id = current_user.get("institutionId")
+    if not institution_id:
+        raise HTTPException(status_code=400, detail="User does not have an institution associated.")
+        
+    # We ideally want to validate standard exists, but mapping_service will handle it.
+    background_tasks.add_task(analyze_standard_criteria, standard_id, institution_id)
+    return {"status": "analyzing", "message": "Analysis started"}
+
+@router.get("/{standard_id}/mappings")
+async def get_standard_mappings(
+    standard_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all criteria mappings for a standard for the current institution."""
+    institution_id = current_user.get("institutionId")
+    if not institution_id:
+        raise HTTPException(status_code=400, detail="User does not have an institution associated.")
+        
+    async for db in get_db():
+        standard = await db.standard.find_unique(where={"id": standard_id}, include={"criteria": True})
+        if not standard:
+            raise HTTPException(status_code=404, detail="Standard not found")
+            
+        mappings = await db.criteriamapping.find_many(
+            where={
+                "standardId": standard_id,
+                "institutionId": institution_id
+            },
+            include={"criterion": True}
+        )
+        
+        total = len(standard.criteria) if standard.criteria else 0
+        mapped_count = len(mappings)
+        met = sum(1 for m in mappings if m.status == "met")
+        partial = sum(1 for m in mappings if m.status == "partial")
+        gap = sum(1 for m in mappings if m.status == "gap")
+        
+        mapping_results = []
+        for m in mappings:
+            # We already expect criteria title to contain code [code] title
+            code = m.criterion.title.split(']')[0].replace('[', '') if m.criterion and '[' in m.criterion.title else "N/A"
+            title = m.criterion.title.split(']')[1].strip() if m.criterion and ']' in m.criterion.title else (m.criterion.title if m.criterion else "")
+            
+            mapping_results.append({
+                "criterion_id": m.criterionId,
+                "criterion_code": code,
+                "criterion_title": title,
+                "status": m.status,
+                "confidence_score": m.confidenceScore,
+                "ai_reasoning": m.aiReasoning,
+                "evidence_id": m.evidenceId
+            })
+            
+        return {
+            "standard_id": standard_id,
+            "standard_name": standard.title,
+            "total_criteria": total,
+            "mapped": mapped_count,
+            "met": met,
+            "partial": partial,
+            "gap": gap,
+            "mappings": mapping_results
+        }
+
+@router.get("/{standard_id}/mappings/status")
+async def get_mapping_status(
+    standard_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get just the counts/status of analysis for polling."""
+    institution_id = current_user.get("institutionId")
+    if not institution_id:
+        raise HTTPException(status_code=400, detail="User does not have an institution associated.")
+        
+    async for db in get_db():
+        # Using prisma to count mappings
+        mappings = await db.criteriamapping.find_many(
+            where={
+                "standardId": standard_id,
+                "institutionId": institution_id
+            }
+        )
+        
+        standard = await db.standard.find_unique(where={"id": standard_id}, include={"criteria": True})
+        if not standard:
+            raise HTTPException(status_code=404, detail="Standard not found")
+            
+        total = len(standard.criteria) if standard.criteria else 0
+        mapped_count = len(mappings)
+        
+        # Check GapAnalysis mapping for this standard/institution to indicate completeness
+        gap_record = await db.gapanalysis.find_first(
+            where={
+                "standardId": standard_id,
+                "institutionId": institution_id
+            },
+            order={"createdAt": "desc"}
+        )
+        
+        if mapped_count == 0:
+            status_val = "not_started"
+        elif gap_record and len(mappings) > 0 and (mapped_count >= total):
+            status_val = "complete"
+        elif mapped_count > 0 and mapped_count < total:
+             # In progress or incomplete
+             status_val = "analyzing"
+        else:
+            status_val = "complete" if gap_record else "analyzing"
+            
+        return {
+            "status": status_val,
+            "mapped": mapped_count,
+            "total": total
+        }

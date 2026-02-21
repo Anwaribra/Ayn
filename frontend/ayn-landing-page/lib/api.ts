@@ -232,6 +232,20 @@ class ApiClient {
     })
   }
 
+  async analyzeStandard(standardId: string) {
+    return this.request<{ status: string; message: string }>(`/standards/${standardId}/analyze`, {
+      method: "POST"
+    })
+  }
+
+  async getStandardMappingsStatus(standardId: string) {
+    return this.request<{ status: string; mapped: number; total: number }>(`/standards/${standardId}/mappings/status`)
+  }
+
+  async getStandardMappings(standardId: string) {
+    return this.request<any>(`/standards/${standardId}/mappings`)
+  }
+
   async importStandardPDF(file: File) {
     const formData = new FormData()
     formData.append("file", file)

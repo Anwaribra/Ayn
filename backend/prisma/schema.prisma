@@ -109,6 +109,7 @@ model Criterion {
   standard    Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
   evidence    Evidence[] // Deprecated single link
   evidenceCriteria EvidenceCriterion[] // New many-to-many link
+  criteriaMappings CriteriaMapping[] // Detailed AI mapping results
 
   @@index([standardId])
 }
@@ -131,6 +132,7 @@ model Evidence {
   // Relations
   uploadedBy      User     @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
   criteria        EvidenceCriterion[]
+  criteriaMappings CriteriaMapping[]
 
   // Deprecated single link (keeping for safety until migration complete)
   criterionId     String?
@@ -160,6 +162,27 @@ model EvidenceCriterion {
   @@index([criterionId])
 }
 
+// Detailed AI Criteria Mapping
+model CriteriaMapping {
+  id              String    @id @default(uuid())
+  criterionId     String
+  evidenceId      String?
+  institutionId   String
+  standardId      String
+  status          String    @default("gap")
+  confidenceScore Float     @default(0.0)
+  aiReasoning     String    @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  criterion   Criterion  @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  evidence    Evidence?  @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+
+  @@unique([criterionId, institutionId])
+  @@index([standardId, institutionId])
+  @@index([evidenceId])
+}
+
 // Chat Persistence Models
 model Chat {
   id        String    @id @default(uuid())
@@ -172,6 +195,8 @@ model Chat {
 
   @@index([userId])
 }
+
+
 
 model Message {
   id        String   @id @default(uuid())

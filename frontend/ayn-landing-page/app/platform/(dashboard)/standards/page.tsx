@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -23,6 +23,9 @@ import {
   Eye,
   CheckCircle2,
   Upload,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
 } from "lucide-react"
 import type { Standard, Criterion } from "@/types"
 import { AmbientBackground } from "@/components/ui/ambient-background"
@@ -58,6 +61,53 @@ export default function StandardsPage() {
   // Details Modal State
   const [selectedStandard, setSelectedStandard] = useState<Standard | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [mappingStatus, setMappingStatus] = useState<"not_started" | "analyzing" | "complete">("not_started")
+  const [mappingsData, setMappingsData] = useState<any>(null)
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isDetailsOpen && selectedStandard && mappingStatus === "analyzing") {
+      interval = setInterval(async () => {
+        try {
+          const statusRes = await api.getStandardMappingsStatus(selectedStandard.id)
+          setMappingStatus(statusRes.status as any)
+          if (statusRes.status === "complete") {
+            const data = await api.getStandardMappings(selectedStandard.id)
+            setMappingsData(data)
+          }
+        } catch (err) { }
+      }, 3000)
+    }
+    return () => clearInterval(interval)
+  }, [isDetailsOpen, selectedStandard, mappingStatus])
+
+  const openDetails = async (standard: Standard) => {
+    setSelectedStandard(standard)
+    setIsDetailsOpen(true)
+    setMappingStatus("not_started")
+    setMappingsData(null)
+    try {
+      const statusRes = await api.getStandardMappingsStatus(standard.id)
+      setMappingStatus(statusRes.status as any)
+      if (statusRes.status === "complete") {
+        const data = await api.getStandardMappings(standard.id)
+        setMappingsData(data)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleAnalyzeNow = async () => {
+    if (!selectedStandard) return
+    try {
+      await api.analyzeStandard(selectedStandard.id)
+      setMappingStatus("analyzing")
+      toast.success("Analysis started!")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start analysis")
+    }
+  }
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("")
@@ -228,10 +278,7 @@ export default function StandardsPage() {
                         <div className="grid grid-cols-2 gap-5 pt-8 mt-auto">
                           <Button
                             variant="outline"
-                            onClick={() => {
-                              setSelectedStandard(standard)
-                              setIsDetailsOpen(true)
-                            }}
+                            onClick={() => openDetails(standard)}
                             className="h-14 border-2 font-black rounded-2xl flex items-center justify-center gap-2 transition-all hover:bg-muted/50 border-border text-foreground bg-transparent"
                           >
                             <Eye className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
@@ -386,7 +433,32 @@ export default function StandardsPage() {
                         Criteria Evidence Framework
                       </h4>
                       <div className="space-y-4">
-                        {selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
+                        {mappingStatus === "analyzing" ? (
+                          <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border flex flex-col items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                            <p className="text-muted-foreground font-bold">Analysis in progress...</p>
+                          </div>
+                        ) : mappingStatus === "complete" && mappingsData?.mappings?.length > 0 ? (
+                          mappingsData.mappings.map((m: any) => (
+                            <div key={m.criterion_id} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card/50">
+                              {m.status === "met" && <CheckCircle className="text-green-500 mt-0.5 shrink-0" size={18} />}
+                              {m.status === "partial" && <AlertCircle className="text-yellow-500 mt-0.5 shrink-0" size={18} />}
+                              {m.status === "gap" && <XCircle className="text-red-500 mt-0.5 shrink-0" size={18} />}
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-sm text-foreground">
+                                    {m.criterion_code} — {m.criterion_title}
+                                  </span>
+                                  <span className="text-xs font-black text-muted-foreground">
+                                    {Math.round(m.confidence_score * 100)}%
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground font-medium mt-1.5">{m.ai_reasoning}</p>
+                              </div>
+                            </div>
+                          ))
+                        ) : selectedStandard.criteria && selectedStandard.criteria.length > 0 ? (
                           selectedStandard.criteria.map((crit: Criterion) => (
                             <GlassPanel key={crit.id} className="p-8 rounded-[32px] border-border hover:border-primary/30 transition-all group" hoverEffect>
                               <div className="flex items-start gap-6 relative z-10">
@@ -417,12 +489,27 @@ export default function StandardsPage() {
                         <p className="text-base font-medium leading-relaxed">
                           This framework is fully compatible with our <span className="font-black underline decoration-white/30">Multi-Modal Gap Analysis</span> engine.
                         </p>
-                        <Button
-                          onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                          className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider"
-                        >
-                          Analyze Now
-                        </Button>
+
+                        {mappingStatus === "not_started" ? (
+                          <Button
+                            onClick={handleAnalyzeNow}
+                            className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+                          >
+                            Analyze Now
+                          </Button>
+                        ) : mappingStatus === "analyzing" ? (
+                          <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Analyzing...
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
+                            className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+                          >
+                            View Full Report
+                          </Button>
+                        )}
                       </div>
 
                       <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
@@ -430,19 +517,46 @@ export default function StandardsPage() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="text-xs font-black uppercase text-foreground">Total Criteria</span>
-                            <span className="text-xs font-black text-primary">{selectedStandard.criteria?.length ?? 0}</span>
+                            <span className="text-xs font-black text-primary">{mappingsData?.total_criteria || selectedStandard.criteria?.length || 0}</span>
                           </div>
-                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-700"
-                              style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
-                            />
-                          </div>
-                          <p className="text-[10px] text-muted-foreground font-medium">
-                            {selectedStandard.criteria && selectedStandard.criteria.length > 0
-                              ? `${selectedStandard.criteria.length} evidence criteria mapped`
-                              : "No criteria mapped yet — run Gap Analysis to populate"}
-                          </p>
+
+                          {mappingStatus === "complete" && mappingsData ? (
+                            <div className="space-y-2 mt-4">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-foreground">MET</span>
+                                <span className="text-xs font-black text-green-500">{mappingsData.met}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-foreground">PARTIAL</span>
+                                <span className="text-xs font-black text-yellow-500">{mappingsData.partial}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-foreground">GAPS</span>
+                                <span className="text-xs font-black text-red-500">{mappingsData.gap}</span>
+                              </div>
+
+                              <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                                <div
+                                  className="h-full bg-green-500 transition-all duration-700"
+                                  style={{ width: `${(mappingsData.met / mappingsData.total_criteria) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                                <div
+                                  className="h-full bg-primary transition-all duration-700"
+                                  style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
+                                />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground font-medium">
+                                {selectedStandard.criteria && selectedStandard.criteria.length > 0
+                                  ? `${selectedStandard.criteria.length} evidence criteria mapped`
+                                  : "No criteria mapped yet — run Gap Analysis to populate"}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </GlassPanel>
                     </div>

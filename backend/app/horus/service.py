@@ -163,9 +163,30 @@ class HorusService:
                 }
             return None
 
+        async def fetch_mappings_context(uid: str):
+            try:
+                from app.core.db import db as prisma_client
+                user_obj = await prisma_client.user.find_unique(where={"id": uid})
+                if user_obj and user_obj.institutionId:
+                    mappings = await prisma_client.criteriamapping.find_many(
+                        where={"institutionId": user_obj.institutionId},
+                        include={"criterion": True}
+                    )
+                    if mappings:
+                        met = len([m for m in mappings if m.status == "met"])
+                        total = len(mappings)
+                        gap_mappings = [m for m in mappings if m.status == "gap"]
+                        gap_titles = [m.criterion.title for m in gap_mappings[:3] if m.criterion]
+                        gap_str = ", ".join(gap_titles) if gap_titles else "None"
+                        return f"CRITERIA MAPPINGS: {met}/{total} criteria met across all standards.\nCritical gaps: {gap_str}"
+            except Exception as e:
+                logger.error(f"Failed to fetch criteria mappings context: {e}")
+            return ""
+
         tasks = [
             self.state_manager.get_state_summary(user_id),
             ActivityService.get_recent_activities(user_id, limit=5),
+            fetch_mappings_context(user_id),
         ]
         
         # Add file processing tasks if any
@@ -185,11 +206,13 @@ class HorusService:
         
         results = await asyncio.gather(*tasks)
         
+        
         summary = results[0]
         recent_activities = results[1]
+        mapping_context = results[2]
         
         # Handle dynamic results (files)
-        offset = 2
+        offset = 3
         file_results = []
         if files:
             file_results = [r for r in results[offset:offset+len(files)] if r is not None]
@@ -208,7 +231,7 @@ class HorusService:
 
         # 3. AI Interaction (Streaming)
         client = get_gemini_client()
-        context = self._prepare_context_sync(summary, recent_activities, message=message)
+        context = self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context)
         
         full_response = ""
         
@@ -235,7 +258,7 @@ class HorusService:
             
             yield 'data: {"type": "status", "content": "📄 Document received. Running gap analysis in background..."}\n'
             
-            context = self._prepare_context_sync(summary, recent_activities, None, message=message)
+            context = self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
             
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
@@ -350,7 +373,7 @@ class HorusService:
 
         return results
 
-    def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "") -> str:
+    def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "") -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:
@@ -396,6 +419,9 @@ class HorusService:
             
         if brain_context:
             context_parts.append(brain_context)
+            
+        if mapping_context:
+            context_parts.append(mapping_context)
 
         import re
         message_clean = (message or "").replace(" ", "")
@@ -441,6 +467,24 @@ class HorusService:
         else:
             logger_msg = message[:20].replace('\n', ' ') if message else ""
             logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~300 tokens.")
+            
+        try:
+            from app.core.db import db as prisma_client
+            user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+            if user_obj and user_obj.institutionId:
+                mappings = await prisma_client.criteriamapping.find_many(
+                    where={"institutionId": user_obj.institutionId},
+                    include={"criterion": True}
+                )
+                if mappings:
+                    met = len([m for m in mappings if m.status == "met"])
+                    total = len(mappings)
+                    gap_mappings = [m for m in mappings if m.status == "gap"]
+                    gap_titles = [m.criterion.title for m in gap_mappings[:3] if m.criterion]
+                    gap_str = ", ".join(gap_titles) if gap_titles else "None"
+                    context_parts.append(f"CRITERIA MAPPINGS: {met}/{total} criteria met across all standards.\nCritical gaps: {gap_str}")
+        except Exception as e:
+            logger.error(f"Failed to fetch criteria mappings context: {e}")
         
         import re
         message_clean = (message or "").replace(" ", "")

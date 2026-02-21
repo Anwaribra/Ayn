@@ -15,6 +15,7 @@ from app.gap_analysis.models import (
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap_analysis
+from app.standards.mapping_service import analyze_standard_criteria
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class GapAnalysisService:
             standardTitle=standard_title,
             overallScore=record.overallScore,
             summary=record.summary,
+            status=record.status if hasattr(record, "status") else "pending",
             gaps=[GapItem(**g) for g in gaps_data],
             recommendations=recommendations_data,
             archived=record.archived,
@@ -72,6 +74,7 @@ class GapAnalysisService:
                 "standardId": request.standardId,
                 "overallScore": 0.0,           # Sentinel: 0.0 = queued/processing
                 "summary": "queued",            # Sentinel: "queued" = in progress
+                "status": "pending",
                 "gapsJson": "[]",
                 "recommendationsJson": "[]",
             }
@@ -105,9 +108,14 @@ class GapAnalysisService:
                 logger.error(f"Standard {standard_id} not found for job {job_id}")
                 await db.gapanalysis.update(
                     where={"id": job_id},
-                    data={"summary": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                    data={"summary": "failed", "status": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
                 )
                 return
+
+            await db.gapanalysis.update(
+                where={"id": job_id},
+                data={"status": "running"}
+            )
 
             criteria = await db.criterion.find_many(where={"standardId": standard_id})
             criterion_ids = [c.id for c in criteria]
@@ -135,10 +143,17 @@ class GapAnalysisService:
                 data={
                     "overallScore": result["overallScore"],
                     "summary": result["summary"],
+                    "status": "completed",
                     "gapsJson": json.dumps(result["gaps"]),
                     "recommendationsJson": json.dumps(result["recommendations"]),
                 }
             )
+
+            # Recalculate standard coverage mapping
+            try:
+                await analyze_standard_criteria(standard_id, institution_id)
+            except Exception as mapping_err:
+                logger.error(f"Failed standard coverage recalculation: {mapping_err}")
 
             # Notify the user so the SSE stream / notification bell picks it up
             try:
@@ -160,7 +175,7 @@ class GapAnalysisService:
             try:
                 await db.gapanalysis.update(
                     where={"id": job_id},
-                    data={"summary": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                    data={"summary": "failed", "status": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
                 )
                 await NotificationService.create_notification(NotificationCreateRequest(
                     userId=user_id,
@@ -192,6 +207,7 @@ class GapAnalysisService:
                 standardTitle=r.standard.title if r.standard else "Unknown",
                 overallScore=r.overallScore,
                 summary=r.summary,
+                status=r.status if hasattr(r, "status") else "pending",
                 archived=r.archived,
                 createdAt=r.createdAt,
             )

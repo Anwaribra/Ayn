@@ -52,6 +52,7 @@ class GapAnalysisResponse(BaseModel):
     summary: str  # AI executive summary
     gaps: List[GapItem]
     recommendations: List[str]  # Top-level recommendations
+    status: str = "pending"
     archived: bool = False
     createdAt: datetime
 
@@ -65,6 +66,7 @@ class GapAnalysisListItem(BaseModel):
     standardTitle: str
     overallScore: float
     summary: str
+    status: str = "pending"
     archived: bool
     createdAt: datetime
 

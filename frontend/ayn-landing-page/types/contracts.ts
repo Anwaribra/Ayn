@@ -120,6 +120,7 @@ export interface GapAnalysisListItem {
   standardTitle: string;
   overallScore: number;
   summary: string;
+  status?: string;
   archived: boolean;
   createdAt: string;
 }
@@ -135,6 +136,7 @@ export interface GapAnalysisResponse {
   standardTitle: string;
   overallScore: number;
   summary: string;
+  status?: string;
   gaps: GapItem[];
   recommendations: string[];
   archived: boolean;

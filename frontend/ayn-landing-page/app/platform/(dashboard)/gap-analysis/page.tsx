@@ -73,6 +73,18 @@ function GapAnalysisContent() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [deleteConfirm, isRemediating])
 
+  // 2-minute timeout for gap analysis polling
+  useEffect(() => {
+    if (!pendingJobId) return
+    const timer = setTimeout(() => {
+      setGenerating(false)
+      setPendingJobId(null)
+      toast.error("Analysis is taking longer than expected. Try refreshing.")
+    }, 120000)
+
+    return () => clearTimeout(timer)
+  }, [pendingJobId])
+
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
@@ -83,16 +95,23 @@ function GapAnalysisContent() {
     () => api.getGapAnalyses(),
     {
       // Poll every 3s when there's a pending background job
-      // Once the report appears as done (summary !== 'queued'), stop polling
+      // Once the report appears as done (status === 'completed' or 'failed'), stop polling
       refreshInterval: pendingJobId ? 3000 : 0,
       onSuccess: (data: GapAnalysisListItem[]) => {
         if (!pendingJobId) return
         const job = data?.find((r: GapAnalysisListItem) => r.id === pendingJobId)
-        // job.summary will be the real summary text once the AI is done
-        if (job && job.overallScore > 0) {
-          setPendingJobId(null)
-          setGenerating(false)
-          toast.success("Gap analysis is ready!", { description: job.standardTitle })
+
+        if (job) {
+          if (job.status === "completed") {
+            setPendingJobId(null)
+            setGenerating(false)
+            toast.success("Gap analysis is ready!", { description: job.standardTitle })
+            handleViewReport(job.id)
+          } else if (job.status === "failed") {
+            setPendingJobId(null)
+            setGenerating(false)
+            toast.error("Gap analysis failed.", { description: "An error occurred during evidence analysis." })
+          }
         }
       }
     }
@@ -379,9 +398,10 @@ function GapAnalysisContent() {
               </div>
               <div className="space-y-3">
                 {reports
-                  .filter((report: GapAnalysisListItem) => report.overallScore > 0 || report.id === pendingJobId)
+                  .filter((report: GapAnalysisListItem) => report.status !== "pending" && report.status !== "running" || report.id === pendingJobId)
                   .map((report: GapAnalysisListItem) => {
-                    const isQueued = report.id === pendingJobId || report.overallScore === 0
+                    const isQueued = report.status === "pending" || report.status === "running" || report.id === pendingJobId
+                    const isFailed = report.status === "failed"
                     return (
                       <GlassCard
                         key={report.id}
@@ -390,14 +410,16 @@ function GapAnalysisContent() {
                         shine={!isQueued}
                         className={cn(
                           "flex items-center justify-between p-5",
-                          isQueued ? "opacity-70 cursor-wait" : "cursor-pointer"
+                          isQueued ? "opacity-70 cursor-wait" : isFailed ? "border-destructive/50 opacity-80" : "cursor-pointer"
                         )}
-                        onClick={isQueued ? undefined : () => handleViewReport(report.id)}
+                        onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}
                       >
                         <div className="flex items-center gap-5">
                           <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
                             {isQueued ? (
                               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                            ) : isFailed ? (
+                              <AlertTriangle className="w-4 h-4 text-destructive" />
                             ) : (
                               <span className="mono text-[10px] font-bold text-muted-foreground">{Math.round(report.overallScore)}%</span>
                             )}
@@ -405,7 +427,7 @@ function GapAnalysisContent() {
                           <div>
                             <h4 className="text-sm font-bold text-foreground">{report.standardTitle}</h4>
                             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                              {isQueued ? "Analyzing..." : new Date(report.createdAt).toLocaleDateString()}
+                              {isQueued ? "Analyzing..." : isFailed ? "Analysis Failed" : new Date(report.createdAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>

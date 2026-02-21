@@ -257,6 +257,7 @@ model GapAnalysis {
   summary             String   @db.Text
   gapsJson            String   @db.Text
   recommendationsJson String   @db.Text
+  status              String   @default("pending")
   archived            Boolean  @default(false)
   createdAt           DateTime @default(now())
 

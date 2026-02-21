@@ -40,12 +40,16 @@ class NotificationService:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create notification")
 
     @staticmethod
-    async def list_notifications(user_id: str) -> List[NotificationResponse]:
+    async def list_notifications(user_id: str, include_read: bool = False) -> List[NotificationResponse]:
         """List notifications for a user."""
         db = get_db()
         try:
+            where_clause = {"userId": user_id}
+            if not include_read:
+                where_clause["isRead"] = False
+                
             notifications = await db.notification.find_many(
-                where={"userId": user_id},
+                where=where_clause,
                 order={"createdAt": "desc"}
             )
             return [NotificationResponse.model_validate(n) for n in notifications]

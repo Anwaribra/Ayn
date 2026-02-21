@@ -30,12 +30,13 @@ async def create_notification(
 
 @router.get("", response_model=List[NotificationResponse])
 async def list_notifications(
+    include_read: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
     """
     List notifications for the current user.
     """
-    return await NotificationService.list_notifications(current_user["id"])
+    return await NotificationService.list_notifications(current_user["id"], include_read)
 
 
 @router.put("/read-all", status_code=status.HTTP_200_OK)

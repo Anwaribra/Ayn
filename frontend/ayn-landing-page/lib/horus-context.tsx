@@ -35,29 +35,10 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
     const abortControllerRef = useRef<AbortController | null>(null)
 
     // 1. Auto-Resume Last Session on mount
+    // 1. (Auto-Resume functionality removed, chat should start empty on refresh)
     useEffect(() => {
-        if (!user || isInitialized.current) return
-
-        const resumeSession = async () => {
-            try {
-                const lastChat = await api.getLastChat()
-                if (lastChat) {
-                    setCurrentChatId(lastChat.id)
-                    setMessages(lastChat.messages.map((m: any) => ({
-                        id: m.id,
-                        role: m.role,
-                        content: m.content,
-                        timestamp: new Date(m.timestamp).getTime()
-                    })))
-                }
-            } catch (err) {
-                console.error("Horus auto-resume failed:", err)
-            } finally {
-                isInitialized.current = true
-            }
-        }
-        resumeSession()
-    }, [user])
+        isInitialized.current = true
+    }, [])
 
     // 2. Persistent SSE Event Listener
     useEffect(() => {

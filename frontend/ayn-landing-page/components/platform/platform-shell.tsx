@@ -89,13 +89,15 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   )
 
   // Live Toast for New Notifications
-  const lastNotifId = useRef<string | null>(null)
+  const lastShownAt = useRef<number>(Date.now())
   useEffect(() => {
     const unread = notifications?.filter((n: Notification) => !n.isRead) || []
     if (unread.length > 0) {
       const latest = unread[0]
-      if (latest.id !== lastNotifId.current) {
-        lastNotifId.current = latest.id
+      const latestTime = new Date(latest.createdAt).getTime()
+
+      if (latestTime > lastShownAt.current) {
+        lastShownAt.current = latestTime
         toast(latest.title, {
           description: latest.message,
           action: {

@@ -8,7 +8,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import {
   Paperclip,
-  Bot,
   User,
   FileText,
   X,
@@ -247,7 +246,7 @@ export default function HorusAIChat() {
               </div>
             ) : (
               <>
-                {messages.slice(-30).map((msg) => {
+                {messages.slice(-30).filter(msg => !(msg.content || "").toUpperCase().startsWith("EVENT:")).map((msg) => {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
@@ -263,14 +262,15 @@ export default function HorusAIChat() {
                       "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200",
                       msg.role === "user" ? "flex-row-reverse" : "flex-row"
                     )}>
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                        msg.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                      </div>
+                      {msg.role === "user" ? (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary text-primary-foreground">
+                          <User className="w-4 h-4" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          H
+                        </div>
+                      )}
                       <div className={cn(
                         "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
                         msg.role === "user"

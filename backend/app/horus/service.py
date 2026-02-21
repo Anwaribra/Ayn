@@ -63,13 +63,6 @@ class HorusService:
         # 2. Save User Message
         if message:
             await ChatService.save_message(chat_id, user_id, "user", message)
-            await ActivityService.log_activity(
-                user_id=user_id,
-                type="chat_message",
-                title="Message sent to Horus",
-                entity_id=chat_id,
-                entity_type="chat"
-            )
 
         # 3. Get State Summary
         summary = await self.state_manager.get_state_summary(user_id)
@@ -183,13 +176,6 @@ class HorusService:
         if message:
             if background_tasks:
                 background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
-                background_tasks.add_task(ActivityService.log_activity, 
-                    user_id=user_id, 
-                    type="chat_message", 
-                    title="Message sent to Horus",
-                    entity_id=chat_id,
-                    entity_type="chat"
-                )
             else:
                 asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
 

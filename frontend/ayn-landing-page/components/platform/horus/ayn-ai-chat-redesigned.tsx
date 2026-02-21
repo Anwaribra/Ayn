@@ -246,7 +246,11 @@ export default function HorusAIChat() {
               </div>
             ) : (
               <>
-                {messages.slice(-30).filter(msg => !(msg.content || "").toUpperCase().startsWith("EVENT:")).map((msg) => {
+                {messages.slice(-30).filter(msg => {
+                  if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false;
+                  if (msg.role === "assistant" && !msg.content && status === "generating") return false;
+                  return true;
+                }).map((msg) => {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
@@ -259,7 +263,7 @@ export default function HorusAIChat() {
 
                   return (
                     <div key={msg.id} className={cn(
-                      "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200",
+                      "flex items-start gap-3 px-4 py-2 animate-in fade-in slide-in-from-bottom-2 duration-200",
                       msg.role === "user" ? "flex-row-reverse" : "flex-row"
                     )}>
                       {msg.role === "user" ? (
@@ -272,12 +276,17 @@ export default function HorusAIChat() {
                         </div>
                       )}
                       <div className={cn(
-                        "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
                         msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted/80 text-foreground rounded-bl-md border border-[var(--border-subtle)]"
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[80%] text-sm"
+                          : "bg-white/10 rounded-2xl px-4 py-3 max-w-[75%]"
                       )}>
-                        <HorusMarkdown content={msg.content} onAction={handleAction} />
+                        {msg.role === "user" ? (
+                          <HorusMarkdown content={msg.content} onAction={handleAction} />
+                        ) : (
+                          <div className="text-white text-sm leading-relaxed horus-markdown-wrapper">
+                            <HorusMarkdown content={msg.content} onAction={handleAction} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
@@ -285,7 +294,7 @@ export default function HorusAIChat() {
 
                 {/* Typing indicator */}
                 {status !== "idle" && (status === "searching" ? (
-                  <div className="flex gap-3">
+                  <div className="flex items-start gap-3 px-4 py-2">
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                       <Loader2 className="w-4 h-4 text-primary animate-spin" />
                     </div>
@@ -294,9 +303,11 @@ export default function HorusAIChat() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-3 px-4">
-                    <AiLoader size={80} text="Horus" />
-                  </div>
+                  messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content ? null : (
+                    <div className="flex items-start gap-3 px-4 py-2">
+                      <AiLoader size={80} text="Horus" />
+                    </div>
+                  )
                 ))}
               </>
             )}

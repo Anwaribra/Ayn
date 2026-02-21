@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR, { mutate } from "swr"
 import { Evidence } from "@/types"
-import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical } from "lucide-react"
+import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { GlassCard } from "@/components/ui/glass-card"
@@ -31,6 +31,35 @@ function EvidenceContent() {
     user ? [`evidence`, user.id] : null,
     () => api.getEvidence()
   )
+
+  const { data: standards } = useSWR<any[]>(
+    "standards",
+    () => api.getStandards()
+  )
+
+  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false)
+  const [selectedStandardId, setSelectedStandardId] = useState<string>("all")
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const handleAnalyze = async () => {
+    if (!selectedEvidence) return
+    setIsAnalyzing(true)
+    try {
+      if (selectedStandardId === "all") {
+        if (!standards) return
+        // Trigger for all standards
+        await Promise.all(standards.map((s: any) => api.analyzeStandard(s.id, [selectedEvidence.id], true)))
+      } else {
+        await api.analyzeStandard(selectedStandardId, [selectedEvidence.id], true)
+      }
+      toast.success("Analysis started!", { description: "Horus is mapping this evidence against the selected standards." })
+      setIsAnalyzeModalOpen(false)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start analysis")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
 
   const handleDelete = async (evidence: Evidence) => {
     try {
@@ -169,7 +198,7 @@ function EvidenceContent() {
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {evidenceList?.map((evidence) => (
+          {evidenceList?.map((evidence: Evidence) => (
             <GlassCard
               key={evidence.id}
               variant={2}
@@ -262,24 +291,105 @@ function EvidenceContent() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-border bg-muted/30 flex gap-3 justify-end">
+            <div className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row gap-3 justify-end items-center">
+              <div className="flex-1 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsAnalyzeModalOpen(true)}
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Analyze Automatically
+                </button>
+              </div>
+
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(selectedEvidence)}
+                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+                <a
+                  href={selectedEvidence.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 sm:flex-none px-6 py-2 bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open File
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analyze Modal */}
+      {isAnalyzeModalOpen && selectedEvidence && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            onClick={() => !isAnalyzing && setIsAnalyzeModalOpen(false)}
+          />
+          <div className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50">
+            <h3 className="text-xl font-black text-foreground mb-1">Analyze Evidence</h3>
+            <p className="text-sm font-medium text-muted-foreground mb-6">Select framework to map against.</p>
+
+            <div className="space-y-3 mb-8">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-white/30 cursor-pointer transition-colors bg-white/5">
+                <input
+                  type="radio"
+                  name="standard"
+                  value="all"
+                  checked={selectedStandardId === "all"}
+                  onChange={() => setSelectedStandardId("all")}
+                  className="accent-primary"
+                />
+                <span className="text-sm font-bold">All Available Standards</span>
+              </label>
+
+              {standards?.map((s: any) => (
+                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-white/30 cursor-pointer transition-colors bg-white/5">
+                  <input
+                    type="radio"
+                    name="standard"
+                    value={s.id}
+                    checked={selectedStandardId === s.id}
+                    onChange={() => setSelectedStandardId(s.id)}
+                    className="accent-primary"
+                  />
+                  <div>
+                    <span className="text-sm font-bold block">{s.title}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase opacity-80 font-black">{s.code}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => handleDelete(selectedEvidence)}
-                className="px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center gap-2"
+                onClick={() => setIsAnalyzeModalOpen(false)}
+                disabled={isAnalyzing}
+                className="flex-1 px-4 py-3 text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground rounded-2xl transition-colors disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete
+                Cancel
               </button>
-              <a
-                href={selectedEvidence.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-6 py-2 bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center gap-2"
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+                className="flex-[2] px-4 py-3 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-primary/20 disabled:opacity-50"
               >
-                <ExternalLink className="w-4 h-4" />
-                Open File
-              </a>
+                {isAnalyzing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                ) : (
+                  <>Run Analysis <Sparkles className="w-4 h-4 ml-1" /></>
+                )}
+              </button>
             </div>
           </div>
         </div>

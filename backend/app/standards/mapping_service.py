@@ -162,7 +162,7 @@ Return ONLY a valid JSON array, no markdown formatting like ```json.
                 logger.error(f"Failed to batch analyze criteria after {max_retries} retries: {e}")
                 return []
 
-async def analyze_standard_criteria(standard_id: str, institution_id: str):
+async def analyze_standard_criteria(standard_id: str, institution_id: str, evidence_ids: Optional[List[str]] = None, force_reanalyze: bool = False):
     """Background task to analyze standard criteria against evidence."""
     logger.info(f"Starting standard criteria analysis for standard {standard_id} and institution {institution_id}")
     
@@ -193,39 +193,44 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
 
             # 3. Cache Check (Optimization 3)
             # Check if mappings already exist and are less than 24 hours old
-            existing_mappings = await db.criteriamapping.find_many(
-                where={
-                    "standardId": standard_id,
-                    "institutionId": institution_id
-                }
-            )
-            
-            if existing_mappings:
-                # Find most recent date manually to avoid DB sort complexities
-                most_recent = max([m.updatedAt for m in existing_mappings if m.updatedAt] or [m.createdAt for m in existing_mappings])
+            if force_reanalyze:
+                logger.info(f"Force re-analyze requested for standard {standard_id}")
+            else:
+                existing_mappings = await db.criteriamapping.find_many(
+                    where={
+                        "standardId": standard_id,
+                        "institutionId": institution_id
+                    }
+                )
                 
-                # Check if it was updated within the last 24 hours
-                now_utc = datetime.now(timezone.utc)
-                if most_recent.tzinfo is None:
-                    most_recent = most_recent.replace(tzinfo=timezone.utc)
+                if existing_mappings:
+                    # Find most recent date manually to avoid DB sort complexities
+                    most_recent = max([m.updatedAt for m in existing_mappings if m.updatedAt] or [m.createdAt for m in existing_mappings])
                     
-                if (now_utc - most_recent) < timedelta(hours=24):
-                    logger.info(f"Using cached standard criteria mappings for {standard_id} (Age: {now_utc - most_recent}). Skipping AI.")
-                    return existing_mappings
+                    # Check if it was updated within the last 24 hours
+                    now_utc = datetime.now(timezone.utc)
+                    if most_recent.tzinfo is None:
+                        most_recent = most_recent.replace(tzinfo=timezone.utc)
+                        
+                    if (now_utc - most_recent) < timedelta(hours=24):
+                        logger.info(f"Using cached standard criteria mappings for {standard_id} (Age: {now_utc - most_recent}). Skipping AI.")
+                        return existing_mappings
 
             # 4. Fetch all evidence for this institution
             institution_users = await db.user.find_many(where={"institutionId": institution_id})
             user_ids = [u.id for u in institution_users]
             
             # Evidence belongs to users or ownerId
-            evidence_records = await db.evidence.find_many(
-                where={
-                    "OR": [
-                        {"ownerId": institution_id},
-                        {"uploadedById": {"in": user_ids}}
-                    ]
-                }
-            )
+            where_clause = {
+                "OR": [
+                    {"ownerId": institution_id},
+                    {"uploadedById": {"in": user_ids}}
+                ]
+            }
+            if evidence_ids is not None:
+                where_clause["id"] = {"in": evidence_ids}
+                
+            evidence_records = await db.evidence.find_many(where=where_clause)
 
             evidence_context = []
             for ev in evidence_records:

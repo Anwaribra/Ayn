@@ -27,8 +27,10 @@ import {
   AlertCircle,
   XCircle,
   Circle,
+  Check,
+  RefreshCw,
 } from "lucide-react"
-import type { Standard, Criterion } from "@/types"
+import type { Standard, Criterion, Evidence } from "@/types"
 import { AmbientBackground } from "@/components/ui/ambient-background"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
@@ -100,12 +102,22 @@ export default function StandardsPage() {
     }
   }
 
-  const handleAnalyzeNow = async () => {
+  // Evidence Selection State
+  const [evidenceSelection, setEvidenceSelection] = useState<"all" | "specific">("all")
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
+
+  const { data: allEvidence } = useSWR<Evidence[]>(
+    isDetailsOpen ? "evidence" : null,
+    () => api.getEvidence()
+  )
+
+  const handleAnalyzeNow = async (forceRefetch: boolean = false) => {
     if (!selectedStandard) return
     try {
-      await api.analyzeStandard(selectedStandard.id)
+      const ids = evidenceSelection === "specific" ? (selectedEvidenceIds.length > 0 ? selectedEvidenceIds : undefined) : undefined
+      await api.analyzeStandard(selectedStandard.id, ids, forceRefetch)
       setMappingStatus("analyzing")
-      toast.success("Analysis started!")
+      toast.success(forceRefetch ? "Re-analysis started!" : "Analysis started!")
     } catch (err: any) {
       toast.error(err.message || "Failed to start analysis")
     }
@@ -489,6 +501,57 @@ export default function StandardsPage() {
                           This framework is fully compatible with our <span className="font-black underline decoration-white/30">Multi-Modal Gap Analysis</span> engine.
                         </p>
 
+                        <div className="bg-background/20 rounded-xl p-4 border border-white/10 space-y-4">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="evidence"
+                              value="all"
+                              checked={evidenceSelection === "all"}
+                              onChange={() => setEvidenceSelection("all")}
+                              className="accent-primary"
+                            />
+                            <span className="text-sm font-bold">All Evidence ({allEvidence?.length || 0} files)</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="evidence"
+                              value="specific"
+                              checked={evidenceSelection === "specific"}
+                              onChange={() => setEvidenceSelection("specific")}
+                              className="accent-primary"
+                            />
+                            <span className="text-sm font-bold">Select Specific Evidence</span>
+                          </label>
+
+                          {evidenceSelection === "specific" && (
+                            <div className="mt-3 pl-6 space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                              {allEvidence?.map((ev: Evidence) => (
+                                <label key={ev.id} className="flex items-center gap-2 cursor-pointer group">
+                                  <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                                    selectedEvidenceIds.includes(ev.id) ? "bg-white border-white text-primary" : "border-white/30 group-hover:border-white/60"
+                                  )}>
+                                    {selectedEvidenceIds.includes(ev.id) && <Check className="w-3 h-3" />}
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={selectedEvidenceIds.includes(ev.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedEvidenceIds(p => [...p, ev.id])
+                                      else setSelectedEvidenceIds(p => p.filter(id => id !== ev.id))
+                                    }}
+                                  />
+                                  <span className="text-xs truncate max-w-[180px]" title={ev.title || ev.originalFilename || undefined}>{ev.title || ev.originalFilename}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
                         {mappingStatus === "analyzing" ? (
                           <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -497,19 +560,28 @@ export default function StandardsPage() {
                         ) : (
                           <div className="space-y-3">
                             <Button
-                              onClick={handleAnalyzeNow}
+                              onClick={() => handleAnalyzeNow(false)}
                               className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
                             >
                               Analyze Now
                             </Button>
 
                             {mappingStatus === "complete" && (
-                              <Button
-                                onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                                className="w-full h-14 rounded-2xl bg-white/10 text-white hover:bg-white/20 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-white/20"
-                              >
-                                View Full Report
-                              </Button>
+                              <>
+                                <Button
+                                  onClick={() => handleAnalyzeNow(true)}
+                                  variant="outline"
+                                  className="w-full h-12 rounded-2xl border-white/20 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+                                >
+                                  <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
+                                </Button>
+                                <Button
+                                  onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
+                                  className="w-full h-14 rounded-2xl bg-white/10 text-white hover:bg-white/20 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-white/20"
+                                >
+                                  View Full Report
+                                </Button>
+                              </>
                             )}
                           </div>
                         )}

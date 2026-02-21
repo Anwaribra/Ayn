@@ -10,8 +10,9 @@ from app.standards.models import (
     StandardResponse,
     CriterionCreateRequest,
     CriterionUpdateRequest,
-    CriterionResponse
+    CriterionResponse,
 )
+from typing import Optional, List
 from app.standards.service import StandardService
 from app.standards.mapping_service import analyze_standard_criteria, seed_standard_criteria
 import logging
@@ -149,10 +150,15 @@ async def get_standard_coverage(
 
 # ==================== Map / Analyze Endpoints ====================
 
+class AnalyzeRequest(BaseModel):
+    evidence_ids: Optional[List[str]] = None
+    force_reanalyze: bool = False
+
 @router.post("/{standard_id}/analyze")
 async def start_standard_analysis(
     standard_id: str,
     background_tasks: BackgroundTasks,
+    request: Optional[AnalyzeRequest] = None,
     current_user: dict = Depends(get_current_user)
 ):
     """Start background AI analysis for criteria mapping."""
@@ -178,7 +184,10 @@ async def start_standard_analysis(
         resolved_uuid = standard.id
         logger.info(f"Resolved standard_id '{standard_id}' -> '{resolved_uuid}' for analysis")
 
-        background_tasks.add_task(analyze_standard_criteria, resolved_uuid, institution_id)
+        evidence_ids = request.evidence_ids if request else None
+        force = request.force_reanalyze if request else False
+        
+        background_tasks.add_task(analyze_standard_criteria, resolved_uuid, institution_id, evidence_ids, force)
         return {"status": "analyzing", "message": "Analysis started"}
 
 @router.get("/{standard_id}/mappings")

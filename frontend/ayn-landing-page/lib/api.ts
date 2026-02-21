@@ -238,9 +238,13 @@ class ApiClient {
     })
   }
 
-  async analyzeStandard(standardId: string) {
+  async analyzeStandard(standardId: string, evidenceIds?: string[], forceReanalyze?: boolean) {
     return this.request<{ status: string; message: string }>(`/standards/${standardId}/analyze`, {
-      method: "POST"
+      method: "POST",
+      body: JSON.stringify({
+        evidence_ids: evidenceIds,
+        force_reanalyze: forceReanalyze || false
+      })
     })
   }
 

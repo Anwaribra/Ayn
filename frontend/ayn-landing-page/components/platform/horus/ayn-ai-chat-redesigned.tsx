@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
 import { ShiningText } from "@/components/ui/shining-text"
+import { AiLoader } from "@/components/ui/ai-loader"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
@@ -233,18 +234,8 @@ export default function HorusAIChat() {
         <div className="flex-1 w-full max-w-3xl overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
           <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
-              <div className="flex-1 min-h-[40vh] flex flex-col items-center justify-center w-full space-y-4 px-4 text-center animate-in fade-in zoom-in-95">
-                <div className="mb-4 flex flex-col items-center">
-                  <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold mb-4 shadow-lg">
-                    H
-                  </div>
-                </div>
-                <h2 className="text-xl font-black text-foreground">How can I assist you?</h2>
-                <ul className="text-sm text-muted-foreground space-y-2 max-w-sm">
-                  <li className="flex items-center gap-2 justify-center font-medium">Analyze your compliance documents</li>
-                  <li className="flex items-center gap-2 justify-center font-medium">Track missing evidence gaps</li>
-                  <li className="flex items-center gap-2 justify-center font-medium">Explain standards requirements</li>
-                </ul>
+              <div className="flex flex-col items-center justify-center flex-1 gap-0 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
+                <AiLoader size={220} text="Horus AI" />
               </div>
             ) : (
               <>

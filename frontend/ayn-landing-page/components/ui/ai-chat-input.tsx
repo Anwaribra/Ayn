@@ -21,6 +21,7 @@ interface AIChatInputProps {
     onFileAttach?: (file: File) => void;
     isLoading?: boolean;
     disabled?: boolean;
+    hasFiles?: boolean;
 }
 
 export const AIChatInput = ({
@@ -29,6 +30,7 @@ export const AIChatInput = ({
     onFileAttach,
     isLoading = false,
     disabled = false,
+    hasFiles = false,
 }: AIChatInputProps) => {
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const [showPlaceholder, setShowPlaceholder] = useState(true);
@@ -70,7 +72,7 @@ export const AIChatInput = ({
     const handleActivate = () => setIsActive(true);
 
     const handleSend = () => {
-        if (!inputValue.trim() || isLoading) return;
+        if ((!inputValue.trim() && !hasFiles) || isLoading) return;
         onSend(inputValue.trim());
         setInputValue("");
         setIsActive(false);
@@ -231,7 +233,7 @@ export const AIChatInput = ({
                                 className="flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform active:scale-95 shadow-md"
                                 title="Send"
                                 type="button"
-                                disabled={!inputValue.trim()}
+                                disabled={!inputValue.trim() && !hasFiles}
                                 onClick={handleSend}
                                 tabIndex={-1}
                             >

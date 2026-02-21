@@ -230,8 +230,8 @@ export default function HorusAIChat() {
       </div>
 
       {/* ─── Chat Area (full height, centered) ─── */}
-      <div className="flex-1 overflow-hidden relative flex flex-col items-center">
-        <div className="flex-1 w-full max-w-3xl overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
+      <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
+        <div className="flex-1 w-full max-w-[900px] overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
           <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
               <div className="flex flex-col items-center justify-center flex-1 gap-0 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
@@ -270,8 +270,8 @@ export default function HorusAIChat() {
                       )}
                       <div className={cn(
                         msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[80%] text-sm"
-                          : "bg-white/10 rounded-2xl px-4 py-3 max-w-[75%]"
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[85%] text-sm"
+                          : "bg-white/10 rounded-2xl px-4 py-3 max-w-[90%]"
                       )}>
                         {msg.role === "user" ? (
                           <HorusMarkdown content={msg.content} onAction={handleAction} />
@@ -312,8 +312,8 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center">
-          <div className="w-full max-w-3xl mx-auto space-y-2">
+        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center w-full">
+          <div className="w-full max-w-[900px] mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map((file) => (
@@ -339,6 +339,7 @@ export default function HorusAIChat() {
               }}
               isLoading={isProcessing}
               disabled={isProcessing}
+              hasFiles={attachedFiles.length > 0}
             />
           </div>
         </div>

@@ -153,7 +153,10 @@ Communication Guidelines
 
 def get_system_prompt(include_all_knowledge: bool = True) -> str:
     """Construct the system prompt, optionally including deep domain knowledge."""
-    prompt = BASE_SYSTEM_PROMPT
+    if not include_all_knowledge:
+        return "You are Horus (حورس), the AI core of the Ayn platform.\nBe concise. Answer in the same language as the user.\nKeep responses under 150 words unless detail is requested."
+        
+    prompt = "Be concise. Avoid unnecessary repetition. Max 300 words unless user asks for detail.\n\n" + BASE_SYSTEM_PROMPT
     
     if include_all_knowledge:
         prompt += f"\n{ISO_21001_KNOWLEDGE}\n{ISO_9001_KNOWLEDGE}\n{NAQAAE_KNOWLEDGE}"
@@ -337,7 +340,11 @@ class GeminiClient:
         if USE_NEW_API:
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    max_output_tokens=1024,
+                    temperature=0.7
+                ),
                 contents=full_prompt,
             )
             return response.text
@@ -365,7 +372,11 @@ class GeminiClient:
             
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    max_output_tokens=1024,
+                    temperature=0.7
+                ),
                 contents=contents,
             )
             return response.text
@@ -399,7 +410,11 @@ class GeminiClient:
             
             async for chunk in await self.client.aio.models.generate_content_stream(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    max_output_tokens=1024,
+                    temperature=0.7
+                ),
                 contents=contents,
             ):
                 yield chunk.text
@@ -448,7 +463,11 @@ class GeminiClient:
             
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    max_output_tokens=1024,
+                    temperature=0.7
+                ),
                 contents=genai_types.Content(role="user", parts=parts),
             )
             return response.text
@@ -485,7 +504,11 @@ class GeminiClient:
             
             async for chunk in await self.client.aio.models.generate_content_stream(
                 model=self.model_name,
-                config=genai_types.GenerateContentConfig(system_instruction=system_instruction),
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    max_output_tokens=1024,
+                    temperature=0.7
+                ),
                 contents=genai_types.Content(role="user", parts=parts),
             ):
                 yield chunk.text

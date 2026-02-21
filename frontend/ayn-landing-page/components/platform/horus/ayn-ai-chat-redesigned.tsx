@@ -26,7 +26,7 @@ import remarkGfm from "remark-gfm"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
-import { AiLoader } from "@/components/ui/ai-loader"
+import { ShiningText } from "@/components/ui/shining-text"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
@@ -234,8 +234,10 @@ export default function HorusAIChat() {
           <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
               <div className="flex-1 min-h-[40vh] flex flex-col items-center justify-center w-full space-y-4 px-4 text-center animate-in fade-in zoom-in-95">
-                <div className="mb-4">
-                  <AiLoader size={100} text="Horus" />
+                <div className="mb-4 flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold mb-4 shadow-lg">
+                    H
+                  </div>
                 </div>
                 <h2 className="text-xl font-black text-foreground">How can I assist you?</h2>
                 <ul className="text-sm text-muted-foreground space-y-2 max-w-sm">
@@ -304,8 +306,11 @@ export default function HorusAIChat() {
                   </div>
                 ) : (
                   messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content ? null : (
-                    <div className="flex items-start gap-3 px-4 py-2">
-                      <AiLoader size={80} text="Horus" />
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        H
+                      </div>
+                      <ShiningText text="Horus is thinking..." />
                     </div>
                   )
                 ))}

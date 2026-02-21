@@ -102,15 +102,6 @@ function SettingsContent() {
           }}
         />
       )}
-
-      <div className="mt-12 flex items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Ayn Intelligence Hub</span>
-          <div className="w-1.5 h-1.5 rounded-full bg-border" />
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Institutional Node 42</span>
-        </div>
-        <span className="mono text-[10px] text-muted-foreground font-bold">OS_V2.4.12_SYNC_OK</span>
-      </div>
     </div>
   )
 }

@@ -20,7 +20,7 @@ export const AiLoader: React.FC<LoaderProps> = ({
             {letters.map((letter, index) => (
                 <span
                     key={index}
-                    className="inline-block text-white/80 font-semibold tracking-widest animate-[loaderLetter_3s_infinite]"
+                    className="inline-block font-semibold tracking-widest animate-[loaderLetter_3s_infinite] text-white/80 dark:text-white/80 [.light_&]:text-slate-600"
                     style={{
                         fontSize: size * 0.1,
                         animationDelay: `${index * 0.12}s`,

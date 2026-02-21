@@ -28,7 +28,7 @@ import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
 import { ShiningText } from "@/components/ui/shining-text"
 import { AiLoader } from "@/components/ui/ai-loader"
-import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
+import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 
@@ -325,33 +325,21 @@ export default function HorusAIChat() {
                 ))}
               </div>
             )}
-            <PromptInputDynamicGrow
-              placeholder={status === "searching" ? "Scanning…" : status === "generating" ? "Generating…" : "Message Horus…"}
+            <AIChatInput
+              onSend={(message) => {
+                handleSendMessage(message, attachedFiles.map((af) => af.file));
+              }}
+              onStop={() => {
+                stopGeneration();
+              }}
+              onFileAttach={(file) => {
+                handleFileSelect({
+                  target: { files: [file] },
+                } as unknown as React.ChangeEvent<HTMLInputElement>);
+              }}
+              isLoading={isProcessing}
               disabled={isProcessing}
-              onSubmit={(text) => handleSendMessage(text, attachedFiles.map((af) => af.file))}
-              showEffects={true}
-              menuOptions={[]}
-              leftSlot={
-                <label className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0 flex items-center justify-center">
-                  <input type="file" className="hidden" multiple accept=".pdf,.docx,.txt,image/*" onChange={handleFileSelect} />
-                  <Paperclip className="w-4 h-4" />
-                </label>
-              }
-              rightSlot={
-                isProcessing ? (
-                  <Button
-                    type="button"
-                    onClick={stopGeneration}
-                    size="icon"
-                    variant="destructive"
-                    className="rounded-full h-8 w-8 shrink-0 ml-1"
-                  >
-                    <StopCircle className="w-4 h-4" />
-                  </Button>
-                ) : null
-              }
             />
-            <p className="text-[10px] text-muted-foreground/80 text-center mt-1">Horus can make mistakes. Verify important data.</p>
           </div>
         </div>
       </div>

@@ -648,11 +648,10 @@ export default function StandardsPage() {
                     </GlassPanel>
                   </div>
                 </div>
-            </div>
               </GlassCard>
-      </div>
+            </div>
           )}
-    </AnimatePresence>
+        </AnimatePresence>
       </div >
     </ProtectedRoute >
   )

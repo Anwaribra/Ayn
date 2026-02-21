@@ -417,7 +417,7 @@ export default function StandardsPage() {
                 variant={4}
                 className="w-full max-w-5xl shadow-2xl rounded-[40px] border-border flex flex-col max-h-[85vh] overflow-hidden"
               >
-                <div className="p-10 border-b flex items-center justify-between border-border bg-background/30 backdrop-blur-md">
+                <div className="flex-shrink-0 p-10 border-b flex items-center justify-between border-border bg-background/30 backdrop-blur-md">
                   <div className="flex items-center gap-6">
                     <div className={cn(
                       "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3",
@@ -439,7 +439,7 @@ export default function StandardsPage() {
                   </button>
                 </div>
 
-                <div className="flex flex-col max-h-[85vh] overflow-hidden flex-1 p-8 sm:p-10 bg-card/20 w-full rounded-b-[40px]">
+                <div className="flex-1 overflow-y-auto min-h-0 bg-card/20 custom-scrollbar p-10">
                   <div className="flex-shrink-0 mb-6">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground">
                       <Activity className="w-4 h-4 text-primary" />
@@ -447,7 +447,7 @@ export default function StandardsPage() {
                     </h4>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4 custom-scrollbar">
+                  <div className="space-y-4">
                     {mappingStatus === "analyzing" ? (
                       <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border flex flex-col items-center justify-center">
                         <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
@@ -495,158 +495,158 @@ export default function StandardsPage() {
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <div className="flex-shrink-0 border-t border-gray-100 pt-4 mt-2 bg-white dark:bg-transparent dark:border-border grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
-                      <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
-                        <Sparkles className="w-4 h-4" />
-                        Ayn Intelligence
-                      </h5>
-                      <p className="text-lg font-bold leading-relaxed text-foreground">
-                        Analyze against:
-                      </p>
+                <div className="flex-shrink-0 border-t border-gray-100 p-8 pt-4 bg-white dark:bg-transparent dark:border-border grid grid-cols-1 lg:grid-cols-2 gap-8 z-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                  <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
+                    <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
+                      <Sparkles className="w-4 h-4" />
+                      Ayn Intelligence
+                    </h5>
+                    <p className="text-lg font-bold leading-relaxed text-foreground">
+                      Analyze against:
+                    </p>
 
-                      <div className="space-y-4">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="evidence"
-                            value="all"
-                            checked={evidenceSelection === "all"}
-                            onChange={() => setEvidenceSelection("all")}
-                            className="accent-primary"
-                          />
-                          <span className="text-sm font-bold">All Evidence ({allEvidence?.length || 0} files)</span>
-                        </label>
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="evidence"
+                          value="all"
+                          checked={evidenceSelection === "all"}
+                          onChange={() => setEvidenceSelection("all")}
+                          className="accent-primary"
+                        />
+                        <span className="text-sm font-bold">All Evidence ({allEvidence?.length || 0} files)</span>
+                      </label>
 
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="evidence"
-                            value="specific"
-                            checked={evidenceSelection === "specific"}
-                            onChange={() => setEvidenceSelection("specific")}
-                            className="accent-primary"
-                          />
-                          <span className="text-sm font-bold">Select Specific Evidence</span>
-                        </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="evidence"
+                          value="specific"
+                          checked={evidenceSelection === "specific"}
+                          onChange={() => setEvidenceSelection("specific")}
+                          className="accent-primary"
+                        />
+                        <span className="text-sm font-bold">Select Specific Evidence</span>
+                      </label>
 
-                        {evidenceSelection === "specific" && (
-                          <div className="mt-3 pl-6 space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                            {allEvidence?.map((ev: Evidence) => (
-                              <label key={ev.id} className="flex items-center gap-2 cursor-pointer group">
-                                <div className={cn(
-                                  "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                                  selectedEvidenceIds.includes(ev.id) ? "bg-white border-white text-primary" : "border-white/30 group-hover:border-white/60"
-                                )}>
-                                  {selectedEvidenceIds.includes(ev.id) && <Check className="w-3 h-3" />}
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  className="hidden"
-                                  checked={selectedEvidenceIds.includes(ev.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) setSelectedEvidenceIds(p => [...p, ev.id])
-                                    else setSelectedEvidenceIds(p => p.filter(id => id !== ev.id))
-                                  }}
-                                />
-                                <span className="text-xs truncate max-w-[180px] font-medium" title={ev.title || ev.originalFilename || undefined}>
-                                  {ev.title || ev.originalFilename}
+                      {evidenceSelection === "specific" && (
+                        <div className="mt-3 pl-6 space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                          {allEvidence?.map((ev: Evidence) => (
+                            <label key={ev.id} className="flex items-center gap-2 cursor-pointer group">
+                              <div className={cn(
+                                "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                                selectedEvidenceIds.includes(ev.id) ? "bg-white border-white text-primary" : "border-white/30 group-hover:border-white/60"
+                              )}>
+                                {selectedEvidenceIds.includes(ev.id) && <Check className="w-3 h-3" />}
+                              </div>
+                              <input
+                                type="checkbox"
+                                className="hidden"
+                                checked={selectedEvidenceIds.includes(ev.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) setSelectedEvidenceIds(p => [...p, ev.id])
+                                  else setSelectedEvidenceIds(p => p.filter(id => id !== ev.id))
+                                }}
+                              />
+                              <span className="text-xs truncate max-w-[180px] font-medium" title={ev.title || ev.originalFilename || undefined}>
+                                {ev.title || ev.originalFilename}
+                              </span>
+                              {ev.documentType && (
+                                <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[9px] font-bold border border-border">
+                                  {ev.documentType}
                                 </span>
-                                {ev.documentType && (
-                                  <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[9px] font-bold border border-border">
-                                    {ev.documentType}
-                                  </span>
-                                )}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {mappingStatus === "analyzing" ? (
-                        <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Analyzing...
-                        </Button>
-                      ) : (
-                        <div className="space-y-3">
-                          <Button
-                            onClick={() => handleAnalyzeNow(false)}
-                            className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-                          >
-                            Analyze Now
-                          </Button>
-
-                          {mappingStatus === "complete" && (
-                            <>
-                              <Button
-                                onClick={() => handleAnalyzeNow(true)}
-                                variant="outline"
-                                className="w-full h-12 rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                              >
-                                <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
-                              </Button>
-                              <Button
-                                onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                                className="w-full h-14 rounded-2xl bg-muted text-foreground hover:bg-muted/80 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-border"
-                              >
-                                View Full Report
-                              </Button>
-                            </>
-                          )}
+                              )}
+                            </label>
+                          ))}
                         </div>
                       )}
                     </div>
 
-                    <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
+                    {mappingStatus === "analyzing" ? (
+                      <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Analyzing...
+                      </Button>
+                    ) : (
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-black uppercase text-foreground">Total Criteria</span>
-                          <span className="text-xs font-black text-primary">{mappingsData?.total_criteria || selectedStandard.criteria?.length || 0}</span>
-                        </div>
+                        <Button
+                          onClick={() => handleAnalyzeNow(false)}
+                          className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+                        >
+                          Analyze Now
+                        </Button>
 
-                        {mappingStatus === "complete" && mappingsData ? (
-                          <div className="space-y-2 mt-4">
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs font-bold text-foreground">MET</span>
-                              <span className="text-xs font-black text-green-500">{mappingsData.met}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs font-bold text-foreground">PARTIAL</span>
-                              <span className="text-xs font-black text-yellow-500">{mappingsData.partial}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs font-bold text-foreground">GAPS</span>
-                              <span className="text-xs font-black text-red-500">{mappingsData.gap}</span>
-                            </div>
-
-                            <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
-                              <div
-                                className="h-full bg-green-500 transition-all duration-700"
-                                style={{ width: `${(mappingsData.met / mappingsData.total_criteria) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
+                        {mappingStatus === "complete" && (
                           <>
-                            <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
-                              <div
-                                className="h-full bg-primary transition-all duration-700"
-                                style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
-                              />
-                            </div>
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                              {selectedStandard.criteria && selectedStandard.criteria.length > 0
-                                ? `${selectedStandard.criteria.length} evidence criteria mapped`
-                                : "No criteria mapped yet — run Gap Analysis to populate"}
-                            </p>
+                            <Button
+                              onClick={() => handleAnalyzeNow(true)}
+                              variant="outline"
+                              className="w-full h-12 rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                              <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
+                            </Button>
+                            <Button
+                              onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
+                              className="w-full h-14 rounded-2xl bg-muted text-foreground hover:bg-muted/80 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-border"
+                            >
+                              View Full Report
+                            </Button>
                           </>
                         )}
                       </div>
-                    </GlassPanel>
+                    )}
                   </div>
+
+                  <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-black uppercase text-foreground">Total Criteria</span>
+                        <span className="text-xs font-black text-primary">{mappingsData?.total_criteria || selectedStandard.criteria?.length || 0}</span>
+                      </div>
+
+                      {mappingStatus === "complete" && mappingsData ? (
+                        <div className="space-y-2 mt-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-foreground">MET</span>
+                            <span className="text-xs font-black text-green-500">{mappingsData.met}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-foreground">PARTIAL</span>
+                            <span className="text-xs font-black text-yellow-500">{mappingsData.partial}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-foreground">GAPS</span>
+                            <span className="text-xs font-black text-red-500">{mappingsData.gap}</span>
+                          </div>
+
+                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                            <div
+                              className="h-full bg-green-500 transition-all duration-700"
+                              style={{ width: `${(mappingsData.met / mappingsData.total_criteria) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                            <div
+                              className="h-full bg-primary transition-all duration-700"
+                              style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground font-medium">
+                            {selectedStandard.criteria && selectedStandard.criteria.length > 0
+                              ? `${selectedStandard.criteria.length} evidence criteria mapped`
+                              : "No criteria mapped yet — run Gap Analysis to populate"}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </GlassPanel>
                 </div>
               </GlassCard>
             </div>

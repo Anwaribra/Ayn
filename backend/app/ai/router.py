@@ -124,39 +124,40 @@ async def chat_with_files(
                 if has_analysis or has_chat:
                     structured_data = parsed
                     
-                            # 4. Persistence (Stage 2)
-                            if has_analysis:
-                                async def process_analysis(parsed_data, usr_id):
-                                    try:
-                                        from app.gap_analysis.service import GapOneService
-                                        from app.platform_state.service import StateService
-                                        
-                                        gap_service = GapOneService(db)
-                                        state_service = StateService(db)
-                                        
-                                        await gap_service.create_analysis(
-                                            user_id=usr_id,
-                                            standard_id=None, 
-                                            score=float(parsed_data["score"]),
-                                            gaps=parsed_data["gaps"],
-                                            summary=parsed_data.get("summary", "AI Generated Analysis"),
-                                            recommendations=parsed_data.get("recommendations", [])
-                                        )
-                                        
-                                        await state_service.record_metric_update(
-                                            user_id=usr_id,
-                                            metric_id="alignment_score",
-                                            value=float(parsed_data["score"]),
-                                            source_module="gap_analysis"
-                                        )
-                                    except Exception as db_err:
-                                        import logging
-                                        logging.getLogger(__name__).error(f"Persistence Failed: {db_err}")
+                    # 4. Persistence (Stage 2)
+                    if has_analysis:
+                        async def process_analysis(parsed_data, usr_id):
+                            try:
+                                from app.gap_analysis.service import GapOneService
+                                from app.platform_state.service import StateService
                                 
-                                user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-                                background_tasks.add_task(process_analysis, parsed, user_id)
-                                analysis_id = "background-processing"
-                                metrics_updated = True
+                                gap_service = GapOneService(db)
+                                state_service = StateService(db)
+                                
+                                await gap_service.create_analysis(
+                                    user_id=usr_id,
+                                    standard_id=None, 
+                                    score=float(parsed_data["score"]),
+                                    gaps=parsed_data["gaps"],
+                                    summary=parsed_data.get("summary", "AI Generated Analysis"),
+                                    recommendations=parsed_data.get("recommendations", [])
+                                )
+                                
+                                await state_service.record_metric_update(
+                                    user_id=usr_id,
+                                    metric_id="alignment_score",
+                                    value=float(parsed_data["score"]),
+                                    source_module="gap_analysis"
+                                )
+                            except Exception as db_err:
+                                import logging
+                                logging.getLogger(__name__).error(f"Persistence Failed: {db_err}")
+                        
+                        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+                        background_tasks.add_task(process_analysis, parsed, user_id)
+                        analysis_id = "background-processing"
+                        metrics_updated = True
+                else:
                     error_msg = "json_structure_invalid"
             except json.JSONDecodeError:
                 error_msg = "json_parse_failed"

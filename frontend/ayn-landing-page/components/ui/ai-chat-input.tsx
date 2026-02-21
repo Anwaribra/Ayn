@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import { useState, useEffect, useRef } from "react";
-import { Lightbulb, Mic, Globe, Paperclip, Send, StopCircle } from "lucide-react";
+import { Paperclip, Send, StopCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const PLACEHOLDERS = [
     "Ask about your compliance gaps...",
@@ -84,11 +85,11 @@ export const AIChatInput = ({
 
     const containerVariants = {
         collapsed: {
-            boxShadow: "0 4px 12px 0 rgba(0,0,0,0.1)",
+            boxShadow: "0 4px 12px 0 rgba(0,0,0,0.05)",
             transition: { type: "spring", stiffness: 120, damping: 18 },
         },
         expanded: {
-            boxShadow: "0 8px 32px 0 rgba(59,130,246,0.2)",
+            boxShadow: "0 8px 32px 0 rgba(59,130,246,0.15)",
             transition: { type: "spring", stiffness: 120, damping: 18 },
         },
     };
@@ -128,25 +129,25 @@ export const AIChatInput = ({
     };
 
     return (
-        <div className="w-full flex-col flex justify-center items-center pb-6">
+        <div className="w-full flex-col flex justify-center items-center pb-8 pt-4">
             <motion.div
                 ref={wrapperRef}
-                className="w-full max-w-4xl"
                 variants={containerVariants}
                 animate={isActive || inputValue ? "expanded" : "collapsed"}
                 initial="collapsed"
-                style={{
-                    overflow: "hidden", borderRadius: 36, background: "rgba(255,255,255,0.07)",
-                    backdropFilter: "blur(24px)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                }}
+                style={{ overflow: "hidden", borderRadius: 36 }}
+                className={cn(
+                    "w-full max-w-[900px] backdrop-blur-3xl transition-colors duration-300",
+                    "bg-white/95 border border-black/10", // Light mode
+                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10" // Dark mode
+                )}
                 onClick={handleActivate}
             >
                 <div className="flex flex-col items-stretch w-full h-full">
                     {/* Input Row */}
                     <div className="flex items-center gap-3 p-2 rounded-full w-full">
                         <button
-                            className="p-3 ml-1 rounded-full hover:bg-white/10 transition text-white/60 hover:text-white"
+                            className="p-3 ml-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
                             title="Attach file"
                             type="button"
                             tabIndex={-1}
@@ -172,7 +173,10 @@ export const AIChatInput = ({
                                 onKeyDown={handleKeyDown}
                                 disabled={disabled}
                                 onChange={(e) => setInputValue(e.target.value)}
-                                className="flex-1 border-0 outline-0 bg-transparent w-full text-white font-medium text-[16px] py-4 px-2 placeholder-transparent"
+                                className={cn(
+                                    "flex-1 border-0 outline-0 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent focus:ring-0",
+                                    "text-zinc-900 dark:text-white"
+                                )}
                                 style={{ position: "relative", zIndex: 1 }}
                                 onFocus={handleActivate}
                             />
@@ -181,7 +185,10 @@ export const AIChatInput = ({
                                     {showPlaceholder && !isActive && !inputValue && (
                                         <motion.span
                                             key={placeholderIndex}
-                                            className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40 text-[16px] font-medium select-none pointer-events-none"
+                                            className={cn(
+                                                "absolute left-2 top-1/2 -translate-y-1/2 text-[16px] font-medium select-none pointer-events-none",
+                                                "text-zinc-500 dark:text-white/40"
+                                            )}
                                             style={{
                                                 whiteSpace: "nowrap",
                                                 overflow: "hidden",
@@ -213,7 +220,7 @@ export const AIChatInput = ({
 
                         {isLoading ? (
                             <button
-                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0"
+                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0 transition-transform active:scale-95 shadow-md"
                                 onClick={onStop}
                                 type="button"
                             >
@@ -221,14 +228,14 @@ export const AIChatInput = ({
                             </button>
                         ) : (
                             <button
-                                className="flex w-[50px] h-[50px] items-center bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0"
+                                className="flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform active:scale-95 shadow-md"
                                 title="Send"
                                 type="button"
                                 disabled={!inputValue.trim()}
                                 onClick={handleSend}
                                 tabIndex={-1}
                             >
-                                <Send size={22} className="ml-[-2px]" />
+                                <Send size={22} className="ml-[-2px] text-white" />
                             </button>
                         )}
 
@@ -236,7 +243,7 @@ export const AIChatInput = ({
 
                 </div>
             </motion.div>
-            <p className="text-white/30 font-medium text-[12px] mt-4 mb-2">
+            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] mt-4 mb-2">
                 Horus can make mistakes. Verify important data.
             </p>
         </div>

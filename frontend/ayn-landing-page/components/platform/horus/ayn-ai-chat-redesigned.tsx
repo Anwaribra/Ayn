@@ -27,7 +27,7 @@ import remarkGfm from "remark-gfm"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
-import { Component as AILoader } from "@/components/ui/ai-loader"
+import { AiLoader } from "@/components/ui/ai-loader"
 import PromptInputDynamicGrow from "@/components/ui/prompt-input-dynamic-grow"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
@@ -284,20 +284,18 @@ export default function HorusAIChat() {
                 })}
 
                 {/* Typing indicator */}
-                {status !== "idle" && (
+                {status !== "idle" && (status === "searching" ? (
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                       <Loader2 className="w-4 h-4 text-primary animate-spin" />
                     </div>
                     <div className="rounded-2xl rounded-bl-md px-4 py-3 bg-muted/80 border border-[var(--border-subtle)] flex items-center gap-2 text-sm text-muted-foreground">
-                      {status === "searching" ? (
-                        <> <Search className="w-3.5 h-3.5" /> Reading knowledge base… </>
-                      ) : (
-                        <> <span className="flex gap-1"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" /><span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" /><span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.3s]" /></span> Thinking… </>
-                      )}
+                      <Search className="w-3.5 h-3.5" /> Reading knowledge base…
                     </div>
                   </div>
-                )}
+                ) : (
+                  <AiLoader size={160} text="Generating" />
+                ))}
               </>
             )}
             <div ref={messagesEndRef} className="h-4" />

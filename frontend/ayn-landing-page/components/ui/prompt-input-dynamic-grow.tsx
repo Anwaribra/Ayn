@@ -11,10 +11,41 @@ import React, {
   useMemo,
 } from "react"
 import { Plus, Send } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
 
 // ===== TYPES =====
 
 export type MenuOption = "Auto" | "Max" | "Search" | "Plan"
+
+const PLACEHOLDERS = [
+  "Ask about your compliance gaps...",
+  "Upload a document for analysis...",
+  "What are my ISO 21001 requirements?",
+  "Summarize my evidence status...",
+  "How do I improve my compliance score?",
+  "Check my NAQAAE readiness...",
+];
+
+const letterVariants = {
+  initial: { opacity: 0, filter: "blur(8px)", y: 6 },
+  animate: {
+    opacity: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      opacity: { duration: 0.2 },
+      filter: { duration: 0.3 },
+      y: { type: "spring", stiffness: 80, damping: 20 },
+    },
+  },
+  exit: {
+    opacity: 0,
+    filter: "blur(8px)",
+    y: -6,
+    transition: { opacity: { duration: 0.15 }, filter: { duration: 0.2 } },
+  },
+};
+
 
 interface RippleEffect {
   x: number
@@ -224,6 +255,9 @@ const InputArea = memo(({
   textColor,
 }: InputAreaProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const [showPlaceholder, setShowPlaceholder] = useState(true)
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -235,20 +269,60 @@ const InputArea = memo(({
     }
   }, [value])
 
+  useEffect(() => {
+    if (value || isInputFocused) return;
+
+    const interval = setInterval(() => {
+      setShowPlaceholder(false);
+      setTimeout(() => {
+        setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        setShowPlaceholder(true);
+      }, 400);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [value, isInputFocused]);
+
   return (
     <div className="flex-1 relative h-full flex items-center">
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        aria-label="Message Input"
-        rows={1}
-        className="w-full min-h-8 max-h-24 bg-transparent text-sm font-normal text-left self-center border-0 outline-none px-3 pr-10 py-1 z-20 relative resize-none overflow-y-auto placeholder:text-muted-foreground"
-        style={{ color: textColor, letterSpacing: "-0.14px", lineHeight: "22px" }}
-        disabled={disabled}
-      />
+      <div className="relative flex-1 flex w-full min-w-0">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
+          onKeyDown={handleKeyDown}
+          placeholder={""}
+          aria-label="Message Input"
+          rows={1}
+          className="w-full min-h-8 max-h-24 bg-transparent text-sm font-normal text-left self-center border-0 outline-none px-3 pr-10 py-1 z-20 relative resize-none overflow-y-auto placeholder:text-transparent"
+          style={{ color: textColor, letterSpacing: "-0.14px", lineHeight: "22px" }}
+          disabled={disabled}
+        />
+        <AnimatePresence mode="wait">
+          {showPlaceholder && !value && !isInputFocused && (
+            <motion.span
+              key={placeholderIndex}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm pointer-events-none select-none whitespace-nowrap z-10"
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ staggerChildren: 0.025 }}
+            >
+              {PLACEHOLDERS[placeholderIndex].split("").map((char, i) => (
+                <motion.span
+                  key={i}
+                  variants={letterVariants}
+                  style={{ display: "inline-block" }}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
       <SendButton isDisabled={isSubmitDisabled} textColor={textColor} />
     </div>
   )
@@ -289,7 +363,7 @@ const SelectedOptions = memo(({ options, onRemove, textColor }: SelectedOptionsP
 
 export default function PromptInputDynamicGrow({
   placeholder = "Message…",
-  onSubmit = () => {},
+  onSubmit = () => { },
   disabled = false,
   glowIntensity = 0.4,
   expandOnFocus = true,

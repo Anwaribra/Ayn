@@ -415,10 +415,21 @@ export default function StandardsPage() {
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
               <GlassCard
                 variant={4}
-                className="w-full max-w-5xl shadow-2xl rounded-[40px] border-border flex flex-col max-h-[85vh] overflow-hidden"
+                style={{
+                  width: '100%',
+                  maxWidth: '1000px',
+                  height: '85vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: '40px',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                }}
               >
-                <div className="flex-shrink-0 p-10 border-b flex items-center justify-between border-border bg-background/30 backdrop-blur-md">
-                  <div className="flex items-center gap-6">
+                {/* ── HEADER ── fixed, never scrolls */}
+                <div style={{ flexShrink: 0, padding: '40px 40px 0px', borderBottom: '1px solid var(--border)', background: 'rgba(var(--background), 0.3)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="flex items-center gap-6 pb-10">
                     <div className={cn(
                       "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3",
                       selectedStandard.color || "bg-[#1E3A8A]"
@@ -434,18 +445,23 @@ export default function StandardsPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 hover:bg-muted/50 rounded-2xl transition-all">
+                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 hover:bg-muted/50 rounded-2xl transition-all mb-10">
                     <X className="w-6 h-6 text-muted-foreground" />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 bg-card/20 custom-scrollbar p-10">
-                  <div className="flex-shrink-0 mb-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground">
-                      <Activity className="w-4 h-4 text-primary" />
-                      Criteria Evidence Framework
-                    </h4>
-                  </div>
+                {/* ── CRITERIA LIST ── scrollable middle */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  minHeight: 0,
+                  padding: '30px 40px',
+                  background: 'rgba(var(--card), 0.2)'
+                }} className="custom-scrollbar">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground mb-6">
+                    <Activity className="w-4 h-4 text-primary" />
+                    Criteria Evidence Framework
+                  </h4>
 
                   <div className="space-y-4">
                     {mappingStatus === "analyzing" ? (
@@ -497,7 +513,17 @@ export default function StandardsPage() {
                   </div>
                 </div>
 
-                <div className="flex-shrink-0 border-t border-gray-100 p-8 pt-4 bg-white dark:bg-transparent dark:border-border grid grid-cols-1 lg:grid-cols-2 gap-8 z-10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                {/* ── BOTTOM CONTROLS ── fixed, never scrolls */}
+                <div style={{
+                  flexShrink: 0,
+                  borderTop: '1px solid var(--border)',
+                  padding: '30px 40px',
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                  gap: '32px',
+                  zIndex: 10,
+                  boxShadow: '0 -10px 40px -15px rgba(0,0,0,0.1)'
+                }} className="bg-white dark:bg-transparent">
                   <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
                     <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
                       <Sparkles className="w-4 h-4" />

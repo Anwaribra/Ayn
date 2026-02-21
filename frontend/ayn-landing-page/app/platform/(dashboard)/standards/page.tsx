@@ -440,8 +440,8 @@ export default function StandardsPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-card/20">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
+                  <div className="space-y-10">
+                    <div className="space-y-8">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground">
                         <Activity className="w-4 h-4 text-primary" />
                         Criteria Evidence Framework
@@ -454,32 +454,37 @@ export default function StandardsPage() {
                           </div>
                         ) : mappingsData?.mappings?.length > 0 ? (
                           mappingsData.mappings.map((m: any) => (
-                            <div key={m.criterion_id} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card/50">
-                              {m.status === "met" && <CheckCircle className="text-green-500 mt-0.5 shrink-0" size={18} />}
-                              {m.status === "partial" && <AlertCircle className="text-yellow-500 mt-0.5 shrink-0" size={18} />}
-                              {m.status === "gap" && <XCircle className="text-red-500 mt-0.5 shrink-0" size={18} />}
-                              {m.status === "not_analyzed" && <Circle className="text-muted-foreground mt-0.5 shrink-0" size={18} />}
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-sm text-foreground flex items-center gap-2">
-                                    <span className="text-[10px] font-black uppercase text-primary border border-primary/20 bg-primary/10 px-1.5 py-0.5 rounded truncate">
+                            <div key={m.criterion_id} className="flex flex-col gap-2 p-5 rounded-2xl border border-border bg-card/50 hover:bg-card/80 transition-colors">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  {m.status === "met" && <CheckCircle className="text-green-500 shrink-0" size={18} />}
+                                  {m.status === "partial" && <AlertCircle className="text-yellow-500 shrink-0" size={18} />}
+                                  {m.status === "gap" && <XCircle className="text-red-500 shrink-0" size={18} />}
+                                  {m.status === "not_analyzed" && <Circle className="text-muted-foreground shrink-0" size={18} />}
+                                  {m.criterion_code && m.criterion_code !== "N/A" && (
+                                    <span className="text-[11px] font-black uppercase text-primary border border-primary/20 bg-primary/10 px-2 py-0.5 rounded font-mono">
                                       {m.criterion_code}
                                     </span>
+                                  )}
+                                  <span className="font-bold text-base text-foreground">
                                     {m.criterion_title}
                                   </span>
-                                  {m.status !== "not_analyzed" && m.confidence_score !== null && (
-                                    <span className="text-xs font-black text-muted-foreground">
-                                      {Math.round(m.confidence_score * 100)}%
-                                    </span>
-                                  )}
                                 </div>
-                                {m.ai_reasoning ? (
-                                  <p className="text-xs text-muted-foreground font-medium mt-1.5">{m.ai_reasoning}</p>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground/60 italic font-medium mt-1.5">Awaiting analysis against evidence...</p>
-                                )}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={cn(
+                                    "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
+                                    m.status === 'not_analyzed' ? 'bg-muted text-muted-foreground' :
+                                      m.status === 'met' ? 'bg-green-500/10 text-green-500' :
+                                        m.status === 'partial' ? 'bg-yellow-500/10 text-yellow-500' :
+                                          'bg-red-500/10 text-red-500'
+                                  )}>
+                                    {m.status === 'not_analyzed' ? 'N/A' : m.status}
+                                  </span>
+                                </div>
                               </div>
+                              <p className="text-sm text-muted-foreground font-medium pl-[38px] truncate">
+                                {m.criterion_description || (m.ai_reasoning ? m.ai_reasoning : "Awaiting analysis against evidence...")}
+                              </p>
                             </div>
                           ))
                         ) : (
@@ -491,17 +496,17 @@ export default function StandardsPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="p-8 rounded-[32px] bg-primary text-primary-foreground space-y-4 shadow-xl shadow-primary/20">
-                        <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 opacity-80">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-border pt-10">
+                      <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
+                        <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
                           <Sparkles className="w-4 h-4" />
                           Ayn Intelligence
                         </h5>
-                        <p className="text-base font-medium leading-relaxed">
-                          This framework is fully compatible with our <span className="font-black underline decoration-white/30">Multi-Modal Gap Analysis</span> engine.
+                        <p className="text-lg font-bold leading-relaxed text-foreground">
+                          Analyze against:
                         </p>
 
-                        <div className="bg-background/20 rounded-xl p-4 border border-white/10 space-y-4">
+                        <div className="space-y-4">
                           <label className="flex items-center gap-3 cursor-pointer">
                             <input
                               type="radio"
@@ -545,7 +550,14 @@ export default function StandardsPage() {
                                       else setSelectedEvidenceIds(p => p.filter(id => id !== ev.id))
                                     }}
                                   />
-                                  <span className="text-xs truncate max-w-[180px]" title={ev.title || ev.originalFilename || undefined}>{ev.title || ev.originalFilename}</span>
+                                  <span className="text-xs truncate max-w-[180px] font-medium" title={ev.title || ev.originalFilename || undefined}>
+                                    {ev.title || ev.originalFilename}
+                                  </span>
+                                  {ev.documentType && (
+                                    <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[9px] font-bold border border-border">
+                                      {ev.documentType}
+                                    </span>
+                                  )}
                                 </label>
                               ))}
                             </div>
@@ -571,13 +583,13 @@ export default function StandardsPage() {
                                 <Button
                                   onClick={() => handleAnalyzeNow(true)}
                                   variant="outline"
-                                  className="w-full h-12 rounded-2xl border-white/20 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+                                  className="w-full h-12 rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                   <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
                                 </Button>
                                 <Button
                                   onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                                  className="w-full h-14 rounded-2xl bg-white/10 text-white hover:bg-white/20 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-white/20"
+                                  className="w-full h-14 rounded-2xl bg-muted text-foreground hover:bg-muted/80 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-border"
                                 >
                                   View Full Report
                                 </Button>

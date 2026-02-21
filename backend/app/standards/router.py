@@ -240,11 +240,33 @@ async def get_standard_mappings(
         partial = sum(1 for m in mappings if m.status == "partial")
         gap = sum(1 for m in mappings if m.status == "gap")
         
+        import re
         mapping_results = []
         for criterion in all_criteria:
             # Code/Title parsing
-            code = criterion.title.split(']')[0].replace('[', '') if '[' in criterion.title else "N/A"
-            title = criterion.title.split(']')[1].strip() if ']' in criterion.title else criterion.title
+            title_text = criterion.title.strip()
+            code = "N/A"
+            title = title_text
+            
+            if title_text.startswith('[') and ']' in title_text:
+                parts = title_text.split(']', 1)
+                code = parts[0].replace('[', '').strip()
+                title = parts[1].strip()
+            elif re.match(r'^([\d\.]+)\s+(.*)', title_text):
+                match = re.match(r'^([\d\.]+)\s+(.*)', title_text)
+                code = match.group(1)
+                title = match.group(2).strip()
+            elif re.match(r'^(Clause\s+[\d\.]+):?\s+(.*)', title_text, re.IGNORECASE):
+                match = re.match(r'^(Clause\s+[\d\.]+):?\s+(.*)', title_text, re.IGNORECASE)
+                code = match.group(1)
+                title = match.group(2).strip()
+            elif re.match(r'^(Standard\s+[\d\.]+)(:?\s+(.*))?$', title_text, re.IGNORECASE):
+                match = re.match(r'^(Standard\s+[\d\.]+)(:?\s+(.*))?$', title_text, re.IGNORECASE)
+                code = match.group(1)
+                title = match.group(3).strip() if match.group(3) else title_text
+            
+            if len(title) > 80:
+                title = title[:77] + "..."
             
             # Find matching mapping if it exists
             mapping = next((m for m in mappings if m.criterionId == criterion.id), None)
@@ -253,6 +275,7 @@ async def get_standard_mappings(
                 "criterion_id": criterion.id,
                 "criterion_code": code,
                 "criterion_title": title,
+                "criterion_description": criterion.description,
                 "status": mapping.status if mapping else "not_analyzed",
                 "confidence_score": mapping.confidenceScore if mapping else None,
                 "ai_reasoning": mapping.aiReasoning if mapping else None,

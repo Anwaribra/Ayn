@@ -57,6 +57,6 @@ def fix_file(filepath):
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(out)
 
-fix_file(r'd:\CV-4\graduation\Ayn\backend\app\standards\router.py')
-fix_file(r'd:\CV-4\graduation\Ayn\backend\app\standards\mapping_service.py')
+fix_file("backend/app/standards/router.py")
+fix_file("backend/app/standards/mapping_service.py")
 print("Files fixed.")

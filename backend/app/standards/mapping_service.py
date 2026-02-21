@@ -169,7 +169,7 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
                 code = criterion.title.split(']')[0].replace('[', '') if '[' in criterion.title else criterion.title[:10]
                 title = criterion.title.split(']')[1].strip() if ']' in criterion.title else criterion.title
                 
-                prompt = f\"\"\"You are an educational quality compliance expert.
+                prompt = f"""You are an educational quality compliance expert.
                 
 CRITERION: {code} - {title}
 DESCRIPTION: {criterion.description or 'No specific description provided'}
@@ -186,7 +186,7 @@ Respond ONLY with valid JSON exactly matching this structure:
   "ai_reasoning": "1-2 sentence explanation",
   "best_evidence_id": "uuid or null (use exact ID from the list, or null if none)"
 }}
-\"\"\"
+"""
                 
                 result = await analyze_criterion_with_retry(gemini_client, prompt)
                 

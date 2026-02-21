@@ -413,14 +413,14 @@ export default function StandardsPage() {
         <AnimatePresence>
           {isDetailsOpen && selectedStandard && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
-              <GlassCard
-                variant={4}
+              <div
+                className="glass-card relative"
                 style={{
                   width: '100%',
                   maxWidth: '1000px',
                   height: '85vh',
                   display: 'flex',
-                  flexDirection: 'column',
+                  flexDirection: 'column' as const,
                   padding: 0,
                   overflow: 'hidden',
                   borderRadius: '40px',
@@ -674,7 +674,7 @@ export default function StandardsPage() {
                     </div>
                   </GlassPanel>
                 </div>
-              </GlassCard>
+              </div>
             </div>
           )}
         </AnimatePresence>

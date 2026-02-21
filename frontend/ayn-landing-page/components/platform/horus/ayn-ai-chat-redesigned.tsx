@@ -236,13 +236,13 @@ export default function HorusAIChat() {
             {isEmpty ? (
               <div className="flex-1 min-h-[40vh] flex flex-col items-center justify-center w-full space-y-4 px-4 text-center animate-in fade-in zoom-in-95">
                 <div className="mb-4">
-                  <AiLoader size={160} text="Horus" />
+                  <AiLoader size={100} text="Horus" />
                 </div>
                 <h2 className="text-xl font-black text-foreground">How can I assist you?</h2>
                 <ul className="text-sm text-muted-foreground space-y-2 max-w-sm">
-                  <li className="flex items-center gap-2 justify-center font-medium">✨ Analyze your compliance documents</li>
-                  <li className="flex items-center gap-2 justify-center font-medium">🎯 Track missing evidence gaps</li>
-                  <li className="flex items-center gap-2 justify-center font-medium">📚 Explain standards requirements</li>
+                  <li className="flex items-center gap-2 justify-center font-medium">Analyze your compliance documents</li>
+                  <li className="flex items-center gap-2 justify-center font-medium">Track missing evidence gaps</li>
+                  <li className="flex items-center gap-2 justify-center font-medium">Explain standards requirements</li>
                 </ul>
               </div>
             ) : (
@@ -294,7 +294,9 @@ export default function HorusAIChat() {
                     </div>
                   </div>
                 ) : (
-                  <AiLoader size={160} text="Generating" />
+                  <div className="flex items-start gap-3 px-4">
+                    <AiLoader size={80} text="Horus" />
+                  </div>
                 ))}
               </>
             )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useMemo, useEffect, useRef } from "react"
+import { type ReactNode, useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import useSWR from "swr"
 import { toast } from "sonner"
@@ -109,9 +109,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         })
       }
     }
-  }, [notifications])
+  }, [notifications, router])
 
-  const handleClearNotifications = async () => {
+  const handleClearNotifications = useCallback(async () => {
     try {
       await api.markAllNotificationsRead()
       mutateNotifications(
@@ -121,7 +121,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     } catch {
       toast.error("Failed to mark all as read")
     }
-  }
+  }, [mutateNotifications, notifications])
+
+  useEffect(() => {
+    if (showNotifications && notifications?.some((n: Notification) => !n.isRead)) {
+      handleClearNotifications()
+    }
+  }, [showNotifications, notifications, handleClearNotifications])
 
   const handleDismissNotification = async (id: string) => {
     try {

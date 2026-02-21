@@ -77,14 +77,30 @@ class EvidenceService:
             
             # 2.5 Trigger Notification & Activity
             try:
-                await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=current_user["id"],
-                    type="info",
-                    title="Evidence Uploaded",
-                    message=f"File '{file.filename}' has been uploaded.",
-                    relatedEntityId=evidence.id,
-                    relatedEntityType="evidence"
-                ))
+                from datetime import timedelta
+                
+                # Check for existing notification in last 24h
+                existing = await db.notification.find_first(
+                    where={
+                        "userId": current_user["id"],
+                        "type": "info",
+                        "title": "Evidence Uploaded",
+                        "relatedEntityId": evidence.id,
+                        "createdAt": {
+                            "gte": datetime.utcnow() - timedelta(hours=24)
+                        }
+                    }
+                )
+                
+                if not existing:
+                    await NotificationService.create_notification(NotificationCreateRequest(
+                        userId=current_user["id"],
+                        type="info",
+                        title="Evidence Uploaded",
+                        message=f"File '{file.filename}' has been uploaded.",
+                        relatedEntityId=evidence.id,
+                        relatedEntityType="evidence"
+                    ))
                 await ActivityService.log_activity(
                     user_id=current_user["id"],
                     type="evidence_uploaded",

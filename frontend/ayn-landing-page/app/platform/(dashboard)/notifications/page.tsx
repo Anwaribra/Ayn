@@ -22,7 +22,7 @@ export default function NotificationsPage() {
     { refreshInterval: 10000 }
   )
 
-  const handleMarkAllRead = async () => {
+  const handleMarkAllRead = React.useCallback(async () => {
     try {
       await api.markAllNotificationsRead()
       mutate(
@@ -32,7 +32,18 @@ export default function NotificationsPage() {
     } catch {
       toast.error("Failed to mark all as read")
     }
-  }
+  }, [api, mutate, notifications])
+
+  React.useEffect(() => {
+    if (notifications && notifications.length > 0) {
+      const hasUnread = notifications.some(n => !n.isRead);
+      if (hasUnread) {
+        handleMarkAllRead();
+      }
+    }
+  }, [notifications]);
+
+
 
   const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()

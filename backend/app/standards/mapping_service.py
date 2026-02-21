@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from typing import List, Optional
-from app.db.session import get_db
+
 from app.ai.service import get_gemini_client, ISO_21001_KNOWLEDGE, NAQAAE_KNOWLEDGE
 from prisma.models import Standard, Criterion, Evidence, CriteriaMapping, GapAnalysis
 

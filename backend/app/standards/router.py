@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Depends, File, UploadFile, BackgroundTasks, HTTPException
-from app.db.session import get_db
+
 from typing import List
 from pydantic import BaseModel
 from app.core.middlewares import get_current_user

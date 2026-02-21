@@ -3,6 +3,7 @@ import json
 import logging
 import re
 from typing import List, Optional
+from app.core.db import get_db
 
 from app.ai.service import get_gemini_client, ISO_21001_KNOWLEDGE, NAQAAE_KNOWLEDGE
 from prisma.models import Standard, Criterion, Evidence, CriteriaMapping, GapAnalysis
@@ -80,8 +81,8 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str):
     logger.info(f"Starting standard criteria analysis for standard {standard_id} and institution {institution_id}")
     
     # We create a new DB session for the background task since it runs asynchronously
-    async for db_instance in get_db():
-        db = db_instance
+    db = get_db()
+    for _ in [1]:
         try:
             # 1. Fetch standard + all its criteria
             standard = await db.standard.find_unique(
@@ -246,4 +247,4 @@ Respond ONLY with valid JSON exactly matching this structure:
             raise
         finally:
             # We don't disconnect the db if it's the global instance, the session manager handles it
-            break
+            pass

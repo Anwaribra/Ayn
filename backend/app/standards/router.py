@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Depends, File, UploadFile, BackgroundTasks, HTTPException
-
+from app.core.db import get_db
 from typing import List
 from pydantic import BaseModel
 from app.core.middlewares import get_current_user
@@ -174,7 +174,8 @@ async def get_standard_mappings(
     if not institution_id:
         raise HTTPException(status_code=400, detail="User does not have an institution associated.")
         
-    async for db in get_db():
+    db = get_db()
+    for _ in [1]:
         standard = await db.standard.find_unique(where={"id": standard_id}, include={"criteria": True})
         if not standard:
             raise HTTPException(status_code=404, detail="Standard not found")
@@ -230,7 +231,8 @@ async def get_mapping_status(
     if not institution_id:
         raise HTTPException(status_code=400, detail="User does not have an institution associated.")
         
-    async for db in get_db():
+    db = get_db()
+    for _ in [1]:
         # Using prisma to count mappings
         mappings = await db.criteriamapping.find_many(
             where={

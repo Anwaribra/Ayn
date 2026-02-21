@@ -235,8 +235,8 @@ export default function HorusAIChat() {
           <div className="flex-1 flex flex-col space-y-6 pb-4">
             {isEmpty ? (
               <div className="flex-1 min-h-[40vh] flex flex-col items-center justify-center w-full space-y-4 px-4 text-center animate-in fade-in zoom-in-95">
-                <div className="w-16 h-16 rounded-2xl glass-layer-2 flex items-center justify-center text-primary shadow-lg border border-primary/20 bg-primary/5">
-                  <Bot className="w-8 h-8" />
+                <div className="mb-4">
+                  <AiLoader size={160} text="Horus" />
                 </div>
                 <h2 className="text-xl font-black text-foreground">How can I assist you?</h2>
                 <ul className="text-sm text-muted-foreground space-y-2 max-w-sm">

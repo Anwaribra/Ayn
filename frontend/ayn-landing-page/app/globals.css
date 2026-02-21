@@ -384,14 +384,39 @@
 }
 
 /* AI Loader keyframes */
+/* AI Loader keyframes */
 @keyframes loaderCircle {
-  0% { transform: rotate(90deg); box-shadow: 0 6px 12px 0 #60a5fa inset, 0 12px 18px 0 #3b82f6 inset, 0 36px 36px 0 #0ea5e9 inset, 0 0 3px 1.2px rgba(96,165,250,0.3), 0 0 6px 1.8px rgba(59,130,246,0.2); }
-  50% { transform: rotate(270deg); box-shadow: 0 6px 12px 0 #93c5fd inset, 0 12px 6px 0 #38bdf8 inset, 0 24px 36px 0 #3b82f6 inset, 0 0 3px 1.2px rgba(147,197,253,0.3), 0 0 6px 1.8px rgba(56,189,248,0.2); }
-  100% { transform: rotate(450deg); box-shadow: 0 6px 12px 0 #60a5fa inset, 0 12px 18px 0 #3b82f6 inset, 0 36px 36px 0 #0ea5e9 inset, 0 0 3px 1.2px rgba(96,165,250,0.3), 0 0 6px 1.8px rgba(59,130,246,0.2); }
+  0% {
+    transform: rotate(90deg);
+    box-shadow: 0 6px 12px 0 #60a5fa inset, 0 12px 18px 0 #3b82f6 inset, 0 36px 36px 0 #1d4ed8 inset, 0 0 4px 2px rgba(96, 165, 250, 0.3);
+  }
+
+  50% {
+    transform: rotate(270deg);
+    box-shadow: 0 6px 12px 0 #93c5fd inset, 0 12px 6px 0 #38bdf8 inset, 0 24px 36px 0 #2563eb inset, 0 0 4px 2px rgba(147, 197, 253, 0.3);
+  }
+
+  100% {
+    transform: rotate(450deg);
+    box-shadow: 0 6px 12px 0 #60a5fa inset, 0 12px 18px 0 #3b82f6 inset, 0 36px 36px 0 #1d4ed8 inset, 0 0 4px 2px rgba(96, 165, 250, 0.3);
+  }
 }
 
 @keyframes loaderLetter {
-  0%, 100% { opacity: 0.4; transform: translateY(0); }
-  20% { opacity: 1; transform: scale(1.15); }
-  40% { opacity: 0.7; transform: translateY(0); }
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateY(0) scale(1);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  40% {
+    opacity: 0.7;
+    transform: translateY(0) scale(1);
+  }
 }

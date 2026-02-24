@@ -20,6 +20,7 @@ from app.chat.service import ChatService
 from app.activity.service import ActivityService
 from app.gap_analysis.service import GapAnalysisService
 from app.gap_analysis.models import GapAnalysisRequest, UserDTO
+from app.rag.service import RagService
 
 logger = logging.getLogger(__name__)
 
@@ -256,9 +257,9 @@ class HorusService:
                     self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
-            yield 'data: {"type": "status", "content": "📄 Document received. Running gap analysis in background..."}\n'
+            yield 'data: {"type": "status", "content": "📄 Document received. Analyzing and indexing vector embeddings..."}\n'
             
-            context = self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
+            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
             
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
@@ -312,8 +313,18 @@ class HorusService:
                     mime_type=res["mime_type"],
                     user_id=user_id
                 )
+                
+                # IMPORTANT: Rag Indexing
+                # Decode the content for RAG (assuming it's text or pdf processed by OCR inside analyze_evidence_task)
+                # Since analyze_evidence_task handles PDF text extraction but doesn't return it,
+                # we will extract simple text here if possible, or assume OCR will handle DB save.
+                # For pure text files, we can index immediately:
+                if res["mime_type"] == "text/plain" or res["mime_type"] == "text/markdown":
+                    rag = RagService()
+                    await rag.index_document(content.decode("utf-8"), document_id=res["evidenceId"])
+                    
             except Exception as e:
-                logger.error(f"Brain Pipeline Step 1 (Evidence) failed: {e}")
+                logger.error(f"Brain Pipeline Step 1 (Evidence/RAG) failed: {e}")
 
         if not needs_analysis:
             logger.info("Skipping explicit Gap Analysis Trigger; user did not request analysis.")
@@ -420,8 +431,18 @@ class HorusService:
         if brain_context:
             context_parts.append(brain_context)
             
-        if mapping_context:
-            context_parts.append(mapping_context)
+        context_parts.append(mapping_context)
+
+        # 🚀 TRUE RAG: 
+        # Retrieve semantic chunks based on the user's message
+        if message:
+            try:
+                rag = RagService()
+                rag_context = await rag.retrieve_context(message, limit=4)
+                if rag_context:
+                    context_parts.append(rag_context)
+            except Exception as e:
+                logger.error(f"RAG Context retrieval failed during chat sync: {e}")
 
         import re
         message_clean = (message or "").replace(" ", "")
@@ -485,6 +506,17 @@ class HorusService:
                     context_parts.append(f"CRITERIA MAPPINGS: {met}/{total} criteria met across all standards.\nCritical gaps: {gap_str}")
         except Exception as e:
             logger.error(f"Failed to fetch criteria mappings context: {e}")
+            
+        # 🚀 TRUE RAG: 
+        # Retrieve semantic chunks based on the user's message
+        if message:
+            try:
+                rag = RagService()
+                rag_context = await rag.retrieve_context(message, limit=4)
+                if rag_context:
+                    context_parts.append(rag_context)
+            except Exception as e:
+                logger.error(f"RAG Context retrieval failed during chat loop: {e}")
         
         import re
         message_clean = (message or "").replace(" ", "")

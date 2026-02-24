@@ -1,12 +1,14 @@
 // Prisma Schema for Ayn Platform
 generator client {
-  provider = "prisma-client-py"
+  provider        = "prisma-client-py"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 // User Model
@@ -382,5 +384,26 @@ model PlatformEvent {
   @@index([userId])
   @@index([type])
   @@index([timestamp])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AI RAG MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+model VectorDocument {
+  id             String                   @id @default(uuid())
+  content        String                   @db.Text
+  embedding      Unsupported("vector(768)")?
+  
+  // Metadata for filtering
+  documentId     String? // References Evidence PDF id
+  standardId     String? // References a specific standard
+  chunkIndex     Int?    @default(0)
+  
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([documentId])
+  @@index([standardId])
 }
 

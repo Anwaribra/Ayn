@@ -324,6 +324,7 @@ class GeminiClient:
         if USE_NEW_API:
             self.client = new_genai.Client(api_key=api_key)
             self.model_name = "gemini-2.0-flash"
+            self.embedding_model = "text-embedding-004"
         else:
             old_genai.configure(api_key=api_key)
             self.model = old_genai.GenerativeModel('gemini-1.5-flash')
@@ -516,6 +517,25 @@ class GeminiClient:
             response = await self.chat_with_files(message, files)
             yield response
 
+    async def create_embedding(self, text: str) -> list[float]:
+        """Generate a vector embedding for a given text chunk."""
+        if USE_NEW_API:
+            # Using the new google-genai library
+            response = await self.client.aio.models.embed_content(
+                model=self.embedding_model,
+                contents=text
+            )
+            # The new SDK returns an list of embeddings, we want the primary one
+            return response.embeddings[0].values
+        else:
+            # Using the legacy google-generativeai library
+            result = await asyncio.to_thread(
+                old_genai.embed_content,
+                model="models/text-embedding-004",
+                content=text
+            )
+            return result['embedding']
+
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────
 class HorusAIClient:
@@ -606,6 +626,15 @@ class HorusAIClient:
     async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
         async for chunk in self._stream_with_fallback("stream_chat_with_files", message=message, files=files, context=context):
             yield chunk
+
+    async def create_embedding(self, text: str) -> list[float]:
+        # Embeddings usually don't have a 1-to-1 fallback on OpenRouter in the same way,
+        # but if we are using Gemini, it should support it directly.
+        if self.gemini:
+            return await self.gemini.create_embedding(text)
+        else:
+            raise NotImplementedError("Text embeddings are currently only supported via the Gemini provider.")
+
 
     @property
     def provider(self) -> str:

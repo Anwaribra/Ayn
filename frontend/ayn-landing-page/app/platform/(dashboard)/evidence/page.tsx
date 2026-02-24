@@ -339,7 +339,7 @@ function EvidenceContent() {
             <p className="text-sm font-medium text-muted-foreground mb-6">Select framework to map against.</p>
 
             <div className="space-y-3 mb-8">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-white/30 cursor-pointer transition-colors bg-white/5">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/50">
                 <input
                   type="radio"
                   name="standard"
@@ -352,7 +352,7 @@ function EvidenceContent() {
               </label>
 
               {standards?.map((s: any) => (
-                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-white/30 cursor-pointer transition-colors bg-white/5">
+                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/50">
                   <input
                     type="radio"
                     name="standard"

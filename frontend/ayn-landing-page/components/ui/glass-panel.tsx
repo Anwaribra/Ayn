@@ -12,7 +12,7 @@ export function GlassPanel({ children, className, hoverEffect = false }: GlassPa
         <div
             className={cn(
                 "glass rounded-3xl p-6 transition-all duration-300",
-                hoverEffect && "hover:-translate-y-1 hover:shadow-lg hover:border-white/40 dark:hover:border-white/20",
+                hoverEffect && "hover:-translate-y-1 hover:shadow-lg hover:border-border",
                 className
             )}
         >

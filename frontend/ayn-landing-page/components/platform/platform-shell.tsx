@@ -1,9 +1,16 @@
-"use client"
+"use client";
 
-import { type ReactNode, useState, useMemo, useEffect, useRef, useCallback } from "react"
-import { usePathname, useRouter } from "next/navigation"
-import useSWR from "swr"
-import { toast } from "sonner"
+import {
+  type ReactNode,
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
+import useSWR from "swr";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,148 +20,174 @@ import {
   Moon,
   X,
   PanelLeft,
-} from "lucide-react"
-import PlatformSidebar from "@/components/platform/sidebar-enhanced"
-import FloatingAIBar from "@/components/platform/floating-ai-bar"
-import { CommandPalette } from "./command-palette"
-import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
-import { useCommandPaletteContext } from "@/components/platform/command-palette-provider"
-import { useCommandPalette } from "@/hooks/use-command-palette"
-import type { Notification } from "@/types"
-import { useTheme } from "next-themes"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import PlatformSidebar from "@/components/platform/sidebar-enhanced";
+import FloatingAIBar from "@/components/platform/floating-ai-bar";
+import { CommandPalette } from "./command-palette";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
+import { useCommandPaletteContext } from "@/components/platform/command-palette-provider";
+import { useCommandPalette } from "@/hooks/use-command-palette";
+import type { Notification } from "@/types";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   // Start closed so mobile never shows sidebar taking space on first paint
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const router = useRouter()
-  const pathname = usePathname()
-  const { user, isAuthenticated } = useAuth()
-  const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
+  const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext();
 
   // Enable global keyboard shortcuts (⌘K to open command palette)
-  useCommandPalette()
+  useCommandPalette();
 
-  const { setTheme, theme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { setTheme, theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) setSidebarOpen(false)
-      else setSidebarOpen(true)
-    }
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+      if (window.innerWidth < 1024) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Close notification dropdown when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (showNotifications && !target.closest('.notification-dropdown-container')) {
-        setShowNotifications(false)
+      const target = e.target as HTMLElement;
+      if (
+        showNotifications &&
+        !target.closest(".notification-dropdown-container")
+      ) {
+        setShowNotifications(false);
       }
-    }
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showNotifications) {
-        setShowNotifications(false)
+      if (e.key === "Escape" && showNotifications) {
+        setShowNotifications(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyDown)
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [showNotifications])
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showNotifications]);
 
   // Notification data via SWR
-  const { data: notifications, mutate: mutateNotifications } = useSWR<Notification[]>(
+  const { data: notifications, mutate: mutateNotifications } = useSWR<
+    Notification[]
+  >(
     isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
-    { refreshInterval: 10_000, revalidateOnFocus: false, dedupingInterval: 5_000 },
-  )
+    {
+      refreshInterval: 10_000,
+      revalidateOnFocus: false,
+      dedupingInterval: 5_000,
+    },
+  );
   const notificationCount = useMemo(
     () => notifications?.filter((n: Notification) => !n.isRead).length ?? 0,
     [notifications],
-  )
+  );
 
   // Live Toast for New Notifications
-  const lastShownAt = useRef<number>(Date.now())
+  const lastShownAt = useRef<number>(Date.now());
   useEffect(() => {
-    const unread = notifications?.filter((n: Notification) => !n.isRead) || []
+    const unread = notifications?.filter((n: Notification) => !n.isRead) || [];
     if (unread.length > 0) {
-      const latest = unread[0]
-      const latestTime = new Date(latest.createdAt).getTime()
+      const latest = unread[0];
+      const latestTime = new Date(latest.createdAt).getTime();
 
       if (latestTime > lastShownAt.current) {
-        lastShownAt.current = latestTime
+        lastShownAt.current = latestTime;
         toast(latest.title, {
           description: latest.message,
           action: {
             label: "View",
             onClick: () => {
-              if (latest.relatedEntityType === 'evidence') router.push('/platform/evidence')
-              else if (latest.relatedEntityType === 'gap') router.push('/platform/gap-analysis')
-              else router.push('/platform/notifications')
-            }
-          }
-        })
+              if (latest.relatedEntityType === "evidence")
+                router.push("/platform/evidence");
+              else if (latest.relatedEntityType === "gap")
+                router.push("/platform/gap-analysis");
+              else router.push("/platform/notifications");
+            },
+          },
+        });
       }
     }
-  }, [notifications, router])
+  }, [notifications, router]);
 
   const handleClearNotifications = useCallback(async () => {
     try {
-      await api.markAllNotificationsRead()
+      await api.markAllNotificationsRead();
       mutateNotifications(
         notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
-        { revalidate: false }
-      )
+        { revalidate: false },
+      );
     } catch {
-      toast.error("Failed to mark all as read")
+      toast.error("Failed to mark all as read");
     }
-  }, [mutateNotifications, notifications])
+  }, [mutateNotifications, notifications]);
 
   useEffect(() => {
-    if (showNotifications && notifications?.some((n: Notification) => !n.isRead)) {
-      handleClearNotifications()
+    if (
+      showNotifications &&
+      notifications?.some((n: Notification) => !n.isRead)
+    ) {
+      handleClearNotifications();
     }
-  }, [showNotifications, notifications, handleClearNotifications])
+  }, [showNotifications, notifications, handleClearNotifications]);
 
   const handleDismissNotification = async (id: string) => {
     try {
-      await api.markNotificationRead(id)
+      await api.markNotificationRead(id);
       mutateNotifications(
-        notifications?.map((n: Notification) => n.id === id ? { ...n, isRead: true } : n) ?? [],
-        { revalidate: false }
-      )
-      const notification = notifications?.find((n: Notification) => n.id === id)
-      if (notification?.relatedEntityId && notification.relatedEntityType === 'evidence') {
-        router.push('/platform/evidence')
-      } else if (notification?.relatedEntityId && notification.relatedEntityType === 'report') {
-        router.push(`/platform/gap-analysis?report=${notification.relatedEntityId}`)
+        notifications?.map((n: Notification) =>
+          n.id === id ? { ...n, isRead: true } : n,
+        ) ?? [],
+        { revalidate: false },
+      );
+      const notification = notifications?.find(
+        (n: Notification) => n.id === id,
+      );
+      if (
+        notification?.relatedEntityId &&
+        notification.relatedEntityType === "evidence"
+      ) {
+        router.push("/platform/evidence");
+      } else if (
+        notification?.relatedEntityId &&
+        notification.relatedEntityType === "report"
+      ) {
+        router.push(
+          `/platform/gap-analysis?report=${notification.relatedEntityId}`,
+        );
       }
     } catch {
-      toast.error("Failed to mark as read")
+      toast.error("Failed to mark as read");
     }
-  }
+  };
 
   return (
     <div
       className={cn(
-        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground"
+        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground",
       )}
-      data-platform-theme={mounted ? resolvedTheme ?? "dark" : undefined}
+      data-platform-theme={mounted ? (resolvedTheme ?? "dark") : undefined}
     >
       {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
       {/* <div className="cinematic-bg" /> */}
@@ -163,7 +196,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       <div
         className={cn(
           "fixed inset-0 bg-black/50 z-[45] lg:hidden backdrop-blur-sm transition-opacity duration-300",
-          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
@@ -179,7 +212,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         notificationCount={notificationCount}
       />
 
-      <main id="main-content" className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0">
+      <main
+        id="main-content"
+        className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0"
+      >
         <header className="h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
           <div className="flex items-center gap-4">
             {/* Open sidebar when it's overlay (below lg) */}
@@ -198,8 +234,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             >
               <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
-              <kbd className="hidden md:flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-muted border border-border text-xs font-mono text-muted-foreground">
-                <span className="text-sm">⌘</span>K
+              <kbd className="hidden md:flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-muted border border-border text-sm font-mono text-muted-foreground font-bold">
+                <span className="text-base">⌘</span>K
               </kbd>
             </button>
           </div>
@@ -223,10 +259,22 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               {showNotifications && (
                 <div className="absolute top-full right-0 mt-2 w-[320px] glass-panel rounded-3xl p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Activity</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                      Activity
+                    </h3>
                     <div className="flex items-center gap-2">
-                      <button onClick={handleClearNotifications} className="text-[10px] text-primary font-bold hover:underline">Mark all read</button>
-                      <button onClick={() => setShowNotifications(false)} className="p-1 text-muted-foreground hover:text-foreground transition-colors"><X className="w-3 h-3" /></button>
+                      <button
+                        onClick={handleClearNotifications}
+                        className="text-[10px] text-primary font-bold hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                      <button
+                        onClick={() => setShowNotifications(false)}
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
 
@@ -234,7 +282,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     {!notifications || notifications.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 opacity-60">
                         <Bell className="w-8 h-8 text-muted-foreground mb-3" />
-                        <p className="text-center text-muted-foreground italic text-sm">Quiet for now.</p>
+                        <p className="text-center text-muted-foreground italic text-sm">
+                          Quiet for now.
+                        </p>
                       </div>
                     ) : (
                       notifications.slice(0, 8).map((n: Notification) => (
@@ -242,24 +292,57 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                           key={n.id}
                           className={cn(
                             "flex gap-3 group cursor-pointer hover:bg-layer-3 p-3 rounded-xl transition-all",
-                            !n.isRead ? "bg-layer-1 border border-border" : "opacity-70"
+                            !n.isRead
+                              ? "bg-layer-1 border border-border"
+                              : "opacity-70",
                           )}
                           onClick={() => handleDismissNotification(n.id)}
                         >
-                          <div className={cn(
-                            "w-1 h-full min-h-[2rem] rounded-full flex-shrink-0",
-                            !n.isRead
-                              ? (n.type === 'error' ? 'bg-destructive' : n.type === 'success' ? 'bg-emerald-500' : 'bg-primary')
-                              : 'bg-muted-foreground/30'
-                          )} />
+                          <div
+                            className={cn(
+                              "w-1 h-full min-h-[2rem] rounded-full flex-shrink-0",
+                              !n.isRead
+                                ? n.type === "error"
+                                  ? "bg-destructive"
+                                  : n.type === "success"
+                                    ? "bg-emerald-500"
+                                    : "bg-primary"
+                                : "bg-muted-foreground/30",
+                            )}
+                          />
                           <div className="flex-1 min-w-0">
-                            <h4 className={cn("text-xs font-bold", !n.isRead ? "text-foreground" : "text-muted-foreground")}>{n.title}</h4>
-                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">{n.message}</p>
+                            <h4
+                              className={cn(
+                                "text-xs font-bold",
+                                !n.isRead
+                                  ? "text-foreground"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {n.title}
+                            </h4>
+                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
+                              {n.message}
+                            </p>
                             <span className="text-[9px] text-muted-foreground/70 mt-1.5 block font-bold uppercase tracking-wider">
-                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(n.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           </div>
-                          {!n.isRead && <div className={cn("w-2 h-2 rounded-full mt-1.5", n.type === 'error' ? 'bg-destructive' : n.type === 'success' ? 'bg-emerald-500' : 'bg-primary')} />}
+                          {!n.isRead && (
+                            <div
+                              className={cn(
+                                "w-2 h-2 rounded-full mt-1.5",
+                                n.type === "error"
+                                  ? "bg-destructive"
+                                  : n.type === "success"
+                                    ? "bg-emerald-500"
+                                    : "bg-primary",
+                              )}
+                            />
+                          )}
                         </div>
                       ))
                     )}
@@ -267,7 +350,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                   {notifications && notifications.length > 0 && (
                     <button
-                      onClick={() => { setShowNotifications(false); router.push('/platform/notifications'); }}
+                      onClick={() => {
+                        setShowNotifications(false);
+                        router.push("/platform/notifications");
+                      }}
                       className="w-full mt-4 py-3 rounded-2xl bg-layer-3 hover:bg-layer-1 transition-colors text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground text-center border border-border"
                     >
                       View All Activity
@@ -277,32 +363,53 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               )}
             </div>
 
-
-
             {/* Theme Toggle */}
             <button
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              onClick={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
               className={cn(
                 "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
                 "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
-              title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={
+                resolvedTheme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
+              aria-label={
+                resolvedTheme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
             >
-              {mounted && (resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
+              {mounted &&
+                (resolvedTheme === "dark" ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                ))}
             </button>
 
             <div className="w-px h-4 bg-[var(--glass-border)]" />
           </div>
         </header>
 
-        <div className={cn(
-          "flex-1 overflow-y-auto scroll-smooth transition-colors duration-300",
-          pathname?.includes("/horus-ai")
-            ? "content-scroll-area min-h-0"
-            : "px-6 md:px-10 pt-5 pb-24 content-scroll-area"
-        )}>
-          <div className={pathname?.includes("/horus-ai") ? "h-full w-full" : "max-w-[1280px] w-full mx-auto"}>
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto scroll-smooth transition-colors duration-300",
+            pathname?.includes("/horus-ai")
+              ? "content-scroll-area min-h-0"
+              : "px-6 md:px-10 pt-5 pb-24 content-scroll-area",
+          )}
+        >
+          <div
+            className={
+              pathname?.includes("/horus-ai")
+                ? "h-full w-full"
+                : "max-w-[1280px] w-full mx-auto"
+            }
+          >
             {children}
           </div>
         </div>
@@ -310,6 +417,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
       <FloatingAIBar />
       <CommandPalette />
-    </div >
-  )
+    </div>
+  );
 }

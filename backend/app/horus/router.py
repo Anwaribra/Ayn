@@ -12,6 +12,7 @@ from pydantic import BaseModel
 import json
 import asyncio
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, BackgroundTasks
+import io
 from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
@@ -63,11 +64,19 @@ async def horus_chat_post(
         state_service = StateService(db)
         horus_service = HorusService(state_service)
         
+        in_memory_files = []
+        if files:
+            for f in files:
+                content = await f.read()
+                new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content))
+                new_f.content_type = f.content_type
+                in_memory_files.append(new_f)
+                
         return await horus_service.chat(
             user_id=user_id,
             message=message,
             chat_id=chat_id,
-            files=files,
+            files=in_memory_files,
             background_tasks=background_tasks,
             db=db,
             current_user=current_user
@@ -93,12 +102,20 @@ async def horus_chat_stream(
     state_service = StateService(db)
     horus_service = HorusService(state_service)
     
+    in_memory_files = []
+    if files:
+        for f in files:
+            content = await f.read()
+            new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content))
+            new_f.content_type = f.content_type
+            in_memory_files.append(new_f)
+            
     async def event_generator():
         async for chunk in horus_service.stream_chat(
             user_id=user_id,
             message=message,
             chat_id=chat_id,
-            files=files,
+            files=in_memory_files,
             background_tasks=background_tasks,
             db=db,
             current_user=current_user

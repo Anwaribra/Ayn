@@ -521,20 +521,36 @@ class GeminiClient:
         """Generate a vector embedding for a given text chunk."""
         if USE_NEW_API:
             # Using the new google-genai library
-            response = await self.client.aio.models.embed_content(
-                model=self.embedding_model,
-                contents=text
-            )
-            # The new SDK returns an list of embeddings, we want the primary one
-            return response.embeddings[0].values
+            try:
+                response = await self.client.aio.models.embed_content(
+                    model=self.embedding_model,
+                    contents=text
+                )
+                return response.embeddings[0].values
+            except Exception as e:
+                logger.warning(f"Failed embedding with {self.embedding_model}: {e}. Falling back to embedding-001...")
+                response = await self.client.aio.models.embed_content(
+                    model="embedding-001",
+                    contents=text
+                )
+                return response.embeddings[0].values
         else:
             # Using the legacy google-generativeai library
-            result = await asyncio.to_thread(
-                old_genai.embed_content,
-                model="models/text-embedding-004",
-                content=text
-            )
-            return result['embedding']
+            try:
+                result = await asyncio.to_thread(
+                    old_genai.embed_content,
+                    model="models/text-embedding-004",
+                    content=text
+                )
+                return result['embedding']
+            except Exception as e:
+                logger.warning(f"Failed embedding with text-embedding-004: {e}. Falling back to embedding-001...")
+                result = await asyncio.to_thread(
+                    old_genai.embed_content,
+                    model="models/embedding-001",
+                    content=text
+                )
+                return result['embedding']
 
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────

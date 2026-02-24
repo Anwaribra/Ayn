@@ -232,7 +232,7 @@ class HorusService:
 
         # 3. AI Interaction (Streaming)
         client = get_gemini_client()
-        context = self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context)
+        context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context)
         
         full_response = ""
         
@@ -384,7 +384,7 @@ class HorusService:
 
         return results
 
-    def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "") -> str:
+    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "") -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:

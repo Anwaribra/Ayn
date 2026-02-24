@@ -203,7 +203,7 @@ class HorusService:
 
         # EXECUTE EVERYTHING IN PARALLEL
         if files:
-            yield 'data: {"type": "status", "content": "Processing attached files..."}\n'
+            yield "_[Status: Processing attached files...]_\n\n"
         
         results = await asyncio.gather(*tasks)
         
@@ -257,7 +257,7 @@ class HorusService:
                     self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
-            yield 'data: {"type": "status", "content": "📄 Document received. Analyzing and indexing vector embeddings..."}\n'
+            yield "_[Status: 📄 Document received. Analyzing and indexing vector embeddings...]_\n\n"
             
             context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
             

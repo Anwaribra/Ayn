@@ -66,10 +66,11 @@ async def horus_chat_post(
         
         in_memory_files = []
         if files:
+            from starlette.datastructures import Headers
             for f in files:
                 content = await f.read()
-                new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content))
-                new_f.content_type = f.content_type
+                headers = Headers({"content-type": f.content_type}) if f.content_type else Headers()
+                new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content), headers=headers)
                 in_memory_files.append(new_f)
                 
         return await horus_service.chat(
@@ -104,10 +105,11 @@ async def horus_chat_stream(
     
     in_memory_files = []
     if files:
+        from starlette.datastructures import Headers
         for f in files:
             content = await f.read()
-            new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content))
-            new_f.content_type = f.content_type
+            headers = Headers({"content-type": f.content_type}) if f.content_type else Headers()
+            new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content), headers=headers)
             in_memory_files.append(new_f)
             
     async def event_generator():

@@ -30,6 +30,7 @@ _db_url = _build_database_url()
 
 # Global Prisma client instance — datasource_url overrides schema's DATABASE_URL
 prisma = Prisma(datasource={"url": _db_url} if _db_url else None)
+db = prisma
 
 
 async def connect_db() -> None:

@@ -30,8 +30,7 @@ export function HorusAssistant() {
           <Thread
             assistantMessage={{ components: { Text: MarkdownText } }}
             welcome={{
-              title: "Horus Intelligence",
-              message: "Analyze, extract, and ensure absolute compliance.",
+              message: "### Horus Intelligence\nAnalyze, extract, and ensure absolute compliance.",
             }}
           />
         </div>

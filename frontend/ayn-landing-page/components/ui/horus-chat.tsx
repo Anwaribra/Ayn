@@ -115,10 +115,13 @@ export function HorusChat() {
               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-600 text-white">
                 A
               </div>
-              <div className="p-4 rounded-2xl bg-layer-1 border border-border flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500/50 animate-bounce"></div>
-                <div className="w-2 h-2 rounded-full bg-blue-500/50 animate-bounce delay-100"></div>
-                <div className="w-2 h-2 rounded-full bg-blue-500/50 animate-bounce delay-200"></div>
+              <div className="p-4 rounded-2xl bg-layer-1 border border-border shadow-sm rounded-tl-sm text-foreground flex items-center gap-3">
+                <span className="text-sm font-medium animate-pulse text-muted-foreground">Horus يفكّر...</span>
+                <div className="flex gap-1.5 pt-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70 animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70 animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70 animate-bounce [animation-delay:-0.3s]"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -127,19 +130,25 @@ export function HorusChat() {
       </div>
 
       <div className="mt-4 pt-4 border-t border-border bg-layer-0/50 backdrop-blur-sm sticky bottom-0">
-        <form onSubmit={handleSubmit} className="relative flex items-center">
-          <input
-            type="text"
+        <form onSubmit={handleSubmit} className="relative flex items-end">
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
             placeholder="Write a message..."
             disabled={isLoading}
-            className="w-full bg-layer-1 border border-border rounded-xl py-4 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm text-foreground disabled:opacity-50 transition-shadow"
+            rows={1}
+            className="w-full bg-layer-1 border border-border rounded-xl py-3 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm text-foreground disabled:opacity-50 transition-shadow resize-none min-h-[50px] max-h-[150px] overflow-y-auto scrollbar-thin"
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="absolute right-3 p-2 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 bg-transparent border-none cursor-pointer"
+            className="absolute right-3 bottom-3 p-2 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 bg-transparent border-none cursor-pointer"
           >
             <Send size={20} />
           </button>

@@ -3,7 +3,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export async function POST(req: Request) {
   try {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      systemInstruction: "You are Horus (حورس), the central intelligence of the Ayn (عين) Platform. You assist with educational quality assurance, ISO 21001, NAQAAE, and NCAAA. Keep answers professional, concise, and structured with Markdown."
+    });
     
     const body = await req.json();
     const { messages } = body as { messages: any[] };

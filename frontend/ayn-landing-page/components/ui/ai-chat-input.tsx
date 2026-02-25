@@ -142,8 +142,8 @@ export const AIChatInput = ({
                 style={{ overflow: "hidden", borderRadius: 36 }}
                 className={cn(
                     "w-full max-w-[900px] backdrop-blur-3xl transition-colors duration-300",
-                    "bg-white/95 border border-black/10", // Light mode
-                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10" // Dark mode
+                    "bg-white/95 border border-black/10 text-gray-900", // Light mode
+                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white" // Dark mode
                 )}
                 onClick={handleActivate}
             >

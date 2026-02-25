@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { Bot, Pause, Play, Square } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useStreamingText, useCursorBlink } from "@/hooks/use-streaming-text"
-import ReactMarkdown from "react-markdown"
+import { HorusMarkdown } from "./horus/horus-markdown"
 
 interface AIStreamingMessageProps {
   content: string
@@ -69,9 +69,7 @@ export function AIStreamingMessage({
       <div className="flex max-w-[80%] flex-col gap-1">
         <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
           <div className="relative">
-            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-              <ReactMarkdown>{displayedText}</ReactMarkdown>
-            </div>
+            <HorusMarkdown content={displayedText} />
             {isStreaming && !isComplete && (
               <span
                 className={cn(
@@ -143,9 +141,7 @@ export function AIMessage({
       </div>
       <div className="flex max-w-[80%] flex-col gap-1">
         <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
-          <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </div>
+          <HorusMarkdown content={content} />
         </div>
       </div>
     </motion.div>

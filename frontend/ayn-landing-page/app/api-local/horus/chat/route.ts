@@ -1,42 +1,57 @@
-import { NextRequest } from "next/server";
-import { streamText } from "ai";
-import { google } from "@ai-sdk/google";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export const maxDuration = 60; // Allow longer execution time for AI streams
-
-/**
- * Horus AI Chat Endpoint (Next.js Edge Route)
- * We call the Gemini API directly from this route using @ai-sdk/google.
- * This is the simpler approach for assistant-ui integration since Vercel AI SDK 
- * natively handles message history, formatting, streaming constraints, and 
- * inline image/PDF parsing directly to Gemini via dataURIs without needing 
- * complex FormData translations and manual evidence upload proxying.
- */
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-1.5-pro",
+      systemInstruction: "You are Horus (حورس), the central intelligence of the Ayn (عين) Platform. You assist with educational quality assurance, ISO 21001, NAQAAE, and NCAAA. Keep answers professional, concise, and structured with Markdown."
+    });
+    
+    const body = await req.json();
+    const { messages } = body as { messages: any[] };
 
-    if (!process.env.GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured in .env.local" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      });
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "Messages array is required" }), { status: 400 });
     }
 
-    const systemPrompt = `You are Horus (حورس), the central intelligence of the Ayn (عين) Platform. You assist with educational quality assurance, ISO 21001, NAQAAE, and NCAAA. Keep answers professional, concise, and structured with Markdown.`
+    // Format history
+    const history = messages.slice(0, -1).map(msg => ({
+      role: msg.role === "user" ? "user" : "model",
+      parts: Array.isArray(msg.content) ? msg.content : [{ text: msg.content }],
+    }));
+    
+    // Format latest message
+    const latestMessage = messages[messages.length - 1].content;
+    const messageParts = Array.isArray(latestMessage) ? latestMessage : [{ text: latestMessage }];
 
-    const result = await streamText({
-      model: google("gemini-1.5-pro-latest"),
-      system: systemPrompt,
-      messages: messages as any[],
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessageStream(messageParts);
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            controller.enqueue(encoder.encode(chunkText));
+          }
+          controller.close();
+        } catch (e) {
+          controller.error(e);
+        }
+      }
     });
 
-    // Stream the responses back using standard Vercel AI data stream format
-    // @ts-ignore - toDataStreamResponse is the correct method for AI SDK v3 data protocol
-    return result.toDataStreamResponse();
+    return new Response(stream, {
+      headers: { 
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache"
+      },
+    });
   } catch (error: any) {
-    console.error("Horus Chat Error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Failed to generate AI response." }), {
+    console.error("Gemini stream error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
     });

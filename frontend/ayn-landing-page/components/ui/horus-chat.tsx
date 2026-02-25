@@ -157,7 +157,7 @@ export function HorusChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/horus/chat", {
+      const response = await fetch("/api-local/horus/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),

@@ -15,30 +15,31 @@ interface Message {
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
 
-interface HorusContextType {
+interface HorusContextValue {
     messages: Message[]
     currentChatId: string | null
     status: HorusStatus
+    thinkingSteps: string[]          // Real steps pushed by __THINKING__: events
     sendMessage: (text: string, files?: File[]) => Promise<void>
     stopGeneration: () => void
     newChat: () => void
     loadChat: (chatId: string) => Promise<void>
 }
 
-const HorusContext = createContext<HorusContextType | undefined>(undefined)
+const HorusContext = createContext<HorusContextValue | undefined>(undefined)
 
-export function HorusProvider({ children }: { children: React.ReactNode }) {
+export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth()
     const [messages, setMessages] = useState<Message[]>([])
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [status, setStatus] = useState<HorusStatus>("idle")
-    const isInitialized = useRef(false)
+    const [thinkingSteps, setThinkingSteps] = useState<string[]>([])
     const abortControllerRef = useRef<AbortController | null>(null)
 
     // 1. Auto-Resume Last Session on mount
     // 1. (Auto-Resume functionality removed, chat should start empty on refresh)
     useEffect(() => {
-        isInitialized.current = true
+        // isInitialized.current = true // Removed as per instruction
     }, [])
 
     // 2. Persistent SSE Event Listener
@@ -97,6 +98,8 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
     const sendMessage = async (text: string, files?: File[]) => {
         if ((!text && (!files || files.length === 0)) || status !== "idle") return
 
+        setThinkingSteps([])  // Reset thinking steps for new request
+
         const userMsg: Message = {
             id: crypto.randomUUID(),
             role: "user",
@@ -105,22 +108,6 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
         }
 
         setMessages(prev => [...prev, userMsg])
-        setStatus("searching")
-
-        // 1. RAG Search Step
-        let augmentedMessage = text
-        try {
-            if (text.length > 10) {
-                const context = await api.searchRelevantEvidence(text)
-                if (context) {
-                    augmentedMessage = `${context}\n\n[User Query]:\n${text}`
-                    console.log("[Horus] Context injected:", context.length, "chars")
-                }
-            }
-        } catch (err) {
-            console.warn("[Horus] Search step failed, proceeding without context.")
-        }
-
         setStatus("generating")
         const assistantMsgId = crypto.randomUUID()
         setMessages(prev => [...prev, {
@@ -136,13 +123,20 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
 
         try {
             await api.horusChatStream(
-                augmentedMessage || "Analyze these files.",
+                text || "Analyze these files.",
                 files,
                 currentChatId || undefined,
                 (chunk) => {
                     if (chunk.startsWith("__CHAT_ID__:")) {
                         const newId = chunk.split(":")[1].trim()
                         setCurrentChatId(newId)
+                        return
+                    }
+
+                    // Real thinking step from backend — push to thinkingSteps
+                    if (chunk.startsWith("__THINKING__:")) {
+                        const stepText = chunk.slice("__THINKING__:".length).trim()
+                        if (stepText) setThinkingSteps(prev => [...prev, stepText])
                         return
                     }
 
@@ -182,10 +176,12 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
         stopGeneration()
         setCurrentChatId(null)
         setMessages([])
+        setThinkingSteps([])
     }
 
     const loadChat = async (chatId: string) => {
         stopGeneration()
+        setThinkingSteps([]) // Clear thinking steps when loading a new chat
         try {
             const chat = await api.getChatMessages(chatId)
             setCurrentChatId(chat.id)
@@ -201,7 +197,7 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, sendMessage, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, sendMessage, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

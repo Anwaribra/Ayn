@@ -183,23 +183,62 @@ class HorusService:
                     # Emit the structured result as a special prefix
                     yield f"__ACTION_RESULT__:{json.dumps(result)}\n"
 
-                    # Also emit a short human-readable summary so the chat
-                    # history contains something meaningful (not just the JSON blob)
-                    intent_labels = {
-                        "run_full_audit": "Full compliance audit report generated.",
-                        "check_compliance_gaps": "Compliance gap analysis retrieved.",
-                        "generate_remediation_report": "Remediation action plan generated.",
+                    # Generate a contextual AI narrative based on the actual result data
+                    # This runs after the card is emitted so the card renders first,
+                    # then Horus provides a natural language commentary below it.
+                    payload = result.get("payload", {})
+                    narrative_prompts = {
+                        "run_full_audit": (
+                            f"You just ran a full compliance audit for an educational institution. "
+                            f"The overall compliance score is {payload.get('overall_score', 0):.0f}% "
+                            f"across {payload.get('total_criteria', 0)} criteria, with "
+                            f"{len(payload.get('passed', []))} passed and {len(payload.get('failed', []))} failed. "
+                            f"Write 2 concise sentences summarizing the audit result and the most urgent next step. "
+                            f"Be direct and data-driven. No pleasantries."
+                        ),
+                        "check_compliance_gaps": (
+                            f"You just retrieved the compliance gap table for an institution. "
+                            f"There are {len([r for r in payload.get('rows', []) if r.get('status') == 'gap'])} active gaps "
+                            f"and {len([r for r in payload.get('rows', []) if r.get('status') == 'met'])} criteria met. "
+                            f"Write 2 concise sentences: state the gap severity and the single most important action to take now. "
+                            f"Be direct. No pleasantries."
+                        ),
+                        "generate_remediation_report": (
+                            f"You just generated a remediation action plan with {len(payload.get('rows', []))} items. "
+                            f"Critical items: {len([r for r in payload.get('rows', []) if 'Critical' in r.get('priority', '')])}, "
+                            f"High: {len([r for r in payload.get('rows', []) if 'High' in r.get('priority', '')])}. "
+                            f"Write 2 concise sentences summarizing the plan and the most critical item to start with. "
+                            f"Be prescriptive and direct. No pleasantries."
+                        ),
                     }
-                    summary_text = intent_labels.get(intent, "Agent action completed.")
-                    yield summary_text
 
-                    # Save the summary (not the raw JSON) to chat history
+                    narrative_text = ""
+                    if intent in narrative_prompts and payload:
+                        try:
+                            ai_narrative = await client.generate_text(
+                                prompt=narrative_prompts[intent]
+                            )
+                            narrative_text = ai_narrative.strip()
+                            yield "\n" + narrative_text
+                        except Exception as narrative_err:
+                            logger.warning(f"Narrative generation failed: {narrative_err}")
+                            # Fallback to static label
+                            static_labels = {
+                                "run_full_audit": "Full compliance audit report generated.",
+                                "check_compliance_gaps": "Compliance gap analysis retrieved.",
+                                "generate_remediation_report": "Remediation action plan generated.",
+                            }
+                            narrative_text = static_labels.get(intent, "Agent action completed.")
+                            yield narrative_text
+
+                    # Save the narrative (not the raw JSON) to chat history
                     if background_tasks:
-                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", summary_text)
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text or "Agent action completed.")
                     else:
-                        await ChatService.save_message(chat_id, user_id, "assistant", summary_text)
+                        await ChatService.save_message(chat_id, user_id, "assistant", narrative_text or "Agent action completed.")
 
                     return  # ← Exit before the AI streaming pipeline
+
 
                 except Exception as agent_err:
                     logger.error(f"Agent action '{intent}' failed: {agent_err}", exc_info=True)
@@ -264,7 +303,9 @@ class HorusService:
 
         # EXECUTE EVERYTHING IN PARALLEL
         if files:
-            yield "_[Status: Processing attached files...]_\n\n"
+            yield "__THINKING__:Processing attached files...\n"
+        else:
+            yield "__THINKING__:Reading platform state...\n"
         
         results = await asyncio.gather(*tasks)
         
@@ -298,7 +339,7 @@ class HorusService:
         full_response = ""
         
         # Lazily fetch history without blocking initial file processing or state fetching
-        history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=5))
+        history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=20))
 
         if file_results:
             compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis", "audit", "score", "evaluate"]
@@ -318,9 +359,9 @@ class HorusService:
                     self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
-            yield "_[Status: 📄 Document received. Analyzing and indexing vector embeddings...]_\n\n"
-            
+            yield "__THINKING__:Analyzing document content...\n"
             context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
+            yield "__THINKING__:Generating response...\n"
             
             async for chunk in client.stream_chat_with_files(
                 message=message or "Analyze these files.",
@@ -332,10 +373,12 @@ class HorusService:
                     yield chunk
         else:
             history = await history_task
+            yield "__THINKING__:Searching conversation history...\n"
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
             # Ensure the current message is included if not already in history (race condition check)
             if message and not any(m["content"] == message for m in messages):
                 messages.append({"role": "user", "content": message})
+            yield "__THINKING__:Generating response...\n"
             
             async for chunk in client.stream_chat(messages=messages, context=context):
                 if chunk:

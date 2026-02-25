@@ -568,13 +568,50 @@ class ApiClient {
     let fullText = ""
 
     if (reader) {
+      // Protocol lines (starting with __) MUST arrive complete before being parsed.
+      // We buffer them until we see a newline, then flush as a single unit.
+      // Regular text tokens are passed through immediately for word-by-word display.
+      let protocolBuffer = ""
+
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
-          const chunk = decoder.decode(value, { stream: true })
-          fullText += chunk
-          if (onChunk) onChunk(chunk)
+          if (done) {
+            // Flush any remaining buffered content
+            if (protocolBuffer) {
+              fullText += protocolBuffer
+              if (onChunk) onChunk(protocolBuffer)
+            }
+            break
+          }
+
+          const raw = decoder.decode(value, { stream: true })
+
+          // If we're mid-protocol-line, keep buffering
+          if (protocolBuffer || raw.startsWith("__")) {
+            protocolBuffer += raw
+            // Check if the protocol line is now complete (has a newline)
+            const nlIdx = protocolBuffer.indexOf("\n")
+            if (nlIdx !== -1) {
+              const completeLine = protocolBuffer.slice(0, nlIdx)
+              const remainder = protocolBuffer.slice(nlIdx + 1)
+              protocolBuffer = ""
+
+              fullText += completeLine
+              if (onChunk) onChunk(completeLine)
+
+              // Any text after the protocol line on the same read — pass through immediately
+              if (remainder) {
+                fullText += remainder
+                if (onChunk) onChunk(remainder)
+              }
+            }
+            // Otherwise keep buffering — newline hasn't arrived yet
+          } else {
+            // Regular streaming text — pass through immediately (word-by-word effect)
+            fullText += raw
+            if (onChunk) onChunk(raw)
+          }
         }
       } catch (err: any) {
         if (err.name === 'AbortError') {
@@ -585,6 +622,7 @@ class ApiClient {
       }
     }
     return fullText
+
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

@@ -25,10 +25,10 @@ function parsePriority(priority: string) {
 
 function priorityClass(label: string) {
   const l = label.toLowerCase()
-  if (l === "critical") return "bg-red-500/10 text-red-400 border-red-500/20"
-  if (l === "high") return "bg-orange-500/10 text-orange-400 border-orange-500/20"
-  if (l === "low") return "bg-green-500/10 text-green-400 border-green-500/20"
-  return "bg-amber-500/10 text-amber-400 border-amber-500/20"
+  if (l === "critical") return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+  if (l === "high") return "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20"
+  if (l === "low") return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+  return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
 }
 
 export function RemediationPlanCard({ payload }: { payload: RemediationPlanPayload }) {

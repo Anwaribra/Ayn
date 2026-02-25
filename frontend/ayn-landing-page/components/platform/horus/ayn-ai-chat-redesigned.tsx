@@ -23,6 +23,9 @@ import {
   Check,
   Brain,
   ArrowRight,
+  ThumbsUp,
+  ThumbsDown,
+  ExternalLink,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -47,19 +50,19 @@ type ReasoningState = {
   tempUserMessage: string | null
 }
 
+// Real thinking steps are now driven by __THINKING__: events from the backend.
+// This function is kept as a FALLBACK for when no thinking events arrive within 500ms
+// (e.g. very fast responses or agent actions).
 function getReasoningSteps(text: string, hasFiles: boolean) {
-  const steps = ["Analyzing your request"]
-  const lowerText = text.toLowerCase()
-  if (/(iso|ncaaa|criteria|standard|audit)/.test(lowerText)) {
+  const steps: string[] = []
+  if (hasFiles) steps.push("Processing attached files...")
+  steps.push("Reading platform state...")
+  if (/(iso|ncaaa|criteria|standard|audit)/i.test(text)) {
     steps.push("Searching standards library")
   }
-  if (hasFiles) {
-    steps.push("Processing evidence files")
-  }
-  if (/(evidence|gap|compliance|score|remediation)/.test(lowerText)) {
+  if (/(evidence|gap|compliance|score|remediation)/i.test(text)) {
     steps.push("Calculating compliance gaps")
   }
-  
   return steps
 }
 
@@ -168,6 +171,7 @@ export default function HorusAIChat() {
     messages,
     currentChatId,
     status,
+    thinkingSteps,
     sendMessage,
     stopGeneration,
     newChat,
@@ -177,6 +181,8 @@ export default function HorusAIChat() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
   const [inputValue, setInputValue] = useState("")
+  // M3: per-message feedback state
+  const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -190,6 +196,18 @@ export default function HorusAIChat() {
     }
   }, [messages, status])
 
+  // L2: Keyboard shortcut — Ctrl/Cmd+K → new chat
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        newChat()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [newChat])
+
   // Cleanup on unmount to prevent ghost streams
   useEffect(() => {
     return () => {
@@ -198,8 +216,9 @@ export default function HorusAIChat() {
   }, [])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB hard limit
+    const PDF_INLINE_LIMIT = 5 * 1024 * 1024 // 5MB — above this, Gemini inline limit risks
+    const ALLOWED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]
 
     const files = Array.from(e.target.files || [])
 
@@ -210,15 +229,23 @@ export default function HorusAIChat() {
     // Validate files
     const validFiles = files.filter(file => {
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`);
-        return false;
+        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`)
+        return false
+      }
+      // M4: Large PDF guard — warn user to upload via Evidence Vault instead
+      if (file.type === "application/pdf" && file.size > PDF_INLINE_LIMIT) {
+        toast.warning(
+          `${file.name} is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Large PDFs are best uploaded via the Evidence Vault for full processing.`,
+          { duration: 5000 }
+        )
+        // Still allow it — just warn the user
       }
       if (!file.type.startsWith("image/") && !ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`File ${file.name} has an unsupported type.`);
-        return false;
+        toast.error(`File ${file.name} has an unsupported type.`)
+        return false
       }
-      return true;
-    });
+      return true
+    })
 
     const newFiles: AttachedFile[] = validFiles.slice(0, 5 - attachedFiles.length).map((file) => ({
       id: crypto.randomUUID(),
@@ -246,12 +273,17 @@ export default function HorusAIChat() {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
     setAttachedFiles([])
 
-    const calculatedSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
     const initialStartTime = Date.now()
 
-    if (calculatedSteps.length > 0) {
+    // Seed reasoning with any thinking steps already received from the backend.
+    // If none arrive (agent action or very fast response), fall back to computed steps.
+    const seedSteps = thinkingSteps.length > 0
+      ? thinkingSteps
+      : getReasoningSteps(text || "", filesToUpload.length > 0)
+
+    if (seedSteps.length > 0) {
       setReasoning({
-        steps: calculatedSteps.map((s) => ({ text: s, status: "pending" })),
+        steps: seedSteps.map((s) => ({ text: s, status: "pending" })),
         startTime: initialStartTime,
         duration: null,
         isExpanded: true,
@@ -259,8 +291,8 @@ export default function HorusAIChat() {
         tempUserMessage: text || "Attached files for analysis",
       })
 
-      // Advance steps smoothly
-      for (let i = 0; i < calculatedSteps.length; i++) {
+      // Run fallback animation through the seed steps
+      for (let i = 0; i < seedSteps.length; i++) {
         setReasoning((prev) => {
           if (!prev) return prev
           const newSteps = [...prev.steps]
@@ -268,7 +300,7 @@ export default function HorusAIChat() {
           return { ...prev, steps: newSteps }
         })
         
-        await new Promise((r) => setTimeout(r, 600 + (Math.random() * 200)))
+        await new Promise((r) => setTimeout(r, 500 + (Math.random() * 150)))
         
         setReasoning((prev) => {
           if (!prev) return prev
@@ -305,6 +337,12 @@ export default function HorusAIChat() {
         success: "Report downloaded!",
         error: "Failed to download report."
       })
+    } else if (type === 'view_gap') {
+      router.push(`/platform/gap-analysis?highlight=${payload}`)
+    } else if (type === 'run_analysis') {
+      router.push(`/platform/gap-analysis?standardId=${payload}&autoRun=true`)
+    } else if (type === 'link_evidence') {
+      router.push(`/platform/evidence?highlight=${payload}`)
     }
   }
 
@@ -319,6 +357,9 @@ export default function HorusAIChat() {
       toast.error("Failed to delete.")
     }
   }
+
+  // Derive the id of the last assistant message for M1 contextual actions
+  const lastAssistantMsgId = messages.filter(m => m.role === "assistant").pop()?.id
 
   const isEmpty = messages.length === 0 && !reasoning
   const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
@@ -337,8 +378,11 @@ export default function HorusAIChat() {
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-border bg-[var(--layer-0)]">
-            <div className="p-6 border-b border-border">
+            <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-black text-foreground">Session History</h2>
+              <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-full">
+                ⌘K new chat
+              </span>
             </div>
             <ScrollArea className="h-[calc(100vh-80px)]">
               <div className="p-4 space-y-2">
@@ -370,9 +414,22 @@ export default function HorusAIChat() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-2 font-medium">
-                        {new Date(session.createdAt).toLocaleDateString()}
-                      </p>
+                      {/* L1: Preview — description or date */}
+                      {session.description && (
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+                          {session.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-[10px] text-muted-foreground font-medium">
+                          {new Date(session.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {session.messageCount > 0 && (
+                          <span className="text-[9px] font-bold text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded-full">
+                            {session.messageCount} msg{session.messageCount !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -430,6 +487,23 @@ export default function HorusAIChat() {
                               <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
                             )}
 
+                          {/* M6: Skeleton card — show while agent action is loading for this message */}
+                          {msg.role === "assistant" && !(msg as any).structuredResult && status === "generating" &&
+                            msg.id === messages.filter(m => m.role === "assistant").pop()?.id &&
+                            !msg.content && (
+                            <div className="mb-4 animate-pulse">
+                              <div className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/60 p-5 space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-[var(--border-subtle)]" />
+                                  <div className="h-3.5 bg-[var(--border-subtle)] rounded w-40" />
+                                </div>
+                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-full" />
+                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-4/5" />
+                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-3/5" />
+                              </div>
+                            </div>
+                          )}
+
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (
                             <div className="mb-4">
@@ -437,18 +511,16 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {/* Only show text content if there's something meaningful to show
-                              (for agent messages the summary text is short and intentional) */}
+                          {/* Only show text content if there's something meaningful to show */}
                           {msg.content && (
                             <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
                               <HorusMarkdown content={msg.content} onAction={handleAction} />
                             </div>
                           )}
-                          
-                          {/* Contextual Action Cards */}
-                          {msg.role === "assistant" && status !== "generating" && (
+
+                          {/* M1: Contextual Action Cards — only on the LAST assistant message */}
+                          {msg.role === "assistant" && status !== "generating" && msg.id === lastAssistantMsgId && (
                             <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              {/* Gap / Compliance logic */}
                               {/(gap|compliance|score|remediate|remediation|shortfall)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Generate Remediation Plan")}
@@ -458,8 +530,6 @@ export default function HorusAIChat() {
                                   <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                               )}
-                              
-                              {/* Audit Findings logic */}
                               {/(audit findings|audit report|non-conformity|observation|major|minor)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Export Audit Report")}
@@ -469,8 +539,6 @@ export default function HorusAIChat() {
                                   <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                               )}
-                              
-                              {/* Evidence Analysis logic */}
                               {/(evidence|document|policy|procedure|manual|reviewed files)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Show me in the Evidence Vault")}
@@ -480,6 +548,36 @@ export default function HorusAIChat() {
                                   <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                            </div>
+                          )}
+
+                          {/* M3: Feedback buttons — only on completed assistant messages */}
+                          {msg.role === "assistant" && status === "idle" && (
+                            <div className="flex items-center gap-1 mt-3">
+                              <button
+                                onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: prev[msg.id] === "up" ? null : "up" }))}
+                                className={cn(
+                                  "p-1.5 rounded-lg transition-colors",
+                                  feedback[msg.id] === "up"
+                                    ? "text-green-500 bg-green-500/10"
+                                    : "text-muted-foreground/40 hover:text-green-500 hover:bg-green-500/10"
+                                )}
+                                title="Helpful"
+                              >
+                                <ThumbsUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: prev[msg.id] === "down" ? null : "down" }))}
+                                className={cn(
+                                  "p-1.5 rounded-lg transition-colors",
+                                  feedback[msg.id] === "down"
+                                    ? "text-red-500 bg-red-500/10"
+                                    : "text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10"
+                                )}
+                                title="Not helpful"
+                              >
+                                <ThumbsDown className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           )}
                         </div>

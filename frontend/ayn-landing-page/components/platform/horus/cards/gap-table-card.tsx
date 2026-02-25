@@ -39,7 +39,7 @@ export function GapTableCard({ payload }: { payload: GapTablePayload }) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
-            <AlertCircle className="w-4 h-4 text-red-400" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
           </div>
           <div>
             <p className="font-bold text-foreground text-[14px]">Compliance Gap Analysis</p>
@@ -84,7 +84,7 @@ export function GapTableCard({ payload }: { payload: GapTablePayload }) {
                       <CheckCircle2 className="w-2.5 h-2.5" /> Met
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 text-[10px] font-bold whitespace-nowrap">
                       <AlertCircle className="w-2.5 h-2.5" /> Gap
                     </span>
                   )}

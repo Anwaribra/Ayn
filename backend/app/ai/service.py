@@ -140,6 +140,28 @@ NAQAAE_KNOWLEDGE = """
 • Accreditation Process: Self-study → External review → Decision → Follow-up.
 """
 
+NCAAA_KNOWLEDGE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. NCAAA — National Centre for Academic Accreditation and Evaluation (Saudi Arabia)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Full Arabic name: المركز الوطني للتقويم والاعتماد الأكاديمي
+• Mission: Accreditation of higher education institutions and programs in Saudi Arabia.
+• Framework: Quality Standards for Higher Education in Saudi Arabia.
+• Key Standards Areas:
+  1. Mission, Governance & Administration
+  2. Quality Assurance & Improvement
+  3. Learning & Teaching
+  4. Student Administration & Support Services
+  5. Learning Resources
+  6. Program Design & Approval
+  7. Faculty & Staff
+  8. Research & Scholarly Activity
+  9. Community Engagement
+• Accreditation Types: Institutional Accreditation + Program Accreditation
+• Self-Study Report → Site Visit → Decision → Periodic Review cycle.
+• Aligns with the Saudi Vision 2030 education reform agenda.
+"""
+
 COMMUNICATION_GUIDELINES = """
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Communication Guidelines
@@ -151,18 +173,56 @@ Communication Guidelines
 • Use markdown formatting.
 """
 
-def get_system_prompt(include_all_knowledge: bool = True) -> str:
-    """Construct the system prompt, optionally including deep domain knowledge."""
+def _detect_standards(text: str) -> dict:
+    """Detect which specific standards are mentioned in the text."""
+    lower = text.lower()
+    return {
+        "iso21001": any(k in lower for k in ["iso 21001", "iso21001", "eoms", "educational organization"]),
+        "iso9001":  any(k in lower for k in ["iso 9001", "iso9001", "quality management", "pdca", "qms"]),
+        "naqaae":   any(k in lower for k in ["naqaae", "نقاا", "الهيئة القومية", "egypt accreditation"]),
+        "ncaaa":    any(k in lower for k in ["ncaaa", "saudi accreditation", "saudi quality"]),
+        # Generic compliance — inject whatever is most common for the institution
+        "generic":  any(k in lower for k in ["standard", "clause", "criterion", "accreditation", "audit", "compliance", "gap"])
+            and not any(k in lower for k in ["iso 21001", "iso21001", "iso 9001", "iso9001", "naqaae", "ncaaa"]),
+    }
+
+
+def get_system_prompt(include_all_knowledge: bool = True, query_text: str = "") -> str:
+    """Construct the system prompt with per-standard knowledge injection.
+    
+    - include_all_knowledge=False → ultra-short prompt (saves tokens on casual queries)
+    - include_all_knowledge=True + query_text → inject only the standards referenced
+    - include_all_knowledge=True + no query_text → inject all knowledge (legacy path)
+    """
     if not include_all_knowledge:
-        return "You are Horus (حورس), the AI core of the Ayn platform.\nBe concise. Answer in the same language as the user.\nKeep responses under 150 words unless detail is requested."
-        
+        return (
+            "You are Horus (حورس), the AI core of the Ayn platform.\n"
+            "Be concise. Answer in the same language as the user.\n"
+            "Keep responses under 150 words unless detail is requested."
+        )
+
     prompt = "Be concise. Avoid unnecessary repetition. Max 300 words unless user asks for detail.\n\n" + BASE_SYSTEM_PROMPT
-    
-    if include_all_knowledge:
-        prompt += f"\n{ISO_21001_KNOWLEDGE}\n{ISO_9001_KNOWLEDGE}\n{NAQAAE_KNOWLEDGE}"
-    
+
+    if query_text:
+        detected = _detect_standards(query_text)
+        if detected["iso21001"] or detected["generic"]:
+            prompt += f"\n{ISO_21001_KNOWLEDGE}"
+        if detected["iso9001"]:
+            prompt += f"\n{ISO_9001_KNOWLEDGE}"
+        if detected["naqaae"] or detected["generic"]:
+            prompt += f"\n{NAQAAE_KNOWLEDGE}"
+        if detected["ncaaa"]:
+            prompt += f"\n{NCAAA_KNOWLEDGE}"
+        # If none specifically detected, include ISO 21001 + NAQAAE as defaults
+        if not any(detected.values()):
+            prompt += f"\n{ISO_21001_KNOWLEDGE}\n{NAQAAE_KNOWLEDGE}"
+    else:
+        # Legacy path: inject everything
+        prompt += f"\n{ISO_21001_KNOWLEDGE}\n{ISO_9001_KNOWLEDGE}\n{NAQAAE_KNOWLEDGE}\n{NCAAA_KNOWLEDGE}"
+
     prompt += f"\n{COMMUNICATION_GUIDELINES}"
     return prompt
+
 
 # Default prompt for backward compatibility
 SYSTEM_PROMPT = get_system_prompt(include_all_knowledge=True)
@@ -343,7 +403,7 @@ class GeminiClient:
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
-                    max_output_tokens=1024,
+                    max_output_tokens=4096,
                     temperature=0.7
                 ),
                 contents=full_prompt,
@@ -360,7 +420,7 @@ class GeminiClient:
         context_text = (context or "").lower()
         needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
         
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge, query_text=query_text + " " + context_text)
         
         if context:
             system_instruction += f"\n\nAdditional context: {context}"
@@ -375,7 +435,7 @@ class GeminiClient:
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                    max_output_tokens=1024,
+                    max_output_tokens=4096,
                     temperature=0.7
                 ),
                 contents=contents,
@@ -398,7 +458,7 @@ class GeminiClient:
         context_text = (context or "").lower()
         needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
         
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge, query_text=query_text + " " + context_text)
         
         if context:
             system_instruction += f"\n\nAdditional context: {context}"
@@ -413,7 +473,7 @@ class GeminiClient:
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                    max_output_tokens=1024,
+                    max_output_tokens=4096,
                     temperature=0.7
                 ),
                 contents=contents,
@@ -466,7 +526,7 @@ class GeminiClient:
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                    max_output_tokens=1024,
+                    max_output_tokens=4096,
                     temperature=0.7
                 ),
                 contents=genai_types.Content(role="user", parts=parts),
@@ -507,7 +567,7 @@ class GeminiClient:
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                    max_output_tokens=1024,
+                    max_output_tokens=4096,
                     temperature=0.7
                 ),
                 contents=genai_types.Content(role="user", parts=parts),

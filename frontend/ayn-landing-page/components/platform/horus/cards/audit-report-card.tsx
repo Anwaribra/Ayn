@@ -39,17 +39,17 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
 
   const scoreColor =
     payload.overall_score >= 75
-      ? "text-green-400"
+      ? "text-green-600 dark:text-green-400"
       : payload.overall_score >= 50
-      ? "text-amber-400"
-      : "text-red-400"
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-red-600 dark:text-red-400"
 
   const ringColor =
     payload.overall_score >= 75
-      ? "stroke-green-400"
+      ? "stroke-green-500 dark:stroke-green-400"
       : payload.overall_score >= 50
-      ? "stroke-amber-400"
-      : "stroke-red-400"
+      ? "stroke-amber-500 dark:stroke-amber-400"
+      : "stroke-red-500 dark:stroke-red-400"
 
   // SVG ring values
   const radius = 36
@@ -98,8 +98,8 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
             </div>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-medium">
-            <span className="flex items-center gap-1 text-green-400"><Check className="w-3 h-3" />{payload.passed.length}</span>
-            <span className="flex items-center gap-1 text-red-400"><X className="w-3 h-3" />{payload.failed.length}</span>
+            <span className="flex items-center gap-1 text-green-600 dark:text-green-400"><Check className="w-3 h-3" />{payload.passed.length}</span>
+            <span className="flex items-center gap-1 text-red-600 dark:text-red-400"><X className="w-3 h-3" />{payload.failed.length}</span>
           </div>
         </div>
 
@@ -108,13 +108,13 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
           {/* Passed */}
           {payload.passed.length > 0 && (
             <div>
-              <p className="text-[11px] font-black text-green-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <p className="text-[11px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                 <Check className="w-3 h-3" /> Passed ({payload.passed.length})
               </p>
               <ul className="space-y-1">
                 {payload.passed.slice(0, 4).map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-[12px] text-foreground">
-                    <Check className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+                    <Check className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                     <span className="truncate">{item.title}</span>
                     <span className="text-muted-foreground text-[10px] ml-auto flex-shrink-0">{item.standard}</span>
                   </li>
@@ -129,13 +129,13 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
           {/* Failed */}
           {payload.failed.length > 0 && (
             <div>
-              <p className="text-[11px] font-black text-red-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <p className="text-[11px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                 <X className="w-3 h-3" /> Failed ({payload.failed.length})
               </p>
               <ul className="space-y-1">
                 {payload.failed.slice(0, 4).map((item, i) => (
                   <li key={i} className="flex items-start gap-2 text-[12px] text-foreground">
-                    <X className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
+                    <X className="w-3 h-3 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                     <span className="truncate">{item.title}</span>
                     <span className="text-muted-foreground text-[10px] ml-auto flex-shrink-0">{item.standard}</span>
                   </li>
@@ -153,13 +153,13 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
       {payload.recommendations.length > 0 && (
         <div className="px-5 pb-5">
           <div className="border-t border-[var(--border-subtle)] pt-4">
-            <p className="text-[11px] font-black text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+            <p className="text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <TrendingUp className="w-3 h-3" /> Recommendations
             </p>
             <ul className="space-y-2">
               {payload.recommendations.slice(0, 4).map((rec, i) => (
                 <li key={i} className="flex items-start gap-2 text-[12px] text-[var(--text-secondary)] leading-relaxed">
-                  <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <span>{rec}</span>
                 </li>
               ))}

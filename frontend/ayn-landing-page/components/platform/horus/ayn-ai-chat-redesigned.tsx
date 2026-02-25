@@ -30,7 +30,7 @@ import { ShiningText } from "@/components/ui/shining-text"
 import { AiLoader } from "@/components/ui/ai-loader"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
-import { HorusMarkdown } from "./horus-markdown"
+
 
 
 
@@ -274,10 +274,14 @@ export default function HorusAIChat() {
                           : "bg-white/10 rounded-2xl px-4 py-3 max-w-[90%]"
                       )}>
                         {msg.role === "user" ? (
-                          <HorusMarkdown content={msg.content} onAction={handleAction} />
+                          <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
                         ) : (
                           <div className="text-white text-sm leading-relaxed horus-markdown-wrapper">
-                            <HorusMarkdown content={msg.content} onAction={handleAction} />
+                            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
                           </div>
                         )}
                       </div>

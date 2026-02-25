@@ -25,7 +25,7 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import ReactMarkdown from "react-markdown"
 import { AttachedFile } from "./types"
-import { HorusMarkdown } from "./horus-markdown"
+
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface Message {
@@ -235,7 +235,9 @@ export default function HorusAIChat() {
                   <div className={cn("max-w-[80%] space-y-2", msg.role === "user" && "items-end")}>
                     <Card className={cn("p-4", msg.role === "user" && "bg-primary text-primary-foreground")}>
                       {msg.role === "assistant" ? (
-                        <HorusMarkdown content={msg.content} />
+                        <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
                       ) : (
                         <p className="text-sm">{msg.content}</p>
                       )}

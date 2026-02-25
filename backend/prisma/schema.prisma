@@ -22,8 +22,8 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  institution   Institution? @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  evidence      Evidence[] @relation("EvidenceUploader")
+  institution   Institution?   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  evidence      Evidence[]     @relation("EvidenceUploader")
   notifications Notification[]
   chats         Chat[]
   activities    Activity[]
@@ -34,6 +34,10 @@ model User {
   platformGaps     PlatformGap[]
   platformMetrics  PlatformMetric[]
   platformEvents   PlatformEvent[]
+
+  // Horus AI relations
+  mockAuditSessions MockAuditSession[]
+  documentDrafts    DocumentDraft[]
 
   @@index([email])
   @@index([institutionId])
@@ -57,9 +61,13 @@ model Institution {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users                 User[]
-  institutionStandards  InstitutionStandard[]
-  gapAnalyses           GapAnalysis[]
+  users                User[]
+  institutionStandards InstitutionStandard[]
+  gapAnalyses          GapAnalysis[]
+
+  // Horus AI relations
+  mockAuditSessions MockAuditSession[]
+  documentDrafts    DocumentDraft[]
 
   @@index([name])
 }
@@ -72,7 +80,7 @@ model InstitutionStandard {
   createdAt     DateTime @default(now())
 
   institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  standard    Standard   @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  standard    Standard    @relation(fields: [standardId], references: [id], onDelete: Cascade)
 
   @@unique([institutionId, standardId])
   @@index([institutionId])
@@ -91,25 +99,28 @@ model Standard {
   color          String?  @default("from-blue-600 to-indigo-600")
   features       String[] @default([])
   isPublic       Boolean  @default(true)
-  source         String?  // "seeded" or "imported-pdf"
+  source         String? // "seeded" or "imported-pdf"
   estimatedSetup String?
 
-  criteria     Criterion[]
+  criteria             Criterion[]
   institutionStandards InstitutionStandard[]
-  gapAnalyses  GapAnalysis[]
+  gapAnalyses          GapAnalysis[]
+
+  // Horus AI relations
+  mockAuditSessions MockAuditSession[]
 
   @@index([title])
 }
 
 // Criterion Model
 model Criterion {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   standardId  String
   title       String
   description String?
 
-  standard    Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
-  evidence    Evidence[] // Deprecated single link
+  standard         Standard            @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  evidence         Evidence[] // Deprecated single link
   evidenceCriteria EvidenceCriterion[] // New many-to-many link
   criteriaMappings CriteriaMapping[] // Detailed AI mapping results
 
@@ -118,30 +129,30 @@ model Criterion {
 
 // Evidence Model
 model Evidence {
-  id              String   @id @default(uuid())
-  fileUrl         String
+  id               String  @id @default(uuid())
+  fileUrl          String
   originalFilename String? // Storing original name as required
-  uploadedById    String
-  ownerId         String?   // Organization/Institution identifier for multi-tenancy
-  
+  uploadedById     String
+  ownerId          String? // Organization/Institution identifier for multi-tenancy
+
   // AI Analysis Data
   title           String?
-  summary         String?  @db.Text
+  summary         String? @db.Text
   documentType    String?
-  confidenceScore Float?   @default(0.0)
-  status          String   @default("processing") // processing, analyzed, failed, unmapped
-  
+  confidenceScore Float?  @default(0.0)
+  status          String  @default("processing") // processing, analyzed, failed, unmapped
+
   // Relations
-  uploadedBy      User     @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
-  criteria        EvidenceCriterion[]
+  uploadedBy       User                @relation("EvidenceUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  criteria         EvidenceCriterion[]
   criteriaMappings CriteriaMapping[]
 
   // Deprecated single link (keeping for safety until migration complete)
-  criterionId     String?
-  criterion       Criterion? @relation(fields: [criterionId], references: [id], onDelete: SetNull)
+  criterionId String?
+  criterion   Criterion? @relation(fields: [criterionId], references: [id], onDelete: SetNull)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([uploadedById])
   @@index([ownerId])
@@ -150,14 +161,14 @@ model Evidence {
 
 // Many-to-Many Link between Evidence and Criteria
 model EvidenceCriterion {
-  id          String    @id @default(uuid())
+  id          String @id @default(uuid())
   evidenceId  String
   criterionId String
-  
-  evidence    Evidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
-  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime  @default(now())
+
+  evidence  Evidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@unique([evidenceId, criterionId])
   @@index([evidenceId])
@@ -166,19 +177,19 @@ model EvidenceCriterion {
 
 // Detailed AI Criteria Mapping
 model CriteriaMapping {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   criterionId     String
   evidenceId      String?
   institutionId   String
   standardId      String
-  status          String    @default("gap")
-  confidenceScore Float     @default(0.0)
-  aiReasoning     String    @db.Text
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  status          String   @default("gap")
+  confidenceScore Float    @default(0.0)
+  aiReasoning     String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  criterion   Criterion  @relation(fields: [criterionId], references: [id], onDelete: Cascade)
-  evidence    Evidence?  @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  evidence  Evidence? @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
 
   @@unique([criterionId, institutionId])
   @@index([standardId, institutionId])
@@ -198,17 +209,15 @@ model Chat {
   @@index([userId])
 }
 
-
-
 model Message {
   id        String   @id @default(uuid())
   chatId    String
   userId    String
-  role      String   // user, assistant, system
+  role      String // user, assistant, system
   content   String   @db.Text
   timestamp DateTime @default(now())
-  
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@index([chatId])
 }
@@ -217,15 +226,15 @@ model Message {
 model Activity {
   id          String   @id @default(uuid())
   userId      String
-  type        String   // evidence_uploaded, analysis_finished, score_updated, etc.
+  type        String // evidence_uploaded, analysis_finished, score_updated, etc.
   title       String
   description String?  @db.Text
-  entityId    String?  // Reference to related object (evidenceId, chatId, etc.)
+  entityId    String? // Reference to related object (evidenceId, chatId, etc.)
   entityType  String?
   metadata    Json     @default("{}")
   createdAt   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -233,17 +242,17 @@ model Activity {
 
 // Notification System
 model Notification {
-  id              String   @id @default(uuid())
-  userId          String
-  type            String   // info, success, warning, error
-  title           String
-  message         String   @db.Text
-  relatedEntityId String?
+  id                String   @id @default(uuid())
+  userId            String
+  type              String // info, success, warning, error
+  title             String
+  message           String   @db.Text
+  relatedEntityId   String?
   relatedEntityType String? // evidence, gap, report, workflow
-  isRead          Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  isRead            Boolean  @default(false)
+  createdAt         DateTime @default(now())
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
@@ -263,8 +272,8 @@ model GapAnalysis {
   archived            Boolean  @default(false)
   createdAt           DateTime @default(now())
 
-  institution  Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  standard     Standard?   @relation(fields: [standardId], references: [id], onDelete: SetNull)
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  standard    Standard?   @relation(fields: [standardId], references: [id], onDelete: SetNull)
 
   @@index([institutionId])
   @@index([standardId])
@@ -276,111 +285,111 @@ model GapAnalysis {
 // ═══════════════════════════════════════════════════════════════════════════
 
 model PlatformFile {
-  id          String   @id
-  name        String
-  type        String
-  size        Int
-  userId      String
-  
+  id     String @id
+  name   String
+  type   String
+  size   Int
+  userId String
+
   // Analysis results
-  detectedStandards String[] @default([])
-  documentType String?
-  clauses     String[] @default([])
-  analysisConfidence Float @default(0)
-  
+  detectedStandards  String[] @default([])
+  documentType       String?
+  clauses            String[] @default([])
+  analysisConfidence Float    @default(0)
+
   // State
-  status      String   @default("uploaded")
-  
+  status String @default("uploaded")
+
   // Cross-module links (Relations)
-  evidence    PlatformEvidence[] @relation("FileEvidence")
-  gaps        PlatformGap[]      @relation("FileGaps")
-  
+  evidence PlatformEvidence[] @relation("FileEvidence")
+  gaps     PlatformGap[]      @relation("FileGaps")
+
   // Metadata
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
 
 model PlatformEvidence {
-  id          String   @id
-  title       String
-  type        String
-  userId      String
-  
+  id     String @id
+  title  String
+  type   String
+  userId String
+
   // State
-  status      String   @default("defined")
-  
+  status String @default("defined")
+
   // References
-  files       PlatformFile[]     @relation("FileEvidence")
-  gaps        PlatformGap[]      @relation("GapEvidence")
-  criteriaRefs Json @default("[]")
-  
+  files        PlatformFile[] @relation("FileEvidence")
+  gaps         PlatformGap[]  @relation("GapEvidence")
+  criteriaRefs Json           @default("[]")
+
   // Metadata
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
 
 model PlatformGap {
-  id          String   @id
+  id          String @id
   standard    String
   clause      String
   description String
-  severity    String   @default("medium")
+  severity    String @default("medium")
   userId      String
-  
+
   // State
-  status      String   @default("defined")
-  
+  status String @default("defined")
+
   // References
-  evidence    PlatformEvidence[] @relation("GapEvidence")
-  files       PlatformFile[]     @relation("FileGaps")
-  
+  evidence PlatformEvidence[] @relation("GapEvidence")
+  files    PlatformFile[]     @relation("FileGaps")
+
   // Metadata
-  createdAt   DateTime @default(now())
-  closedAt    DateTime?
-  
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  createdAt DateTime  @default(now())
+  closedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
   @@index([standard])
 }
 
 model PlatformMetric {
-  id          String   @id
-  name        String
-  value       Float
+  id            String @id
+  name          String
+  value         Float
   previousValue Float?
-  sourceModule String
-  userId      String
-  
-  updatedAt   DateTime @updatedAt
-  
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  sourceModule  String
+  userId        String
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([sourceModule])
 }
 
 model PlatformEvent {
-  id          String   @id @default(uuid())
-  type        String
-  userId      String
-  entityId    String?
-  metadata    Json     @default("{}")
-  timestamp   DateTime @default(now())
-  
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id        String   @id @default(uuid())
+  type      String
+  userId    String
+  entityId  String?
+  metadata  Json     @default("{}")
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([type])
   @@index([timestamp])
@@ -391,17 +400,17 @@ model PlatformEvent {
 // ═══════════════════════════════════════════════════════════════════════════
 
 model VectorDocument {
-  id             String                   @id @default(uuid())
-  content        String                   @db.Text
-  embedding      Unsupported("vector(768)")?
-  
+  id        String                      @id @default(uuid())
+  content   String                      @db.Text
+  embedding Unsupported("vector(768)")?
+
   // Metadata for filtering
-  documentId     String? // References Evidence PDF id
-  standardId     String? // References a specific standard
-  chunkIndex     Int?    @default(0)
-  
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
+  documentId String? // References Evidence PDF id
+  standardId String? // References a specific standard
+  chunkIndex Int?    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([documentId])
   @@index([standardId])
@@ -417,15 +426,15 @@ model MockAuditSession {
   userId        String
   standardId    String?
   status        String   @default("active") // active, completed
-  score         Float?   // Optional evaluation score at the end
+  score         Float? // Optional evaluation score at the end
   summary       String?  @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  standard      Standard?   @relation(fields: [standardId], references: [id], onDelete: SetNull)
-  messages      MockAuditMessage[]
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution Institution        @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  standard    Standard?          @relation(fields: [standardId], references: [id], onDelete: SetNull)
+  messages    MockAuditMessage[]
 
   @@index([institutionId])
   @@index([userId])
@@ -433,14 +442,14 @@ model MockAuditSession {
 }
 
 model MockAuditMessage {
-  id          String   @id @default(uuid())
-  sessionId   String
-  role        String   // user (staff), assistant (Horus AI), system
-  content     String   @db.Text
-  confidence  Float?   // AI's confidence in the user's answer
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  sessionId  String
+  role       String // user (staff), assistant (Horus AI), system
+  content    String   @db.Text
+  confidence Float? // AI's confidence in the user's answer
+  createdAt  DateTime @default(now())
 
-  session     MockAuditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session MockAuditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
@@ -449,16 +458,16 @@ model DocumentDraft {
   id            String   @id @default(uuid())
   institutionId String
   userId        String
-  gapId         String?  // The PlatformGap that triggered this draft
+  gapId         String? // The PlatformGap that triggered this draft
   title         String
   content       String   @db.Text // The markdown or HTML drafted by AI
   status        String   @default("draft") // draft, reviewed, finalized
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
   // NOTE: PlatformGap goes not have a Prisma relation directly to avoid 
   // complex circular dependencies with the transitional PlatformState models,
   // so gapId is just a String reference.
@@ -467,4 +476,3 @@ model DocumentDraft {
   @@index([userId])
   @@index([gapId])
 }
-

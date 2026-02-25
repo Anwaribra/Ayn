@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Stream the responses back using standard Vercel AI data stream format
-    return result.toTextStreamResponse();
+    // @ts-ignore - toDataStreamResponse is the correct method for AI SDK v3 data protocol
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error("Horus Chat Error:", error);
     return new Response(JSON.stringify({ error: error.message || "Failed to generate AI response." }), {

@@ -493,17 +493,22 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
-        <div className="flex-1 w-full overflow-y-auto px-6 py-8 custom-scrollbar flex flex-col items-center">
-          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col gap-10", isEmpty ? "pb-40 md:pb-32" : "pb-4")}>
+        <div
+          className={cn(
+            "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
+            isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-36 md:pb-28"
+          )}
+        >
+          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-10 pb-4")}>
             {isEmpty ? (
               // M3: Example prompts empty state — replaces the spinning AI loader
-              <div className="flex-1 min-h-0 w-full overflow-y-auto flex items-center justify-center">
-                <div className="flex flex-col items-center justify-center gap-8 w-full min-h-[40vh] max-h-[calc(100dvh-250px)] md:max-h-[calc(100dvh-280px)] animate-in fade-in zoom-in-95 py-6">
+              <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
+                <div className="flex flex-col items-center justify-center gap-5 md:gap-6 w-full min-h-0 max-h-full animate-in fade-in zoom-in-95 py-2">
                   <div className="flex flex-col items-center gap-3">
                     <div className="lg:hidden">
                       <AiLoader size={200} text="Horus AI" />
                     </div>
-                    <div className="hidden lg:block">
+                    <div className="hidden lg:block scale-90 2xl:scale-100">
                       <AiLoader size={300} text="Horus AI" />
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>

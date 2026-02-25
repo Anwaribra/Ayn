@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { BarChart3, Filter, Target, Zap, Globe, Cpu, ChevronRight } from "lucide-react"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import type { GapAnalysisListItem } from "@/types"
@@ -27,14 +28,12 @@ function AnalyticsContent() {
     () => api.getGapAnalyses(),
   )
 
-  // Derive chart data from reports (reversed to show chronological left-to-right)
-  // If no reports, we show a greyed out "No Data" placeholder
-  const chartValues = reports && reports.length > 0
-    ? reports.slice(0, 12).reverse().map(r => Math.round(r.overallScore))
-    : []
-
-  const chartLabels = reports && reports.length > 0
-    ? reports.slice(0, 12).reverse().map(r => new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }))
+  const chartData = reports && reports.length > 0
+    ? [...reports].reverse().map(r => ({
+        date: new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        score: Math.round(r.overallScore),
+        standard: r.standardTitle
+      }))
     : []
 
   // Derive distribution from unique standards in reports
@@ -87,7 +86,7 @@ function AnalyticsContent() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 px-4">
             {/* Neural Trend Chart */}
             <div className="lg:col-span-2 glass-panel p-8 rounded-[40px] relative overflow-hidden border-[var(--border-subtle)]">
-              <div className="flex justify-between items-start mb-10">
+              <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Institutional Pulse</h3>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Compliance Equilibrium Trend</p>
@@ -95,45 +94,62 @@ function AnalyticsContent() {
                 <div className="flex gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Target</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Current</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Equilibrium</span>
                   </div>
                 </div>
               </div>
 
-              <div className="h-56 flex items-end gap-2 relative">
-                {chartValues.length > 0 ? (
-                  chartValues.map((h, i) => (
-                    <div key={i} className="flex-1 group relative">
-                      <div
-                        className="w-full rounded-t-lg transition-all duration-700 group-hover:opacity-100"
-                        style={{ height: `${Math.max(h, 5)}%`, backgroundColor: "var(--primary)" }}
+              <div className="h-64 w-full -ml-4">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+                      <XAxis 
+                        dataKey="date" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} 
+                        dy={10}
                       />
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity mono text-[10px] font-bold text-primary">
-                        {h}%
-                      </div>
-                    </div>
-                  ))
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} 
+                        domain={[0, 100]} 
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "var(--surface-modal)", 
+                          borderColor: "var(--border-subtle)", 
+                          borderRadius: "12px",
+                          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                        }}
+                        itemStyle={{ color: "var(--text-primary)", fontWeight: "bold" }}
+                        labelStyle={{ color: "var(--text-secondary)", fontSize: "12px", marginBottom: "4px" }}
+                        formatter={(value) => [`${value}%`, 'Score']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorScore)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center flex-col gap-2">
+                  <div className="flex items-center justify-center h-full flex-col gap-2">
                     <div className="text-muted-foreground text-sm font-bold uppercase tracking-widest">No Trend Data</div>
                     <div className="text-muted-foreground text-[10px]">Run an alignment analysis to populate</div>
                   </div>
                 )}
-
-                {/* Horizontal Grid lines */}
-                <div className="absolute inset-x-0 top-0 h-px bg-border pointer-events-none" />
-                <div className="absolute inset-x-0 top-1/4 h-px bg-border pointer-events-none" />
-                <div className="absolute inset-x-0 top-1/2 h-px bg-border pointer-events-none" />
-                <div className="absolute inset-x-0 top-3/4 h-px bg-border pointer-events-none" />
-              </div>
-              <div className="flex justify-between mt-6 px-1">
-                {chartLabels.map((m, i) => (
-                  <span key={i} className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[40px]">{m}</span>
-                ))}
               </div>
             </div>
 

@@ -203,3 +203,42 @@ async def delete_chat(
     user_id = get_user_id(current_user)
     await ChatService.delete_chat(chat_id, user_id)
     return {"status": "deleted"}
+
+
+# ─── Feedback ─────────────────────────────────────────────────────────────────
+
+class MessageFeedback(BaseModel):
+    message_id: str
+    chat_id: str | None = None
+    rating: str  # "up" | "down"
+    comment: str | None = None
+
+
+@router.post("/feedback")
+async def submit_message_feedback(
+    body: MessageFeedback,
+    current_user = Depends(get_current_user)
+):
+    """Record thumbs-up / thumbs-down feedback for a Horus response."""
+    import json, pathlib, datetime
+    user_id = get_user_id(current_user)
+
+    record = {
+        "user_id": user_id,
+        "message_id": body.message_id,
+        "chat_id": body.chat_id,
+        "rating": body.rating,
+        "comment": body.comment,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+    }
+
+    # Persist to a simple JSONL log — zero schema migration required.
+    log_path = pathlib.Path("horus_feedback.jsonl")
+    try:
+        with log_path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception:
+        pass  # Never fail the client over a logging error
+
+    return {"status": "ok", "message_id": body.message_id}
+

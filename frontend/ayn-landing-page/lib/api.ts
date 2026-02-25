@@ -690,6 +690,13 @@ class ApiClient {
     return this.request(`/horus/history/${chatId}`, { method: "DELETE" })
   }
 
+  async submitMessageFeedback(messageId: string, chatId: string | null, rating: "up" | "down") {
+    return this.request("/horus/feedback", {
+      method: "POST",
+      body: JSON.stringify({ message_id: messageId, chat_id: chatId, rating }),
+    })
+  }
+
   async generateAnswer(prompt: string, context?: string) {
     return this.request<import("./types").AIResponse>("/ai/generate-answer", {
       method: "POST",

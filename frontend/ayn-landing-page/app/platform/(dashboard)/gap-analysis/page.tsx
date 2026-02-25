@@ -17,7 +17,9 @@ import {
   Target,
   Radio,
   Loader2,
-  Sparkles, // <-- AI Icon
+  Sparkles,
+  FileText,
+  X,
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
@@ -330,6 +332,34 @@ function GapAnalysisContent() {
         </div>
       </header>
 
+      {/* H4: Active report indicator banner */}
+      {activeReport && (
+        <div className="px-4 mb-6">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/20 text-sm">
+            <FileText className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-muted-foreground font-medium">Viewing:</span>
+            <span className="text-foreground font-bold truncate flex-1">{activeReport.standardTitle ?? "Gap Analysis"}</span>
+            {activeReport.overallScore !== undefined && (
+              <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                {Math.round(activeReport.overallScore)}% score
+              </span>
+            )}
+            {activeReport.createdAt && (
+              <span className="text-[10px] text-muted-foreground font-medium shrink-0 hidden sm:block">
+                {new Date(activeReport.createdAt).toLocaleDateString()}
+              </span>
+            )}
+            <button
+              onClick={() => setActiveReport(null)}
+              className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              aria-label="Close report"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Generate Controls */}
       <div className="px-4 mb-10">
         <div className="glass-panel p-6 rounded-3xl border-[var(--border-subtle)] flex flex-col md:flex-row items-center gap-4">
@@ -346,7 +376,7 @@ function GapAnalysisContent() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedStandard}
-            className="flex items-center gap-2 px-8 py-3 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-8 py-3 bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {generating ? (
               <>

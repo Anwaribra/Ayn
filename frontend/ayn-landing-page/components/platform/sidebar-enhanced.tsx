@@ -204,7 +204,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         <div className="space-y-2">
           {!isCollapsed && (
             <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
-              Strategy
+              Reporting & Automation
             </p>
           )}
           {INSIGHTS_TOOLS.map((item) => (

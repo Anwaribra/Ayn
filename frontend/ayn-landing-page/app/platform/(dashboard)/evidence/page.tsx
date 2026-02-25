@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -10,6 +10,7 @@ import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, L
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { GlassCard } from "@/components/ui/glass-card"
+import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,11 @@ function EvidenceContent() {
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
+  // H3: Filter state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<any>("")
+  const [standardFilter, setStandardFilter] = useState("")
+
   const { data: evidenceList, isLoading, error, mutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
     () => api.getEvidence()
@@ -36,6 +42,20 @@ function EvidenceContent() {
     "standards",
     () => api.getStandards()
   )
+
+  // H3: Client-side filter — fast while server result is cached
+  const filteredEvidence = useMemo(() => {
+    if (!evidenceList) return []
+    return evidenceList.filter((ev) => {
+      const matchesSearch = searchQuery === "" ||
+        (ev.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (ev.originalFilename ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = statusFilter === "" || ev.status === statusFilter
+      const matchesStandard = standardFilter === "" ||
+        ev.criteria?.some((c: any) => c.standardId === standardFilter || c.id === standardFilter)
+      return matchesSearch && matchesStatus && matchesStandard
+    })
+  }, [evidenceList, searchQuery, statusFilter, standardFilter])
 
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false)
   const [selectedStandardId, setSelectedStandardId] = useState<string>("all")
@@ -167,7 +187,13 @@ function EvidenceContent() {
         </label>
       </div>
 
-      <EvidenceFilters />
+      <EvidenceFilters
+        onSearch={setSearchQuery}
+        onStatusChange={setStatusFilter}
+        onStandardChange={setStandardFilter}
+        activeStatus={statusFilter}
+        activeStandard={standardFilter}
+      />
 
       {error ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-border bg-muted/30">
@@ -187,30 +213,43 @@ function EvidenceContent() {
           ))}
         </div>
       ) : evidenceList?.length === 0 ? (
-        <GlassCard variant={2} className="text-center py-20 border-2 border-dashed border-border">
-          <div className="w-16 h-16 rounded-2xl glass-layer-3 mx-auto flex items-center justify-center mb-6">
-            <UploadCloud className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">Vault is Empty</h3>
-          <p className="text-muted-foreground max-w-sm mx-auto">
-            Upload proof documents, reports, or policies to start mapping your compliance framework.
-          </p>
-        </GlassCard>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {evidenceList?.map((evidence: Evidence) => (
-            <GlassCard
-              key={evidence.id}
-              variant={2}
-              hoverEffect
-              shine
-              onClick={() => setSelectedEvidence(evidence)}
-              className="cursor-pointer group p-0"
-            >
-              <EvidenceCard evidence={evidence} onClick={() => setSelectedEvidence(evidence)} />
-            </GlassCard>
-          ))}
+        <div className="mt-8">
+          <EmptyState type="evidence" />
         </div>
+      ) : (
+        <>
+          {/* H3: Result count */}
+          {(searchQuery || statusFilter || standardFilter) && (
+            <p className="text-sm text-muted-foreground font-medium mb-4">
+              {filteredEvidence.length} result{filteredEvidence.length !== 1 ? "s" : ""}
+              {searchQuery && <span> for <span className="text-foreground font-bold">"{searchQuery}"</span></span>}
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredEvidence.length === 0 ? (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-muted-foreground font-medium">No evidence matches your filters.</p>
+                <button
+                  onClick={() => { setSearchQuery(""); setStatusFilter(""); setStandardFilter("") }}
+                  className="mt-3 text-xs font-bold text-primary hover:underline"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : filteredEvidence.map((evidence: Evidence) => (
+              <GlassCard
+                key={evidence.id}
+                variant={2}
+                hoverEffect
+                shine
+                onClick={() => setSelectedEvidence(evidence)}
+                className="cursor-pointer group p-0"
+              >
+                <EvidenceCard evidence={evidence} onClick={() => setSelectedEvidence(evidence)} />
+              </GlassCard>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Quick Preview Modal Overlay */}

@@ -49,7 +49,7 @@ export default function WorkflowsPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="px-2 py-0.5 rounded bg-zinc-800 border border-[var(--border-subtle)]">
+                <div className="px-2 py-0.5 rounded bg-muted border border-[var(--border-subtle)]">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Automation Layer</span>
                 </div>
               </div>
@@ -57,10 +57,17 @@ export default function WorkflowsPage() {
                 Active <span className="text-[var(--text-tertiary)] not-italic font-light">Workflows</span>
               </h1>
             </div>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5">
-              <Plus className="w-3.5 h-3.5" />
-              New Workflow
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                disabled
+                className="flex items-center gap-2 px-5 py-2.5 bg-muted text-muted-foreground rounded-xl font-bold text-xs border border-border cursor-not-allowed opacity-60"
+                title="Workflow builder coming soon"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Workflow
+              </button>
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Coming Soon</span>
+            </div>
           </div>
         </div>
 
@@ -131,12 +138,7 @@ export default function WorkflowsPage() {
                           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Last Run</div>
                           <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
                         </div>
-                        <button
-                          onClick={() => toast.info('Workflow configuration is locked by admin policy')}
-                          className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </button>
+
                       </div>
                     </div>
                   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,6 +26,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   ExternalLink,
+  Copy,
+  Download,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -181,8 +183,11 @@ export default function HorusAIChat() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
   const [inputValue, setInputValue] = useState("")
-  // M3: per-message feedback state
+  // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
+  const [feedbackPersisted, setFeedbackPersisted] = useState<Set<string>>(new Set())
+  // M1: copy state tracking
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -196,10 +201,10 @@ export default function HorusAIChat() {
     }
   }, [messages, status])
 
-  // L2: Keyboard shortcut — Ctrl/Cmd+K → new chat
+  // L2: Keyboard shortcut — Ctrl/Cmd+N → new chat (⌘K is reserved for the global command palette)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault()
         newChat()
       }
@@ -214,6 +219,47 @@ export default function HorusAIChat() {
       stopGeneration()
     }
   }, [])
+
+  // M1: Copy message text to clipboard
+  const handleCopy = useCallback(async (msgId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedMsgId(msgId)
+      setTimeout(() => setCopiedMsgId(null), 2000)
+    } catch {
+      toast.error("Clipboard unavailable")
+    }
+  }, [])
+
+  // M2: Wire feedback to backend
+  const handleFeedback = useCallback(async (msgId: string, rating: "up" | "down") => {
+    const next = feedback[msgId] === rating ? null : rating
+    setFeedback(prev => ({ ...prev, [msgId]: next }))
+    if (!next) return // un-vote — no server call needed
+    try {
+      await api.submitMessageFeedback(msgId, currentChatId, next)
+      setFeedbackPersisted(prev => new Set([...prev, msgId]))
+    } catch {
+      // Silently fail — optimistic state is still correct locally
+    }
+  }, [feedback, currentChatId])
+
+  // M8: Export conversation as .txt download
+  const handleExportChat = useCallback(() => {
+    if (!messages.length) return
+    const lines = messages
+      .filter(m => m.role !== "system")
+      .map(m => `[${m.role.toUpperCase()}]\n${m.content}\n`)
+      .join("\n---\n\n")
+    const blob = new Blob([lines], { type: "text/plain;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `horus-chat-${new Date().toISOString().slice(0,10)}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success("Chat exported")
+  }, [messages])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB hard limit
@@ -366,9 +412,15 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
-      {/* New + History as floating top-right (no header bar) */}
+      {/* New + History + Export as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat">
+        {/* M8: Export chat — only visible when conversation has messages */}
+        {!isEmpty && (
+          <Button variant="ghost" size="sm" onClick={handleExportChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Export chat (.txt)">
+            <Download className="h-4 w-4" />
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
         <Sheet>
@@ -381,7 +433,7 @@ export default function HorusAIChat() {
             <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-black text-foreground">Session History</h2>
               <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-full">
-                ⌘K new chat
+                ⌘N new chat
               </span>
             </div>
             <ScrollArea className="h-[calc(100vh-80px)]">
@@ -444,8 +496,37 @@ export default function HorusAIChat() {
         <div className="flex-1 w-full overflow-y-auto px-6 py-8 custom-scrollbar flex flex-col items-center">
           <div className="flex-1 w-full max-w-[760px] flex flex-col gap-10 pb-4">
             {isEmpty ? (
-              <div className="flex flex-col items-center justify-center flex-1 gap-0 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
-                <AiLoader size={220} text="Horus AI" />
+              // M3: Example prompts empty state — replaces the spinning AI loader
+              <div className="flex flex-col items-center justify-center flex-1 gap-8 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Brain className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold text-foreground">Horus AI</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[640px]">
+                  {[
+                    { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
+                    { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
+                    { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
+                    { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
+                  ].map((item) => (
+                    <button
+                      key={item.prompt}
+                      onClick={() => {
+                        setInputValue(item.prompt)
+                        handleSendMessage(item.prompt)
+                      }}
+                      className="text-left px-4 py-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
+                    >
+                      <span className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</span>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.prompt}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <>
@@ -513,8 +594,12 @@ export default function HorusAIChat() {
 
                           {/* Only show text content if there's something meaningful to show */}
                           {msg.content && (
-                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
+                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none">
                               <HorusMarkdown content={msg.content} onAction={handleAction} />
+                              {/* M4: blinking caret during live streaming of THIS message */}
+                              {status === "generating" && msg.id === messages.filter(m => m.role === "assistant").pop()?.id && (
+                                <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-primary align-middle animate-pulse rounded-full" />
+                              )}
                             </div>
                           )}
 
@@ -551,11 +636,29 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {/* M3: Feedback buttons — only on completed assistant messages */}
+                          {/* M3: Feedback buttons + M1: Copy button — only on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && (
                             <div className="flex items-center gap-1 mt-3">
+                              {/* M1: Copy */}
+                              {msg.content && (
+                                <button
+                                  onClick={() => handleCopy(msg.id, msg.content)}
+                                  className={cn(
+                                    "p-1.5 rounded-lg transition-colors",
+                                    copiedMsgId === msg.id
+                                      ? "text-green-500 bg-green-500/10"
+                                      : "text-muted-foreground/40 hover:text-foreground hover:bg-muted/50"
+                                  )}
+                                  title={copiedMsgId === msg.id ? "Copied!" : "Copy response"}
+                                >
+                                  {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                              {/* Divider */}
+                              <div className="w-px h-3 bg-border mx-1" />
+                              {/* M2: Feedback */}
                               <button
-                                onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: prev[msg.id] === "up" ? null : "up" }))}
+                                onClick={() => handleFeedback(msg.id, "up")}
                                 className={cn(
                                   "p-1.5 rounded-lg transition-colors",
                                   feedback[msg.id] === "up"
@@ -567,7 +670,7 @@ export default function HorusAIChat() {
                                 <ThumbsUp className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => setFeedback(prev => ({ ...prev, [msg.id]: prev[msg.id] === "down" ? null : "down" }))}
+                                onClick={() => handleFeedback(msg.id, "down")}
                                 className={cn(
                                   "p-1.5 rounded-lg transition-colors",
                                   feedback[msg.id] === "down"
@@ -578,6 +681,10 @@ export default function HorusAIChat() {
                               >
                                 <ThumbsDown className="w-3.5 h-3.5" />
                               </button>
+                              {/* Persisted check — shows after feedback is saved to backend */}
+                              {feedbackPersisted.has(msg.id) && (
+                                <span className="text-[10px] text-muted-foreground/60 font-medium ml-1">Saved</span>
+                              )}
                             </div>
                           )}
                         </div>

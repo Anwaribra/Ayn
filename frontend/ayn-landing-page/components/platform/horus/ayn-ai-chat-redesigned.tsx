@@ -499,13 +499,8 @@ export default function HorusAIChat() {
               // M3: Example prompts empty state — replaces the spinning AI loader
               <div className="flex flex-col items-center justify-center flex-1 gap-8 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <Brain className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground">Horus AI</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
-                  </div>
+                  <AiLoader size={300} text="Horus AI" />
+                  <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[640px]">
                   {[

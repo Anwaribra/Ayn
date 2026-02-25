@@ -36,6 +36,7 @@ import { AiLoader } from "@/components/ui/ai-loader"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
+import { AgentResultRenderer } from "./agent-result-renderer"
 
 type ReasoningState = {
   steps: { text: string; status: "pending" | "active" | "done" }[]
@@ -393,7 +394,6 @@ export default function HorusAIChat() {
               <>
                 {messages.slice(-30).filter(msg => {
                   if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false;
-                  if (msg.role === "assistant" && !msg.content && status === "generating") return false;
                   return true;
                 }).map((msg, i) => {
                   if (msg.role === "system") {
@@ -430,9 +430,20 @@ export default function HorusAIChat() {
                               <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
                             )}
 
-                          <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
-                            <HorusMarkdown content={msg.content} onAction={handleAction} />
-                          </div>
+                          {/* Agent Structured Result — rendered ABOVE the text content */}
+                          {msg.role === "assistant" && (msg as any).structuredResult && (
+                            <div className="mb-4">
+                              <AgentResultRenderer result={(msg as any).structuredResult} />
+                            </div>
+                          )}
+
+                          {/* Only show text content if there's something meaningful to show
+                              (for agent messages the summary text is short and intentional) */}
+                          {msg.content && (
+                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
+                              <HorusMarkdown content={msg.content} onAction={handleAction} />
+                            </div>
+                          )}
                           
                           {/* Contextual Action Cards */}
                           {msg.role === "assistant" && status !== "generating" && (
@@ -567,6 +578,10 @@ export default function HorusAIChat() {
                 ))}
               </div>
             )}
+            
+            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] pb-4 pt-2 text-center w-full">
+                Horus can make mistakes. Verify important data.
+            </p>
           </div>
         </div>
       </div>

@@ -182,8 +182,8 @@ export const AIChatInput = ({
                                     if (onChange) onChange(e.target.value);
                                 }}
                                 className={cn(
-                                    "flex-1 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
-                                    "text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                    "flex-1 w-full font-medium text-[16px] py-4 px-2 placeholder-transparent bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none !text-gray-900 dark:!text-white",
+                                    "placeholder-gray-400 dark:placeholder-gray-500"
                                 )}
                                 style={{ position: "relative", zIndex: 1 }}
                                 onFocus={handleActivate}
@@ -251,9 +251,6 @@ export const AIChatInput = ({
 
                 </div>
             </motion.div>
-            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] mt-4 mb-2">
-                Horus can make mistakes. Verify important data.
-            </p>
         </div>
     );
 };

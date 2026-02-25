@@ -21,6 +21,8 @@ from app.activity.service import ActivityService
 from app.gap_analysis.service import GapAnalysisService
 from app.gap_analysis.models import GapAnalysisRequest, UserDTO
 from app.rag.service import RagService
+from app.horus.intent_router import detect_intent
+from app.horus.agent_actions import ACTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -138,12 +140,71 @@ class HorusService:
         """
         Hyper-optimized streaming chat interface.
         Parallelizes database saves, state fetching, and file processing.
+
+        Agent mode: if the user message matches a known compliance intent,
+        we bypass the AI streaming pipeline, run the agent action directly,
+        and return a structured __ACTION_RESULT__ prefix that the frontend
+        can render as a typed card component.
         """
         # 1. Start Chat Creation or Fetch in Parallel with State
         if not chat_id:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
+
+        # ── AGENT INTENT DISPATCH ─────────────────────────────────────────────
+        # Only run intent detection when there are no files attached (file uploads
+        # always go through the full AI pipeline for multi-modal analysis).
+        if message and not files:
+            intent = detect_intent(message)
+            if intent and intent in ACTION_REGISTRY:
+                logger.info(f"Horus agent intent detected: '{intent}' for user {user_id}")
+
+                # Save user message to history
+                if background_tasks:
+                    background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                else:
+                    asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
+
+                try:
+                    # Resolve institution_id from the user record
+                    from app.core.db import db as prisma_client
+                    user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                    institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
+
+                    # Execute the agent action
+                    action_fn = ACTION_REGISTRY[intent]
+                    result = await action_fn(
+                        user_id=user_id,
+                        institution_id=institution_id,
+                        db=prisma_client,
+                    )
+
+                    # Emit the structured result as a special prefix
+                    yield f"__ACTION_RESULT__:{json.dumps(result)}\n"
+
+                    # Also emit a short human-readable summary so the chat
+                    # history contains something meaningful (not just the JSON blob)
+                    intent_labels = {
+                        "run_full_audit": "Full compliance audit report generated.",
+                        "check_compliance_gaps": "Compliance gap analysis retrieved.",
+                        "generate_remediation_report": "Remediation action plan generated.",
+                    }
+                    summary_text = intent_labels.get(intent, "Agent action completed.")
+                    yield summary_text
+
+                    # Save the summary (not the raw JSON) to chat history
+                    if background_tasks:
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", summary_text)
+                    else:
+                        await ChatService.save_message(chat_id, user_id, "assistant", summary_text)
+
+                    return  # ← Exit before the AI streaming pipeline
+
+                except Exception as agent_err:
+                    logger.error(f"Agent action '{intent}' failed: {agent_err}", exc_info=True)
+                    # Fall through to the normal AI pipeline on failure
+                    yield "I encountered an issue running that action. Let me help you with a standard response instead.\n\n"
         
         # 2. Parallelize ALL initial operations for speed
         async def process_file(f):

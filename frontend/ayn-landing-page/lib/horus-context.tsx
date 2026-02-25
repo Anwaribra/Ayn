@@ -10,6 +10,7 @@ interface Message {
     role: "user" | "assistant" | "system"
     content: string
     timestamp: number
+    structuredResult?: { type: string; payload: any } | null
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
@@ -142,6 +143,20 @@ export function HorusProvider({ children }: { children: React.ReactNode }) {
                     if (chunk.startsWith("__CHAT_ID__:")) {
                         const newId = chunk.split(":")[1].trim()
                         setCurrentChatId(newId)
+                        return
+                    }
+
+                    // Agent structured result — parse and attach to message, don't stream as text
+                    if (chunk.startsWith("__ACTION_RESULT__:")) {
+                        try {
+                            const jsonStr = chunk.slice("__ACTION_RESULT__:".length).trim()
+                            const parsed = JSON.parse(jsonStr)
+                            setMessages(prev => prev.map(m =>
+                                m.id === assistantMsgId ? { ...m, structuredResult: parsed } : m
+                            ))
+                        } catch (e) {
+                            console.error("[Horus] Failed to parse action result:", e)
+                        }
                         return
                     }
 

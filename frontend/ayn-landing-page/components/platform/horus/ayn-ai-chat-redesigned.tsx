@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Check,
   Brain,
+  ArrowRight,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -136,8 +137,8 @@ function ReasoningBlock({
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
   return (
-    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl bg-layer-0 border border-border shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl bg-[var(--layer-0)] border border-[var(--border-subtle)] shadow-sm transition-all hover:border-[var(--brand-primary)]/50 hover:shadow-md">
+      <div className="w-8 h-8 rounded-lg bg-[var(--brand-primary)]/10 flex items-center justify-center text-[var(--brand-primary)] shrink-0">
         {file.type === 'image' && file.preview ? (
           <img src={file.preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
         ) : (
@@ -174,6 +175,7 @@ export default function HorusAIChat() {
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
+  const [inputValue, setInputValue] = useState("")
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -431,6 +433,44 @@ export default function HorusAIChat() {
                           <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
                             <HorusMarkdown content={msg.content} onAction={handleAction} />
                           </div>
+                          
+                          {/* Contextual Action Cards */}
+                          {msg.role === "assistant" && status !== "generating" && (
+                            <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              {/* Gap / Compliance logic */}
+                              {/(gap|compliance|score|remediate|remediation|shortfall)/i.test(msg.content) && (
+                                <button
+                                  onClick={() => handleSendMessage("Generate Remediation Plan")}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                >
+                                  Generate Remediation Plan
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              
+                              {/* Audit Findings logic */}
+                              {/(audit findings|audit report|non-conformity|observation|major|minor)/i.test(msg.content) && (
+                                <button
+                                  onClick={() => handleSendMessage("Export Audit Report")}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                >
+                                  Export Audit Report
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              
+                              {/* Evidence Analysis logic */}
+                              {/(evidence|document|policy|procedure|manual|reviewed files)/i.test(msg.content) && (
+                                <button
+                                  onClick={() => handleSendMessage("Show me in the Evidence Vault")}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                >
+                                  View in Evidence Vault
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -493,8 +533,10 @@ export default function HorusAIChat() {
                 ))}
               </div>
             )}
+            
             <AIChatInput
               onSend={(message) => {
+                setInputValue("")
                 handleSendMessage(message, attachedFiles.map((af) => af.file));
               }}
               onStop={() => {
@@ -505,10 +547,26 @@ export default function HorusAIChat() {
                   target: { files: [file] },
                 } as unknown as React.ChangeEvent<HTMLInputElement>);
               }}
+              onChange={setInputValue}
               isLoading={isProcessing}
               disabled={isProcessing}
               hasFiles={attachedFiles.length > 0}
             />
+            
+            {/* Quick Action Buttons */}
+            {isEmpty && !inputValue && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2 animate-in fade-in duration-300">
+                {["Run Full Audit", "Check Compliance Gaps", "Generate Remediation Report"].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => handleSendMessage(action)}
+                    className="px-4 py-1.5 text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground transition-all duration-200"
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -19,6 +19,7 @@ interface AIChatInputProps {
     onSend: (message: string) => void;
     onStop?: () => void;
     onFileAttach?: (file: File) => void;
+    onChange?: (value: string) => void;
     isLoading?: boolean;
     disabled?: boolean;
     hasFiles?: boolean;
@@ -31,6 +32,7 @@ export const AIChatInput = ({
     isLoading = false,
     disabled = false,
     hasFiles = false,
+    onChange,
 }: AIChatInputProps) => {
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const [showPlaceholder, setShowPlaceholder] = useState(true);
@@ -175,7 +177,10 @@ export const AIChatInput = ({
                                 value={inputValue}
                                 onKeyDown={handleKeyDown}
                                 disabled={disabled}
-                                onChange={(e) => setInputValue(e.target.value)}
+                                onChange={(e) => {
+                                    setInputValue(e.target.value);
+                                    if (onChange) onChange(e.target.value);
+                                }}
                                 className={cn(
                                     "flex-1 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
                                     "text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"

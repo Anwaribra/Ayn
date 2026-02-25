@@ -341,7 +341,7 @@ function EvidenceContent() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-muted/50 border border-border">
                   <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
                   <div className="text-xl font-black text-foreground capitalize">{selectedEvidence.status}</div>
@@ -369,7 +369,7 @@ function EvidenceContent() {
                 <button
                   type="button"
                   onClick={() => setIsAnalyzeModalOpen(true)}
-                  className="w-full sm:w-auto px-4 py-2 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                  className="w-full sm:w-auto px-4 py-3 min-h-[44px] text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                 >
                   <Sparkles className="w-4 h-4" />
                   Analyze Automatically
@@ -380,7 +380,7 @@ function EvidenceContent() {
                 <button
                   type="button"
                   onClick={() => handleDelete(selectedEvidence)}
-                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none px-4 py-3 min-h-[44px] text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete
@@ -389,7 +389,7 @@ function EvidenceContent() {
                   href={selectedEvidence.fileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 sm:flex-none px-6 py-2 bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none px-6 py-3 min-h-[44px] bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center justify-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Open File

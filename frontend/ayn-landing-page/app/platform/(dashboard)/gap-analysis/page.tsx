@@ -318,16 +318,16 @@ function GapAnalysisContent() {
           </h1>
         </div>
 
-        <div className="p-1 glass-panel rounded-xl flex gap-1 border-[var(--border-subtle)]">
+        <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 border-[var(--border-subtle)]">
           <button
             onClick={() => setActiveTab("all")}
-            className={cn("px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
             System Wide
           </button>
           <button
             onClick={() => setActiveTab("urgent")}
-            className={cn("px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
             Critical Only
           </button>
@@ -400,7 +400,7 @@ function GapAnalysisContent() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedStandard}
-            className="flex items-center gap-2 px-8 py-3 bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {generating ? (
               <>
@@ -504,7 +504,7 @@ function GapAnalysisContent() {
                        <button
                         onClick={() => handleDraftRemediationClick(gap.original)}
                         disabled={isDrafting}
-                        className="flex items-center justify-center gap-2 px-6 py-2 bg-secondary text-secondary-foreground rounded-xl font-bold text-xs border hover:bg-muted transition-all disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] bg-secondary text-secondary-foreground rounded-xl font-bold text-xs border hover:bg-muted transition-all disabled:opacity-50"
                       >
                         {isDrafting && targetGap?.gap.gap === gap.original.gap ? (
                            <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -515,7 +515,7 @@ function GapAnalysisContent() {
                       </button>
                       <button
                         onClick={() => handleRemediateClick(gap.original)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center"
+                        className="flex items-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         Link Evidence
@@ -547,7 +547,7 @@ function GapAnalysisContent() {
                         hoverEffect={!isQueued}
                         shine={!isQueued}
                         className={cn(
-                          "flex items-center justify-between p-5",
+                          "flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 justify-between p-5",
                           isQueued ? "opacity-70 cursor-wait" : isFailed ? "border-destructive/50 opacity-80" : "cursor-pointer"
                         )}
                         onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}
@@ -569,18 +569,18 @@ function GapAnalysisContent() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 self-end sm:self-auto">
                           <a
                             href="#"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); api.downloadGapAnalysisReport(report.id) }}
-                            className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                             title="Download PDF Report"
                           >
                             Export PDF
                           </a>
                           <button
                             onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                           >
                             Delete
                           </button>
@@ -643,4 +643,3 @@ function GapAnalysisContent() {
     </div>
   )
 }
-

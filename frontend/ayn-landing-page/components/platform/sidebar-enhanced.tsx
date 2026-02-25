@@ -92,7 +92,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         href={item.href}
         onClick={handleNavClick}
         className={cn(
-          "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all duration-300",
+          "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 min-h-[44px] text-sm transition-all duration-300",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           active
             ? "bg-primary/15 text-primary border border-primary/40 shadow-md shadow-primary/20"
@@ -169,7 +169,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-muted/50 dark:bg-muted/50 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-muted dark:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          className="inline-flex h-11 w-11 lg:h-9 lg:w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-muted/50 dark:bg-muted/50 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-muted dark:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -270,7 +270,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
                 e.stopPropagation()
                 handleLogout()
               }}
-              className="ml-2 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+              className="ml-2 shrink-0 inline-flex h-11 w-11 lg:h-8 lg:w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />

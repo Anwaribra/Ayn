@@ -190,7 +190,7 @@ export default function StandardsPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-center gap-4 max-w-4xl">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 max-w-4xl">
                       <div className="relative flex-1 w-full group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <input
@@ -203,7 +203,7 @@ export default function StandardsPage() {
                       </div>
                       <Button
                         onClick={() => setIsPDFModalOpen(true)}
-                        className="h-16 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                        className="h-14 sm:h-16 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-primary/20 min-h-[44px]"
                       >
                         <FileUp className="w-5 h-5" />
                         <span className="text-lg">Import Framework</span>
@@ -226,7 +226,7 @@ export default function StandardsPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "px-6 py-4 font-black uppercase text-[12px] tracking-widest transition-all relative border-b-4",
+                      "px-4 sm:px-6 py-3 sm:py-4 min-h-[44px] font-black uppercase text-[12px] tracking-widest transition-all relative border-b-4",
                       activeTab === tab.id
                         ? "text-primary border-primary"
                         : "text-muted-foreground hover:text-foreground border-transparent"
@@ -413,51 +413,32 @@ export default function StandardsPage() {
         <AnimatePresence>
           {isDetailsOpen && selectedStandard && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
-              <div
-                className="glass-card relative"
-                style={{
-                  width: '100%',
-                  maxWidth: '1000px',
-                  height: '85vh',
-                  display: 'flex',
-                  flexDirection: 'column' as const,
-                  padding: 0,
-                  overflow: 'hidden',
-                  borderRadius: '40px',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                }}
-              >
+              <div className="glass-card relative w-full max-w-[1000px] h-[92vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden rounded-[28px] sm:rounded-[40px] shadow-2xl">
                 {/* ── HEADER ── fixed, never scrolls */}
-                <div style={{ flexShrink: 0, padding: '40px 40px 0px', borderBottom: '1px solid var(--border)', background: 'rgba(var(--background), 0.3)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="flex items-center gap-6 pb-10">
+                <div className="shrink-0 px-4 sm:px-10 pt-4 sm:pt-10 pb-4 sm:pb-10 border-b border-[var(--border)] bg-background/30 backdrop-blur-xl flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                     <div className={cn(
-                      "w-16 h-16 rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3",
+                      "w-12 h-12 sm:w-16 sm:h-16 rounded-[16px] sm:rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3 shrink-0",
                       selectedStandard.color || "bg-[#1E3A8A]"
                     )}>
-                      <GraduationCap className="w-10 h-10" />
+                      <GraduationCap className="w-7 h-7 sm:w-10 sm:h-10" />
                     </div>
-                    <div>
-                      <h3 className="text-3xl font-black text-foreground">{selectedStandard.title}</h3>
-                      <div className="flex items-center gap-3 mt-1">
+                    <div className="min-w-0">
+                      <h3 className="text-xl sm:text-3xl font-black text-foreground truncate">{selectedStandard.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{selectedStandard.code}</span>
                         <div className="w-1 h-1 rounded-full bg-border" />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{selectedStandard.category}</span>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 hover:bg-muted/50 rounded-2xl transition-all mb-10">
+                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 min-h-[44px] min-w-[44px] hover:bg-muted/50 rounded-2xl transition-all">
                     <X className="w-6 h-6 text-muted-foreground" />
                   </button>
                 </div>
 
                 {/* ── CRITERIA LIST ── scrollable middle */}
-                <div style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  minHeight: 0,
-                  padding: '30px 40px',
-                  background: 'rgba(var(--card), 0.2)'
-                }} className="custom-scrollbar">
+                <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-10 py-5 sm:py-8 bg-card/20 custom-scrollbar">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground mb-6">
                     <Activity className="w-4 h-4 text-primary" />
                     Criteria Evidence Framework
@@ -514,17 +495,8 @@ export default function StandardsPage() {
                 </div>
 
                 {/* ── BOTTOM CONTROLS ── fixed, never scrolls */}
-                <div style={{
-                  flexShrink: 0,
-                  borderTop: '1px solid var(--border)',
-                  padding: '30px 40px',
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                  gap: '32px',
-                  zIndex: 10,
-                  boxShadow: '0 -10px 40px -15px rgba(0,0,0,0.1)'
-                }} className="bg-white dark:bg-transparent">
-                  <div className="p-8 rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
+                <div className="shrink-0 border-t border-[var(--border)] px-4 sm:px-10 py-5 sm:py-8 grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-8 z-10 bg-white dark:bg-transparent shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                  <div className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
                     <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
                       <Sparkles className="w-4 h-4" />
                       Ayn Intelligence
@@ -610,7 +582,7 @@ export default function StandardsPage() {
                             <Button
                               onClick={() => handleAnalyzeNow(true)}
                               variant="outline"
-                              className="w-full h-12 rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
+                              className="w-full h-12 min-h-[44px] rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
                               <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
                             </Button>
@@ -626,7 +598,7 @@ export default function StandardsPage() {
                     )}
                   </div>
 
-                  <GlassPanel className="p-8 rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
+                  <GlassPanel className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">

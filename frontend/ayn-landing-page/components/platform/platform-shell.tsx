@@ -216,8 +216,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         id="main-content"
         className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0"
       >
-        <header className="h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
-          <div className="flex items-center gap-4">
+        <header className="h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Open sidebar when it's overlay (below lg) */}
             <button
               onClick={() => setSidebarOpen(true)}
@@ -230,7 +230,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Navigation / Command Palette */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0"
             >
               <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
@@ -240,12 +240,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             </button>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
             {/* Notifications */}
             <div className="relative notification-dropdown-container">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
                 aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                 aria-haspopup="true"
                 aria-expanded={showNotifications}
@@ -257,7 +257,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               </button>
 
               {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-[320px] glass-panel rounded-3xl p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                       Activity
@@ -265,13 +265,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleClearNotifications}
-                        className="text-[10px] text-primary font-bold hover:underline"
+                        className="text-[10px] text-primary font-bold hover:underline min-h-[32px] px-1"
                       >
                         Mark all read
                       </button>
                       <button
                         onClick={() => setShowNotifications(false)}
-                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -369,7 +369,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 setTheme(resolvedTheme === "dark" ? "light" : "dark")
               }
               className={cn(
-                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95",
+                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95 min-h-[44px] min-w-[44px]",
                 "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
               title={

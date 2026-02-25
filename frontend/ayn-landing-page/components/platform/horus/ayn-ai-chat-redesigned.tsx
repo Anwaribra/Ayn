@@ -416,16 +416,16 @@ export default function HorusAIChat() {
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         {/* M8: Export chat — only visible when conversation has messages */}
         {!isEmpty && (
-          <Button variant="ghost" size="sm" onClick={handleExportChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Export chat (.txt)">
+          <Button variant="ghost" size="sm" onClick={handleExportChat} className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Export chat (.txt)">
             <Download className="h-4 w-4" />
           </Button>
         )}
-        <Button variant="ghost" size="sm" onClick={newChat} className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat (⌘N)">
+        <Button variant="ghost" size="sm" onClick={newChat} className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="History">
+            <Button variant="ghost" size="sm" className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="History">
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
@@ -461,7 +461,7 @@ export default function HorusAIChat() {
                         </p>
                         <button
                           onClick={(e) => deleteSession(session.id, e)}
-                          className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-2 min-h-[36px] min-w-[36px]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -604,7 +604,7 @@ export default function HorusAIChat() {
                               {/(gap|compliance|score|remediate|remediation|shortfall)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Generate Remediation Plan")}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
                                 >
                                   Generate Remediation Plan
                                   <ArrowRight className="w-3.5 h-3.5" />
@@ -613,7 +613,7 @@ export default function HorusAIChat() {
                               {/(audit findings|audit report|non-conformity|observation|major|minor)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Export Audit Report")}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
                                 >
                                   Export Audit Report
                                   <ArrowRight className="w-3.5 h-3.5" />
@@ -622,7 +622,7 @@ export default function HorusAIChat() {
                               {/(evidence|document|policy|procedure|manual|reviewed files)/i.test(msg.content) && (
                                 <button
                                   onClick={() => handleSendMessage("Show me in the Evidence Vault")}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
+                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
                                 >
                                   View in Evidence Vault
                                   <ArrowRight className="w-3.5 h-3.5" />
@@ -639,7 +639,7 @@ export default function HorusAIChat() {
                                 <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
                                   className={cn(
-                                    "p-1.5 rounded-lg transition-colors",
+                                    "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
                                     copiedMsgId === msg.id
                                       ? "text-green-500 bg-green-500/10"
                                       : "text-muted-foreground/40 hover:text-foreground hover:bg-muted/50"
@@ -655,7 +655,7 @@ export default function HorusAIChat() {
                               <button
                                 onClick={() => handleFeedback(msg.id, "up")}
                                 className={cn(
-                                  "p-1.5 rounded-lg transition-colors",
+                                  "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
                                   feedback[msg.id] === "up"
                                     ? "text-green-500 bg-green-500/10"
                                     : "text-muted-foreground/40 hover:text-green-500 hover:bg-green-500/10"
@@ -667,7 +667,7 @@ export default function HorusAIChat() {
                               <button
                                 onClick={() => handleFeedback(msg.id, "down")}
                                 className={cn(
-                                  "p-1.5 rounded-lg transition-colors",
+                                  "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
                                   feedback[msg.id] === "down"
                                     ? "text-red-500 bg-red-500/10"
                                     : "text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10"
@@ -771,7 +771,7 @@ export default function HorusAIChat() {
                   <button
                     key={action}
                     onClick={() => handleSendMessage(action)}
-                    className="px-4 py-1.5 text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground transition-all duration-200"
+                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground transition-all duration-200"
                   >
                     {action}
                   </button>

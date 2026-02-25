@@ -57,10 +57,10 @@ export default function WorkflowsPage() {
                 Active <span className="text-[var(--text-tertiary)] not-italic font-light">Workflows</span>
               </h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 disabled
-                className="flex items-center gap-2 px-5 py-2.5 bg-muted text-muted-foreground rounded-xl font-bold text-xs border border-border cursor-not-allowed opacity-60"
+                className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-muted text-muted-foreground rounded-xl font-bold text-xs border border-border cursor-not-allowed opacity-60"
                 title="Workflow builder coming soon"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -129,12 +129,12 @@ export default function WorkflowsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-8 pl-16 md:pl-0">
-                        <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                      <div className="flex flex-wrap items-center gap-4 md:gap-8 pl-0 md:pl-0">
+                        <div className="flex flex-col md:items-end gap-1 min-w-0 md:min-w-[120px]">
                           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trigger</div>
                           <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
                         </div>
-                        <div className="flex flex-col md:items-end gap-1 min-w-[120px]">
+                        <div className="flex flex-col md:items-end gap-1 min-w-0 md:min-w-[120px]">
                           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Last Run</div>
                           <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
                         </div>
@@ -151,4 +151,3 @@ export default function WorkflowsPage() {
     </ProtectedRoute>
   )
 }
-

@@ -108,14 +108,14 @@ function DashboardContent() {
 
         {/* Dashdot Gauges */}
         <div className="flex flex-col sm:flex-row xl:flex-col gap-4 shrink-0">
-          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 min-w-[280px]">
+          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <CircularGauge value={Math.round(alignmentScore)} label="System Health" icon={<Cpu className="w-5 h-5" />} color="#3B82F6" />
             <div className="flex flex-col justify-center">
               <span className="text-2xl font-bold tracking-tight">Good</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Optimal State</span>
             </div>
           </div>
-          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 min-w-[280px]">
+          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <CircularGauge
               value={metrics?.totalGapAnalyses ?? 0}
               max={20}

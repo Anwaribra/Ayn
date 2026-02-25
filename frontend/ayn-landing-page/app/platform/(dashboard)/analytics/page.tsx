@@ -61,16 +61,16 @@ function AnalyticsContent() {
           </div>
           <h1 className="text-4xl font-black tracking-tight italic text-[var(--text-primary)]">Reports & <span className="text-[var(--text-tertiary)] not-italic font-light">Insights</span></h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => toast.info('Period filtering is active for current fiscal quarter')}
-            className="flex items-center gap-2 px-5 py-2 glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-all border-[var(--border-subtle)] text-muted-foreground"
+            className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-all border-[var(--border-subtle)] text-muted-foreground"
           >
             <Filter className="w-3 h-3" /> Filter Period
           </button>
           <button
             onClick={() => toast.info('Export formatted reports from the Insight Hub below')}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
+            className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
           >
             Export Intelligence
           </button>
@@ -237,4 +237,3 @@ function AnalyticsContent() {
     </div>
   )
 }
-

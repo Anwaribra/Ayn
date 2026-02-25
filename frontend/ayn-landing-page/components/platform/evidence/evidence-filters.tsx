@@ -69,13 +69,13 @@ export function EvidenceFilters({
                 )}
             </div>
 
-            <div className="flex gap-2 relative">
+            <div className="flex flex-wrap gap-2 relative">
                 {/* Status Filter */}
                 <div className="relative">
                     <button
                         onClick={() => { setShowStatusMenu(!showStatusMenu); setShowStandardMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-3 glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
+                            "flex items-center gap-2 px-4 py-3 min-h-[44px] glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
                             activeStatus
                                 ? "text-primary border border-primary/40 bg-primary/5"
                                 : "text-muted-foreground hover:text-foreground"
@@ -115,7 +115,7 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStandardMenu(!showStandardMenu); setShowStatusMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-3 glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
+                            "flex items-center gap-2 px-4 py-3 min-h-[44px] glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
                             activeStandard
                                 ? "text-primary border border-primary/40 bg-primary/5"
                                 : "text-muted-foreground hover:text-foreground"
@@ -135,7 +135,7 @@ export function EvidenceFilters({
                         )}
                     </button>
                     {showStandardMenu && (
-                        <div className="absolute top-full right-0 mt-1 z-30 glass-layer-3 rounded-xl border border-border shadow-2xl min-w-[200px] py-1 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 z-30 glass-layer-3 rounded-xl border border-border shadow-2xl min-w-[200px] max-w-[calc(100vw-2rem)] py-1 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto">
                             {!standards || standards.length === 0 ? (
                                 <p className="px-4 py-3 text-sm text-muted-foreground">No standards configured</p>
                             ) : (
@@ -161,7 +161,7 @@ export function EvidenceFilters({
                 {hasActiveFilters && (
                     <button
                         onClick={clearAll}
-                        className="flex items-center gap-1.5 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-3 min-h-[44px] text-xs font-bold text-muted-foreground hover:text-destructive transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
                         Clear

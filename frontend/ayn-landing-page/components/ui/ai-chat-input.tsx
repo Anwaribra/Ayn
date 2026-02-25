@@ -183,12 +183,11 @@ export const AIChatInput = ({
                                 }}
                                 className={cn(
                                     "flex-1 w-full font-medium text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
-                                    "text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-white/45"
+                                    "!text-gray-900 dark:!text-white placeholder:!text-gray-500 dark:placeholder:!text-white/45"
                                 )}
                                 style={{
                                     position: "relative",
                                     zIndex: 1,
-                                    colorScheme: "light dark",
                                     caretColor: "currentColor",
                                 }}
                                 onFocus={handleActivate}

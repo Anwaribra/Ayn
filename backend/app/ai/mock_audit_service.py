@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from app.ai.service import get_gemini_client
-from app.ai.rag_service import query_evidence
+from app.rag.service import RagService
 from app.core.db import get_db
 
 logger = logging.getLogger(__name__)
@@ -28,9 +28,8 @@ async def start_mock_audit(
     query = "All evidence policies and procedures related to this standard."
     rag_context = ""
     try:
-        rag_results = await query_evidence(query, institution_id=institution_id, top_k=5)
-        for doc in rag_results:
-            rag_context += f"- {doc['content'][:500]}\n"
+        rag = RagService()
+        rag_context = await rag.retrieve_context(query, limit=5)
     except Exception as e:
         logger.warning(f"Failed to fetch RAG context for initial mock audit: {e}")
         rag_context = "No pre-existing documentation could be loaded."
@@ -92,9 +91,8 @@ async def submit_mock_audit_message(
     # 3. Gather RAG context based on what the user just said
     rag_context = ""
     try:
-        rag_results = await query_evidence(content, institution_id=session.institutionId, top_k=3)
-        for doc in rag_results:
-            rag_context += f"- {doc['content'][:500]}\n"
+        rag = RagService()
+        rag_context = await rag.retrieve_context(content, limit=3)
     except Exception as e:
         logger.warning(f"Failed to fetch RAG context for mock audit message: {e}")
 

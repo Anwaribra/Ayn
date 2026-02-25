@@ -411,7 +411,7 @@ export default function HorusAIChat() {
   const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
 
   return (
-    <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       {/* New + History + Export as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         {/* M8: Export chat — only visible when conversation has messages */}
@@ -494,7 +494,7 @@ export default function HorusAIChat() {
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
         <div className="flex-1 w-full overflow-y-auto px-6 py-8 custom-scrollbar flex flex-col items-center">
-          <div className="flex-1 w-full max-w-[760px] flex flex-col gap-10 pb-4">
+          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col gap-10", isEmpty ? "pb-40 md:pb-32" : "pb-4")}>
             {isEmpty ? (
               // M3: Example prompts empty state — replaces the spinning AI loader
               <div className="flex flex-col items-center justify-center flex-1 gap-8 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
@@ -731,7 +731,7 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center w-full bg-gradient-to-t from-[var(--layer-0)] via-[var(--layer-0)] to-transparent">
+        <div className="sticky bottom-0 flex-shrink-0 px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/45 via-background/15 to-transparent">
           <div className="w-full max-w-[760px] mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -745,24 +745,26 @@ export default function HorusAIChat() {
               </div>
             )}
             
-            <AIChatInput
-              onSend={(message) => {
-                setInputValue("")
-                handleSendMessage(message, attachedFiles.map((af) => af.file));
-              }}
-              onStop={() => {
-                stopGeneration();
-              }}
-              onFileAttach={(file) => {
-                handleFileSelect({
-                  target: { files: [file] },
-                } as unknown as React.ChangeEvent<HTMLInputElement>);
-              }}
-              onChange={setInputValue}
-              isLoading={isProcessing}
-              disabled={isProcessing}
-              hasFiles={attachedFiles.length > 0}
-            />
+            <div className="-mb-6 sm:-mb-4">
+              <AIChatInput
+                onSend={(message) => {
+                  setInputValue("")
+                  handleSendMessage(message, attachedFiles.map((af) => af.file));
+                }}
+                onStop={() => {
+                  stopGeneration();
+                }}
+                onFileAttach={(file) => {
+                  handleFileSelect({
+                    target: { files: [file] },
+                  } as unknown as React.ChangeEvent<HTMLInputElement>);
+                }}
+                onChange={setInputValue}
+                isLoading={isProcessing}
+                disabled={isProcessing}
+                hasFiles={attachedFiles.length > 0}
+              />
+            </div>
             
             {/* Quick Action Buttons */}
             {isEmpty && !inputValue && (
@@ -779,7 +781,7 @@ export default function HorusAIChat() {
               </div>
             )}
             
-            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] pb-4 pt-2 text-center w-full">
+            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] pb-2 pt-1 text-center w-full">
                 Horus can make mistakes. Verify important data.
             </p>
           </div>

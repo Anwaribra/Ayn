@@ -178,7 +178,7 @@ export const AIChatInput = ({
                                 onChange={(e) => setInputValue(e.target.value)}
                                 className={cn(
                                     "flex-1 border-0 outline-0 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent focus:ring-0",
-                                    "text-zinc-900 dark:text-white"
+                                    "text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                                 )}
                                 style={{ position: "relative", zIndex: 1 }}
                                 onFocus={handleActivate}

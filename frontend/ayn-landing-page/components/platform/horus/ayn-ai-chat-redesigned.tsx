@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
+  Brain,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -53,9 +54,15 @@ function getReasoningSteps(text: string, hasFiles: boolean) {
   if (hasFiles) {
     steps.push("Processing evidence files")
   }
-  if (/(gap|compliance|score|remediation)/.test(lowerText)) {
+  if (/(evidence|gap|compliance|score|remediation)/.test(lowerText)) {
     steps.push("Calculating compliance gaps")
   }
+  
+  // Rule: skip thinking block for casual messages
+  if (steps.length === 1 && /^(hi|hello|thanks|thank you|hey)$/.test(lowerText.trim())) {
+    return []
+  }
+  
   return steps
 }
 
@@ -80,7 +87,7 @@ function ReasoningBlock({
           {reasoning.isComplete ? (
             <Check className="w-4 h-4 text-green-500" />
           ) : (
-            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+            <Brain className="w-4 h-4 text-primary animate-pulse" />
           )}
           <span className="text-sm font-semibold text-[var(--text-primary)] tracking-tight">
             {reasoning.isComplete
@@ -241,45 +248,53 @@ export default function HorusAIChat() {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
     setAttachedFiles([])
 
-    // Simulated Reasoning Process
     const calculatedSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
     const initialStartTime = Date.now()
 
-    setReasoning({
-      steps: calculatedSteps.map((s) => ({ text: s, status: "pending" })),
-      startTime: initialStartTime,
-      duration: null,
-      isExpanded: true,
-      isComplete: false,
-      tempUserMessage: text || "Attached files for analysis",
-    })
+    if (calculatedSteps.length > 0) {
+      setReasoning({
+        steps: calculatedSteps.map((s) => ({ text: s, status: "pending" })),
+        startTime: initialStartTime,
+        duration: null,
+        isExpanded: true,
+        isComplete: false,
+        tempUserMessage: text || "Attached files for analysis",
+      })
 
-    // Advance steps
-    for (let i = 0; i < calculatedSteps.length; i++) {
+      // Advance steps smoothly
+      for (let i = 0; i < calculatedSteps.length; i++) {
+        setReasoning((prev) => {
+          if (!prev) return prev
+          const newSteps = [...prev.steps]
+          newSteps[i].status = "active"
+          return { ...prev, steps: newSteps }
+        })
+        
+        await new Promise((r) => setTimeout(r, 600 + (Math.random() * 200)))
+        
+        setReasoning((prev) => {
+          if (!prev) return prev
+          const newSteps = [...prev.steps]
+          newSteps[i].status = "done"
+          return { ...prev, steps: newSteps }
+        })
+      }
+
+      // Complete Reasoning
       setReasoning((prev) => {
         if (!prev) return prev
-        const newSteps = [...prev.steps]
-        if (i > 0) newSteps[i - 1].status = "done"
-        newSteps[i].status = "active"
-        return { ...prev, steps: newSteps }
+        const newSteps = prev.steps.map((s) => ({ ...s, status: "done" as const }))
+        const finalDuration = (Date.now() - prev.startTime) / 1000
+        return {
+          ...prev,
+          steps: newSteps,
+          isComplete: true,
+          isExpanded: false,
+          duration: finalDuration,
+          tempUserMessage: null,
+        }
       })
-      await new Promise((r) => setTimeout(r, 600))
     }
-
-    // Complete Reasoning
-    setReasoning((prev) => {
-      if (!prev) return prev
-      const newSteps = prev.steps.map((s) => ({ ...s, status: "done" as const }))
-      const finalDuration = (Date.now() - prev.startTime) / 1000
-      return {
-        ...prev,
-        steps: newSteps,
-        isComplete: true,
-        isExpanded: false,
-        duration: finalDuration,
-        tempUserMessage: null,
-      }
-    })
 
     await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
     mutateHistory()
@@ -397,17 +412,16 @@ export default function HorusAIChat() {
                   return (
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
-                        <div className="w-full py-4 space-y-2">
-                           {/* Using a subtle background pill or text style for user */}
-                           <div className="text-[14px] text-muted-foreground whitespace-pre-wrap font-medium">
+                        <div className="w-full py-4 flex flex-col items-end">
+                           <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] whitespace-pre-wrap font-medium shadow-sm">
                              {msg.content}
                            </div>
                         </div>
                       ) : (
                         <div className="w-full py-4">
                           <div className="flex items-center gap-2 mb-4">
-                            <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
-                              H
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
+                              <Brain className="w-3.5 h-3.5" />
                             </div>
                             <span className="text-sm font-bold text-foreground">Horus</span>
                           </div>
@@ -432,16 +446,16 @@ export default function HorusAIChat() {
                 {reasoning && !reasoning.isComplete && (
                   <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                     {reasoning.tempUserMessage && (
-                      <div className="w-full py-4 space-y-2">
-                        <div className="text-[14px] text-muted-foreground whitespace-pre-wrap font-medium">
+                      <div className="w-full py-4 flex flex-col items-end">
+                        <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] whitespace-pre-wrap font-medium shadow-sm">
                           {reasoning.tempUserMessage}
                         </div>
                       </div>
                     )}
                     <div className="w-full py-4 mt-2">
                       <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
-                          H
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
+                          <Brain className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-sm font-bold text-foreground">Horus</span>
                       </div>
@@ -467,8 +481,8 @@ export default function HorusAIChat() {
                   messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content ? null : (
                     <div className="w-full py-4 animate-in fade-in">
                       <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
-                          H
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
+                          <Brain className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-sm font-bold text-foreground">Horus</span>
                       </div>

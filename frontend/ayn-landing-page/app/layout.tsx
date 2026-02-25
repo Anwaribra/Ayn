@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display } from "next/font/google"
+import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
@@ -11,6 +11,11 @@ import "./globals.css"
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
+})
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600"],
 })
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -79,7 +84,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#05070A" media="(prefers-color-scheme: dark)" />
       </head>
-      <body className={`font-sans antialiased ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
+      <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}

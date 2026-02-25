@@ -29,8 +29,10 @@
   --glass-border-subtle: rgba(255, 255, 255, 0.3);
   --glass-blur: 16px;
   /* Shadow includes a subtle 1px ring for contrast against light backgrounds */
-  --glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --glass-shadow-hover: 0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --glass-shadow:
+    0 4px 24px -1px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --glass-shadow-hover:
+    0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-glow: 0 0 20px rgba(59, 111, 217, 0.3);
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
 
@@ -60,27 +62,27 @@
   --popover-foreground: oklch(0.12 0.02 240);
 
   /* Brand Colors */
-  --brand: #3B6FD9;
+  --brand: #3b6fd9;
   --brand-foreground: #ffffff;
-  --brand-muted: #5B8FE8;
-  --primary: oklch(0.40 0.18 255);
+  --brand-muted: #5b8fe8;
+  --primary: oklch(0.4 0.18 255);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 240);
   --muted: oklch(0.94 0.03 240);
   --muted-foreground: oklch(0.42 0.02 240);
   --accent: oklch(0.96 0.01 255);
-  --accent-foreground: oklch(0.20 0.05 255);
+  --accent-foreground: oklch(0.2 0.05 255);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.88 0.006 240);
   --input: oklch(0.88 0.006 240);
-  --ring: oklch(0.40 0.18 255);
+  --ring: oklch(0.4 0.18 255);
 
   /* Chart Colors */
-  --chart-1: oklch(0.40 0.18 255);
+  --chart-1: oklch(0.4 0.18 255);
   --chart-2: oklch(0.55 0.15 150);
-  --chart-3: oklch(0.60 0.18 45);
+  --chart-3: oklch(0.6 0.18 45);
   --chart-4: oklch(0.55 0.22 25);
   --chart-5: oklch(0.5 0.1 280);
 
@@ -89,8 +91,8 @@
 
 .dark {
   /* Glassmorphism System - Dark Mode */
-  --glass-bg: rgba(30, 40, 60, 0.40);
-  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-bg: rgba(30, 40, 60, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-border-subtle: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
@@ -98,7 +100,7 @@
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
 
   /* Enterprise Dark Theme - Layer System */
-  --layer-0: oklch(0.10 0.03 245);
+  --layer-0: oklch(0.1 0.03 245);
   --layer-1: oklch(0.13 0.03 245);
   --layer-2: oklch(0.15 0.04 245);
   --layer-3: oklch(0.18 0.04 245);
@@ -122,10 +124,10 @@
   --popover: var(--layer-3);
   --popover-foreground: oklch(0.98 0.01 240);
 
-  --brand: #3B6FD9;
+  --brand: #3b6fd9;
   --brand-foreground: #ffffff;
-  --brand-muted: #5B8FE8;
-  --primary: oklch(0.40 0.18 255);
+  --brand-muted: #5b8fe8;
+  --primary: oklch(0.4 0.18 255);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.18 0.04 245);
   --secondary-foreground: oklch(0.98 0.01 240);
@@ -137,17 +139,18 @@
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.18 0.04 245);
   --input: oklch(0.18 0.04 245);
-  --ring: oklch(0.40 0.18 255);
+  --ring: oklch(0.4 0.18 255);
 
   --chart-1: oklch(0.45 0.18 255);
-  --chart-2: oklch(0.60 0.15 150);
+  --chart-2: oklch(0.6 0.15 150);
   --chart-3: oklch(0.65 0.18 45);
-  --chart-4: oklch(0.60 0.22 25);
+  --chart-4: oklch(0.6 0.22 25);
   --chart-5: oklch(0.55 0.1 280);
 }
 
 @theme inline {
-  --font-sans: "Inter", "Geist", "Segoe UI", sans-serif;
+  --font-sans:
+    var(--font-inter), var(--font-geist), "Inter", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Geist Mono", monospace;
   --font-arabic: "Noto Sans Arabic", "Arial", sans-serif;
 
@@ -197,16 +200,32 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
     background-image:
-      radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+      radial-gradient(
+        circle at 10% 20%,
+        rgba(37, 99, 235, 0.05) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 90% 80%,
+        rgba(14, 165, 233, 0.05) 0%,
+        transparent 40%
+      ),
       linear-gradient(to right bottom, #f8fafc, #ffffff, #e0f2fe);
     background-attachment: fixed;
   }
 
   .dark body {
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(0.40 0.18 255 / 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(0.55 0.15 150 / 0.08) 0%, transparent 50%),
+      radial-gradient(
+        circle at 0% 0%,
+        oklch(0.4 0.18 255 / 0.08) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 100% 100%,
+        oklch(0.55 0.15 150 / 0.08) 0%,
+        transparent 50%
+      ),
       linear-gradient(135deg, #0f0f14, #1a1a2e, #2a1a3e);
   }
 
@@ -342,7 +361,6 @@
 }
 
 @keyframes pulse-subtle {
-
   0%,
   100% {
     opacity: 1;
@@ -387,22 +405,39 @@
 @keyframes loaderCircle {
   0% {
     transform: rotate(90deg);
-    box-shadow: 0 6px 12px 0 #38bdf8 inset, 0 12px 18px 0 #005dff inset, 0 36px 36px 0 #1e40af inset, 0 0 3px 1.2px rgba(56, 189, 248, 0.3), 0 0 6px 1.8px rgba(0, 93, 255, 0.2), 0 0 40px 8px rgba(59, 130, 246, 0.15);
+    box-shadow:
+      0 6px 12px 0 #38bdf8 inset,
+      0 12px 18px 0 #005dff inset,
+      0 36px 36px 0 #1e40af inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2),
+      0 0 40px 8px rgba(59, 130, 246, 0.15);
   }
 
   50% {
     transform: rotate(270deg);
-    box-shadow: 0 6px 12px 0 #60a5fa inset, 0 12px 6px 0 #0284c7 inset, 0 24px 36px 0 #005dff inset, 0 0 3px 1.2px rgba(56, 189, 248, 0.3), 0 0 6px 1.8px rgba(0, 93, 255, 0.2), 0 0 40px 8px rgba(59, 130, 246, 0.15);
+    box-shadow:
+      0 6px 12px 0 #60a5fa inset,
+      0 12px 6px 0 #0284c7 inset,
+      0 24px 36px 0 #005dff inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2),
+      0 0 40px 8px rgba(59, 130, 246, 0.15);
   }
 
   100% {
     transform: rotate(450deg);
-    box-shadow: 0 6px 12px 0 #4dc8fd inset, 0 12px 18px 0 #005dff inset, 0 36px 36px 0 #1e40af inset, 0 0 3px 1.2px rgba(56, 189, 248, 0.3), 0 0 6px 1.8px rgba(0, 93, 255, 0.2), 0 0 40px 8px rgba(59, 130, 246, 0.15);
+    box-shadow:
+      0 6px 12px 0 #4dc8fd inset,
+      0 12px 18px 0 #005dff inset,
+      0 36px 36px 0 #1e40af inset,
+      0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+      0 0 6px 1.8px rgba(0, 93, 255, 0.2),
+      0 0 40px 8px rgba(59, 130, 246, 0.15);
   }
 }
 
 @keyframes loaderLetter {
-
   0%,
   100% {
     opacity: 0.5;

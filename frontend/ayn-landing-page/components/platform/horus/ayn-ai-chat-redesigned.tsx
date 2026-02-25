@@ -23,6 +23,7 @@ import {
   Check,
   Brain,
   ArrowRight,
+  ArrowUpRight,
   ThumbsUp,
   ThumbsDown,
   ExternalLink,
@@ -513,7 +514,7 @@ export default function HorusAIChat() {
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[640px]">
+                  <div className="w-full max-w-[720px] flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                     {[
                       { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
                       { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
@@ -526,12 +527,10 @@ export default function HorusAIChat() {
                           setInputValue(item.prompt)
                           handleSendMessage(item.prompt)
                         }}
-                        className="w-full text-left px-4 py-2.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        <span className="flex items-center justify-between gap-2 text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">
-                          <span className="truncate">{item.label}</span>
-                          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-                        </span>
+                        <span>{item.label}</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/70" />
                       </button>
                     ))}
                   </div>

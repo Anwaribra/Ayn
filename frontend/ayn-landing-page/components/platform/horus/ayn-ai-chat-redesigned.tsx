@@ -58,11 +58,6 @@ function getReasoningSteps(text: string, hasFiles: boolean) {
     steps.push("Calculating compliance gaps")
   }
   
-  // Rule: skip thinking block for casual messages
-  if (steps.length === 1 && /^(hi|hello|thanks|thank you|hey)$/.test(lowerText.trim())) {
-    return []
-  }
-  
   return steps
 }
 
@@ -420,7 +415,7 @@ export default function HorusAIChat() {
                       ) : (
                         <div className="w-full py-4">
                           <div className="flex items-center gap-2 mb-4">
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-primary/10 text-primary flex-shrink-0">
                               <Brain className="w-3.5 h-3.5" />
                             </div>
                             <span className="text-sm font-bold text-foreground">Horus</span>
@@ -454,7 +449,7 @@ export default function HorusAIChat() {
                     )}
                     <div className="w-full py-4 mt-2">
                       <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-primary/10 text-primary flex-shrink-0">
                           <Brain className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-sm font-bold text-foreground">Horus</span>
@@ -465,7 +460,7 @@ export default function HorusAIChat() {
                 )}
 
                 {/* Typing indicator */}
-                {status !== "idle" && (!reasoning || reasoning.isComplete) && (status === "searching" ? (
+                {status !== "idle" && (!reasoning || reasoning.isComplete) && status === "searching" && (
                   <div className="w-full py-4 animate-in fade-in">
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-6 h-6 rounded flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-bold flex-shrink-0">
@@ -477,21 +472,7 @@ export default function HorusAIChat() {
                       <Search className="w-4 h-4" /> Reading knowledge base…
                     </div>
                   </div>
-                ) : (
-                  messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content ? null : (
-                    <div className="w-full py-4 animate-in fade-in">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600/20 text-blue-500 flex-shrink-0">
-                          <Brain className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-sm font-bold text-foreground">Horus</span>
-                      </div>
-                      <div className="text-muted-foreground text-[15px] leading-relaxed">
-                        <ShiningText text="Thinking..." />
-                      </div>
-                    </div>
-                  )
-                ))}
+                )}
               </>
             )}
             <div ref={messagesEndRef} className="h-4" />

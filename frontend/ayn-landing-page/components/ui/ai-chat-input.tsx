@@ -177,7 +177,7 @@ export const AIChatInput = ({
                                 disabled={disabled}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 className={cn(
-                                    "flex-1 border-0 outline-0 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent focus:ring-0",
+                                    "flex-1 bg-transparent w-full font-medium text-[16px] py-4 px-2 placeholder-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
                                     "text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                                 )}
                                 style={{ position: "relative", zIndex: 1 }}

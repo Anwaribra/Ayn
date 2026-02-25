@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Request, BackgroundTasks
 from typing import List
 from app.auth.dependencies import require_roles
-from app.ai.models import ChatRequest, AIResponse
+from app.ai.models import ChatRequest, AIResponse, DraftRequest, MockAuditStartRequest, MockAuditMessageRequest
 from app.ai.service import get_gemini_client
+from app.ai.remediation_service import draft_remediation_document
+from app.ai.mock_audit_service import start_mock_audit, submit_mock_audit_message
 from app.core.rate_limit import limiter
 import base64
 
@@ -11,7 +13,6 @@ from app.core.db import get_db, Prisma
 
 router = APIRouter()
 
-# ALLOWED_AI_ROLES = ["ADMIN", "TEACHER", "AUDITOR"]  <-- Removed restriction for demo
 
 
 @router.post("/chat", response_model=AIResponse)
@@ -180,3 +181,67 @@ async def chat_with_files(
             error=f"execution_error: {str(e)}",
             model="gemini-2.0-flash-multimodal-fallback"
         )
+
+
+@router.post("/draft-document")
+@limiter.limit("5/minute")
+async def create_document_draft(
+    request: Request,
+    body: DraftRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Generate an AI document draft to mediate a specific Gap."""
+    # Enforce role checking optionally here
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    
+    try:
+        draft = await draft_remediation_document(
+            gap_id=body.gap_id,
+            institution_id=body.institution_id,
+            user_id=user_id,
+            custom_instructions=body.custom_instructions
+        )
+        return {"status": "success", "draft_id": draft.id, "content": draft.content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/mock-audit/start")
+@limiter.limit("3/minute")
+async def api_start_mock_audit(
+    request: Request,
+    body: MockAuditStartRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Start a new Mock Audit session with the Horus Virtual Auditor."""
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    
+    try:
+        result = await start_mock_audit(
+            institution_id=body.institution_id,
+            user_id=user_id,
+            standard_id=body.standard_id
+        )
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/mock-audit/message")
+@limiter.limit("10/minute")
+async def api_mock_audit_message(
+    request: Request,
+    body: MockAuditMessageRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Send a message to the Virtual Auditor in an ongoing session."""
+    try:
+        result = await submit_mock_audit_message(
+            session_id=body.session_id,
+            content=body.content
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -407,3 +407,64 @@ model VectorDocument {
   @@index([standardId])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// HORUS VIRTUAL AUDITOR & AUTO-REMEDIATION MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+model MockAuditSession {
+  id            String   @id @default(uuid())
+  institutionId String
+  userId        String
+  standardId    String?
+  status        String   @default("active") // active, completed
+  score         Float?   // Optional evaluation score at the end
+  summary       String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  standard      Standard?   @relation(fields: [standardId], references: [id], onDelete: SetNull)
+  messages      MockAuditMessage[]
+
+  @@index([institutionId])
+  @@index([userId])
+  @@index([standardId])
+}
+
+model MockAuditMessage {
+  id          String   @id @default(uuid())
+  sessionId   String
+  role        String   // user (staff), assistant (Horus AI), system
+  content     String   @db.Text
+  confidence  Float?   // AI's confidence in the user's answer
+  createdAt   DateTime @default(now())
+
+  session     MockAuditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model DocumentDraft {
+  id            String   @id @default(uuid())
+  institutionId String
+  userId        String
+  gapId         String?  // The PlatformGap that triggered this draft
+  title         String
+  content       String   @db.Text // The markdown or HTML drafted by AI
+  status        String   @default("draft") // draft, reviewed, finalized
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  
+  // NOTE: PlatformGap goes not have a Prisma relation directly to avoid 
+  // complex circular dependencies with the transitional PlatformState models,
+  // so gapId is just a String reference.
+
+  @@index([institutionId])
+  @@index([userId])
+  @@index([gapId])
+}
+

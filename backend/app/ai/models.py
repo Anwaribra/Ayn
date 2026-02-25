@@ -115,4 +115,19 @@ class AIResponse(BaseModel):
             }
         }
 
+class DraftRequest(BaseModel):
+    """Request model for auto-drafting a document based on a gap."""
+    gap_id: str = Field(..., description="ID of the PlatformGap to remediate")
+    institution_id: str = Field(..., description="ID of the institution")
+    custom_instructions: Optional[str] = Field(None, description="Optional extra instructions for the AI")
+
+class MockAuditStartRequest(BaseModel):
+    """Request model to initialize a mock audit session."""
+    institution_id: str = Field(..., description="ID of the institution being audited")
+    standard_id: Optional[str] = Field(None, description="Optional specific standard to audit against")
+
+class MockAuditMessageRequest(BaseModel):
+    """Request model to send a message in a mock audit."""
+    session_id: str = Field(..., description="ID of the active MockAuditSession")
+    content: str = Field(..., description="The user's response to the auditor")
 

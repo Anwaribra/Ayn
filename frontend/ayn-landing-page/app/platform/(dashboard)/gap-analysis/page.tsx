@@ -17,12 +17,14 @@ import {
   Target,
   Radio,
   Loader2,
+  Sparkles, // <-- AI Icon
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { GlassCard } from "@/components/ui/glass-card"
+import { DocumentEditor } from "@/components/platform/document-editor" // <-- Import Dialog
 import { cn } from "@/lib/utils"
 
 export default function GapAnalysisPage() {
@@ -47,6 +49,12 @@ function GapAnalysisContent() {
   // Remediation State
   const [isRemediating, setIsRemediating] = useState(false)
   const [targetGap, setTargetGap] = useState<{ gap: GapItem, standardId: string } | null>(null)
+
+  // Auto-Draft Remediation State
+  const [isDrafting, setIsDrafting] = useState(false)
+  const [draftContent, setDraftContent] = useState("")
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
 
   // Auto-open report when navigating from notification (e.g. ?report=<id>)
   useEffect(() => {
@@ -187,6 +195,68 @@ function GapAnalysisContent() {
     } catch (error) {
       console.error(error)
       toast.error("Failed to link evidence")
+    }
+  }
+
+  const handleDraftRemediationClick = async (gapItem: GapItem) => {
+    if (!activeReport || !user?.institutionId) {
+      toast.error("Institution context missing")
+      return
+    }
+    
+    // In current implementation gap_id is not saved per physical Item, 
+    // so we use a mock one based on standardId for demo purposes.
+    const mockGapId = `gap-${Date.now()}` 
+    
+    setTargetGap({ gap: gapItem, standardId: activeReport.standardId })
+    setIsDrafting(true)
+
+    try {
+      toast.info("Horus AI is drafting a document...", { duration: 4000 })
+      const res = await api.draftDocument(mockGapId, user.institutionId, `Please draft a policy/evidence regarding: ${gapItem.recommendation}`)
+      setDraftContent(res.content)
+      setIsEditorOpen(true)
+    } catch (e: any) {
+      toast.error(e.message || "Failed to generate AI Draft")
+    } finally {
+      setIsDrafting(false)
+    }
+  }
+
+  const handleSaveDraftAsEvidence = async (finalContent: string) => {
+    if (!targetGap || !user) return
+    setIsSavingDraft(true)
+    try {
+      // Create a text file from the drafted content
+      const file = new File([finalContent], `Auto-Draft-${targetGap.gap.criterionTitle.slice(0, 15)}.txt`, {
+        type: "text/plain",
+      })
+
+      // Upload file directly using the standard evidence endpoint
+      const uploadRes = await api.uploadEvidence(file)
+      
+      const gapId = crypto.randomUUID()
+      // 1. Create the PlatformGap 
+      await api.recordGapDefined(
+        gapId,
+        targetGap.standardId,
+        targetGap.gap.criterionTitle,
+        targetGap.gap.gap,
+        targetGap.gap.priority.toLowerCase()
+      )
+
+      // 2. Link Evidence to the newly created PlatformGap
+      // (Using uploadRes.id assuming the endpoint returns the DB evidence ID)
+      await api.recordGapAddressed(gapId, uploadRes.id || uploadRes.evidence_id)
+
+      toast.success("Draft saved and linked as Evidence!")
+      setIsEditorOpen(false)
+      setTargetGap(null)
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e.message || "Failed to save draft as Evidence")
+    } finally {
+      setIsSavingDraft(false)
     }
   }
 
@@ -376,13 +446,27 @@ function GapAnalysisContent() {
                       <div className="mono text-xl font-bold text-muted-foreground">{gap.riskScore}%</div>
                     </div>
                     <div className="h-10 w-px bg-border hidden md:block" />
-                    <button
-                      onClick={() => handleRemediateClick(gap.original)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      Remediate
-                    </button>
+                    <div className="flex flex-col gap-2">
+                       <button
+                        onClick={() => handleDraftRemediationClick(gap.original)}
+                        disabled={isDrafting}
+                        className="flex items-center justify-center gap-2 px-6 py-2 bg-secondary text-secondary-foreground rounded-xl font-bold text-xs border hover:bg-muted transition-all disabled:opacity-50"
+                      >
+                        {isDrafting && targetGap?.gap.gap === gap.original.gap ? (
+                           <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        )}
+                        Auto-Draft
+                      </button>
+                      <button
+                        onClick={() => handleRemediateClick(gap.original)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        Link Evidence
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -492,6 +576,15 @@ function GapAnalysisContent() {
         open={isRemediating}
         onOpenChange={setIsRemediating}
         onSelect={handleEvidenceSelected}
+      />
+
+      {/* AI Draft Editor Modal */}
+      <DocumentEditor
+        open={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        draftContent={draftContent}
+        onSave={handleSaveDraftAsEvidence}
+        isSaving={isSavingDraft}
       />
     </div>
   )

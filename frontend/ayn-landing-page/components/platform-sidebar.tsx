@@ -12,6 +12,7 @@ import {
   Settings,
   UserCircle2,
   PanelLeft,
+  ShieldCheck, // <-- Imported icon for Virtual Auditor
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 
@@ -59,6 +60,7 @@ interface SidebarProps {
 const menuItems = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
   { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
+  { id: "mock-audit", icon: ShieldCheck, label: "Virtual Auditor", href: "/platform/horus-ai/mock-audit" },
   { id: "evidence", icon: Archive, label: "Evidence Library", href: "/platform/evidence" },
   { id: "standards", icon: BookOpen, label: "Standards", href: "/platform/standards" },
   { id: "gap-analysis", icon: AlertTriangle, label: "Gap Analysis", href: "/platform/gap-analysis" },

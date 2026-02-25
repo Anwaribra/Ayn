@@ -687,6 +687,31 @@ class ApiClient {
     })
   }
 
+  async draftDocument(gapId: string, institutionId: string, customInstructions?: string) {
+    return this.request<{ status: string; draft_id: string; content: string }>("/ai/draft-document", {
+      method: "POST",
+      body: JSON.stringify({
+        gap_id: gapId,
+        institution_id: institutionId,
+        custom_instructions: customInstructions,
+      }),
+    })
+  }
+
+  async startMockAudit(institutionId: string, standardId?: string) {
+    return this.request<{ session_id: string; initial_message: string }>("/ai/mock-audit/start", {
+      method: "POST",
+      body: JSON.stringify({ institution_id: institutionId, standard_id: standardId }),
+    })
+  }
+
+  async sendMockAuditMessage(sessionId: string, content: string) {
+    return this.request<{ reply: string }>("/ai/mock-audit/message", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, content }),
+    })
+  }
+
   // Gap Analysis
   async generateGapAnalysis(standardId: string, assessmentId?: string) {
     return this.request<{ jobId: string; status: string }>("/gap-analysis/generate", {

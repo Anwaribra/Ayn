@@ -18,6 +18,9 @@ import {
   PlusCircle,
   StopCircle,
   Search,
+  ChevronDown,
+  ChevronRight,
+  Check,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -32,7 +35,101 @@ import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 
+type ReasoningState = {
+  steps: { text: string; status: "pending" | "active" | "done" }[]
+  startTime: number
+  duration: number | null
+  isExpanded: boolean
+  isComplete: boolean
+  tempUserMessage: string | null
+}
 
+function getReasoningSteps(text: string, hasFiles: boolean) {
+  const steps = ["Analyzing your request"]
+  const lowerText = text.toLowerCase()
+  if (/(iso|ncaaa|criteria|standard|audit)/.test(lowerText)) {
+    steps.push("Searching standards library")
+  }
+  if (hasFiles) {
+    steps.push("Processing evidence files")
+  }
+  if (/(gap|compliance|score|remediation)/.test(lowerText)) {
+    steps.push("Calculating compliance gaps")
+  }
+  return steps
+}
+
+function ReasoningBlock({
+  reasoning,
+  setReasoning,
+}: {
+  reasoning: ReasoningState
+  setReasoning: React.Dispatch<React.SetStateAction<ReasoningState | null>>
+}) {
+  if (!reasoning) return null
+
+  return (
+    <div className="w-full max-w-3xl bg-[var(--surface)]/50 border border-[var(--border-subtle)] rounded-xl overflow-hidden shadow-sm transition-all duration-300 mb-6">
+      <div
+        className="flex items-center justify-between p-3 cursor-pointer hover:bg-[var(--surface-modal)] transition-colors"
+        onClick={() =>
+          setReasoning((prev) => (prev ? { ...prev, isExpanded: !prev.isExpanded } : prev))
+        }
+      >
+        <div className="flex items-center gap-3">
+          {reasoning.isComplete ? (
+            <Check className="w-4 h-4 text-green-500" />
+          ) : (
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          )}
+          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-tight">
+            {reasoning.isComplete
+              ? `Analyzed in ${reasoning.duration?.toFixed(1)} seconds`
+              : "Thinking Process"}
+          </span>
+        </div>
+        {reasoning.isExpanded ? (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+
+      {reasoning.isExpanded && (
+        <div className="px-5 pb-5 pt-2 space-y-4">
+          {reasoning.steps.map((step, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-4 relative before:absolute before:left-[7px] before:top-6 before:bottom-[-16px] before:w-px before:bg-[var(--border-subtle)] last:before:hidden"
+            >
+              <div className="relative z-10 w-4 h-4 flex items-center justify-center bg-[var(--surface)]">
+                {step.status === "done" ? (
+                  <Check className="w-4 h-4 text-muted-foreground" />
+                ) : step.status === "active" ? (
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  step.status === "active"
+                    ? "text-[var(--text-primary)] animate-pulse"
+                    : step.status === "done"
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)]"
+                )}
+              >
+                {step.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
@@ -74,6 +171,8 @@ export default function HorusAIChat() {
   } = useHorus()
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
+  const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
+  
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -140,8 +239,49 @@ export default function HorusAIChat() {
 
   const handleSendMessage = async (text: string, files?: File[]) => {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
-    await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
     setAttachedFiles([])
+
+    // Simulated Reasoning Process
+    const calculatedSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
+    const initialStartTime = Date.now()
+
+    setReasoning({
+      steps: calculatedSteps.map((s) => ({ text: s, status: "pending" })),
+      startTime: initialStartTime,
+      duration: null,
+      isExpanded: true,
+      isComplete: false,
+      tempUserMessage: text || "Attached files for analysis",
+    })
+
+    // Advance steps
+    for (let i = 0; i < calculatedSteps.length; i++) {
+      setReasoning((prev) => {
+        if (!prev) return prev
+        const newSteps = [...prev.steps]
+        if (i > 0) newSteps[i - 1].status = "done"
+        newSteps[i].status = "active"
+        return { ...prev, steps: newSteps }
+      })
+      await new Promise((r) => setTimeout(r, 600))
+    }
+
+    // Complete Reasoning
+    setReasoning((prev) => {
+      if (!prev) return prev
+      const newSteps = prev.steps.map((s) => ({ ...s, status: "done" as const }))
+      const finalDuration = (Date.now() - prev.startTime) / 1000
+      return {
+        ...prev,
+        steps: newSteps,
+        isComplete: true,
+        isExpanded: false,
+        duration: finalDuration,
+        tempUserMessage: null,
+      }
+    })
+
+    await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
     mutateHistory()
   }
 
@@ -167,8 +307,8 @@ export default function HorusAIChat() {
     }
   }
 
-  const isEmpty = messages.length === 0
-  const isProcessing = status !== "idle"
+  const isEmpty = messages.length === 0 && !reasoning
+  const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
 
   return (
     <div className="flex flex-col h-full bg-transparent relative overflow-hidden">
@@ -231,8 +371,8 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
-        <div className="flex-1 w-full max-w-[900px] overflow-y-auto px-6 py-5 custom-scrollbar flex flex-col">
-          <div className="flex-1 flex flex-col space-y-6 pb-4">
+        <div className="flex-1 w-full overflow-y-auto px-6 py-8 custom-scrollbar flex flex-col items-center">
+          <div className="flex-1 w-full max-w-[760px] flex flex-col gap-10 pb-4">
             {isEmpty ? (
               <div className="flex flex-col items-center justify-center flex-1 gap-0 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
                 <AiLoader size={220} text="Horus AI" />
@@ -243,7 +383,7 @@ export default function HorusAIChat() {
                   if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false;
                   if (msg.role === "assistant" && !msg.content && status === "generating") return false;
                   return true;
-                }).map((msg) => {
+                }).map((msg, i) => {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
@@ -255,53 +395,86 @@ export default function HorusAIChat() {
                   }
 
                   return (
-                    <div key={msg.id} className={cn(
-                      "flex items-start gap-3 px-4 py-2 animate-in fade-in slide-in-from-bottom-2 duration-200",
-                      msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                    )}>
+                    <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary text-primary-foreground">
-                          <User className="w-4 h-4" />
+                        <div className="w-full py-4 space-y-2">
+                           {/* Using a subtle background pill or text style for user */}
+                           <div className="text-[14px] text-muted-foreground whitespace-pre-wrap font-medium">
+                             {msg.content}
+                           </div>
                         </div>
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          H
-                        </div>
-                      )}
-                      <div className={cn(
-                        msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[85%] text-sm"
-                          : "bg-white/10 rounded-2xl px-4 py-3 max-w-[90%]"
-                      )}>
-                        {msg.role === "user" ? (
-                          <HorusMarkdown content={msg.content} onAction={handleAction} />
-                        ) : (
-                          <div className="text-white text-sm leading-relaxed horus-markdown-wrapper">
+                        <div className="w-full py-4">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
+                              H
+                            </div>
+                            <span className="text-sm font-bold text-foreground">Horus</span>
+                          </div>
+
+                          {/* Inject Reasoning Block ONLY for the latest assistant message */}
+                          {msg.role === "assistant" &&
+                            msg.id === messages.filter((m) => m.role === "assistant").pop()?.id &&
+                            reasoning?.isComplete && (
+                              <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
+                            )}
+
+                          <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose prose-invert max-w-none">
                             <HorusMarkdown content={msg.content} onAction={handleAction} />
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
 
-                {/* Typing indicator */}
-                {status !== "idle" && (status === "searching" ? (
-                  <div className="flex items-start gap-3 px-4 py-2">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                {/* Incomplete Reasoning Phase (before real message is appended) */}
+                {reasoning && !reasoning.isComplete && (
+                  <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    {reasoning.tempUserMessage && (
+                      <div className="w-full py-4 space-y-2">
+                        <div className="text-[14px] text-muted-foreground whitespace-pre-wrap font-medium">
+                          {reasoning.tempUserMessage}
+                        </div>
+                      </div>
+                    )}
+                    <div className="w-full py-4 mt-2">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
+                          H
+                        </div>
+                        <span className="text-sm font-bold text-foreground">Horus</span>
+                      </div>
+                      <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
                     </div>
-                    <div className="rounded-2xl rounded-bl-md px-4 py-3 bg-muted/80 border border-[var(--border-subtle)] flex items-center gap-2 text-sm text-muted-foreground">
-                      <Search className="w-3.5 h-3.5" /> Reading knowledge base…
+                  </div>
+                )}
+
+                {/* Typing indicator */}
+                {status !== "idle" && (!reasoning || reasoning.isComplete) && (status === "searching" ? (
+                  <div className="w-full py-4 animate-in fade-in">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-6 h-6 rounded flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-bold flex-shrink-0">
+                         <Loader2 className="w-3 h-3 animate-spin" />
+                      </div>
+                      <span className="text-sm font-bold text-muted-foreground">System</span>
+                    </div>
+                    <div className="text-muted-foreground text-[14px] flex items-center gap-2 font-medium">
+                      <Search className="w-4 h-4" /> Reading knowledge base…
                     </div>
                   </div>
                 ) : (
                   messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content ? null : (
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        H
+                    <div className="w-full py-4 animate-in fade-in">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-6 h-6 rounded flex items-center justify-center bg-blue-600/20 text-blue-500 text-[10px] font-bold flex-shrink-0">
+                          H
+                        </div>
+                        <span className="text-sm font-bold text-foreground">Horus</span>
                       </div>
-                      <ShiningText text="Horus is thinking..." />
+                      <div className="text-muted-foreground text-[15px] leading-relaxed">
+                        <ShiningText text="Thinking..." />
+                      </div>
                     </div>
                   )
                 ))}
@@ -312,8 +485,8 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center w-full">
-          <div className="w-full max-w-[900px] mx-auto space-y-2">
+        <div className="flex-shrink-0 px-4 pb-6 pt-2 z-20 flex flex-col items-center w-full bg-gradient-to-t from-[var(--layer-0)] via-[var(--layer-0)] to-transparent">
+          <div className="w-full max-w-[760px] mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map((file) => (

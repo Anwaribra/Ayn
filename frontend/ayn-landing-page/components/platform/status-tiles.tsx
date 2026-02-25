@@ -33,7 +33,7 @@ export function StatusTiles({ stats = defaultTiles }: StatusTilesProps) {
                         variant={2}
                         hoverEffect
                         shine
-                        className="flex flex-col items-center justify-center p-4 text-center gap-3 aspect-square lg:aspect-auto lg:h-32"
+                        className="flex flex-col items-center justify-center p-4 text-center gap-3 aspect-auto min-h-[140px] sm:aspect-square lg:aspect-auto lg:h-32"
                     >
                         <div className={cn("p-2.5 rounded-xl border", statusClass)}>
                             <tile.icon className="w-5 h-5" />

@@ -459,7 +459,7 @@ export function CommandPalette() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-1/2 top-[15%] z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2"
+            className="fixed left-1/2 top-4 md:top-[15%] z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2"
           >
             <div className="overflow-hidden rounded-2xl border border-glass-border glass-layer-3 shadow-2xl">
               {/* Search Header */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -60,6 +60,23 @@ function EvidenceContent() {
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false)
   const [selectedStandardId, setSelectedStandardId] = useState<string>("all")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [evidenceToDelete, setEvidenceToDelete] = useState<Evidence | null>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isAnalyzeModalOpen && !isAnalyzing) {
+          setIsAnalyzeModalOpen(false)
+        } else if (evidenceToDelete) {
+          setEvidenceToDelete(null)
+        } else if (selectedEvidence && !isAnalyzeModalOpen) {
+          setSelectedEvidence(null)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isAnalyzeModalOpen, isAnalyzing, selectedEvidence, evidenceToDelete])
 
   const handleAnalyze = async () => {
     if (!selectedEvidence) return
@@ -82,15 +99,25 @@ function EvidenceContent() {
   }
 
   const handleDelete = async (evidence: Evidence) => {
+    setEvidenceToDelete(evidence)
+  }
+
+  const confirmDelete = async () => {
+    if (!evidenceToDelete) return
     try {
-      await api.deleteEvidence(evidence.id)
+      await api.deleteEvidence(evidenceToDelete.id)
       toast.success("Evidence deleted")
-      setSelectedEvidence(null)
+      if (selectedEvidence?.id === evidenceToDelete.id) {
+        setSelectedEvidence(null)
+      }
       mutate()
     } catch (error) {
       toast.error("Failed to delete evidence", { description: "Please try again." })
+    } finally {
+      setEvidenceToDelete(null)
     }
   }
+
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return
@@ -258,15 +285,21 @@ function EvidenceContent() {
           <div
             className="absolute inset-0 bg-[#000000]/60 backdrop-blur-md transition-opacity"
             onClick={() => setSelectedEvidence(null)}
+            aria-hidden="true"
           />
-          <div className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-border">
+          <div 
+            className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-border"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="preview-modal-title"
+          >
             <div className="p-6 border-b border-border flex items-start justify-between bg-muted/30">
               <div className="flex gap-4">
                 <div className="w-12 h-12 rounded-2xl status-info border flex items-center justify-center shrink-0">
-                  <FileText className="w-6 h-6" />
+                  <FileText className="w-6 h-6" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground leading-tight mb-1">{selectedEvidence.title}</h3>
+                  <h3 id="preview-modal-title" className="text-lg font-bold text-foreground leading-tight mb-1">{selectedEvidence.title}</h3>
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
@@ -286,6 +319,7 @@ function EvidenceContent() {
               <button
                 onClick={() => setSelectedEvidence(null)}
                 className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close preview"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -372,9 +406,15 @@ function EvidenceContent() {
           <div
             className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
             onClick={() => !isAnalyzing && setIsAnalyzeModalOpen(false)}
+            aria-hidden="true"
           />
-          <div className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50">
-            <h3 className="text-xl font-black text-foreground mb-1">Analyze Evidence</h3>
+          <div 
+            className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analyze-modal-title"
+          >
+            <h3 id="analyze-modal-title" className="text-xl font-black text-foreground mb-1">Analyze Evidence</h3>
             <p className="text-sm font-medium text-muted-foreground mb-6">Select framework to map against.</p>
 
             <div className="space-y-3 mb-8">
@@ -428,6 +468,42 @@ function EvidenceContent() {
                 ) : (
                   <>Run Analysis <Sparkles className="w-4 h-4 ml-1" /></>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {evidenceToDelete && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            onClick={() => setEvidenceToDelete(null)}
+            aria-hidden="true"
+          />
+          <div 
+            className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+          >
+            <h3 id="delete-modal-title" className="text-xl font-black text-foreground mb-1">Delete Evidence</h3>
+            <p className="text-sm font-medium text-muted-foreground mb-6">Are you sure you want to delete &quot;{evidenceToDelete.title}&quot;? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setEvidenceToDelete(null)}
+                className="flex-1 px-4 py-3 text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground rounded-2xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="flex-[2] px-4 py-3 text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-destructive/20"
+              >
+                <Trash2 className="w-4 h-4 ml-1" /> Confirm Delete
               </button>
             </div>
           </div>

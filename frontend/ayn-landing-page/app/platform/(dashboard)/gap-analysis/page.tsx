@@ -20,6 +20,8 @@ import {
   Sparkles,
   FileText,
   X,
+  Lightbulb,
+  Check,
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
@@ -356,6 +358,28 @@ function GapAnalysisContent() {
             >
               <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding / Contextual Help */}
+      {(!reports || reports.length === 0) && !generating && !pendingJobId && !activeReport && (
+        <div className="px-4 mb-8">
+          <div className="p-6 rounded-3xl glass-layer-2 border-[var(--border-subtle)] bg-primary/5 flex flex-col md:flex-row gap-6 items-start">
+            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
+              <Lightbulb className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground mb-2">What is a Gap Analysis?</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-3xl">
+                A gap analysis compares your uploaded institutional evidence against selected compliance frameworks (like ISO 9001 or NCAAA). Horus AI scans your documentation to identify vulnerabilities, missing policies, and areas of non-compliance, creating a prioritized remediation roadmap.
+              </p>
+              <div className="flex flex-wrap gap-4 text-xs font-bold">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 text-[var(--status-success)]"><Check className="w-3.5 h-3.5" /> 1. Configure Standards</span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 text-[var(--status-success)]"><Check className="w-3.5 h-3.5" /> 2. Upload Evidence</span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 text-primary"><Sparkles className="w-3.5 h-3.5" /> 3. Run Analysis</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

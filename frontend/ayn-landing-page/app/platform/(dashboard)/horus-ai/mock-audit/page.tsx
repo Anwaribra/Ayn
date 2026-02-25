@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 export default function MockAuditPage() {
   return (
     <ProtectedRoute>
-      <div className="h-[calc(100vh-56px)] flex flex-col p-4 max-w-5xl mx-auto w-full">
+      <div className="h-[calc(100dvh-120px)] lg:h-[calc(100vh-80px)] flex flex-col p-4 max-w-5xl mx-auto w-full">
         <MockAuditChat />
       </div>
     </ProtectedRoute>
@@ -162,7 +162,7 @@ function MockAuditChat() {
                     </div>
                     <span className="text-sm font-bold text-foreground">Horus Auditor</span>
                   </div>
-                  <div className="text-foreground text-[15px] leading-relaxed w-full prose prose-invert max-w-none">
+                  <div className="text-foreground text-[15px] leading-relaxed w-full prose dark:prose-invert max-w-none">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>

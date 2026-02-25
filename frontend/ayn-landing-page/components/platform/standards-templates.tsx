@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -60,6 +60,16 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   const { data: rawStandards, isLoading } = useSWR(isOpen ? "standards" : null, () => api.getStandards())
 
   const templates: Template[] = (rawStandards || []).map(std => ({
@@ -102,6 +112,9 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
             transition={{ duration: 0.2 }}
             className="w-full max-w-5xl max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="standards-library-title"
           >
             <div className="glass-panel rounded-3xl border-border overflow-hidden">
               {/* Header */}
@@ -109,10 +122,10 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                 <div>
                   <div className="flex items-center gap-3 mb-1">
                     <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-primary-foreground" />
+                      <BookOpen className="w-5 h-5 text-primary-foreground" aria-hidden="true" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-foreground">Standards Library</h2>
+                      <h2 id="standards-library-title" className="text-xl font-bold text-foreground">Standards Library</h2>
                       <p className="text-xs text-muted-foreground">Browse pre-built compliance frameworks</p>
                     </div>
                   </div>
@@ -120,6 +133,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                 <button
                   onClick={onClose}
                   className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-xl hover:bg-muted"
+                  aria-label="Close standards library"
                 >
                   <X className="w-5 h-5" />
                 </button>

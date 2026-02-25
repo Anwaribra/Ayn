@@ -28,9 +28,13 @@ export function CircularGauge({
     const strokeDashoffset = circumference - (percentage / 100) * circumference
 
     return (
-        <div className={cn("relative flex items-center justify-center", className)}>
+        <div 
+            className={cn("relative flex items-center justify-center", className)}
+            role="img"
+            aria-label={`${label}: ${value}${sublabel ? ' ' + sublabel : ''}`}
+        >
             {/* SVG Container */}
-            <div className="relative w-32 h-32">
+            <div className="relative w-32 h-32" aria-hidden="true">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
                     {/* Background Ring */}
                     <circle

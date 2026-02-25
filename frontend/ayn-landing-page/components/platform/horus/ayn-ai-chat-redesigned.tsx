@@ -526,10 +526,12 @@ export default function HorusAIChat() {
                           setInputValue(item.prompt)
                           handleSendMessage(item.prompt)
                         }}
-                        className="text-left px-4 py-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
+                        className="w-full text-left px-4 py-2.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
                       >
-                        <span className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.prompt}</p>
+                        <span className="flex items-center justify-between gap-2 text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">
+                          <span className="truncate">{item.label}</span>
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                        </span>
                       </button>
                     ))}
                   </div>

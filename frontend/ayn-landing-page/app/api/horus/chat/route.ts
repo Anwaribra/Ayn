@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
     const model = ai.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-pro",
       systemInstruction: "You are Horus (حورس), the central intelligence of the Ayn (عين) Platform. You assist with educational quality assurance, ISO 21001, NAQAAE, and NCAAA. Keep answers professional, concise, and structured with Markdown."
     });
     
@@ -15,14 +15,18 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), { status: 400 });
     }
 
+    // Format history
     const history = messages.slice(0, -1).map(msg => ({
       role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }],
+      parts: Array.isArray(msg.content) ? msg.content : [{ text: msg.content }],
     }));
     
+    // Format latest message
     const latestMessage = messages[messages.length - 1].content;
+    const messageParts = Array.isArray(latestMessage) ? latestMessage : [{ text: latestMessage }];
+
     const chat = model.startChat({ history });
-    const result = await chat.sendMessageStream(latestMessage);
+    const result = await chat.sendMessageStream(messageParts);
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({

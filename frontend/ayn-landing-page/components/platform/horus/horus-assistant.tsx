@@ -5,6 +5,9 @@ import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { Thread, makeMarkdownText } from "@assistant-ui/react-ui";
 
+import "@assistant-ui/react-ui/styles/index.css";
+import "@assistant-ui/react-ui/styles/markdown.css";
+
 const MarkdownText = makeMarkdownText();
 
 export function HorusAssistant() {

@@ -497,30 +497,37 @@ export default function HorusAIChat() {
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col gap-10", isEmpty ? "pb-40 md:pb-32" : "pb-4")}>
             {isEmpty ? (
               // M3: Example prompts empty state — replaces the spinning AI loader
-              <div className="flex flex-col items-center justify-center flex-1 gap-8 w-full min-h-[40vh] animate-in fade-in zoom-in-95">
-                <div className="flex flex-col items-center gap-3">
-                  <AiLoader size={300} text="Horus AI" />
-                  <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[640px]">
-                  {[
-                    { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
-                    { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
-                    { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
-                    { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                  ].map((item) => (
-                    <button
-                      key={item.prompt}
-                      onClick={() => {
-                        setInputValue(item.prompt)
-                        handleSendMessage(item.prompt)
-                      }}
-                      className="text-left px-4 py-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
-                    >
-                      <span className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</span>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.prompt}</p>
-                    </button>
-                  ))}
+              <div className="flex-1 min-h-0 w-full overflow-y-auto flex items-center justify-center">
+                <div className="flex flex-col items-center justify-center gap-8 w-full min-h-[40vh] max-h-[calc(100dvh-250px)] md:max-h-[calc(100dvh-280px)] animate-in fade-in zoom-in-95 py-6">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="lg:hidden">
+                      <AiLoader size={200} text="Horus AI" />
+                    </div>
+                    <div className="hidden lg:block">
+                      <AiLoader size={300} text="Horus AI" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[640px]">
+                    {[
+                      { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
+                      { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
+                      { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
+                      { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
+                    ].map((item) => (
+                      <button
+                        key={item.prompt}
+                        onClick={() => {
+                          setInputValue(item.prompt)
+                          handleSendMessage(item.prompt)
+                        }}
+                        className="text-left px-4 py-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)]/50 hover:bg-[var(--surface-modal)] hover:border-primary/30 transition-all group"
+                      >
+                        <span className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</span>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{item.prompt}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (

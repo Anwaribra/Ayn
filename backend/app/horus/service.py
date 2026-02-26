@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 # In-memory pending confirmations keyed by confirmation id.
 # Scope check (user_id/chat_id) prevents cross-user execution.
 PENDING_ACTION_CONFIRMATIONS: dict[str, dict[str, Any]] = {}
+PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
+STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started"}
 
 
 class Observation(BaseModel):
@@ -164,6 +166,55 @@ class HorusService:
 
         client = get_gemini_client()
 
+        # ── TIER 1: FAST PATH (no platform context build) ────────────────────
+        if self._should_use_fast_path(message=message, files=files):
+            full_response = ""
+            try:
+                if message:
+                    if background_tasks:
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                    else:
+                        asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
+
+                yield "__THINKING__:Generating response...\n"
+
+                fast_messages = [{"role": "user", "content": message or ""}]
+                try:
+                    history = await asyncio.wait_for(
+                        ChatService.get_chat(chat_id, user_id, message_limit=6),
+                        timeout=0.5,
+                    )
+                    if history and getattr(history, "messages", None):
+                        fast_messages = [{"role": m.role, "content": m.content} for m in history.messages[-6:]]
+                        if message and not any(m["content"] == message for m in fast_messages):
+                            fast_messages.append({"role": "user", "content": message})
+                except Exception:
+                    # Keep fast path non-blocking; fall back to current user message only.
+                    pass
+
+                async for chunk in client.stream_chat(
+                    messages=fast_messages,
+                    context=(
+                        "You are Horus AI for the Ayn platform. "
+                        "Answer conversational and general questions clearly. "
+                        "Do not claim you accessed platform state unless explicitly requested."
+                    ),
+                ):
+                    if chunk:
+                        full_response += chunk
+                        yield chunk
+            except Exception as fast_err:
+                logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
+                if not full_response:
+                    full_response = "I’m having trouble right now. Please try again."
+                    yield full_response
+
+            if full_response and background_tasks:
+                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+            elif full_response:
+                await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+            return
+
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         if message and not files:
             try:
@@ -179,55 +230,72 @@ class HorusService:
                 }
 
                 # 1) Resolve pending confirmation command first.
+                self._cleanup_stale_pending_confirmations()
                 confirm_id = self._extract_control_token(message, "__CONFIRM_ACTION__:")
                 cancel_id = self._extract_control_token(message, "__CANCEL_ACTION__:")
 
-                if confirm_id:
+                if message.startswith("__CONFIRM_ACTION__:"):
                     pending = PENDING_ACTION_CONFIRMATIONS.get(confirm_id)
-                    if pending and pending.get("user_id") == user_id and pending.get("chat_id") == chat_id:
-                        tool_name = pending["tool_name"]
-                        args = pending.get("args", {})
-                        yield "__THINKING__:Executing confirmed action...\n"
-                        await asyncio.sleep(0.25)
-                        tool_result = await execute_tool(
-                            tool_name=tool_name,
-                            args=args,
-                            db=prisma_client,
-                            user_id=user_id,
-                            institution_id=institution_id,
-                            current_user=current_user_dict,
-                        )
-                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
-
-                        if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
-                            yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
-
-                        narrative_prompt = (
-                            "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
-                            f"Tool: {tool_name}\n"
-                            f"Tool result JSON: {json.dumps(tool_result)}\n"
-                        )
-                        narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
-                        if narrative_text:
-                            yield ("\n" if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"} else "") + narrative_text
-
+                    if not confirm_id or not pending or not self._pending_matches_scope(pending, user_id, chat_id):
+                        invalid_text = "That confirmation request is invalid or expired. Please run the action again."
+                        yield invalid_text
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", invalid_text)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                            await ChatService.save_message(chat_id, user_id, "assistant", invalid_text)
                         return
 
-                if cancel_id:
+                    tool_name = pending["tool_name"]
+                    args = pending.get("args", {})
+                    yield "__THINKING__:Executing confirmed action...\n"
+                    await asyncio.sleep(0.25)
+                    tool_result = await execute_tool(
+                        tool_name=tool_name,
+                        args=args,
+                        db=prisma_client,
+                        user_id=user_id,
+                        institution_id=institution_id,
+                        current_user=current_user_dict,
+                    )
+                    PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
+
+                    if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
+                        yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
+
+                    narrative_prompt = (
+                        "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
+                        f"Tool: {tool_name}\n"
+                        f"Tool result JSON: {json.dumps(tool_result)}\n"
+                    )
+                    narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
+                    if narrative_text:
+                        yield ("\n" if tool_result.get("type") in STRUCTURED_RESULT_TYPES else "") + narrative_text
+
+                    if background_tasks:
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                    else:
+                        await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                    return
+
+                if message.startswith("__CANCEL_ACTION__:"):
                     pending = PENDING_ACTION_CONFIRMATIONS.get(cancel_id)
-                    if pending and pending.get("user_id") == user_id and pending.get("chat_id") == chat_id:
-                        PENDING_ACTION_CONFIRMATIONS.pop(cancel_id, None)
-                        cancelled_text = "Understood. I canceled that action."
+                    if not cancel_id or not pending or not self._pending_matches_scope(pending, user_id, chat_id):
+                        cancelled_text = "That confirmation request is no longer active."
                         yield cancelled_text
                         if background_tasks:
                             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", cancelled_text)
                         else:
                             await ChatService.save_message(chat_id, user_id, "assistant", cancelled_text)
                         return
+
+                    PENDING_ACTION_CONFIRMATIONS.pop(cancel_id, None)
+                    cancelled_text = "Understood. I canceled that action."
+                    yield cancelled_text
+                    if background_tasks:
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", cancelled_text)
+                    else:
+                        await ChatService.save_message(chat_id, user_id, "assistant", cancelled_text)
+                    return
 
                 # 2) Normal planner path.
                 snapshot = await build_agent_context(
@@ -302,7 +370,7 @@ class HorusService:
                             current_user=current_user_dict,
                         )
 
-                        if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
+                        if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
                             yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
 
                         narrative_prompt = (
@@ -315,7 +383,7 @@ class HorusService:
                         narrative_text = await client.generate_text(prompt=narrative_prompt)
                         narrative_text = (narrative_text or "Agent action completed.").strip()
                         if narrative_text:
-                            if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
+                            if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
                                 yield "\n" + narrative_text
                             else:
                                 yield narrative_text
@@ -765,6 +833,92 @@ class HorusService:
         if not message.startswith(prefix):
             return None
         return message[len(prefix):].strip() or None
+
+    def _should_use_fast_path(self, message: str | None, files: List[Any] | None) -> bool:
+        if files:
+            return False
+        if not message:
+            return False
+
+        msg = message.strip()
+        lowered = msg.lower()
+        if not lowered:
+            return False
+
+        if lowered.startswith("__confirm_action__:") or lowered.startswith("__cancel_action__:"):
+            return False
+
+        platform_keywords = (
+            "gap",
+            "evidence",
+            "standard",
+            "criteria",
+            "criterion",
+            "audit",
+            "remediation",
+            "report",
+            "dashboard",
+            "workflow",
+            "analytics",
+            "compliance",
+            "policy",
+            "document",
+            "vault",
+            "hub",
+            "score",
+            "ncaaa",
+            "iso",
+            "institution",
+            "upload",
+            "export",
+            "task",
+        )
+        if any(keyword in lowered for keyword in platform_keywords):
+            return False
+
+        direct_smalltalk = (
+            "hi",
+            "hello",
+            "hey",
+            "thanks",
+            "thank you",
+            "how are you",
+            "good morning",
+            "good evening",
+            "who are you",
+            "what can you do",
+        )
+        if any(lowered == t or lowered.startswith(f"{t} ") for t in direct_smalltalk):
+            return True
+
+        # Lightweight default for simple factual/conversational prompts.
+        word_count = len(lowered.split())
+        return word_count <= 20
+
+    def _cleanup_stale_pending_confirmations(self) -> None:
+        now = datetime.utcnow()
+        expired_ids: list[str] = []
+        for confirmation_id, pending in PENDING_ACTION_CONFIRMATIONS.items():
+            created_at = pending.get("created_at")
+            try:
+                created_ts = datetime.fromisoformat(created_at) if created_at else None
+            except Exception:
+                created_ts = None
+            if not created_ts:
+                expired_ids.append(confirmation_id)
+                continue
+            age_seconds = (now - created_ts).total_seconds()
+            if age_seconds > PENDING_CONFIRMATION_TTL_SECONDS:
+                expired_ids.append(confirmation_id)
+        for confirmation_id in expired_ids:
+            PENDING_ACTION_CONFIRMATIONS.pop(confirmation_id, None)
+
+    def _pending_matches_scope(self, pending: Dict[str, Any], user_id: str, chat_id: str | None) -> bool:
+        return bool(
+            pending
+            and pending.get("user_id") == user_id
+            and pending.get("chat_id") == chat_id
+        )
 
     def _extract_json_block(self, text: str) -> Dict[str, Any] | None:
         if not text:

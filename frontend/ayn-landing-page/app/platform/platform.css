@@ -303,24 +303,22 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-color: #020305;
-  background-image:
-    radial-gradient(circle at 18% 84%, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0) 42%),
-    radial-gradient(circle at 86% 14%, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0) 38%),
-    linear-gradient(106deg, rgba(29, 78, 216, 0.22) 0%, rgba(29, 78, 216, 0.07) 26%, rgba(2, 3, 5, 0) 54%),
-    linear-gradient(112deg, rgba(56, 189, 248, 0.18) 12%, rgba(56, 189, 248, 0.05) 34%, rgba(2, 3, 5, 0) 60%),
-    repeating-linear-gradient(
-      113deg,
-      rgba(59, 130, 246, 0.14) 0px,
-      rgba(59, 130, 246, 0.14) 2px,
-      rgba(2, 3, 5, 0) 2px,
-      rgba(2, 3, 5, 0) 105px
-    ),
-    linear-gradient(140deg, #020305 0%, #04070D 44%, #030912 100%);
-  background-size: 120% 120%, 120% 120%, 180% 180%, 180% 180%, 320px 320px, 120% 120%;
-  animation: platformNeonDrift 32s ease-in-out infinite alternate;
-  filter: saturate(0.94) brightness(0.94);
+  background:
+    radial-gradient(circle at 70% 30%, rgba(30, 41, 59, 0.27) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, rgba(59, 47, 30, 0.27) 0%, transparent 50%),
+    #07090E;
+  filter: blur(80px) saturate(var(--platform-bg-saturation, 1.06)) brightness(var(--platform-bg-brightness, 1));
   opacity: var(--platform-bg-opacity, 1);
+  pointer-events: none;
+}
+
+[data-section="platform"] .cinematic-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  filter: contrast(120%) brightness(100%);
+  opacity: 0.04;
   pointer-events: none;
 }
 
@@ -379,14 +377,6 @@
   }
 }
 
-@keyframes platformNeonDrift {
-  0% {
-    background-position: 0% 0%, 100% 0%, 0% 30%, 100% 70%, 0 0, 0% 0%;
-  }
-  100% {
-    background-position: 100% 100%, 0% 100%, 100% 60%, 0% 30%, 140px 60px, 100% 100%;
-  }
-}
 
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {

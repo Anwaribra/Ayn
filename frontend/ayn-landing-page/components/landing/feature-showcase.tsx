@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useMemo, useState } from "react"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import {
   BrainCircuit,
   FolderLock,
@@ -23,6 +23,41 @@ interface Feature {
   benefits: string[]
   color: string
   preview: React.ReactNode
+}
+
+const tabItemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  show: (index: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: index * 0.06,
+      duration: 0.35,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+  }),
+}
+
+const panelTransition = {
+  type: "spring" as const,
+  stiffness: 260,
+  damping: 26,
+}
+
+const benefitListVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.05,
+    },
+  },
+}
+
+const benefitItemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.25 } },
 }
 
 const features: Feature[] = [
@@ -301,6 +336,11 @@ const features: Feature[] = [
 
 export function FeatureShowcase() {
   const [activeFeature, setActiveFeature] = useState(features[0])
+  const reduceMotion = useReducedMotion()
+  const activeFeatureIndex = useMemo(
+    () => features.findIndex((feature) => feature.id === activeFeature.id),
+    [activeFeature.id]
+  )
 
   return (
     <section id="features" className="py-[var(--spacing-section)] px-[var(--spacing-content)] bg-muted/10">
@@ -336,18 +376,28 @@ export function FeatureShowcase() {
               return (
                 <motion.button
                   key={feature.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  custom={index}
+                  variants={tabItemVariants}
+                  initial="hidden"
+                  whileInView="show"
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  whileHover={reduceMotion ? undefined : { x: 2 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.995 }}
                   onClick={() => setActiveFeature(feature)}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl border transition-all duration-300 group",
+                    "relative w-full text-left p-4 rounded-xl border transition-all duration-300 group overflow-hidden",
                     isActive
                       ? "border-border/60 bg-card/80 backdrop-blur-[12px] shadow-[var(--glass-shadow)] scale-[1.01]"
                       : "border-border/50 hover:border-border/70 hover:bg-card/60 hover:backdrop-blur-[8px] hover:shadow-[var(--glass-shadow)] hover:scale-[1.005]"
                   )}
                 >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabRail"
+                      className="absolute left-0 top-0 h-full w-1 rounded-r-full bg-gradient-to-b from-[var(--brand)] to-primary/70"
+                      transition={panelTransition}
+                    />
+                  )}
                   <div className="flex items-start gap-4">
                     <div
                       className={cn(
@@ -376,6 +426,7 @@ export function FeatureShowcase() {
                           <motion.div
                             layoutId="activeIndicator"
                             className="w-1.5 h-1.5 rounded-full bg-[var(--brand)]"
+                            transition={panelTransition}
                           />
                         )}
                       </div>
@@ -399,10 +450,10 @@ export function FeatureShowcase() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeFeature.id}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.98 }}
+                transition={panelTransition}
                 className="space-y-6"
               >
                 {/* Preview card */}
@@ -413,9 +464,36 @@ export function FeatureShowcase() {
                       activeFeature.color
                     )}
                   />
+                  <motion.div
+                    key={`${activeFeature.id}-orb-a`}
+                    className="pointer-events-none absolute -top-8 right-10 h-20 w-20 rounded-full bg-primary/10 blur-2xl"
+                    animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.35, 0.55, 0.35] }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    key={`${activeFeature.id}-orb-b`}
+                    className="pointer-events-none absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-[var(--brand)]/10 blur-2xl"
+                    animate={reduceMotion ? undefined : { y: [0, 10, 0], opacity: [0.25, 0.5, 0.25] }}
+                    transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.25 }}
+                  />
                   <div className="relative glass-card rounded-xl p-1 border border-border/60 bg-card/80 backdrop-blur-[14px] shadow-[var(--glass-shadow)]">
                     {activeFeature.preview}
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="h-1 rounded-full bg-muted overflow-hidden">
+                    <motion.div
+                      key={`feature-progress-${activeFeature.id}`}
+                      className={cn("h-full rounded-full bg-gradient-to-r", activeFeature.color)}
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${((activeFeatureIndex + 1) / features.length) * 100}%` }}
+                      transition={panelTransition}
+                    />
+                  </div>
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Module {activeFeatureIndex + 1} of {features.length}
+                  </p>
                 </div>
 
                 {/* Benefits list */}
@@ -423,20 +501,23 @@ export function FeatureShowcase() {
                   <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
                     Key Benefits
                   </h4>
-                  <ul className="space-y-2">
+                  <motion.ul
+                    variants={benefitListVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-2"
+                  >
                     {activeFeature.benefits.map((benefit, i) => (
                       <motion.li
                         key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
+                        variants={benefitItemVariants}
                         className="flex items-center gap-2 text-sm"
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                         <span>{benefit}</span>
                       </motion.li>
                     ))}
-                  </ul>
+                  </motion.ul>
                 </div>
 
                 {/* CTA */}

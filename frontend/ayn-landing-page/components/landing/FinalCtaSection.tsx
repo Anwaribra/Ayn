@@ -51,7 +51,7 @@ export function FinalCtaSection() {
               size="lg"
               className="px-8 py-6 text-base font-medium h-auto"
             >
-              Learn More
+              View Agent Capabilities
             </Button>
           </Link>
         </motion.div>

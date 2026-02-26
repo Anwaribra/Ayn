@@ -30,12 +30,11 @@ const features: Feature[] = [
     id: "ai",
     icon: BrainCircuit,
     title: "Horus AI",
-    description: "Your central intelligence for education quality. Horus AI understands your institution end-to-end and can shift from assistant mode to guided agent workflows across every module.",
+    description: "Assistant and agent in one place, with context across your full quality workspace.",
     benefits: [
-      "Context-aware answers about your institution's status",
-      "Automated document analysis and classification",
-      "Cross-module insights and recommendations",
-      "Action execution with approval and full audit trail",
+      "Context-aware answers tied to real institutional data",
+      "Agent actions with approval and full audit trail",
+      "Cross-module planning and follow-through",
     ],
     color: "from-violet-500 to-purple-600",
     preview: (
@@ -110,12 +109,11 @@ const features: Feature[] = [
     id: "evidence",
     icon: FolderLock,
     title: "Evidence Management",
-    description: "Upload documents and let Horus AI organize them. Ask questions like 'What evidence do I need for communication policies?' and get instant guidance.",
+    description: "Upload once, then let Horus classify, map, and surface missing evidence instantly.",
     benefits: [
-      "AI-powered document analysis and categorization",
+      "AI classification and structured tagging",
       "Automatic evidence-to-criteria mapping",
-      "Version control and audit trails",
-      "Conversational evidence search",
+      "Conversation-based evidence retrieval",
     ],
     color: "from-emerald-500 to-teal-600",
     preview: (
@@ -171,12 +169,11 @@ const features: Feature[] = [
     id: "gap",
     icon: GitCompare,
     title: "Gap Analysis",
-    description: "Ask Horus AI 'Where are my compliance gaps?' and get detailed analysis with prioritized recommendations for every standard.",
+    description: "Detect compliance gaps fast and move to prioritized remediation steps.",
     benefits: [
       "Conversational gap discovery",
-      "AI-generated risk scoring",
-      "Actionable remediation steps",
-      "Real-time progress tracking",
+      "Risk scoring with priority order",
+      "Track remediation progress in real time",
     ],
     color: "from-amber-500 to-orange-600",
     preview: (
@@ -243,12 +240,11 @@ const features: Feature[] = [
     id: "standards",
     icon: LibraryBig,
     title: "Standards Hub",
-    description: "Ask Horus AI about any quality standard or accreditation requirement. Get guidance and implementation steps in plain language — no technical jargon.",
+    description: "Query standards in plain language and get practical implementation guidance.",
     benefits: [
       "Natural language standard queries",
-      "AI-explained compliance in plain language",
       "Implementation roadmaps on demand",
-      "Multi-framework support",
+      "Multi-framework alignment support",
     ],
     color: "from-blue-500 to-cyan-600",
     preview: (
@@ -330,7 +326,7 @@ export function FeatureShowcase() {
         </motion.div>
 
         {/* Feature tabs */}
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+        <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-12 items-start">
           {/* Tabs list */}
           <div className="space-y-3">
             {features.map((feature, index) => {
@@ -348,8 +344,8 @@ export function FeatureShowcase() {
                   className={cn(
                     "w-full text-left p-4 rounded-xl border transition-all duration-300 group",
                     isActive
-                      ? "border-white/40 bg-white/60 backdrop-blur-[16px] shadow-lg scale-[1.01]"
-                      : "border-border/50 hover:border-white/40 hover:bg-white/40 hover:backdrop-blur-[8px] hover:shadow-md hover:scale-[1.005]"
+                      ? "border-border/60 bg-card/80 backdrop-blur-[12px] shadow-[var(--glass-shadow)] scale-[1.01]"
+                      : "border-border/50 hover:border-border/70 hover:bg-card/60 hover:backdrop-blur-[8px] hover:shadow-[var(--glass-shadow)] hover:scale-[1.005]"
                   )}
                 >
                   <div className="flex items-start gap-4">
@@ -417,7 +413,7 @@ export function FeatureShowcase() {
                       activeFeature.color
                     )}
                   />
-                  <div className="relative glass-card rounded-xl p-1 border border-white/40 bg-white/60 backdrop-blur-[16px] shadow-lg">
+                  <div className="relative glass-card rounded-xl p-1 border border-border/60 bg-card/80 backdrop-blur-[14px] shadow-[var(--glass-shadow)]">
                     {activeFeature.preview}
                   </div>
                 </div>

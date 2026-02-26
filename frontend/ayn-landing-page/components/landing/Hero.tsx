@@ -247,6 +247,9 @@ export function Hero() {
                   <Sparkles className="w-3 h-3" />
                   Ayn
                 </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold uppercase tracking-[0.12em]">
+                  Full Agent Mode
+                </span>
               </motion.div>
 
               {/* Main headline */}
@@ -270,7 +273,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.15 }}
               >
-                AI-powered compliance platform that maps your evidence to ISO, NCAAA, and global frameworks, then turns insight into guided actions.
+                Map evidence to ISO, NCAAA, and global frameworks, then run guided compliance actions from the same AI workflow.
               </motion.p>
 
 

@@ -44,7 +44,7 @@ const NodeCard = ({
           <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/25 to-primary/10 rounded-3xl opacity-50" />
 
           {/* Center card — Liquid Glass */}
-          <div className="relative rounded-3xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-12">
+          <div className="relative rounded-3xl bg-card/80 backdrop-blur-[16px] border border-border/60 shadow-[var(--glass-shadow)] p-12">
             <div className="relative w-28 h-28 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group">
               <BrainCircuit className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
               <div className="absolute inset-0 rounded-2xl border border-primary/30 animate-ping opacity-20" />
@@ -61,7 +61,7 @@ const NodeCard = ({
         </motion.div>
       ) : (
         /* Side nodes — Liquid Glass */
-        <div className="relative rounded-2xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-6 hover:shadow-xl hover:border-primary/30 hover:scale-[1.01] transition-all duration-300 group">
+        <div className="relative rounded-2xl bg-card/75 backdrop-blur-[12px] border border-border/60 shadow-[var(--glass-shadow)] p-6 hover:shadow-[var(--glass-shadow-hover)] hover:border-primary/30 hover:scale-[1.01] transition-all duration-300 group">
           <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center mb-4 border border-primary/10 group-hover:scale-110 transition-transform">
             <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
@@ -252,7 +252,7 @@ export function HorusIntelligenceSection() {
             className="relative"
           >
             <div className="absolute -inset-2 bg-gradient-to-br from-primary/15 to-primary/5 rounded-2xl blur-lg" />
-            <div className="relative rounded-2xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-6">
+            <div className="relative rounded-2xl bg-card/80 backdrop-blur-[14px] border border-border/60 shadow-[var(--glass-shadow)] p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                   <BrainCircuit className="w-8 h-8 text-primary" />
@@ -281,7 +281,7 @@ export function HorusIntelligenceSection() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <div className="h-full rounded-xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg p-4 hover:shadow-xl hover:scale-[1.01] transition-all">
+                <div className="h-full rounded-xl bg-card/75 backdrop-blur-[12px] border border-border/60 shadow-[var(--glass-shadow)] p-4 hover:shadow-[var(--glass-shadow-hover)] hover:scale-[1.01] transition-all">
                   <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                     <item.icon className="w-4 h-4 text-muted-foreground" />
                   </div>

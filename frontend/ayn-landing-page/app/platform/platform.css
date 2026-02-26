@@ -96,6 +96,20 @@
   /* Glow - reduced for cleaner look */
   --glow-blue: rgba(59, 111, 217, 0.12);
 
+  /* Unified cinematic background (match V3 across all platform pages) */
+  --platform-bg-opacity: 1;
+  --platform-bg-saturation: 1;
+  --platform-bg-brightness: 1;
+  --platform-bg-size: auto;
+  --platform-bg-animation: none;
+  --platform-bg-blur: 80px;
+  --platform-bg-noise-opacity: 0.04;
+  --platform-bg-dark-image:
+    radial-gradient(circle at 70% 30%, rgba(30, 41, 59, 0.27) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, rgba(59, 47, 30, 0.27) 0%, transparent 50%),
+    #07090E;
+  --platform-bg-opacity-light: 1;
+
   /* Override shadcn/ui variables for dark mode */
   --background: var(--layer-0);
   --foreground: #F1F5F9;
@@ -343,57 +357,7 @@
   opacity: var(--platform-bg-opacity-light, 1);
 }
 
-/* ─── Per-Page Visual Tuning (same language, different intensity) ────────── */
-[data-section="platform"] [data-platform-page="dashboard"] {
-  --platform-bg-opacity: 0.95;
-  --platform-bg-saturation: 1.02;
-  --platform-bg-brightness: 1;
-  --platform-bg-opacity-light: 1;
-}
-
-[data-section="platform"] [data-platform-page="horus"] {
-  --platform-bg-opacity: 1;
-  --platform-bg-saturation: 1;
-  --platform-bg-brightness: 1;
-  --platform-bg-size: auto;
-  --platform-bg-animation: none;
-  --platform-bg-blur: 80px;
-  --platform-bg-noise-opacity: 0.04;
-  --platform-bg-dark-image:
-    radial-gradient(circle at 70% 30%, rgba(30, 41, 59, 0.27) 0%, transparent 50%),
-    radial-gradient(circle at 20% 80%, rgba(59, 47, 30, 0.27) 0%, transparent 50%),
-    #07090E;
-  --platform-bg-opacity-light: 1;
-}
-
-[data-section="platform"] [data-platform-page="evidence"],
-[data-section="platform"] [data-platform-page="standards"] {
-  --platform-bg-opacity: 0.98;
-  --platform-bg-saturation: 1.06;
-  --platform-bg-brightness: 1;
-  --platform-bg-opacity-light: 1;
-}
-
-[data-section="platform"] [data-platform-page="standards"] {
-  --platform-bg-opacity: 1;
-  --platform-bg-saturation: 1;
-  --platform-bg-brightness: 1;
-  --platform-bg-size: auto;
-  --platform-bg-animation: none;
-  --platform-bg-blur: 80px;
-  --platform-bg-noise-opacity: 0.04;
-  --platform-bg-dark-image:
-    radial-gradient(circle at 70% 30%, rgba(30, 41, 59, 0.27) 0%, transparent 50%),
-    radial-gradient(circle at 20% 80%, rgba(59, 47, 30, 0.27) 0%, transparent 50%),
-    #07090E;
-}
-
-[data-section="platform"] [data-platform-page="analytics"] {
-  --platform-bg-opacity: 0.9;
-  --platform-bg-saturation: 0.98;
-  --platform-bg-brightness: 1.02;
-  --platform-bg-opacity-light: 0.95;
-}
+/* Unified background intentionally shared across all platform pages */
 
 @keyframes platformLiquidFlow {
   0% {

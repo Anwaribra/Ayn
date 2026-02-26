@@ -36,6 +36,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Start closed so mobile never shows sidebar taking space on first paint
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
@@ -61,6 +62,16 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const next = window.scrollY > 8;
+      setHeaderScrolled(next);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Close notification dropdown when clicking outside or pressing ESC
@@ -227,7 +238,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         id="main-content"
         className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0"
       >
-        <header className="h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-30 transition-colors duration-300 platform-header">
+        <header
+          className={cn(
+            "h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-30 transition-all duration-300 platform-header",
+            headerScrolled && "platform-header-scrolled"
+          )}
+        >
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             {/* Open sidebar when it's overlay (below lg) */}
             <button

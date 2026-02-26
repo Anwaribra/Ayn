@@ -132,7 +132,9 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       return (
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right">{item.label}</TooltipContent>
+          <TooltipContent side="right" sideOffset={10} className="text-xs font-medium">
+            {item.label}
+          </TooltipContent>
         </Tooltip>
       )
     }
@@ -186,13 +188,13 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
       {/* Navigation */}
       <nav className={cn("flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
-        <div className="space-y-2">
+        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} />
           ))}
         </div>
 
-        <div className="space-y-2">
+        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
             <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
               Compliance Core
@@ -203,7 +205,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           ))}
         </div>
 
-        <div className="space-y-2">
+        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
             <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
               Reporting & Automation

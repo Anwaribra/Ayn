@@ -888,22 +888,6 @@ export default function HorusAIChat() {
               />
             </div>
             
-            {/* Quick Action Buttons */}
-            {isEmpty && !inputValue && (
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-1 animate-in fade-in duration-300">
-                {["Run Full Audit", "Check Compliance Gaps", "Generate Remediation Report"].map((action, idx) => (
-                  <button
-                    key={action}
-                    onClick={() => handleSendMessage(action)}
-                    className="px-4 py-2.5 min-h-[44px] text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full bg-[var(--surface)]/30 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
-                    style={{ animationDelay: `${idx * 70}ms` }}
-                  >
-                    {action}
-                  </button>
-                ))}
-              </div>
-            )}
-            
             <p className="text-zinc-500 dark:text-white/30 font-medium text-[11px] pb-2 pt-1 text-center w-full tracking-wide">
                 Horus can make mistakes. Verify important data.
             </p>

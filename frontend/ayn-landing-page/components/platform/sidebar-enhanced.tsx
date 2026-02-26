@@ -93,6 +93,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         onClick={handleNavClick}
         className={cn(
           "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 min-h-[44px] text-sm transition-all duration-300",
+          isCollapsed && "justify-center px-0 mx-auto w-11",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           active
             ? "bg-primary/15 text-primary border border-primary/40 shadow-md shadow-primary/20"
@@ -113,9 +114,10 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <item.icon
           className={cn(
-            "h-5 w-5 transition-colors",
+            "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
             active ? "text-primary" : "group-hover:text-foreground"
           )}
+          strokeWidth={2.1}
         />
 
         {!isCollapsed && (
@@ -183,7 +185,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 space-y-6">
+      <nav className={cn("flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
         <div className="space-y-2">
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} />

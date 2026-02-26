@@ -1075,14 +1075,22 @@
 
 /* ─── Platform Header Glass Effect ──────────────────────────────────────────── */
 [data-section="platform"] .platform-header {
-  background: var(--layer-1);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--layer-0) 48%, transparent),
+    color-mix(in oklab, var(--layer-0) 30%, transparent)
+  );
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(1.05);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(1.05);
   border-bottom: 1px solid var(--glass-border);
 }
 
 /* Light mode header */
 [data-section="platform"] [data-platform-theme="light"] .platform-header {
-  background: var(--layer-1);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.72),
+    rgba(255, 255, 255, 0.58)
+  );
   border-bottom-color: var(--glass-border);
 }

@@ -103,16 +103,21 @@ function ReasoningBlock({
         )}
       </div>
 
-      {reasoning.isExpanded && (
-        <div className="px-5 pb-5 pt-2 space-y-3.5">
-          {reasoning.steps.map((step, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-4 relative before:absolute before:left-[7px] before:top-6 before:bottom-[-16px] before:w-px before:bg-[var(--border-subtle)] last:before:hidden"
-            >
+      <div
+        className={cn(
+          "px-5 pt-2 space-y-3.5 overflow-hidden transition-all duration-300 ease-out",
+          reasoning.isExpanded ? "max-h-[520px] pb-5 opacity-100" : "max-h-0 pb-0 opacity-0 pointer-events-none"
+        )}
+      >
+        {reasoning.steps.map((step, idx) => (
+          <div
+            key={idx}
+            className="flex items-center gap-4 relative before:absolute before:left-[7px] before:top-6 before:bottom-[-16px] before:w-px before:bg-[var(--border-subtle)] last:before:hidden animate-in fade-in slide-in-from-bottom-1 duration-300"
+            style={{ animationDelay: `${Math.min(idx * 40, 220)}ms` }}
+          >
               <div className="relative z-10 w-4 h-4 flex items-center justify-center bg-[var(--surface)]">
                 {step.status === "done" ? (
-                  <Check className="w-4 h-4 text-emerald-500" />
+                  <Check className="w-4 h-4 text-emerald-500 animate-in zoom-in-75 duration-200" />
                 ) : step.status === "active" ? (
                   <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                 ) : (
@@ -131,10 +136,9 @@ function ReasoningBlock({
               >
                 {step.text}
               </span>
-            </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -637,14 +641,15 @@ export default function HorusAIChat() {
                       { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
                       { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
                       { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                    ].map((item) => (
+                    ].map((item, idx) => (
                       <button
                         key={item.prompt}
                         onClick={() => {
                           setInputValue(item.prompt)
                           handleSendMessage(item.prompt)
                         }}
-                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors animate-in fade-in slide-in-from-bottom-1 duration-300"
+                        style={{ animationDelay: `${Math.min(idx * 70, 240)}ms` }}
                       >
                         <span>{item.label}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/70" />
@@ -702,7 +707,7 @@ export default function HorusAIChat() {
 
                           {/* Pending action confirmation */}
                           {msg.role === "assistant" && msg.pendingConfirmation && (
-                            <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4 shadow-sm">
+                            <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                               <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
@@ -726,7 +731,7 @@ export default function HorusAIChat() {
 
                           {/* Only show text content if there's something meaningful to show */}
                           {msg.content && (
-                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent">
+                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent animate-in fade-in duration-200">
                               <HorusMarkdown content={msg.content} onAction={handleAction} />
                               {/* M4: blinking caret during live streaming of THIS message */}
                               {status === "generating" && msg.id === messages.filter(m => m.role === "assistant").pop()?.id && (
@@ -884,11 +889,12 @@ export default function HorusAIChat() {
             {/* Quick Action Buttons */}
             {isEmpty && !inputValue && (
               <div className="flex flex-wrap items-center justify-center gap-2 mt-1 animate-in fade-in duration-300">
-                {["Run Full Audit", "Check Compliance Gaps", "Generate Remediation Report"].map((action) => (
+                {["Run Full Audit", "Check Compliance Gaps", "Generate Remediation Report"].map((action, idx) => (
                   <button
                     key={action}
                     onClick={() => handleSendMessage(action)}
-                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200"
+                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
+                    style={{ animationDelay: `${idx * 70}ms` }}
                   >
                     {action}
                   </button>

@@ -151,7 +151,8 @@ export const AIChatInput = ({
                 <div className="flex flex-col items-stretch w-full h-full">
                     {/* Input Row */}
                     <div className="flex items-center gap-2.5 p-2 rounded-full w-full">
-                        <button
+                        <motion.button
+                            whileTap={{ scale: 0.94 }}
                             className="p-3 ml-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px]"
                             title="Attach file"
                             type="button"
@@ -159,7 +160,7 @@ export const AIChatInput = ({
                             onClick={() => fileInputRef.current?.click()}
                         >
                             <Paperclip size={24} />
-                        </button>
+                        </motion.button>
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -234,16 +235,22 @@ export const AIChatInput = ({
 
 
                         {isLoading ? (
-                            <button
-                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0 transition-transform active:scale-95 shadow-md min-h-[44px] min-w-[44px]"
+                            <motion.button
+                                whileTap={{ scale: 0.94 }}
+                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px]"
                                 onClick={onStop}
                                 type="button"
                             >
                                 <StopCircle size={22} />
-                            </button>
+                            </motion.button>
                         ) : (
-                            <button
-                                className="flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform active:scale-95 shadow-md min-h-[44px] min-w-[44px]"
+                            <motion.button
+                                whileTap={{ scale: 0.94 }}
+                                whileHover={{ scale: !inputValue.trim() && !hasFiles ? 1 : 1.03 }}
+                                className={cn(
+                                    "flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px]",
+                                    (inputValue.trim() || hasFiles) && "animate-pulse"
+                                )}
                                 title="Send"
                                 type="button"
                                 disabled={!inputValue.trim() && !hasFiles}
@@ -251,7 +258,7 @@ export const AIChatInput = ({
                                 tabIndex={-1}
                             >
                                 <Send size={22} className="ml-[-2px] text-white" />
-                            </button>
+                            </motion.button>
                         )}
 
                     </div>

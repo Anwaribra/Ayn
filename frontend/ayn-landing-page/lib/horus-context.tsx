@@ -199,7 +199,15 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const sendMessage = async (text: string, files?: File[]) => {
-        await streamRequest(text, files, { appendUser: true, visibleUserText: text || "📎 Attached files for analysis" })
+        const hasFiles = !!files && files.length > 0
+        const normalizedText = text?.trim() || ""
+        const visibleUserText = hasFiles
+            ? (normalizedText
+                ? `${normalizedText}\n📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached`
+                : `📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached for analysis`)
+            : (normalizedText || "📎 Attached files for analysis")
+
+        await streamRequest(text, files, { appendUser: true, visibleUserText })
     }
 
     const resolveActionConfirmation = async (id: string, decision: "confirm" | "cancel") => {

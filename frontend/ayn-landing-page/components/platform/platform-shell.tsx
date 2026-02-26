@@ -189,8 +189,8 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       )}
       data-platform-theme={mounted ? (resolvedTheme ?? "dark") : undefined}
     >
-      {/* 🌌 Cinematic Background Layer - REMOVED (Using global body gradient) */}
-      {/* <div className="cinematic-bg" /> */}
+      {/* 🌌 Shared Platform Background Layer */}
+      <div className="cinematic-bg" />
 
       {/* Backdrop when sidebar is overlay (below lg) */}
       <div

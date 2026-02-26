@@ -303,15 +303,23 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-color: #05070A;
+  background-color: #020305;
   background-image:
-    radial-gradient(circle at 62% 24%, rgba(37, 99, 235, 0.24) 0%, rgba(37, 99, 235, 0) 42%),
-    radial-gradient(circle at 86% 58%, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0) 44%),
-    radial-gradient(circle at 24% 76%, rgba(99, 102, 241, 0.20) 0%, rgba(99, 102, 241, 0) 46%),
-    linear-gradient(110deg, #070A13 0%, #0B1230 42%, #06141B 100%);
-  background-size: 120% 120%;
-  animation: platformLiquidFlow 24s ease-in-out infinite alternate;
-  filter: saturate(var(--platform-bg-saturation, 1.06)) brightness(var(--platform-bg-brightness, 1));
+    radial-gradient(circle at 18% 84%, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0) 42%),
+    radial-gradient(circle at 86% 14%, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0) 38%),
+    linear-gradient(106deg, rgba(29, 78, 216, 0.22) 0%, rgba(29, 78, 216, 0.07) 26%, rgba(2, 3, 5, 0) 54%),
+    linear-gradient(112deg, rgba(56, 189, 248, 0.18) 12%, rgba(56, 189, 248, 0.05) 34%, rgba(2, 3, 5, 0) 60%),
+    repeating-linear-gradient(
+      113deg,
+      rgba(59, 130, 246, 0.14) 0px,
+      rgba(59, 130, 246, 0.14) 2px,
+      rgba(2, 3, 5, 0) 2px,
+      rgba(2, 3, 5, 0) 105px
+    ),
+    linear-gradient(140deg, #020305 0%, #04070D 44%, #030912 100%);
+  background-size: 120% 120%, 120% 120%, 180% 180%, 180% 180%, 320px 320px, 120% 120%;
+  animation: platformNeonDrift 32s ease-in-out infinite alternate;
+  filter: saturate(0.94) brightness(0.94);
   opacity: var(--platform-bg-opacity, 1);
   pointer-events: none;
 }
@@ -368,6 +376,15 @@
   }
   100% {
     background-position: 100% 100%;
+  }
+}
+
+@keyframes platformNeonDrift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 0% 30%, 100% 70%, 0 0, 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%, 0% 100%, 100% 60%, 0% 30%, 140px 60px, 100% 100%;
   }
 }
 

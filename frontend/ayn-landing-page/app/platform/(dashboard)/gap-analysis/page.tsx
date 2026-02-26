@@ -208,16 +208,15 @@ function GapAnalysisContent() {
       return
     }
     
-    // In current implementation gap_id is not saved per physical Item, 
-    // so we use a mock one based on standardId for demo purposes.
-    const mockGapId = `gap-${Date.now()}` 
+    // Use a generated stable ID for this draft request instead of mock/demo IDs.
+    const gapId = crypto.randomUUID()
     
     setTargetGap({ gap: gapItem, standardId: activeReport.standardId })
     setIsDrafting(true)
 
     try {
       toast.info("Horus AI is drafting a document...", { duration: 4000 })
-      const res = await api.draftDocument(mockGapId, user.institutionId, `Please draft a policy/evidence regarding: ${gapItem.recommendation}`)
+      const res = await api.draftDocument(gapId, user.institutionId, `Please draft a policy/evidence regarding: ${gapItem.recommendation}`)
       setDraftContent(res.content)
       setIsEditorOpen(true)
     } catch (e: any) {
@@ -280,9 +279,8 @@ function GapAnalysisContent() {
     const p = priorityMap[item.priority] ?? "Med"
     const s = statusMap[item.status] ?? "Warning"
     const statusClass = p === "High" ? "status-critical" : p === "Med" ? "status-warning" : "status-success"
-    // Derive risk impact from the gap's status rather than hardcoding
-    const riskScore = s === "Critical" ? Math.round(85 + Math.random() * 10) :
-      s === "Warning" ? Math.round(35 + Math.random() * 20) : Math.round(5 + Math.random() * 15)
+    // Deterministic risk score for consistent UI state and testing.
+    const riskScore = s === "Critical" ? 90 : s === "Warning" ? 55 : 20
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",

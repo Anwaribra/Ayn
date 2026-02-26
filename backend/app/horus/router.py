@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db, Prisma
 from app.horus.service import HorusService
+from app.horus.agent_tools import build_tool_manifest, requires_explicit_confirmation
 from app.platform_state.service import StateService
 from app.chat.service import ChatService
 
@@ -248,6 +249,26 @@ async def get_chat_messages(
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
     return chat
+
+
+@router.get("/agent/capabilities")
+async def get_agent_capabilities(
+    current_user = Depends(get_current_user)
+):
+    """Expose Horus tool manifest for UI/clients."""
+    _ = get_user_id(current_user)
+    tools = build_tool_manifest()
+    return {
+        "agent_mode": "planner_executor",
+        "tool_count": len(tools),
+        "tools": [
+            {
+                **t,
+                "requires_confirmation": requires_explicit_confirmation(t["name"]),
+            }
+            for t in tools
+        ],
+    }
 
 
 @router.delete("/history/{chat_id}")

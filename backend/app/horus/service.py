@@ -25,6 +25,7 @@ from app.rag.service import RagService
 from app.horus.agent_context import build_agent_context
 from app.horus.agent_tools import (
     TOOL_REGISTRY,
+    build_tool_manifest,
     execute_tool,
     get_tool_ui_meta,
     requires_explicit_confirmation,
@@ -249,33 +250,64 @@ class HorusService:
                     args = pending.get("args", {})
                     yield "__THINKING__:Executing confirmed action...\n"
                     await asyncio.sleep(0.25)
-                    tool_result = await execute_tool(
-                        tool_name=tool_name,
-                        args=args,
-                        db=prisma_client,
-                        user_id=user_id,
-                        institution_id=institution_id,
-                        current_user=current_user_dict,
-                    )
-                    PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
 
-                    if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
-                        yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
-
-                    narrative_prompt = (
-                        "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
-                        f"Tool: {tool_name}\n"
-                        f"Tool result JSON: {json.dumps(tool_result)}\n"
-                    )
-                    narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
-                    if narrative_text:
-                        yield ("\n" if tool_result.get("type") in STRUCTURED_RESULT_TYPES else "") + narrative_text
-
-                    if background_tasks:
-                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                    if tool_name == "__plan__":
+                        plan_steps = pending.get("plan_steps", [])
+                        plan_output = await self._execute_agent_plan(
+                            plan_steps=plan_steps,
+                            db=prisma_client,
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            current_user=current_user_dict,
+                            background_tasks=background_tasks,
+                        )
+                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
+                        if plan_output["last_structured"]:
+                            yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
+                        if plan_output["summary_text"]:
+                            yield ("\n" if plan_output["last_structured"] else "") + plan_output["summary_text"]
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"])
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"])
+                        return
                     else:
-                        await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
-                    return
+                        tool_result = await execute_tool(
+                            tool_name=tool_name,
+                            args=args,
+                            db=prisma_client,
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            current_user=current_user_dict,
+                        )
+                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
+
+                        if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
+                            yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
+
+                        await self._log_agent_action(
+                            user_id=user_id,
+                            tool_name=tool_name,
+                            args=args,
+                            result=tool_result,
+                            background_tasks=background_tasks,
+                            phase="confirmed",
+                        )
+
+                        narrative_prompt = (
+                            "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
+                            f"Tool: {tool_name}\n"
+                            f"Tool result JSON: {json.dumps(tool_result)}\n"
+                        )
+                        narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
+                        if narrative_text:
+                            yield ("\n" if tool_result.get("type") in STRUCTURED_RESULT_TYPES else "") + narrative_text
+
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                        return
 
                 if message.startswith("__CANCEL_ACTION__:"):
                     pending = PENDING_ACTION_CONFIRMATIONS.get(cancel_id)
@@ -373,6 +405,15 @@ class HorusService:
                         if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
                             yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
 
+                        await self._log_agent_action(
+                            user_id=user_id,
+                            tool_name=tool_name,
+                            args=args,
+                            result=tool_result,
+                            background_tasks=background_tasks,
+                            phase="auto",
+                        )
+
                         narrative_prompt = (
                             "You are Horus. Summarize this tool execution in 2 concise sentences. "
                             "If relevant, include exactly one next step.\n\n"
@@ -392,6 +433,69 @@ class HorusService:
                             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
                         else:
                             await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                        return
+                elif plan and plan.get("mode") == "plan":
+                    raw_steps = plan.get("steps", [])
+                    plan_steps = self._normalize_plan_steps(raw_steps)
+                    if plan_steps:
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "user", message)
+
+                        has_mutating = any(requires_explicit_confirmation(step["tool"]) for step in plan_steps)
+                        if has_mutating:
+                            confirm_id = str(uuid4())
+                            PENDING_ACTION_CONFIRMATIONS[confirm_id] = {
+                                "user_id": user_id,
+                                "chat_id": chat_id,
+                                "tool_name": "__plan__",
+                                "plan_steps": plan_steps,
+                                "description": f"Run a {len(plan_steps)}-step agent plan including write operations.",
+                                "created_at": datetime.utcnow().isoformat(),
+                            }
+                            confirm_payload = {
+                                "id": confirm_id,
+                                "tool": "__plan__",
+                                "title": "Execute multi-step plan",
+                                "description": f"Horus prepared {len(plan_steps)} steps. Confirmation required for mutating actions.",
+                            }
+                            yield "__THINKING__:Prepared a multi-step plan...\n"
+                            yield f"__ACTION_CONFIRM__:{json.dumps(confirm_payload)}\n"
+                            if background_tasks:
+                                background_tasks.add_task(
+                                    ChatService.save_message,
+                                    chat_id,
+                                    user_id,
+                                    "assistant",
+                                    "Confirmation required before executing the multi-step plan.",
+                                )
+                            else:
+                                await ChatService.save_message(
+                                    chat_id,
+                                    user_id,
+                                    "assistant",
+                                    "Confirmation required before executing the multi-step plan.",
+                                )
+                            return
+
+                        yield "__THINKING__:Executing multi-step plan...\n"
+                        plan_output = await self._execute_agent_plan(
+                            plan_steps=plan_steps,
+                            db=prisma_client,
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            current_user=current_user_dict,
+                            background_tasks=background_tasks,
+                        )
+                        if plan_output["last_structured"]:
+                            yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
+                        if plan_output["summary_text"]:
+                            yield ("\n" if plan_output["last_structured"] else "") + plan_output["summary_text"]
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"])
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"])
                         return
             except Exception as agent_err:
                 logger.error(f"Agent planner/tool execution failed: {agent_err}", exc_info=True)
@@ -962,15 +1066,7 @@ class HorusService:
         message: str,
         platform_snapshot: Dict[str, Any],
     ) -> Dict[str, Any] | None:
-        tool_manifest = [
-            {
-                "name": name,
-                "description": spec["description"],
-                "mutating": spec["mutating"],
-                "args_schema": spec["args_schema"],
-            }
-            for name, spec in TOOL_REGISTRY.items()
-        ]
+        tool_manifest = build_tool_manifest()
 
         planner_prompt = f"""
 You are Horus planner. Decide whether to call exactly one tool or answer as chat.
@@ -986,14 +1082,17 @@ Available tools:
 
 Return ONLY valid JSON with this exact schema:
 {{
-  "mode": "tool" | "chat",
+  "mode": "tool" | "plan" | "chat",
   "tool": "tool_name_or_null",
   "arguments": {{}},
+  "steps": [{{"tool":"tool_name","arguments":{{}},"reason":"short"}}],
   "reason": "short reason"
 }}
 
 Rules:
 - Choose mode "tool" only if a tool materially improves accuracy/action.
+- Choose mode "plan" only when user asks for multiple outcomes in one request.
+- Plan can contain up to 3 steps.
 - For mutating tools, choose them only when user intent is explicit.
 - If unsure, return mode "chat".
 """
@@ -1001,13 +1100,122 @@ Rules:
         parsed = self._extract_json_block(raw)
         if not isinstance(parsed, dict):
             return None
-        if parsed.get("mode") not in {"tool", "chat"}:
+        if parsed.get("mode") not in {"tool", "plan", "chat"}:
             return None
         if parsed.get("mode") == "tool" and parsed.get("tool") not in TOOL_REGISTRY:
             return None
+        if parsed.get("mode") == "plan":
+            parsed["steps"] = self._normalize_plan_steps(parsed.get("steps", []))
+            if not parsed["steps"]:
+                return None
         if not isinstance(parsed.get("arguments", {}), dict):
             parsed["arguments"] = {}
         return parsed
+
+    def _normalize_plan_steps(self, raw_steps: Any) -> list[dict]:
+        if not isinstance(raw_steps, list):
+            return []
+        steps: list[dict] = []
+        for step in raw_steps[:3]:
+            if not isinstance(step, dict):
+                continue
+            tool = step.get("tool")
+            if tool not in TOOL_REGISTRY:
+                continue
+            arguments = step.get("arguments", {})
+            if not isinstance(arguments, dict):
+                arguments = {}
+            steps.append({
+                "tool": tool,
+                "arguments": arguments,
+                "reason": str(step.get("reason", "")).strip()[:180],
+            })
+        return steps
+
+    async def _execute_agent_plan(
+        self,
+        *,
+        plan_steps: list[dict],
+        db: Any,
+        user_id: str,
+        institution_id: Optional[str],
+        current_user: dict,
+        background_tasks: Any = None,
+    ) -> dict:
+        executed: list[dict] = []
+        last_structured: Optional[dict] = None
+
+        for step in plan_steps:
+            tool_name = step["tool"]
+            args = step.get("arguments", {}) or {}
+            result = await execute_tool(
+                tool_name=tool_name,
+                args=args,
+                db=db,
+                user_id=user_id,
+                institution_id=institution_id,
+                current_user=current_user,
+            )
+            if result.get("type") in STRUCTURED_RESULT_TYPES:
+                last_structured = result
+
+            await self._log_agent_action(
+                user_id=user_id,
+                tool_name=tool_name,
+                args=args,
+                result=result,
+                background_tasks=background_tasks,
+                phase="plan",
+            )
+            executed.append({
+                "tool": tool_name,
+                "result_type": result.get("type", "unknown"),
+                "ok": result.get("type") != "action_error",
+            })
+
+        success = len([e for e in executed if e["ok"]])
+        summary_lines = [f"Executed {len(executed)} plan steps ({success} successful)."]
+        for idx, e in enumerate(executed, start=1):
+            status = "ok" if e["ok"] else "failed"
+            summary_lines.append(f"{idx}. {e['tool']} -> {e['result_type']} ({status})")
+
+        return {
+            "last_structured": last_structured,
+            "summary_text": "\n".join(summary_lines),
+        }
+
+    async def _log_agent_action(
+        self,
+        *,
+        user_id: str,
+        tool_name: str,
+        args: dict,
+        result: dict,
+        background_tasks: Any = None,
+        phase: str = "auto",
+    ) -> None:
+        title = f"Horus executed {tool_name}"
+        description = f"Phase={phase}, result={result.get('type', 'unknown')}"
+        metadata = {"tool": tool_name, "args": args, "result_type": result.get("type"), "phase": phase}
+        if background_tasks:
+            background_tasks.add_task(
+                ActivityService.log_activity,
+                user_id=user_id,
+                type="horus_action",
+                title=title,
+                description=description,
+                entity_type="horus_tool",
+                metadata=metadata,
+            )
+        else:
+            await ActivityService.log_activity(
+                user_id=user_id,
+                type="horus_action",
+                title=title,
+                description=description,
+                entity_type="horus_tool",
+                metadata=metadata,
+            )
 
     async def _trigger_gap_analysis_after_upload(
         self,

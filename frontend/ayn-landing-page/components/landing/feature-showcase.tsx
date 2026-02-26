@@ -30,12 +30,12 @@ const features: Feature[] = [
     id: "ai",
     icon: BrainCircuit,
     title: "Horus AI",
-    description: "Your central intelligence for education quality. Horus AI understands your entire institution—evidence, compliance, gaps, and progress—providing insights across every module.",
+    description: "Your central intelligence for education quality. Horus AI understands your institution end-to-end and can shift from assistant mode to guided agent workflows across every module.",
     benefits: [
       "Context-aware answers about your institution's status",
       "Automated document analysis and classification",
       "Cross-module insights and recommendations",
-      "Multi-language support including Arabic",
+      "Action execution with approval and full audit trail",
     ],
     color: "from-violet-500 to-purple-600",
     preview: (

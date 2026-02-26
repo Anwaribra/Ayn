@@ -134,7 +134,8 @@ export function HorusIntelligenceSection() {
             className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
           >
             Horus AI understands the full quality ecosystem. Evidence, standards,
-            analysis, and insights operate as one connected system — not isolated tools.
+            analysis, and insights operate as one connected system. From insight to
+            action, Horus can execute guided multi-step compliance workflows.
           </motion.p>
         </motion.div>
 

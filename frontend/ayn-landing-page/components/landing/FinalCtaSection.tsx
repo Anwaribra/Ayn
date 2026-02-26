@@ -28,14 +28,14 @@ export function FinalCtaSection() {
           className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
         >
           <span className="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Start a Conversation with Horus AI
+            Start with Horus AI Assistant or Full Agent
           </span>
         </motion.h2>
         <motion.p
           variants={fadeInUp}
           className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto"
         >
-          Your AI assistant for educational quality is ready. Ask questions, upload evidence, generate reports — Horus handles it all.
+          Ask, analyze, and execute. Horus helps your team move from questions to approved compliance actions in one flow.
         </motion.p>
         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
           <ShinyButton

@@ -270,7 +270,7 @@ export function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.15 }}
               >
-                AI-powered compliance platform that maps your evidence to ISO, NCAAA, and global frameworks — instantly.
+                AI-powered compliance platform that maps your evidence to ISO, NCAAA, and global frameworks, then turns insight into guided actions.
               </motion.p>
 
 
@@ -308,7 +308,7 @@ export function Hero() {
               >
                 <div className="flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-primary" />
-                  <span>Conversational AI</span>
+                  <span>Assistant + Agent Modes</span>
                 </div>
                 <div className="w-px h-3 bg-border" />
                 <div className="flex items-center gap-1.5">

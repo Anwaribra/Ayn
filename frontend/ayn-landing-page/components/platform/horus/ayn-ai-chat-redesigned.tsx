@@ -7,8 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import {
-  Paperclip,
-  User,
   FileText,
   X,
   Loader2,
@@ -16,7 +14,6 @@ import {
   Trash2,
   History,
   PlusCircle,
-  StopCircle,
   Search,
   ChevronDown,
   ChevronRight,
@@ -26,18 +23,14 @@ import {
   ArrowUpRight,
   ThumbsUp,
   ThumbsDown,
-  ExternalLink,
   Copy,
   Download,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
-import { ShiningText } from "@/components/ui/shining-text"
 import { AiLoader } from "@/components/ui/ai-loader"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -79,24 +72,29 @@ function ReasoningBlock({
   if (!reasoning) return null
 
   return (
-    <div className="w-full max-w-3xl bg-[var(--surface)]/50 border border-[var(--border-subtle)] rounded-xl overflow-hidden shadow-sm transition-all duration-300 mb-6">
+    <div className="w-full max-w-3xl bg-[var(--surface)]/65 border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm transition-all duration-300 mb-4">
       <div
-        className="flex items-center justify-between p-3 cursor-pointer hover:bg-[var(--surface-modal)] transition-colors"
+        className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[var(--surface-modal)]/80 transition-colors"
         onClick={() =>
           setReasoning((prev) => (prev ? { ...prev, isExpanded: !prev.isExpanded } : prev))
         }
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {reasoning.isComplete ? (
             <Check className="w-4 h-4 text-green-500" />
           ) : (
             <Brain className="w-4 h-4 text-primary animate-pulse" />
           )}
-          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-tight">
-            {reasoning.isComplete
-              ? `Analyzed in ${reasoning.duration?.toFixed(1)} seconds`
-              : "Thinking Process"}
-          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--text-primary)] tracking-tight truncate">
+              {reasoning.isComplete
+                ? `Analyzed in ${reasoning.duration?.toFixed(1)} seconds`
+                : "Thinking Process"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {reasoning.steps.length} step{reasoning.steps.length === 1 ? "" : "s"}
+            </p>
+          </div>
         </div>
         {reasoning.isExpanded ? (
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -106,7 +104,7 @@ function ReasoningBlock({
       </div>
 
       {reasoning.isExpanded && (
-        <div className="px-5 pb-5 pt-2 space-y-4">
+        <div className="px-5 pb-5 pt-2 space-y-3.5">
           {reasoning.steps.map((step, idx) => (
             <div
               key={idx}
@@ -114,7 +112,7 @@ function ReasoningBlock({
             >
               <div className="relative z-10 w-4 h-4 flex items-center justify-center bg-[var(--surface)]">
                 {step.status === "done" ? (
-                  <Check className="w-4 h-4 text-muted-foreground" />
+                  <Check className="w-4 h-4 text-emerald-500" />
                 ) : step.status === "active" ? (
                   <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                 ) : (
@@ -525,7 +523,7 @@ export default function HorusAIChat() {
   }
 
   // Derive the id of the last assistant message for M1 contextual actions
-  const lastAssistantMsgId = messages.filter(m => m.role === "assistant").pop()?.id
+  const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
 
   const isEmpty = messages.length === 0 && !reasoning
   const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
@@ -675,13 +673,13 @@ export default function HorusAIChat() {
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
                         <div className="w-full py-4 flex flex-col items-end">
-                           <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] whitespace-pre-wrap font-medium shadow-sm">
+                           <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-3 rounded-2xl rounded-tr-sm max-w-[88%] whitespace-pre-wrap font-medium shadow-sm">
                              {msg.content}
                            </div>
                         </div>
                       ) : (
-                        <div className="w-full py-4">
-                          <div className="flex items-center gap-2 mb-4">
+                        <div className="w-full py-4 space-y-3">
+                          <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-primary/10 text-primary flex-shrink-0">
                               <Brain className="w-3.5 h-3.5" />
                             </div>
@@ -697,14 +695,14 @@ export default function HorusAIChat() {
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (
-                            <div className="mb-4">
+                            <div className="mb-3">
                               <AgentResultRenderer result={(msg as any).structuredResult} />
                             </div>
                           )}
 
                           {/* Pending action confirmation */}
                           {msg.role === "assistant" && msg.pendingConfirmation && (
-                            <div className="mb-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+                            <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4 shadow-sm">
                               <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
@@ -728,7 +726,7 @@ export default function HorusAIChat() {
 
                           {/* Only show text content if there's something meaningful to show */}
                           {msg.content && (
-                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none">
+                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent">
                               <HorusMarkdown content={msg.content} onAction={handleAction} />
                               {/* M4: blinking caret during live streaming of THIS message */}
                               {status === "generating" && msg.id === messages.filter(m => m.role === "assistant").pop()?.id && (
@@ -862,7 +860,7 @@ export default function HorusAIChat() {
               </div>
             )}
             
-            <div className="-mb-6 sm:-mb-4">
+            <div className="-mb-5 sm:-mb-3">
               <AIChatInput
                 onSend={(message) => {
                   setInputValue("")
@@ -885,12 +883,12 @@ export default function HorusAIChat() {
             
             {/* Quick Action Buttons */}
             {isEmpty && !inputValue && (
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-2 animate-in fade-in duration-300">
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-1 animate-in fade-in duration-300">
                 {["Run Full Audit", "Check Compliance Gaps", "Generate Remediation Report"].map((action) => (
                   <button
                     key={action}
                     onClick={() => handleSendMessage(action)}
-                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground transition-all duration-200"
+                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200"
                   >
                     {action}
                   </button>

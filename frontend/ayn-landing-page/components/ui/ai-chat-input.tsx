@@ -141,17 +141,18 @@ export const AIChatInput = ({
                 initial="collapsed"
                 style={{ overflow: "hidden", borderRadius: 36 }}
                 className={cn(
-                    "w-full max-w-[900px] backdrop-blur-3xl transition-colors duration-300",
-                    "bg-white/95 border border-black/10 text-black", // Light mode
-                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white" // Dark mode
+                    "w-full max-w-[900px] backdrop-blur-3xl transition-all duration-300",
+                    "bg-white/95 border border-black/10 text-black shadow-[0_8px_26px_rgba(2,6,23,0.08)]", // Light mode
+                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white dark:shadow-[0_8px_30px_rgba(2,6,23,0.45)]",
+                    (isActive || inputValue) && "ring-1 ring-primary/35 border-primary/40"
                 )}
                 onClick={handleActivate}
             >
                 <div className="flex flex-col items-stretch w-full h-full">
                     {/* Input Row */}
-                    <div className="flex items-center gap-3 p-2 rounded-full w-full">
+                    <div className="flex items-center gap-2.5 p-2 rounded-full w-full">
                         <button
-                            className="p-3 ml-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
+                            className="p-3 ml-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px]"
                             title="Attach file"
                             type="button"
                             tabIndex={-1}
@@ -182,13 +183,15 @@ export const AIChatInput = ({
                                     if (onChange) onChange(e.target.value);
                                 }}
                                 className={cn(
-                                    "flex-1 w-full font-medium text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
-                                    "!text-black dark:!text-white placeholder:!text-gray-500 dark:placeholder:!text-white/45"
+                                    "flex-1 w-full font-medium text-[15px] md:text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
+                                    "text-[var(--foreground)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-white/45"
                                 )}
                                 style={{
                                     position: "relative",
                                     zIndex: 1,
-                                    caretColor: "currentColor",
+                                    color: "var(--foreground)",
+                                    WebkitTextFillColor: "var(--foreground)",
+                                    caretColor: "var(--foreground)",
                                 }}
                                 onFocus={handleActivate}
                             />
@@ -232,7 +235,7 @@ export const AIChatInput = ({
 
                         {isLoading ? (
                             <button
-                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0 transition-transform active:scale-95 shadow-md"
+                                className="flex w-[50px] h-[50px] items-center bg-red-500 hover:bg-red-400 text-white rounded-full font-bold justify-center flex-shrink-0 transition-transform active:scale-95 shadow-md min-h-[44px] min-w-[44px]"
                                 onClick={onStop}
                                 type="button"
                             >
@@ -240,7 +243,7 @@ export const AIChatInput = ({
                             </button>
                         ) : (
                             <button
-                                className="flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform active:scale-95 shadow-md"
+                                className="flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform active:scale-95 shadow-md min-h-[44px] min-w-[44px]"
                                 title="Send"
                                 type="button"
                                 disabled={!inputValue.trim() && !hasFiles}

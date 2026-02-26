@@ -521,6 +521,20 @@ class HorusService:
                 if chunk:
                     full_response += chunk
                     yield chunk
+            if not full_response.strip():
+                # Some multimodal providers may stream empty chunks for certain files.
+                # Ensure the user never sees a silent response.
+                fallback_response = await client.chat_with_files(
+                    message=message or "Analyze these files.",
+                    files=file_results,
+                    context=context,
+                )
+                if fallback_response and fallback_response.strip():
+                    full_response = fallback_response.strip()
+                    yield full_response
+                else:
+                    full_response = "I received your file, but I couldn't extract a clear answer from it. Try sending a clearer image or add more context."
+                    yield full_response
         else:
             history = await history_task
             yield "__THINKING__:Searching conversation history...\n"
@@ -534,6 +548,11 @@ class HorusService:
                 if chunk:
                     full_response += chunk
                     yield chunk
+            if not full_response.strip():
+                fallback_response = await client.chat(messages=messages, context=context)
+                if fallback_response and fallback_response.strip():
+                    full_response = fallback_response.strip()
+                    yield full_response
 
         # 4. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:

@@ -362,9 +362,21 @@ export function FeatureShowcase() {
   const executionStage = executionStageByFeature[activeFeature.id] ?? 1
 
   return (
-    <section id="features" className="relative py-[var(--spacing-section)] px-[var(--spacing-content)] bg-muted/10 overflow-hidden">
+    <section id="features" className="relative py-[calc(var(--spacing-section)-1rem)] px-[var(--spacing-content)] bg-muted/10 overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,hsl(var(--primary)/0.10),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_60%,hsl(var(--primary)/0.08),transparent_50%)]" />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl"
+        animate={reduceMotion ? undefined : { x: [0, 30, 0], y: [0, -20, 0], opacity: [0.25, 0.45, 0.25] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 bottom-12 h-72 w-72 rounded-full bg-[var(--brand)]/10 blur-3xl"
+        animate={reduceMotion ? undefined : { x: [0, -25, 0], y: [0, 15, 0], opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+      />
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section header */}
         <motion.div
@@ -432,7 +444,14 @@ export function FeatureShowcase() {
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-center justify-between gap-2">
                           <h3 className={cn("text-sm font-semibold", isActive ? "text-foreground" : "text-muted-foreground")}>{feature.title}</h3>
-                          <span className={cn("text-[10px] uppercase tracking-wider font-semibold", status === "Running" ? "text-primary" : status === "Synced" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                          <span className={cn("inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold", status === "Running" ? "text-primary" : status === "Synced" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                            {status === "Running" && (
+                              <motion.span
+                                className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
+                                animate={reduceMotion ? undefined : { opacity: [0.3, 1, 0.3], scale: [1, 1.25, 1] }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                              />
+                            )}
                             {status}
                           </span>
                         </div>
@@ -468,84 +487,105 @@ export function FeatureShowcase() {
                   </div>
 
                   <div className="p-3">
-                    <div className="relative mb-4">
-                      <div
-                        className={cn(
-                          "absolute -inset-1 rounded-2xl bg-gradient-to-r opacity-25 blur-xl",
-                          activeFeature.color
-                        )}
-                      />
-                      <motion.div
-                        key={`${activeFeature.id}-orb-a`}
-                        className="pointer-events-none absolute -top-5 right-12 h-16 w-16 rounded-full bg-primary/12 blur-2xl"
-                        animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.35, 0.55, 0.35] }}
-                        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      <div className="relative rounded-xl border border-border/60 bg-card/90 p-1">
-                        {activeFeature.preview}
-                      </div>
-                    </div>
+                    <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+                      <div>
+                        <div className="relative mb-4">
+                          <div
+                            className={cn(
+                              "absolute -inset-1 rounded-2xl bg-gradient-to-r opacity-25 blur-xl",
+                              activeFeature.color
+                            )}
+                          />
+                          <motion.div
+                            key={`${activeFeature.id}-orb-a`}
+                            className="pointer-events-none absolute -top-5 right-12 h-16 w-16 rounded-full bg-primary/12 blur-2xl"
+                            animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.35, 0.55, 0.35] }}
+                            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                          <div className="relative rounded-xl border border-border/60 bg-card/90 p-1 overflow-hidden">
+                            <motion.div
+                              key={`preview-${activeFeature.id}`}
+                              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, filter: "blur(6px)" }}
+                              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                              {activeFeature.preview}
+                            </motion.div>
+                            {!reduceMotion && (
+                              <motion.div
+                                aria-hidden
+                                className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10"
+                                animate={{ x: ["0%", "420%"] }}
+                                transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
+                              />
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="mb-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Execution Flow</p>
-                        <p className="text-[11px] font-medium text-muted-foreground">Module {activeFeatureIndex + 1} of {features.length}</p>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute left-4 right-4 top-[18px] h-px bg-border" />
-                        <motion.div
-                          key={`flow-progress-${activeFeature.id}`}
-                          className={cn("absolute left-4 top-[18px] h-px bg-gradient-to-r", activeFeature.color)}
-                          initial={{ width: 0 }}
-                          animate={{ width: `calc(${(executionStage / flowSteps.length) * 100}% - 1rem)` }}
-                          transition={panelTransition}
-                        />
-                        <div className="grid grid-cols-4 gap-2">
-                          {flowSteps.map((step, stepIndex) => {
-                            const StepIcon = step.icon
-                            const isDone = stepIndex < executionStage - 1
-                            const isCurrent = stepIndex === executionStage - 1
-                            return (
-                              <div key={step.label} className="relative pt-8 text-center">
-                                <div className={cn("mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border text-[10px]", isDone ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-600 dark:text-emerald-400" : isCurrent ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground")}>
-                                  <StepIcon className="h-3.5 w-3.5" />
-                                </div>
-                                <p className={cn("text-[11px] font-semibold", isCurrent ? "text-foreground" : "text-muted-foreground")}>{step.label}</p>
-                                <p className="text-[10px] text-muted-foreground/80">{step.hint}</p>
-                              </div>
-                            )
-                          })}
+                        <div>
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Execution Flow</p>
+                            <p className="text-[11px] font-medium text-muted-foreground">Module {activeFeatureIndex + 1} of {features.length}</p>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute left-4 right-4 top-[18px] h-px bg-border" />
+                            <motion.div
+                              key={`flow-progress-${activeFeature.id}`}
+                              className={cn("absolute left-4 top-[18px] h-px bg-gradient-to-r", activeFeature.color)}
+                              initial={{ width: 0 }}
+                              animate={{ width: `calc(${(executionStage / flowSteps.length) * 100}% - 1rem)` }}
+                              transition={panelTransition}
+                            />
+                            <div className="grid grid-cols-4 gap-2">
+                              {flowSteps.map((step, stepIndex) => {
+                                const StepIcon = step.icon
+                                const isDone = stepIndex < executionStage - 1
+                                const isCurrent = stepIndex === executionStage - 1
+                                return (
+                                  <div key={step.label} className="relative pt-8 text-center">
+                                    <div className={cn("mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border text-[10px]", isDone ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-600 dark:text-emerald-400" : isCurrent ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground")}>
+                                      <StepIcon className="h-3.5 w-3.5" />
+                                    </div>
+                                    <p className={cn("text-[11px] font-semibold", isCurrent ? "text-foreground" : "text-muted-foreground")}>{step.label}</p>
+                                    <p className="text-[10px] text-muted-foreground/80">{step.hint}</p>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Key Benefits</h4>
-                      <motion.ul
-                        variants={benefitListVariants}
-                        initial="hidden"
-                        animate="show"
-                        className="space-y-2"
-                      >
-                        {activeFeature.benefits.map((benefit, i) => (
-                          <motion.li
-                            key={i}
-                            variants={benefitItemVariants}
-                            className="flex items-center gap-2 text-sm"
+                      <div className="flex flex-col justify-between gap-4">
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Key Benefits</h4>
+                          <motion.ul
+                            variants={benefitListVariants}
+                            initial="hidden"
+                            animate="show"
+                            className="space-y-2"
                           >
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                            <span>{benefit}</span>
-                          </motion.li>
-                        ))}
-                      </motion.ul>
-                    </div>
+                            {activeFeature.benefits.map((benefit, i) => (
+                              <motion.li
+                                key={i}
+                                variants={benefitItemVariants}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                <span>{benefit}</span>
+                              </motion.li>
+                            ))}
+                          </motion.ul>
+                        </div>
 
-                    <Link href="/signup" className="mt-4 block">
-                      <Button className="w-full gap-2">
-                        Try {activeFeature.title}
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </Link>
+                        <Link href="/signup" className="block">
+                          <Button className="w-full gap-2">
+                            Try {activeFeature.title}
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>

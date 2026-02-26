@@ -184,7 +184,7 @@ export const AIChatInput = ({
                                     if (onChange) onChange(e.target.value);
                                 }}
                                 className={cn(
-                                    "flex-1 w-full font-medium text-[15px] md:text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
+                                    "flex-1 w-full font-medium text-[15px] md:text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none tracking-[0.01em]",
                                     "text-[var(--foreground)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-white/45"
                                 )}
                                 style={{

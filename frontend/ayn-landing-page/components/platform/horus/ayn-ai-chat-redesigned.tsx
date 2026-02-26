@@ -625,17 +625,19 @@ export default function HorusAIChat() {
             {isEmpty ? (
               // M3: Example prompts empty state — replaces the spinning AI loader
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
-                <div className="flex flex-col items-center justify-center gap-5 md:gap-6 w-full min-h-0 max-h-full animate-in fade-in zoom-in-95 py-2">
-                  <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center justify-center gap-6 md:gap-7 w-full min-h-0 max-h-full animate-in fade-in zoom-in-95 py-2">
+                  <div className="flex flex-col items-center gap-4">
                     <div className="lg:hidden">
                       <AiLoader size={200} text="Horus AI" />
                     </div>
                     <div className="hidden lg:block scale-90 2xl:scale-100">
                       <AiLoader size={300} text="Horus AI" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Your compliance intelligence assistant</p>
+                    <p className="text-sm md:text-base text-muted-foreground/90 mt-1 tracking-wide">
+                      Your compliance intelligence assistant
+                    </p>
                   </div>
-                  <div className="w-full max-w-[720px] flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+                  <div className="w-full max-w-[780px] flex flex-wrap items-center justify-center gap-x-3 gap-y-3">
                     {[
                       { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
                       { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
@@ -648,11 +650,11 @@ export default function HorusAIChat() {
                           setInputValue(item.prompt)
                           handleSendMessage(item.prompt)
                         }}
-                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors animate-in fade-in slide-in-from-bottom-1 duration-300"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-full text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)]/80 bg-[var(--surface)]/35 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/35 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
                         style={{ animationDelay: `${Math.min(idx * 70, 240)}ms` }}
                       >
                         <span>{item.label}</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/70" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
                       </button>
                     ))}
                   </div>
@@ -851,7 +853,7 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 flex-shrink-0 px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/45 via-background/15 to-transparent">
+        <div className="sticky bottom-0 flex-shrink-0 px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/40 via-background/12 to-transparent">
           <div className="w-full max-w-[760px] mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -893,7 +895,7 @@ export default function HorusAIChat() {
                   <button
                     key={action}
                     onClick={() => handleSendMessage(action)}
-                    className="px-4 py-2.5 min-h-[44px] text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
+                    className="px-4 py-2.5 min-h-[44px] text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)] rounded-full bg-[var(--surface)]/30 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/40 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
                     style={{ animationDelay: `${idx * 70}ms` }}
                   >
                     {action}
@@ -902,7 +904,7 @@ export default function HorusAIChat() {
               </div>
             )}
             
-            <p className="text-zinc-500 dark:text-white/30 font-medium text-[12px] pb-2 pt-1 text-center w-full">
+            <p className="text-zinc-500 dark:text-white/30 font-medium text-[11px] pb-2 pt-1 text-center w-full tracking-wide">
                 Horus can make mistakes. Verify important data.
             </p>
           </div>

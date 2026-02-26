@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { Bot, ArrowUpIcon, X, Expand, Sparkles, Loader2, BrainCircuit } from "lucide-react"
+import { ArrowUpIcon, X, Expand, Loader2, BrainCircuit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -10,381 +10,382 @@ import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-// ─── Simple inline markdown renderer ────────────────────────────────────────────
+type MiniMessage = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
+const MINI_MESSAGES_KEY = "horus-mini-messages-v1"
+const MINI_CHAT_ID_KEY = "horus-mini-chat-id-v1"
+
+function loadMiniMessages(): MiniMessage[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(MINI_MESSAGES_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((m) => m?.role && typeof m.content === "string")
+  } catch {
+    return []
+  }
+}
+
+function saveMiniMessages(messages: MiniMessage[]) {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(MINI_MESSAGES_KEY, JSON.stringify(messages.slice(-14)))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function getPageContext(pathname: string | null) {
+  if (!pathname) return ""
+  if (pathname.includes("/gap-analysis")) {
+    return "User is in Gap Analysis. Prioritize actions around remediation, evidence linking, and risk reduction."
+  }
+  if (pathname.includes("/evidence")) {
+    return "User is in Evidence Library. Prioritize evidence quality, mapping, and missing documents."
+  }
+  if (pathname.includes("/standards")) {
+    return "User is in Standards workspace. Prioritize clause mapping and compliance coverage guidance."
+  }
+  if (pathname.includes("/dashboard") || pathname.includes("/overview")) {
+    return "User is in Dashboard. Prioritize high-impact blockers and quick actions."
+  }
+  return "User is in Platform workspace. Provide concise operational guidance and actionable next steps."
+}
+
 function InlineMarkdown({ content }: { content: string }) {
   const lines = content.split("\n")
-  const elements: React.ReactNode[] = []
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.trim() === "") {
-      elements.push(<div key={`br-${i}`} className="h-1.5" />)
-      continue
-    }
-    if (line.startsWith("### ")) {
-      elements.push(
-        <p key={`h-${i}`} className="mt-2 mb-1 text-xs font-semibold text-foreground">
-          {renderBold(line.slice(4))}
-        </p>,
-      )
-      continue
-    }
-    if (line.startsWith("## ")) {
-      elements.push(
-        <p key={`h-${i}`} className="mt-2 mb-1 text-sm font-semibold text-foreground">
-          {renderBold(line.slice(3))}
-        </p>,
-      )
-      continue
-    }
-    if (/^[\s]*[-•*]\s/.test(line)) {
-      const itemContent = line.replace(/^[\s]*[-•*]\s/, "")
-      elements.push(
-        <div key={`li-${i}`} className="flex items-start gap-1.5 my-0.5">
-          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--brand)]" />
-          <span>{renderBold(itemContent)}</span>
-        </div>,
-      )
-      continue
-    }
-    if (/^\s*\d+[.)]\s/.test(line)) {
-      const match = line.match(/^(\s*)(\d+)[.)]\s(.*)$/)
-      if (match) {
-        elements.push(
-          <div key={`ol-${i}`} className="flex items-start gap-1.5 my-0.5">
-            <span className="shrink-0 text-[10px] font-bold text-[var(--brand)]">
-              {match[2]}.
-            </span>
-            <span>{renderBold(match[3])}</span>
-          </div>,
-        )
-        continue
-      }
-    }
-    elements.push(
-      <p key={`p-${i}`} className="my-0.5 leading-relaxed">
-        {renderBold(line)}
-      </p>,
-    )
-  }
-
-  return <div className="text-xs text-foreground/80 leading-relaxed">{elements}</div>
+  return (
+    <div className="text-xs text-foreground/85 leading-relaxed space-y-1">
+      {lines.map((line, i) => (
+        <p key={`${i}-${line.slice(0, 8)}`} className="whitespace-pre-wrap break-words">
+          {line || "\u00a0"}
+        </p>
+      ))}
+    </div>
+  )
 }
 
-function renderBold(text: string): React.ReactNode {
-  const parts: React.ReactNode[] = []
-  let remaining = text
-  let key = 0
-  while (remaining.length > 0) {
-    const match = remaining.match(/^([\s\S]*?)\*\*(.+?)\*\*([\s\S]*)$/)
-    if (match) {
-      if (match[1]) parts.push(<span key={key++}>{match[1]}</span>)
-      parts.push(
-        <strong key={key++} className="font-semibold text-foreground">
-          {match[2]}
-        </strong>,
-      )
-      remaining = match[3]
-      continue
-    }
-    parts.push(<span key={key++}>{remaining}</span>)
-    break
-  }
-  return parts.length === 1 ? parts[0] : <>{parts}</>
-}
-
-// ─── Floating AI Bar ────────────────────────────────────────────────────────────
 export default function FloatingAIBar() {
   const pathname = usePathname()
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [answer, setAnswer] = useState("")
-  const [isFocused, setIsFocused] = useState(false)
+  const [messages, setMessages] = useState<MiniMessage[]>([])
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [showTooltip, setShowTooltip] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const barRef = useRef<HTMLDivElement>(null)
 
-  // Don't show on the Horus AI page (it has its own full chat)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   const isHorusPage = pathname?.includes("/horus-ai")
 
-  // Show onboarding tooltip once on first mount
   useEffect(() => {
-    const seen = sessionStorage.getItem("horus-bar-seen")
-    if (!seen) {
-      const timer = setTimeout(() => {
-        setShowTooltip(true)
-        sessionStorage.setItem("horus-bar-seen", "1")
-        setTimeout(() => setShowTooltip(false), 4000)
-      }, 1500)
-      return () => clearTimeout(timer)
+    const storedMessages = loadMiniMessages()
+    const storedChatId = sessionStorage.getItem(MINI_CHAT_ID_KEY)
+
+    if (storedMessages.length > 0) {
+      setMessages(storedMessages)
+    } else {
+      setMessages([
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "I am Horus. Ask me anything about this page and I will help with the next action.",
+        },
+      ])
     }
+
+    if (storedChatId) setCurrentChatId(storedChatId)
   }, [])
 
-  // Ctrl+I shortcut to focus — fixed: no stale closure on isFocused
+  useEffect(() => {
+    if (messages.length > 0) saveMiniMessages(messages)
+  }, [messages])
+
+  useEffect(() => {
+    if (!currentChatId || typeof window === "undefined") return
+    sessionStorage.setItem(MINI_CHAT_ID_KEY, currentChatId)
+  }, [currentChatId])
+
+  useEffect(() => {
+    const seen = sessionStorage.getItem("horus-mini-seen")
+    if (!seen && !isHorusPage) {
+      const timer = setTimeout(() => {
+        setShowTooltip(true)
+        sessionStorage.setItem("horus-mini-seen", "1")
+        setTimeout(() => setShowTooltip(false), 3500)
+      }, 1200)
+      return () => clearTimeout(timer)
+    }
+  }, [isHorusPage])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "i") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
         e.preventDefault()
         if (isHorusPage) return
-        inputRef.current?.focus()
-        setIsFocused(true)
+        setIsOpen(true)
         setShowTooltip(false)
+        setTimeout(() => inputRef.current?.focus(), 80)
       }
       if (e.key === "Escape") {
+        if (isLoading && abortControllerRef.current) {
+          abortControllerRef.current.abort()
+        }
         setIsOpen(false)
-        setAnswer("")
-        setIsFocused(false)
-        inputRef.current?.blur()
       }
     }
+
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isHorusPage]) // removed isOpen from deps — Escape always works now
+  }, [isHorusPage, isLoading])
 
-  // Close when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (barRef.current && !barRef.current.contains(e.target as Node)) {
-        if (!isLoading) {
-          setIsFocused(false)
-        }
+    const onClick = (e: MouseEvent) => {
+      if (!panelRef.current) return
+      if (!panelRef.current.contains(e.target as Node) && !isLoading) {
+        setIsOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", onClick)
+    return () => document.removeEventListener("mousedown", onClick)
   }, [isLoading])
 
   const handleSend = useCallback(async () => {
     const trimmed = query.trim()
     if (!trimmed || isLoading) return
 
-    setIsLoading(true)
+    const userMsg: MiniMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: trimmed,
+    }
+    const assistantId = crypto.randomUUID()
+
+    setMessages((prev) => [...prev.slice(-13), userMsg, { id: assistantId, role: "assistant", content: "" }])
+    setQuery("")
     setIsOpen(true)
-    setAnswer("")
+    setIsLoading(true)
+
+    const contextHint = getPageContext(pathname)
+    const payload = contextHint
+      ? `[Page Context]\n${contextHint}\n\n[User]\n${trimmed}`
+      : trimmed
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     try {
       let accumulated = ""
       await api.horusChatStream(
-        trimmed,
+        payload,
         undefined,
-        undefined,
+        currentChatId || undefined,
         (chunk: string) => {
-          // Filter out the internal chat_id prefix line
-          if (chunk.startsWith("__CHAT_ID__:")) return
+          if (chunk.startsWith("__CHAT_ID__:")) {
+            const id = chunk.split(":")[1]?.trim()
+            if (id) setCurrentChatId(id)
+            return
+          }
+          if (chunk.startsWith("__")) return
+
           accumulated += chunk
-          setAnswer(accumulated)
-        }
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m)),
+          )
+        },
+        controller.signal,
       )
-      if (!accumulated) setAnswer("No response.")
+
+      if (!accumulated.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: "I could not generate a response yet. Try again or continue in full Horus AI.",
+                }
+              : m,
+          ),
+        )
+      }
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to get response",
-      )
-      setAnswer("Sorry, I couldn't process that. Please try again or use the full Horus AI chat.")
+      if ((err as Error)?.name !== "AbortError") {
+        toast.error(err instanceof Error ? err.message : "Horus request failed")
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: "Connection interrupted. Please retry." }
+              : m,
+          ),
+        )
+      }
     } finally {
       setIsLoading(false)
+      abortControllerRef.current = null
     }
-  }, [query, isLoading])
+  }, [query, isLoading, pathname, currentChatId])
 
-  const handleOpenFull = () => {
-    router.push("/platform/horus-ai")
+  const handleOpenFull = useCallback(() => {
+    const target = currentChatId ? `/platform/horus-ai?chat=${encodeURIComponent(currentChatId)}` : "/platform/horus-ai"
+    router.push(target)
     setIsOpen(false)
-    setAnswer("")
-    setQuery("")
+  }, [router, currentChatId])
+
+  const handleToggle = () => {
+    setIsOpen((v) => !v)
+    setShowTooltip(false)
+    if (!isOpen) setTimeout(() => inputRef.current?.focus(), 80)
   }
 
   if (isHorusPage) return null
 
   return (
-    <div
-      ref={barRef}
-      className="fixed bottom-5 left-1/2 z-30 w-full max-w-xl -translate-x-1/2 px-4 shadow-sm"
-    >
-      {/* Onboarding tooltip */}
+    <div ref={panelRef} className="fixed right-5 bottom-5 z-40 flex flex-col items-end gap-3">
       <AnimatePresence>
-        {showTooltip && (
+        {showTooltip && !isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl glass-layer-3 px-3 py-1.5 text-xs font-medium text-foreground/80 border border-border shadow-lg pointer-events-none"
+            initial={{ opacity: 0, y: 8, x: 8 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: 8, x: 8 }}
+            className="rounded-xl glass-layer-3 border border-border px-3 py-2 text-xs text-foreground/80 shadow-lg"
           >
-            <span className="text-[var(--brand)] font-bold">Horus AI</span> — ask anything about your compliance
-            <span className="ml-2 opacity-50 font-mono text-[10px]">Ctrl+I</span>
+            <span className="font-bold text-[var(--brand)]">Horus</span> is live here
+            <span className="ml-2 font-mono text-[10px] opacity-60">Ctrl+I</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {isOpen && answer && (
+        {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: 10, height: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="mb-2 overflow-hidden rounded-2xl glass-layer-3"
+            initial={{ opacity: 0, y: 16, x: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, x: 20, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="w-[360px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl glass-layer-3"
           >
-            {/* Response header */}
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[var(--brand)]/10">
-                  <BrainCircuit className="h-3 w-3 text-[var(--brand)]" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand)]/10">
+                  <BrainCircuit className="h-4 w-4 text-[var(--brand)]" />
                 </div>
-                <span className="text-xs font-semibold text-foreground/80">
-                  Horus AI
-                </span>
-                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div>
+                  <p className="text-xs font-bold text-foreground/90">Horus Assistant</p>
+                  <p className="text-[10px] text-muted-foreground">Page-aware mini chat</p>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-md text-muted-foreground/50 hover:text-foreground"
+                  className="h-7 w-7 rounded-md text-muted-foreground/70 hover:text-foreground"
                   onClick={handleOpenFull}
-                  title="Open full chat"
+                  title="Open full Horus"
                 >
-                  <Expand className="h-3 w-3" />
+                  <Expand className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-md text-muted-foreground/50 hover:text-foreground"
-                  onClick={() => {
-                    setIsOpen(false)
-                    setAnswer("")
-                  }}
+                  className="h-7 w-7 rounded-md text-muted-foreground/70 hover:text-foreground"
+                  onClick={() => setIsOpen(false)}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
 
-            {/* Response body */}
-            <ScrollArea className="max-h-[280px]">
-              <div className="px-4 py-3">
-                {!answer && isLoading ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin text-[var(--brand)]" />
-                    <span>Thinking...</span>
+            <ScrollArea className="max-h-[320px]">
+              <div className="space-y-2 px-3 py-3">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[88%] rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                        msg.role === "user"
+                          ? "bg-[var(--brand)] text-[var(--brand-foreground)]"
+                          : "bg-muted/60 text-foreground/90 border border-border",
+                      )}
+                    >
+                      <InlineMarkdown content={msg.content || (isLoading ? "Thinking..." : "")} />
+                    </div>
                   </div>
-                ) : (
-                  <>
-                    <InlineMarkdown content={answer} />
-                    {isLoading && (
-                      <span className="inline-block h-3 w-0.5 ml-0.5 bg-[var(--brand)] animate-pulse rounded-full" />
-                    )}
-                  </>
+                ))}
+
+                {isLoading && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-1">
+                    <Loader2 className="h-3 w-3 animate-spin text-[var(--brand)]" />
+                    Horus is thinking...
+                  </div>
                 )}
               </div>
             </ScrollArea>
 
-            {/* Response footer */}
-            <div className="border-t border-white/[0.06] px-4 py-2">
-              <button
-                onClick={handleOpenFull}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1 text-[10px] text-muted-foreground/60 transition-colors hover:text-[var(--brand)]"
-              >
-                <Expand className="h-2.5 w-2.5" />
-                Continue in full Horus AI chat
-              </button>
+            <div className="border-t border-white/[0.08] p-2.5">
+              <div className="mb-2 rounded-lg bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
+                Context: {getPageContext(pathname)}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
+                  placeholder="Ask Horus about this page..."
+                  className="min-w-0 flex-1 rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  disabled={isLoading}
+                />
+                <Button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!query.trim() || isLoading}
+                  size="icon"
+                  className={cn(
+                    "h-9 w-9 rounded-lg",
+                    query.trim() && !isLoading
+                      ? "bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand)]/90"
+                      : "bg-muted/50 text-muted-foreground/50",
+                  )}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowUpIcon className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Input bar */}
-      <motion.div
-        layout
-        className={cn(
-          "flex items-center gap-2 rounded-2xl px-3 py-2 transition-all duration-300 glass-layer-2",
-          isFocused || isOpen
-            ? "border-primary/30 shadow-xl shadow-primary/5 ring-1 ring-primary/10"
-            : "border-glass-border shadow-sm",
-        )}
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="group relative flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-[var(--brand)] text-[var(--brand-foreground)] shadow-xl transition-transform hover:scale-105 active:scale-95"
+        aria-label="Toggle Horus assistant"
       >
-        {/* Horus AI identity badge */}
-        <div
-          className={cn(
-            "flex items-center gap-1.5 shrink-0 rounded-lg px-2 py-1 transition-all",
-            isFocused || isOpen
-              ? "bg-[var(--brand)]/10"
-              : "bg-muted/40",
-          )}
-        >
-          <BrainCircuit
-            className={cn(
-              "h-3.5 w-3.5 transition-colors",
-              isFocused || isOpen
-                ? "text-[var(--brand)]"
-                : "text-muted-foreground/60",
-            )}
-          />
-          <span
-            className={cn(
-              "text-[10px] font-bold tracking-wide transition-colors hidden sm:block",
-              isFocused || isOpen
-                ? "text-[var(--brand)]"
-                : "text-muted-foreground/50",
-            )}
-          >
-            Horus
-          </span>
-        </div>
-
-        {/* Divider */}
-        <div className="h-4 w-px bg-border/50 shrink-0" />
-
-        {/* Input */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => { setIsFocused(true); setShowTooltip(false) }}
-          onBlur={() => { if (!isOpen) setIsFocused(false) }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          placeholder="Ask Horus AI anything about compliance..."
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
-          disabled={isLoading}
-          aria-label="Ask Horus AI"
-        />
-
-        {/* Shortcut hint or send button */}
-        <div className="flex shrink-0 items-center gap-2">
-          {!isFocused && !query && (
-            <kbd className="pointer-events-none hidden items-center gap-0.5 rounded-md border border-border/50 bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/50 sm:flex">
-              <span className="text-[10px]">Ctrl</span>+I
-            </kbd>
-          )}
-          {(query.trim() || isFocused) && (
-            <Button
-              type="button"
-              onClick={handleSend}
-              disabled={!query.trim() || isLoading}
-              size="icon"
-              className={cn(
-                "h-7 w-7 rounded-lg transition-all",
-                query.trim() && !isLoading
-                  ? "bg-[var(--brand)] text-[var(--brand-foreground)] shadow-sm hover:bg-[var(--brand)]/90"
-                  : "bg-muted/50 text-muted-foreground/40",
-              )}
-            >
-              {isLoading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <ArrowUpIcon className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          )}
-        </div>
-      </motion.div>
+        <BrainCircuit className="h-6 w-6" />
+        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+      </button>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -171,6 +171,7 @@ function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => v
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const {
     messages,
@@ -197,8 +198,24 @@ export default function HorusAIChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fallbackQueueRef = useRef<string[]>([])
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const didLoadFromQueryRef = useRef(false)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
+
+  // Handoff support: /platform/horus-ai?chat=<id>
+  useEffect(() => {
+    const chatIdFromQuery = searchParams.get("chat")
+    if (!chatIdFromQuery || didLoadFromQueryRef.current) return
+    if (currentChatId === chatIdFromQuery) {
+      didLoadFromQueryRef.current = true
+      return
+    }
+
+    didLoadFromQueryRef.current = true
+    loadChat(chatIdFromQuery).catch(() => {
+      // loadChat already surfaces toast errors.
+    })
+  }, [searchParams, currentChatId, loadChat])
 
   // Auto-scroll effect
   useEffect(() => {

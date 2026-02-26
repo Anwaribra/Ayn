@@ -311,8 +311,8 @@
     linear-gradient(110deg, #070A13 0%, #0B1230 42%, #06141B 100%);
   background-size: 120% 120%;
   animation: platformLiquidFlow 24s ease-in-out infinite alternate;
-  filter: saturate(1.06);
-  opacity: 1;
+  filter: saturate(var(--platform-bg-saturation, 1.06)) brightness(var(--platform-bg-brightness, 1));
+  opacity: var(--platform-bg-opacity, 1);
   pointer-events: none;
 }
 
@@ -329,7 +329,37 @@
   background-size: 120% 120%;
   animation: platformLiquidFlow 30s ease-in-out infinite alternate;
   filter: none;
-  opacity: 1;
+  opacity: var(--platform-bg-opacity-light, 1);
+}
+
+/* ─── Per-Page Visual Tuning (same language, different intensity) ────────── */
+[data-section="platform"] [data-platform-page="dashboard"] {
+  --platform-bg-opacity: 0.95;
+  --platform-bg-saturation: 1.02;
+  --platform-bg-brightness: 1;
+  --platform-bg-opacity-light: 1;
+}
+
+[data-section="platform"] [data-platform-page="horus"] {
+  --platform-bg-opacity: 1;
+  --platform-bg-saturation: 1.12;
+  --platform-bg-brightness: 0.93;
+  --platform-bg-opacity-light: 1;
+}
+
+[data-section="platform"] [data-platform-page="evidence"],
+[data-section="platform"] [data-platform-page="standards"] {
+  --platform-bg-opacity: 0.98;
+  --platform-bg-saturation: 1.06;
+  --platform-bg-brightness: 1;
+  --platform-bg-opacity-light: 1;
+}
+
+[data-section="platform"] [data-platform-page="analytics"] {
+  --platform-bg-opacity: 0.9;
+  --platform-bg-saturation: 0.98;
+  --platform-bg-brightness: 1.02;
+  --platform-bg-opacity-light: 0.95;
 }
 
 @keyframes platformLiquidFlow {

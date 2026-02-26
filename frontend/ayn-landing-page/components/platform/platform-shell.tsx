@@ -182,12 +182,23 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     }
   };
 
+  const platformVisualMode = useMemo(() => {
+    if (!pathname) return "default";
+    if (pathname.includes("/horus-ai")) return "horus";
+    if (pathname.includes("/analytics")) return "analytics";
+    if (pathname.includes("/evidence")) return "evidence";
+    if (pathname.includes("/standards")) return "standards";
+    if (pathname.includes("/dashboard")) return "dashboard";
+    return "default";
+  }, [pathname]);
+
   return (
     <div
       className={cn(
         "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground",
       )}
       data-platform-theme={mounted ? (resolvedTheme ?? "dark") : undefined}
+      data-platform-page={platformVisualMode}
     >
       {/* 🌌 Shared Platform Background Layer */}
       <div className="cinematic-bg" />

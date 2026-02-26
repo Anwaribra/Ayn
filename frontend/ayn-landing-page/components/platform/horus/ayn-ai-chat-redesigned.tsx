@@ -457,14 +457,17 @@ export default function HorusAIChat() {
 
   const handleSendMessage = async (text: string, files?: File[]) => {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
+    const hasFilesInCurrentMessage = filesToUpload.length > 0
     setAttachedFiles([])
-    const fallbackSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
+    const fallbackSteps = getReasoningSteps(text || "", hasFilesInCurrentMessage)
     if (fallbackSteps.length > 0) {
       if (fallbackTimerRef.current) {
         clearInterval(fallbackTimerRef.current)
         fallbackTimerRef.current = null
       }
-      fallbackQueueRef.current = [...fallbackSteps.slice(1), "Generating response..."]
+      fallbackQueueRef.current = [...fallbackSteps.slice(1), "Generating response..."].filter(
+        (step) => hasFilesInCurrentMessage || step !== "Processing attached files..."
+      )
       setReasoning({
         steps: [{ text: fallbackSteps[0], status: "active" }],
         startTime: Date.now(),
@@ -685,29 +688,12 @@ export default function HorusAIChat() {
                             <span className="text-sm font-bold text-foreground">Horus</span>
                           </div>
 
-                          {/* Inject Reasoning Block ONLY for the latest assistant message */}
+                          {/* Reasoning lives inside the same latest assistant bubble as the response */}
                           {msg.role === "assistant" &&
                             msg.id === messages.filter((m) => m.role === "assistant").pop()?.id &&
-                            reasoning?.isComplete && (
+                            reasoning && (
                               <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
                             )}
-
-                          {/* M6: Skeleton card — show while agent action is loading for this message */}
-                          {msg.role === "assistant" && !(msg as any).structuredResult && status === "generating" &&
-                            msg.id === messages.filter(m => m.role === "assistant").pop()?.id &&
-                            !msg.content && (
-                            <div className="mb-4 animate-pulse">
-                              <div className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/60 p-5 space-y-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-xl bg-[var(--border-subtle)]" />
-                                  <div className="h-3.5 bg-[var(--border-subtle)] rounded w-40" />
-                                </div>
-                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-full" />
-                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-4/5" />
-                                <div className="h-2.5 bg-[var(--border-subtle)] rounded w-3/5" />
-                              </div>
-                            </div>
-                          )}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (
@@ -840,28 +826,6 @@ export default function HorusAIChat() {
                     </div>
                   )
                 })}
-
-                {/* Incomplete Reasoning Phase (before real message is appended) */}
-                {reasoning && !reasoning.isComplete && (
-                  <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    {reasoning.tempUserMessage && (
-                      <div className="w-full py-4 flex flex-col items-end">
-                        <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] whitespace-pre-wrap font-medium shadow-sm">
-                          {reasoning.tempUserMessage}
-                        </div>
-                      </div>
-                    )}
-                    <div className="w-full py-4 mt-2">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-primary/10 text-primary flex-shrink-0">
-                          <Brain className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-sm font-bold text-foreground">Horus</span>
-                      </div>
-                      <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
-                    </div>
-                  </div>
-                )}
 
                 {/* Typing indicator */}
                 {status !== "idle" && (!reasoning || reasoning.isComplete) && status === "searching" && (

@@ -22,6 +22,7 @@ import {
   X,
   Lightbulb,
   Check,
+  ArrowRight,
 } from "lucide-react"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
@@ -30,6 +31,23 @@ import { StatusTiles } from "@/components/platform/status-tiles"
 import { GlassCard } from "@/components/ui/glass-card"
 import { DocumentEditor } from "@/components/platform/document-editor" // <-- Import Dialog
 import { cn } from "@/lib/utils"
+
+type UiSeverity = "High" | "Medium" | "Low"
+type UiAlignment = "Aligned" | "Partially Aligned" | "Not Aligned"
+
+function getSeverity(value?: string): UiSeverity {
+  const normalized = (value ?? "").toLowerCase()
+  if (normalized === "high") return "High"
+  if (normalized === "low") return "Low"
+  return "Medium"
+}
+
+function getAlignment(value?: string): UiAlignment {
+  const normalized = (value ?? "").toLowerCase()
+  if (normalized === "aligned" || normalized === "met") return "Aligned"
+  if (normalized === "partially_aligned" || normalized === "partially_met") return "Partially Aligned"
+  return "Not Aligned"
+}
 
 export default function GapAnalysisPage() {
   return (
@@ -264,28 +282,16 @@ function GapAnalysisContent() {
   }
 
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
-    const priorityMap: Record<string, string> = { high: "High", medium: "Med", low: "Low" }
-    const statusMap: Record<string, string> = {
-      // Backend actual values (from gap_analysis/models.py)
-      aligned: "Verified",
-      partially_aligned: "Warning",
-      needs_improvement: "Critical",
-      no_evidence: "Critical",
-      // Legacy values (backward compat)
-      not_met: "Critical",
-      partially_met: "Warning",
-      met: "Verified",
-    }
-    const p = priorityMap[item.priority] ?? "Med"
-    const s = statusMap[item.status] ?? "Warning"
-    const statusClass = p === "High" ? "status-critical" : p === "Med" ? "status-warning" : "status-success"
+    const severity = getSeverity(item.priority)
+    const alignment = getAlignment(item.status)
+    const statusClass = severity === "High" ? "status-critical" : severity === "Medium" ? "status-warning" : "status-success"
     // Deterministic risk score for consistent UI state and testing.
-    const riskScore = s === "Critical" ? 90 : s === "Warning" ? 55 : 20
+    const riskScore = alignment === "Not Aligned" ? 90 : alignment === "Partially Aligned" ? 55 : 20
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
-      priority: p,
-      status: s,
+      severity,
+      alignment,
       desc: item.recommendation ?? "No recommendation available.",
       riskScore,
       statusClass,
@@ -293,12 +299,12 @@ function GapAnalysisContent() {
   }) ?? []
 
   const filteredGaps = activeTab === "urgent"
-    ? gaps.filter((g) => g.priority === "High")
+    ? gaps.filter((g) => g.severity === "High")
     : gaps
 
   const overallScore = activeReport?.overallScore ?? null
-  const activeGapCount = gaps.filter((g) => g.priority === "High").length
-  const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.priority === "Low").length / gaps.length) * 100) : 94
+  const activeGapCount = gaps.filter((g) => g.severity === "High").length
+  const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.severity === "Low").length / gaps.length) * 100) : 94
 
   return (
     <div className="animate-fade-in-up pb-20">
@@ -306,13 +312,13 @@ function GapAnalysisContent() {
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="px-2 py-0.5 rounded status-info border">
-              <span className="text-[10px] font-bold uppercase tracking-widest">Neural Alignment Monitor</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Gap Analysis</span>
             </div>
             <div className="h-px w-6 bg-border" />
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Framework Alignment</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Evidence vs Standards</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight italic text-[var(--text-primary)]">
-            Alignment <span className="text-[var(--text-tertiary)] not-italic font-light">Analysis</span>
+          <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)]">
+            Compliance Gap <span className="text-[var(--text-tertiary)] font-light">Center</span>
           </h1>
         </div>
 
@@ -321,16 +327,32 @@ function GapAnalysisContent() {
             onClick={() => setActiveTab("all")}
             className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
-            System Wide
+            All Gaps
           </button>
           <button
             onClick={() => setActiveTab("urgent")}
             className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
-            Critical Only
+            High Severity
           </button>
         </div>
       </header>
+
+      <div className="px-4 mb-6">
+        <div className="glass-panel p-4 rounded-2xl border-[var(--border-subtle)]">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            <span>Detect</span>
+            <ArrowRight className="w-3 h-3" />
+            <span>Draft</span>
+            <ArrowRight className="w-3 h-3" />
+            <span>Link Evidence</span>
+            <ArrowRight className="w-3 h-3" />
+            <span>Verify</span>
+            <ArrowRight className="w-3 h-3" />
+            <span>Close</span>
+          </div>
+        </div>
+      </div>
 
       {/* H4: Active report indicator banner */}
       {activeReport && (
@@ -370,10 +392,10 @@ function GapAnalysisContent() {
             <div>
               <h3 className="text-lg font-bold text-foreground mb-2">What is a Gap Analysis?</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-3xl">
-                A gap analysis compares your uploaded institutional evidence against selected compliance frameworks (like ISO 9001 or NCAAA). Horus AI scans your documentation to identify vulnerabilities, missing policies, and areas of non-compliance, creating a prioritized remediation roadmap.
+                Gap Analysis compares your uploaded evidence against selected standards. Horus identifies missing controls, weak documentation, and non-compliance risks, then helps you remediate each item.
               </p>
               <div className="flex flex-wrap gap-4 text-xs font-bold">
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 text-[var(--status-success)]"><Check className="w-3.5 h-3.5" /> 1. Configure Standards</span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 text-[var(--status-success)]"><Check className="w-3.5 h-3.5" /> 1. Select Standard</span>
                 <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 text-[var(--status-success)]"><Check className="w-3.5 h-3.5" /> 2. Upload Evidence</span>
                 <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 text-primary"><Sparkles className="w-3.5 h-3.5" /> 3. Run Analysis</span>
               </div>
@@ -477,17 +499,22 @@ function GapAnalysisContent() {
               filteredGaps.map((gap, i) => (
                 <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-start md:items-center gap-8 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
                   <div className={cn("w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center border border-[var(--border-subtle)]", gap.statusClass)}>
-                    {gap.priority === "High" ? <AlertTriangle className="w-5 h-5" /> :
-                      gap.priority === "Med" ? <Info className="w-5 h-5" /> :
+                    {gap.severity === "High" ? <AlertTriangle className="w-5 h-5" /> :
+                      gap.severity === "Medium" ? <Info className="w-5 h-5" /> :
                         <CheckCircle2 className="w-5 h-5" />}
                   </div>
 
                   <div className="flex-1">
-                    <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
-                      <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.priority === "High" ? "status-critical" : "bg-muted text-muted-foreground border-border")}>
-                        {gap.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.severity === "High" ? "status-critical" : gap.severity === "Medium" ? "status-warning" : "status-success")}>
+                          {gap.severity}
+                        </span>
+                        <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.alignment === "Not Aligned" ? "status-critical" : gap.alignment === "Partially Aligned" ? "status-warning" : "status-success")}>
+                          {gap.alignment}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
                   </div>
@@ -509,7 +536,7 @@ function GapAnalysisContent() {
                         ) : (
                           <Sparkles className="w-3.5 h-3.5" />
                         )}
-                        Auto-Draft
+                        Draft Fix
                       </button>
                       <button
                         onClick={() => handleRemediateClick(gap.original)}
@@ -545,7 +572,7 @@ function GapAnalysisContent() {
                         hoverEffect={!isQueued}
                         shine={!isQueued}
                         className={cn(
-                          "flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 justify-between p-5",
+                          "group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 justify-between p-5",
                           isQueued ? "opacity-70 cursor-wait" : isFailed ? "border-destructive/50 opacity-80" : "cursor-pointer"
                         )}
                         onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}

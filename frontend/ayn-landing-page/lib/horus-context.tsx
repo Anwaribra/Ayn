@@ -11,6 +11,12 @@ interface Message {
     content: string
     timestamp: number
     structuredResult?: { type: string; payload: any } | null
+    pendingConfirmation?: {
+        id: string
+        tool: string
+        title: string
+        description: string
+    } | null
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
@@ -21,6 +27,7 @@ interface HorusContextValue {
     status: HorusStatus
     thinkingSteps: string[]          // Real steps pushed by __THINKING__: events
     sendMessage: (text: string, files?: File[]) => Promise<void>
+    resolveActionConfirmation: (id: string, decision: "confirm" | "cancel") => Promise<void>
     stopGeneration: () => void
     newChat: () => void
     loadChat: (chatId: string) => Promise<void>
@@ -95,29 +102,37 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
-    const sendMessage = async (text: string, files?: File[]) => {
+    const streamRequest = async (
+        text: string,
+        files?: File[],
+        opts?: { appendUser?: boolean; visibleUserText?: string }
+    ) => {
+        const appendUser = opts?.appendUser ?? true
+        const visibleUserText = opts?.visibleUserText ?? text
         if ((!text && (!files || files.length === 0)) || status !== "idle") return
 
-        setThinkingSteps([])  // Reset thinking steps for new request
+        setThinkingSteps([])
 
-        const userMsg: Message = {
-            id: crypto.randomUUID(),
-            role: "user",
-            content: text || "📎 Attached files for analysis",
-            timestamp: Date.now(),
+        if (appendUser) {
+            const userMsg: Message = {
+                id: crypto.randomUUID(),
+                role: "user",
+                content: visibleUserText || "📎 Attached files for analysis",
+                timestamp: Date.now(),
+            }
+            setMessages(prev => [...prev, userMsg])
         }
 
-        setMessages(prev => [...prev, userMsg])
         setStatus("generating")
         const assistantMsgId = crypto.randomUUID()
         setMessages(prev => [...prev, {
             id: assistantMsgId,
             role: "assistant",
             content: "",
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            pendingConfirmation: null,
         }])
 
-        // 2. Stream Generation
         abortControllerRef.current = new AbortController()
         let fullContent = ""
 
@@ -133,20 +148,31 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                         return
                     }
 
-                    // Real thinking step from backend — push to thinkingSteps
                     if (chunk.startsWith("__THINKING__:")) {
                         const stepText = chunk.slice("__THINKING__:".length).trim()
                         if (stepText) setThinkingSteps(prev => [...prev, stepText])
                         return
                     }
 
-                    // Agent structured result — parse and attach to message, don't stream as text
+                    if (chunk.startsWith("__ACTION_CONFIRM__:")) {
+                        try {
+                            const jsonStr = chunk.slice("__ACTION_CONFIRM__:".length).trim()
+                            const parsed = JSON.parse(jsonStr)
+                            setMessages(prev => prev.map(m =>
+                                m.id === assistantMsgId ? { ...m, pendingConfirmation: parsed } : m
+                            ))
+                        } catch (e) {
+                            console.error("[Horus] Failed to parse action confirmation:", e)
+                        }
+                        return
+                    }
+
                     if (chunk.startsWith("__ACTION_RESULT__:")) {
                         try {
                             const jsonStr = chunk.slice("__ACTION_RESULT__:".length).trim()
                             const parsed = JSON.parse(jsonStr)
                             setMessages(prev => prev.map(m =>
-                                m.id === assistantMsgId ? { ...m, structuredResult: parsed } : m
+                                m.id === assistantMsgId ? { ...m, structuredResult: parsed, pendingConfirmation: null } : m
                             ))
                         } catch (e) {
                             console.error("[Horus] Failed to parse action result:", e)
@@ -164,12 +190,23 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (err: any) {
             if (err.name !== 'AbortError') {
                 toast.error("Horus connection interrupted.")
-                setMessages(prev => prev.filter(m => m.id !== assistantMsgId)) // Remove empty message on error
+                setMessages(prev => prev.filter(m => m.id !== assistantMsgId))
             }
         } finally {
             setStatus("idle")
             abortControllerRef.current = null
         }
+    }
+
+    const sendMessage = async (text: string, files?: File[]) => {
+        await streamRequest(text, files, { appendUser: true, visibleUserText: text || "📎 Attached files for analysis" })
+    }
+
+    const resolveActionConfirmation = async (id: string, decision: "confirm" | "cancel") => {
+        const controlMessage = decision === "confirm"
+            ? `__CONFIRM_ACTION__:${id}`
+            : `__CANCEL_ACTION__:${id}`
+        await streamRequest(controlMessage, undefined, { appendUser: false })
     }
 
     const newChat = () => {
@@ -197,7 +234,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, sendMessage, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, sendMessage, resolveActionConfirmation, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

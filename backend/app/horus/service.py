@@ -8,6 +8,7 @@ import base64
 import json
 import logging
 import asyncio
+from uuid import uuid4
 from datetime import datetime
 from typing import List, Optional, Dict, Any, AsyncGenerator
 from pydantic import BaseModel
@@ -21,10 +22,19 @@ from app.activity.service import ActivityService
 from app.gap_analysis.service import GapAnalysisService
 from app.gap_analysis.models import GapAnalysisRequest, UserDTO
 from app.rag.service import RagService
-from app.horus.intent_router import detect_intent
-from app.horus.agent_actions import ACTION_REGISTRY
+from app.horus.agent_context import build_agent_context
+from app.horus.agent_tools import (
+    TOOL_REGISTRY,
+    execute_tool,
+    get_tool_ui_meta,
+    requires_explicit_confirmation,
+)
 
 logger = logging.getLogger(__name__)
+
+# In-memory pending confirmations keyed by confirmation id.
+# Scope check (user_id/chat_id) prevents cross-user execution.
+PENDING_ACTION_CONFIRMATIONS: dict[str, dict[str, Any]] = {}
 
 
 class Observation(BaseModel):
@@ -152,98 +162,171 @@ class HorusService:
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
 
-        # ── AGENT INTENT DISPATCH ─────────────────────────────────────────────
-        # Only run intent detection when there are no files attached (file uploads
-        # always go through the full AI pipeline for multi-modal analysis).
+        client = get_gemini_client()
+
+        # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         if message and not files:
-            intent = detect_intent(message)
-            if intent and intent in ACTION_REGISTRY:
-                logger.info(f"Horus agent intent detected: '{intent}' for user {user_id}")
+            try:
+                from app.core.db import db as prisma_client
 
-                # Save user message to history
-                if background_tasks:
-                    background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
-                else:
-                    asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
+                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
+                current_user_dict = current_user if isinstance(current_user, dict) else {
+                    "id": user_id,
+                    "email": getattr(current_user, "email", ""),
+                    "role": getattr(current_user, "role", "USER"),
+                    "institutionId": institution_id,
+                }
 
-                try:
-                    # Resolve institution_id from the user record
-                    from app.core.db import db as prisma_client
-                    user_obj = await prisma_client.user.find_unique(where={"id": user_id})
-                    institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
+                # 1) Resolve pending confirmation command first.
+                confirm_id = self._extract_control_token(message, "__CONFIRM_ACTION__:")
+                cancel_id = self._extract_control_token(message, "__CANCEL_ACTION__:")
 
-                    # Execute the agent action
-                    action_fn = ACTION_REGISTRY[intent]
-                    result = await action_fn(
-                        user_id=user_id,
-                        institution_id=institution_id,
-                        db=prisma_client,
-                    )
+                if confirm_id:
+                    pending = PENDING_ACTION_CONFIRMATIONS.get(confirm_id)
+                    if pending and pending.get("user_id") == user_id and pending.get("chat_id") == chat_id:
+                        tool_name = pending["tool_name"]
+                        args = pending.get("args", {})
+                        yield "__THINKING__:Executing confirmed action...\n"
+                        await asyncio.sleep(0.25)
+                        tool_result = await execute_tool(
+                            tool_name=tool_name,
+                            args=args,
+                            db=prisma_client,
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            current_user=current_user_dict,
+                        )
+                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
 
-                    # Emit the structured result as a special prefix
-                    yield f"__ACTION_RESULT__:{json.dumps(result)}\n"
+                        if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
+                            yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
 
-                    # Generate a contextual AI narrative based on the actual result data
-                    # This runs after the card is emitted so the card renders first,
-                    # then Horus provides a natural language commentary below it.
-                    payload = result.get("payload", {})
-                    narrative_prompts = {
-                        "run_full_audit": (
-                            f"You just ran a full compliance audit for an educational institution. "
-                            f"The overall compliance score is {payload.get('overall_score', 0):.0f}% "
-                            f"across {payload.get('total_criteria', 0)} criteria, with "
-                            f"{len(payload.get('passed', []))} passed and {len(payload.get('failed', []))} failed. "
-                            f"Write 2 concise sentences summarizing the audit result and the most urgent next step. "
-                            f"Be direct and data-driven. No pleasantries."
-                        ),
-                        "check_compliance_gaps": (
-                            f"You just retrieved the compliance gap table for an institution. "
-                            f"There are {len([r for r in payload.get('rows', []) if r.get('status') == 'gap'])} active gaps "
-                            f"and {len([r for r in payload.get('rows', []) if r.get('status') == 'met'])} criteria met. "
-                            f"Write 2 concise sentences: state the gap severity and the single most important action to take now. "
-                            f"Be direct. No pleasantries."
-                        ),
-                        "generate_remediation_report": (
-                            f"You just generated a remediation action plan with {len(payload.get('rows', []))} items. "
-                            f"Critical items: {len([r for r in payload.get('rows', []) if 'Critical' in r.get('priority', '')])}, "
-                            f"High: {len([r for r in payload.get('rows', []) if 'High' in r.get('priority', '')])}. "
-                            f"Write 2 concise sentences summarizing the plan and the most critical item to start with. "
-                            f"Be prescriptive and direct. No pleasantries."
-                        ),
-                    }
+                        narrative_prompt = (
+                            "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
+                            f"Tool: {tool_name}\n"
+                            f"Tool result JSON: {json.dumps(tool_result)}\n"
+                        )
+                        narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
+                        if narrative_text:
+                            yield ("\n" if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"} else "") + narrative_text
 
-                    narrative_text = ""
-                    if intent in narrative_prompts and payload:
-                        try:
-                            ai_narrative = await client.generate_text(
-                                prompt=narrative_prompts[intent]
-                            )
-                            narrative_text = ai_narrative.strip()
-                            yield "\n" + narrative_text
-                        except Exception as narrative_err:
-                            logger.warning(f"Narrative generation failed: {narrative_err}")
-                            # Fallback to static label
-                            static_labels = {
-                                "run_full_audit": "Full compliance audit report generated.",
-                                "check_compliance_gaps": "Compliance gap analysis retrieved.",
-                                "generate_remediation_report": "Remediation action plan generated.",
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                        return
+
+                if cancel_id:
+                    pending = PENDING_ACTION_CONFIRMATIONS.get(cancel_id)
+                    if pending and pending.get("user_id") == user_id and pending.get("chat_id") == chat_id:
+                        PENDING_ACTION_CONFIRMATIONS.pop(cancel_id, None)
+                        cancelled_text = "Understood. I canceled that action."
+                        yield cancelled_text
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", cancelled_text)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", cancelled_text)
+                        return
+
+                # 2) Normal planner path.
+                snapshot = await build_agent_context(
+                    db=prisma_client,
+                    user_id=user_id,
+                    institution_id=institution_id,
+                )
+                plan = await self._plan_agent_action(
+                    client=client,
+                    message=message,
+                    platform_snapshot=snapshot,
+                )
+
+                if plan and plan.get("mode") == "tool":
+                    tool_name = plan.get("tool")
+                    args = plan.get("arguments", {}) or {}
+                    if tool_name in TOOL_REGISTRY:
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "user", message)
+
+                        tool_meta = get_tool_ui_meta(tool_name)
+                        yield "__THINKING__:Reading your platform data...\n"
+                        await asyncio.sleep(0.25)
+                        yield f"__THINKING__:Identified action: {tool_meta['title']}\n"
+                        await asyncio.sleep(0.25)
+                        yield f"__THINKING__:Preparing {tool_meta['prepare_text']}...\n"
+                        await asyncio.sleep(0.25)
+
+                        if requires_explicit_confirmation(tool_name):
+                            confirm_id = str(uuid4())
+                            description = tool_meta["description"]
+                            PENDING_ACTION_CONFIRMATIONS[confirm_id] = {
+                                "user_id": user_id,
+                                "chat_id": chat_id,
+                                "tool_name": tool_name,
+                                "args": args,
+                                "description": description,
+                                "created_at": datetime.utcnow().isoformat(),
                             }
-                            narrative_text = static_labels.get(intent, "Agent action completed.")
-                            yield narrative_text
+                            confirm_payload = {
+                                "id": confirm_id,
+                                "tool": tool_name,
+                                "title": tool_meta["title"],
+                                "description": description,
+                            }
+                            yield f"__ACTION_CONFIRM__:{json.dumps(confirm_payload)}\n"
+                            if background_tasks:
+                                background_tasks.add_task(
+                                    ChatService.save_message,
+                                    chat_id,
+                                    user_id,
+                                    "assistant",
+                                    f"Confirmation required before '{tool_meta['title']}'.",
+                                )
+                            else:
+                                await ChatService.save_message(
+                                    chat_id,
+                                    user_id,
+                                    "assistant",
+                                    f"Confirmation required before '{tool_meta['title']}'.",
+                                )
+                            return
 
-                    # Save the narrative (not the raw JSON) to chat history
-                    if background_tasks:
-                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text or "Agent action completed.")
-                    else:
-                        await ChatService.save_message(chat_id, user_id, "assistant", narrative_text or "Agent action completed.")
+                        tool_result = await execute_tool(
+                            tool_name=tool_name,
+                            args=args,
+                            db=prisma_client,
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            current_user=current_user_dict,
+                        )
 
-                    return  # ← Exit before the AI streaming pipeline
+                        if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
+                            yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
 
+                        narrative_prompt = (
+                            "You are Horus. Summarize this tool execution in 2 concise sentences. "
+                            "If relevant, include exactly one next step.\n\n"
+                            f"User message: {message}\n"
+                            f"Tool: {tool_name}\n"
+                            f"Tool result JSON: {json.dumps(tool_result)}\n"
+                        )
+                        narrative_text = await client.generate_text(prompt=narrative_prompt)
+                        narrative_text = (narrative_text or "Agent action completed.").strip()
+                        if narrative_text:
+                            if tool_result.get("type") in {"audit_report", "gap_table", "remediation_plan"}:
+                                yield "\n" + narrative_text
+                            else:
+                                yield narrative_text
 
-                except Exception as agent_err:
-                    logger.error(f"Agent action '{intent}' failed: {agent_err}", exc_info=True)
-                    # Fall through to the normal AI pipeline on failure
-                    yield "I encountered an issue running that action. Let me help you with a standard response instead.\n\n"
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                        return
+            except Exception as agent_err:
+                logger.error(f"Agent planner/tool execution failed: {agent_err}", exc_info=True)
         
         # 2. Parallelize ALL initial operations for speed
         async def process_file(f):
@@ -322,7 +405,7 @@ class HorusService:
         
         # Log file uploads in background
         for res in file_results:
-            evidence_id = res.pop("evidenceId")
+            evidence_id = res.get("evidenceId")
             if background_tasks:
                 background_tasks.add_task(ActivityService.log_activity,
                     user_id=user_id,
@@ -333,7 +416,6 @@ class HorusService:
                 )
 
         # 3. AI Interaction (Streaming)
-        client = get_gemini_client()
         context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context)
         
         full_response = ""
@@ -455,7 +537,7 @@ class HorusService:
                                 "evidenceCriteria": {
                                     "some": {
                                         "evidence": {
-                                            "institutionId": institution_id
+                                            "ownerId": institution_id
                                         }
                                     }
                                 }
@@ -474,12 +556,25 @@ class HorusService:
                 
                 for standard in standards:
                     try:
-                        report = await gap_service.generate_report(GapAnalysisRequest(standardId=standard.id), user_dto)
+                        queued = await gap_service.queue_report(
+                            GapAnalysisRequest(standardId=standard.id),
+                            user_dto
+                        )
+                        await gap_service.run_report_background(
+                            job_id=queued["jobId"],
+                            user_id=user_id,
+                            institution_id=institution_id,
+                            standard_id=standard.id,
+                            current_user=user_dto,
+                        )
+                        report = await prisma_client.gapanalysis.find_unique(where={"id": queued["jobId"]})
+                        if not report:
+                            continue
                         results["gap_reports"].append({
-                            "id": report.id,
+                            "id": queued["jobId"],
                             "title": standard.title,
                             "score": report.overallScore,
-                            "gaps": [g.criterionTitle for g in report.gaps[:3]] # Just top 3 gaps for context
+                            "gaps": [],
                         })
                     except Exception as e:
                         logger.error(f"Brain Pipeline Step 2 (Gap) failed for {standard.title}: {e}")
@@ -664,6 +759,83 @@ class HorusService:
     def _hash_state(self, summary) -> str:
         return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.utcnow().strftime('%Y%m%d%H')}"
 
+    def _extract_control_token(self, message: str, prefix: str) -> str | None:
+        if not message:
+            return None
+        if not message.startswith(prefix):
+            return None
+        return message[len(prefix):].strip() or None
+
+    def _extract_json_block(self, text: str) -> Dict[str, Any] | None:
+        if not text:
+            return None
+        cleaned = text.strip().replace("```json", "").replace("```", "").strip()
+        try:
+            return json.loads(cleaned)
+        except Exception:
+            pass
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return None
+        try:
+            return json.loads(cleaned[start : end + 1])
+        except Exception:
+            return None
+
+    async def _plan_agent_action(
+        self,
+        client: Any,
+        message: str,
+        platform_snapshot: Dict[str, Any],
+    ) -> Dict[str, Any] | None:
+        tool_manifest = [
+            {
+                "name": name,
+                "description": spec["description"],
+                "mutating": spec["mutating"],
+                "args_schema": spec["args_schema"],
+            }
+            for name, spec in TOOL_REGISTRY.items()
+        ]
+
+        planner_prompt = f"""
+You are Horus planner. Decide whether to call exactly one tool or answer as chat.
+
+User message:
+{message}
+
+Platform snapshot JSON:
+{json.dumps(platform_snapshot)[:8000]}
+
+Available tools:
+{json.dumps(tool_manifest)}
+
+Return ONLY valid JSON with this exact schema:
+{{
+  "mode": "tool" | "chat",
+  "tool": "tool_name_or_null",
+  "arguments": {{}},
+  "reason": "short reason"
+}}
+
+Rules:
+- Choose mode "tool" only if a tool materially improves accuracy/action.
+- For mutating tools, choose them only when user intent is explicit.
+- If unsure, return mode "chat".
+"""
+        raw = await client.generate_text(prompt=planner_prompt)
+        parsed = self._extract_json_block(raw)
+        if not isinstance(parsed, dict):
+            return None
+        if parsed.get("mode") not in {"tool", "chat"}:
+            return None
+        if parsed.get("mode") == "tool" and parsed.get("tool") not in TOOL_REGISTRY:
+            return None
+        if not isinstance(parsed.get("arguments", {}), dict):
+            parsed["arguments"] = {}
+        return parsed
+
     async def _trigger_gap_analysis_after_upload(
         self,
         user_id: str,
@@ -701,7 +873,7 @@ class HorusService:
                             "evidenceCriteria": {
                                 "some": {
                                     "evidence": {
-                                        "institutionId": institution_id
+                                        "ownerId": institution_id
                                     }
                                 }
                             }
@@ -728,7 +900,17 @@ class HorusService:
                         role=getattr(user, "role", "USER"),
                         email=getattr(user, "email", "unknown")
                     )
-                    report = await gap_service.generate_report(request, user_dto)
+                    queued = await gap_service.queue_report(request, user_dto)
+                    await gap_service.run_report_background(
+                        job_id=queued["jobId"],
+                        user_id=user_id,
+                        institution_id=institution_id,
+                        standard_id=standard.id,
+                        current_user=user_dto,
+                    )
+                    report = await prisma_client.gapanalysis.find_unique(where={"id": queued["jobId"]})
+                    if not report:
+                        continue
                     logger.info(f"Horus gap trigger: Gap analysis complete for standard '{standard.title}' — score: {report.overallScore}%")
 
                     # Notify the user
@@ -737,7 +919,7 @@ class HorusService:
                         type="info",
                         title="Gap Analysis Updated",
                         message=f"Horus auto-ran gap analysis for '{standard.title}' after your file upload. Score: {report.overallScore:.0f}%.",
-                        relatedEntityId=report.id,
+                        relatedEntityId=queued["jobId"],
                         relatedEntityType="gap_analysis"
                     ))
 

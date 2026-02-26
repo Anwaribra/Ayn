@@ -159,6 +159,62 @@ async def horus_events_stream(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+@router.get("/observe")
+async def horus_observe(
+    query: Optional[str] = Query(None),
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Lightweight state observation endpoint for legacy clients.
+    """
+    user_id = get_user_id(current_user)
+    state_service = StateService(db)
+    summary = await state_service.get_state_summary(user_id)
+    content = (
+        f"Platform snapshot: {summary.total_files} files, "
+        f"{summary.total_evidence} evidence items, "
+        f"{summary.total_gaps} gaps, score {summary.total_score:.1f}%."
+    )
+    if query:
+        content += f" Query focus: {query}"
+    return {
+        "content": content,
+        "timestamp": datetime.utcnow().timestamp(),
+        "state_hash": f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}",
+    }
+
+
+@router.get("/state/files")
+async def horus_state_files(
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    user_id = get_user_id(current_user)
+    manager = StateService(db).manager
+    return await manager.get_files_by_user(user_id)
+
+
+@router.get("/state/evidence")
+async def horus_state_evidence(
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    user_id = get_user_id(current_user)
+    manager = StateService(db).manager
+    return await manager.get_evidence_by_user(user_id)
+
+
+@router.get("/state/gaps")
+async def horus_state_gaps(
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    user_id = get_user_id(current_user)
+    manager = StateService(db).manager
+    return await manager.get_gaps_by_user(user_id)
+
+
 @router.get("/history/last")
 async def get_last_chat(
     current_user = Depends(get_current_user)

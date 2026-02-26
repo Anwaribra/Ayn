@@ -263,8 +263,23 @@ async def get_events(
     current_user = Depends(get_current_user)
 ):
     """Get recent events."""
-    manager = StateService(db).manager
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+    events = await db.platformevent.find_many(
+        where={"userId": user_id},
+        order={"timestamp": "desc"},
+        take=limit
+    )
+    return [
+        {
+            "id": e.id,
+            "type": e.type,
+            "user_id": e.userId,
+            "entity_id": e.entityId,
+            "metadata": e.metadata,
+            "timestamp": e.timestamp,
+        }
+        for e in events
+    ]
 
 @router.get("/workflows")
 async def get_workflows(

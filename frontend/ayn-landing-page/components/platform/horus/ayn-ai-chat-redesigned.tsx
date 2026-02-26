@@ -176,6 +176,7 @@ export default function HorusAIChat() {
     status,
     thinkingSteps,
     sendMessage,
+    resolveActionConfirmation,
     stopGeneration,
     newChat,
     loadChat
@@ -220,6 +221,49 @@ export default function HorusAIChat() {
       stopGeneration()
     }
   }, [])
+
+  // Drive reasoning UI from real backend thinking events.
+  useEffect(() => {
+    if (thinkingSteps.length === 0) return
+
+    setReasoning((prev) => {
+      const base = prev && !prev.isComplete ? prev : {
+        steps: [] as { text: string; status: "pending" | "active" | "done" }[],
+        startTime: Date.now(),
+        duration: null,
+        isExpanded: true,
+        isComplete: false,
+        tempUserMessage: null,
+      }
+
+      const nextSteps = thinkingSteps.map((text, idx) => ({
+        text,
+        status: idx === thinkingSteps.length - 1 ? ("active" as const) : ("done" as const),
+      }))
+
+      return {
+        ...base,
+        steps: nextSteps,
+        isExpanded: true,
+        isComplete: false,
+      }
+    })
+  }, [thinkingSteps])
+
+  useEffect(() => {
+    if (status !== "idle") return
+    setReasoning((prev) => {
+      if (!prev || prev.isComplete || prev.steps.length === 0) return prev
+      return {
+        ...prev,
+        steps: prev.steps.map((s) => ({ ...s, status: "done" as const })),
+        isComplete: true,
+        isExpanded: false,
+        duration: prev.duration ?? (Date.now() - prev.startTime) / 1000,
+        tempUserMessage: null,
+      }
+    })
+  }, [status])
 
   // M1: Copy message text to clipboard
   const handleCopy = useCallback(async (msgId: string, content: string) => {
@@ -319,58 +363,18 @@ export default function HorusAIChat() {
   const handleSendMessage = async (text: string, files?: File[]) => {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
     setAttachedFiles([])
-
-    const initialStartTime = Date.now()
-
-    // Seed reasoning with any thinking steps already received from the backend.
-    // If none arrive (agent action or very fast response), fall back to computed steps.
-    const seedSteps = thinkingSteps.length > 0
-      ? thinkingSteps
-      : getReasoningSteps(text || "", filesToUpload.length > 0)
-
-    if (seedSteps.length > 0) {
+    const fallbackSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
+    if (fallbackSteps.length > 0) {
       setReasoning({
-        steps: seedSteps.map((s) => ({ text: s, status: "pending" })),
-        startTime: initialStartTime,
+        steps: [{ text: fallbackSteps[0], status: "active" }],
+        startTime: Date.now(),
         duration: null,
         isExpanded: true,
         isComplete: false,
-        tempUserMessage: text || "Attached files for analysis",
+        tempUserMessage: null,
       })
-
-      // Run fallback animation through the seed steps
-      for (let i = 0; i < seedSteps.length; i++) {
-        setReasoning((prev) => {
-          if (!prev) return prev
-          const newSteps = [...prev.steps]
-          newSteps[i].status = "active"
-          return { ...prev, steps: newSteps }
-        })
-        
-        await new Promise((r) => setTimeout(r, 500 + (Math.random() * 150)))
-        
-        setReasoning((prev) => {
-          if (!prev) return prev
-          const newSteps = [...prev.steps]
-          newSteps[i].status = "done"
-          return { ...prev, steps: newSteps }
-        })
-      }
-
-      // Complete Reasoning
-      setReasoning((prev) => {
-        if (!prev) return prev
-        const newSteps = prev.steps.map((s) => ({ ...s, status: "done" as const }))
-        const finalDuration = (Date.now() - prev.startTime) / 1000
-        return {
-          ...prev,
-          steps: newSteps,
-          isComplete: true,
-          isExpanded: false,
-          duration: finalDuration,
-          tempUserMessage: null,
-        }
-      })
+    } else {
+      setReasoning(null)
     }
 
     await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
@@ -597,6 +601,30 @@ export default function HorusAIChat() {
                           {msg.role === "assistant" && (msg as any).structuredResult && (
                             <div className="mb-4">
                               <AgentResultRenderer result={(msg as any).structuredResult} />
+                            </div>
+                          )}
+
+                          {/* Pending action confirmation */}
+                          {msg.role === "assistant" && msg.pendingConfirmation && (
+                            <div className="mb-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+                              <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
+                              </p>
+                              <div className="mt-3 flex items-center gap-2">
+                                <button
+                                  onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "confirm")}
+                                  className="px-3 py-2 min-h-[44px] rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "cancel")}
+                                  className="px-3 py-2 min-h-[44px] rounded-md border border-[var(--border-subtle)] text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-[var(--surface-modal)] transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
                           )}
 

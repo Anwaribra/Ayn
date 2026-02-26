@@ -169,7 +169,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "get_platform_snapshot": {
         "mutating": False,
         "title": "Read platform snapshot",
-        "prepare_text": "preparing a full platform snapshot",
+        "prepare_text": "a full platform snapshot",
         "description": "Fetch a complete platform snapshot for the current user/institution.",
         "args_schema": {},
         "handler": tool_get_platform_snapshot,
@@ -177,7 +177,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "run_full_audit": {
         "mutating": False,
         "title": "Run full audit",
-        "prepare_text": "preparing a full compliance audit report",
+        "prepare_text": "a full compliance audit report",
         "description": "Generate an audit report card from existing institution analysis data.",
         "args_schema": {},
         "handler": tool_run_full_audit,
@@ -185,7 +185,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "check_compliance_gaps": {
         "mutating": False,
         "title": "Check compliance gaps",
-        "prepare_text": "preparing the compliance gap table",
+        "prepare_text": "the compliance gap table",
         "description": "Return criteria-level compliance gap rows for the institution.",
         "args_schema": {},
         "handler": tool_check_compliance_gaps,
@@ -193,7 +193,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "generate_remediation_report": {
         "mutating": False,
         "title": "Generate remediation report",
-        "prepare_text": "preparing the remediation action plan",
+        "prepare_text": "the remediation action plan",
         "description": "Generate remediation actions for current open platform gaps.",
         "args_schema": {},
         "handler": tool_generate_remediation_report,
@@ -201,7 +201,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "start_gap_analysis_run": {
         "mutating": True,
         "title": "Start gap analysis run",
-        "prepare_text": "preparing a new gap analysis run",
+        "prepare_text": "a new gap analysis run",
         "description": "Queue and run a new gap analysis for a specific standard id.",
         "args_schema": {"standard_id": "string"},
         "handler": tool_start_gap_analysis_run,
@@ -209,7 +209,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "link_evidence_to_criterion": {
         "mutating": True,
         "title": "Link evidence to criterion",
-        "prepare_text": "preparing evidence-to-criterion linking",
+        "prepare_text": "evidence-to-criterion linking",
         "description": "Attach one evidence item to one criterion.",
         "args_schema": {"evidence_id": "string", "criterion_id": "string"},
         "handler": tool_link_evidence_to_criterion,
@@ -217,7 +217,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "generate_report_export_link": {
         "mutating": False,
         "title": "Generate report export link",
-        "prepare_text": "preparing the report export link",
+        "prepare_text": "the report export link",
         "description": "Create an export link for an existing gap analysis report id.",
         "args_schema": {"report_id": "string"},
         "handler": tool_generate_report_export_link,

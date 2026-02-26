@@ -203,6 +203,10 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const resolveActionConfirmation = async (id: string, decision: "confirm" | "cancel") => {
+        // Optimistically clear the existing confirmation card to avoid duplicate stale controls.
+        setMessages(prev => prev.map(m =>
+            m.pendingConfirmation?.id === id ? { ...m, pendingConfirmation: null } : m
+        ))
         const controlMessage = decision === "confirm"
             ? `__CONFIRM_ACTION__:${id}`
             : `__CANCEL_ACTION__:${id}`

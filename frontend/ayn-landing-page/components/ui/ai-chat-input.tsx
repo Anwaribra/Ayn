@@ -142,7 +142,7 @@ export const AIChatInput = ({
                 style={{ overflow: "hidden", borderRadius: 36 }}
                 className={cn(
                     "w-full max-w-[900px] backdrop-blur-3xl transition-colors duration-300",
-                    "bg-white/95 border border-black/10 text-gray-900", // Light mode
+                    "bg-white/95 border border-black/10 text-black", // Light mode
                     "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white" // Dark mode
                 )}
                 onClick={handleActivate}
@@ -183,7 +183,7 @@ export const AIChatInput = ({
                                 }}
                                 className={cn(
                                     "flex-1 w-full font-medium text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none",
-                                    "!text-gray-900 dark:!text-white placeholder:!text-gray-500 dark:placeholder:!text-white/45"
+                                    "!text-black dark:!text-white placeholder:!text-gray-500 dark:placeholder:!text-white/45"
                                 )}
                                 style={{
                                     position: "relative",

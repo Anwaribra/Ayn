@@ -193,6 +193,8 @@ export default function HorusAIChat() {
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fallbackQueueRef = useRef<string[]>([])
+  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
 
@@ -219,6 +221,10 @@ export default function HorusAIChat() {
   useEffect(() => {
     return () => {
       stopGeneration()
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current)
+        fallbackTimerRef.current = null
+      }
     }
   }, [])
 
@@ -248,10 +254,24 @@ export default function HorusAIChat() {
         isComplete: false,
       }
     })
+
+    // Real backend steps take priority over fallback animation.
+    if (fallbackTimerRef.current) {
+      clearInterval(fallbackTimerRef.current)
+      fallbackTimerRef.current = null
+    }
+    fallbackQueueRef.current = []
   }, [thinkingSteps])
 
   useEffect(() => {
     if (status !== "idle") return
+
+    if (fallbackTimerRef.current) {
+      clearInterval(fallbackTimerRef.current)
+      fallbackTimerRef.current = null
+    }
+    fallbackQueueRef.current = []
+
     setReasoning((prev) => {
       if (!prev || prev.isComplete || prev.steps.length === 0) return prev
       return {
@@ -264,6 +284,81 @@ export default function HorusAIChat() {
       }
     })
   }, [status])
+
+  // Fallback sequential animation for non-tool/general chat when no __THINKING__ steps are emitted.
+  useEffect(() => {
+    if (status !== "generating") return
+    if (thinkingSteps.length > 0) return
+    if (fallbackTimerRef.current) return
+
+    fallbackTimerRef.current = setInterval(() => {
+      setReasoning((prev) => {
+        if (!prev || prev.isComplete) return prev
+        if (thinkingSteps.length > 0) return prev
+
+        const steps = [...prev.steps]
+        const activeIndex = steps.findIndex((s) => s.status === "active")
+        if (activeIndex >= 0) steps[activeIndex] = { ...steps[activeIndex], status: "done" }
+
+        const next = fallbackQueueRef.current.shift()
+        if (next) {
+          steps.push({ text: next, status: "active" })
+          return { ...prev, steps }
+        }
+
+        return { ...prev, steps }
+      })
+    }, 700)
+
+    return () => {
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current)
+        fallbackTimerRef.current = null
+      }
+    }
+  }, [status, thinkingSteps.length])
+
+  // Collapse smoothly once real assistant content starts streaming.
+  useEffect(() => {
+    if (status !== "generating") return
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")
+    if (!lastAssistant?.content?.trim()) return
+
+    setReasoning((prev) => {
+      if (!prev || prev.isComplete) return prev
+      const alreadyHasGeneration = prev.steps.some((s) => s.text === "Generating response...")
+      const steps = alreadyHasGeneration
+        ? prev.steps.map((s) => ({ ...s, status: "done" as const }))
+        : [...prev.steps.map((s) => ({ ...s, status: "done" as const })), { text: "Generating response...", status: "done" as const }]
+      return {
+        ...prev,
+        steps,
+        isComplete: true,
+        isExpanded: false,
+        duration: prev.duration ?? (Date.now() - prev.startTime) / 1000,
+        tempUserMessage: null,
+      }
+    })
+  }, [messages, status])
+
+  // Confirmation phase step.
+  useEffect(() => {
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")
+    if (!lastAssistant?.pendingConfirmation) return
+
+    setReasoning((prev) => {
+      if (!prev) return prev
+      const exists = prev.steps.some((s) => s.text === "Ready to execute — please confirm")
+      if (exists) return prev
+      return {
+        ...prev,
+        steps: [...prev.steps.map((s) => ({ ...s, status: "done" as const })), { text: "Ready to execute — please confirm", status: "done" as const }],
+        isComplete: true,
+        isExpanded: false,
+        duration: prev.duration ?? (Date.now() - prev.startTime) / 1000,
+      }
+    })
+  }, [messages])
 
   // M1: Copy message text to clipboard
   const handleCopy = useCallback(async (msgId: string, content: string) => {
@@ -365,6 +460,11 @@ export default function HorusAIChat() {
     setAttachedFiles([])
     const fallbackSteps = getReasoningSteps(text || "", filesToUpload.length > 0)
     if (fallbackSteps.length > 0) {
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current)
+        fallbackTimerRef.current = null
+      }
+      fallbackQueueRef.current = [...fallbackSteps.slice(1), "Generating response..."]
       setReasoning({
         steps: [{ text: fallbackSteps[0], status: "active" }],
         startTime: Date.now(),
@@ -374,7 +474,19 @@ export default function HorusAIChat() {
         tempUserMessage: null,
       })
     } else {
-      setReasoning(null)
+      if (fallbackTimerRef.current) {
+        clearInterval(fallbackTimerRef.current)
+        fallbackTimerRef.current = null
+      }
+      fallbackQueueRef.current = ["Generating response..."]
+      setReasoning({
+        steps: [{ text: "Understanding your request...", status: "active" }],
+        startTime: Date.now(),
+        duration: null,
+        isExpanded: true,
+        isComplete: false,
+        tempUserMessage: null,
+      })
     }
 
     await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)

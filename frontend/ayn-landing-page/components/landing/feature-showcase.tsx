@@ -9,7 +9,11 @@ import {
   LibraryBig,
   Layers,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  ScanSearch,
+  Rocket,
+  ShieldCheck,
+  CircleDot,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -58,6 +62,20 @@ const benefitListVariants = {
 const benefitItemVariants = {
   hidden: { opacity: 0, x: -10 },
   show: { opacity: 1, x: 0, transition: { duration: 0.25 } },
+}
+
+const flowSteps = [
+  { label: "Ask", icon: BrainCircuit, hint: "Intent captured" },
+  { label: "Analyze", icon: ScanSearch, hint: "Context mapped" },
+  { label: "Execute", icon: Rocket, hint: "Actions orchestrated" },
+  { label: "Verify", icon: ShieldCheck, hint: "Audit confirmed" },
+]
+
+const executionStageByFeature: Record<string, number> = {
+  ai: 1,
+  evidence: 2,
+  gap: 3,
+  standards: 4,
 }
 
 const features: Feature[] = [
@@ -341,10 +359,13 @@ export function FeatureShowcase() {
     () => features.findIndex((feature) => feature.id === activeFeature.id),
     [activeFeature.id]
   )
+  const executionStage = executionStageByFeature[activeFeature.id] ?? 1
 
   return (
-    <section id="features" className="py-[var(--spacing-section)] px-[var(--spacing-content)] bg-muted/10">
-      <div className="max-w-6xl mx-auto">
+    <section id="features" className="relative py-[var(--spacing-section)] px-[var(--spacing-content)] bg-muted/10 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,hsl(var(--primary)/0.10),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_60%,hsl(var(--primary)/0.08),transparent_50%)]" />
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -365,168 +386,168 @@ export function FeatureShowcase() {
           </p>
         </motion.div>
 
-        {/* Feature tabs */}
-        <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-12 items-start">
-          {/* Tabs list */}
-          <div className="space-y-3">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              const isActive = activeFeature.id === feature.id
+        <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-7 lg:gap-10 items-start">
+          <div className="rounded-2xl border border-border/60 bg-card/75 backdrop-blur-[12px] p-4 md:p-5 shadow-[var(--glass-shadow)]">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Command Rail</p>
+              <span className="text-[11px] px-2 py-1 rounded-full border border-primary/20 bg-primary/10 text-primary font-semibold">
+                Agent Online
+              </span>
+            </div>
+            <div className="space-y-2.5">
+              {features.map((feature, index) => {
+                const Icon = feature.icon
+                const isActive = activeFeature.id === feature.id
+                const status = index < activeFeatureIndex ? "Synced" : isActive ? "Running" : "Queued"
 
-              return (
-                <motion.button
-                  key={feature.id}
-                  custom={index}
-                  variants={tabItemVariants}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  whileHover={reduceMotion ? undefined : { x: 2 }}
-                  whileTap={reduceMotion ? undefined : { scale: 0.995 }}
-                  onClick={() => setActiveFeature(feature)}
-                  className={cn(
-                    "relative w-full text-left p-4 rounded-xl border transition-all duration-300 group overflow-hidden",
-                    isActive
-                      ? "border-border/60 bg-card/80 backdrop-blur-[12px] shadow-[var(--glass-shadow)] scale-[1.01]"
-                      : "border-border/50 hover:border-border/70 hover:bg-card/60 hover:backdrop-blur-[8px] hover:shadow-[var(--glass-shadow)] hover:scale-[1.005]"
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTabRail"
-                      className="absolute left-0 top-0 h-full w-1 rounded-r-full bg-gradient-to-b from-[var(--brand)] to-primary/70"
-                      transition={panelTransition}
-                    />
-                  )}
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                        isActive ? "bg-[var(--brand)]/10" : "bg-muted"
-                      )}
-                    >
-                      <Icon
-                        className={cn(
-                          "w-5 h-5 transition-colors",
-                          isActive ? "text-[var(--brand)]" : "text-muted-foreground"
-                        )}
+                return (
+                  <motion.button
+                    key={feature.id}
+                    custom={index}
+                    variants={tabItemVariants}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true }}
+                    whileHover={reduceMotion ? undefined : { x: 3 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.995 }}
+                    onClick={() => setActiveFeature(feature)}
+                    className={cn(
+                      "relative w-full text-left rounded-xl border p-3.5 transition-all duration-300 overflow-hidden",
+                      isActive
+                        ? "border-primary/35 bg-primary/5 shadow-[var(--glass-shadow)]"
+                        : "border-border/50 bg-card/55 hover:border-border/70 hover:bg-card/70"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeCommandRail"
+                        className="absolute left-0 top-0 h-full w-1.5 rounded-r-full bg-gradient-to-b from-[var(--brand)] to-primary/70"
+                        transition={panelTransition}
                       />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3
-                          className={cn(
-                            "font-semibold transition-colors",
-                            isActive ? "text-foreground" : "text-muted-foreground"
-                          )}
-                        >
-                          {feature.title}
-                        </h3>
-                        {isActive && (
-                          <motion.div
-                            layoutId="activeIndicator"
-                            className="w-1.5 h-1.5 rounded-full bg-[var(--brand)]"
-                            transition={panelTransition}
-                          />
-                        )}
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border", isActive ? "border-primary/25 bg-primary/10" : "border-border/60 bg-muted/50")}>
+                        <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
                       </div>
-                      <p
-                        className={cn(
-                          "text-sm line-clamp-2 transition-colors",
-                          isActive ? "text-muted-foreground" : "text-muted-foreground/60"
-                        )}
-                      >
-                        {feature.description}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <h3 className={cn("text-sm font-semibold", isActive ? "text-foreground" : "text-muted-foreground")}>{feature.title}</h3>
+                          <span className={cn("text-[10px] uppercase tracking-wider font-semibold", status === "Running" ? "text-primary" : status === "Synced" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                            {status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{feature.description}</p>
+                      </div>
                     </div>
-                  </div>
-                </motion.button>
-              )
-            })}
+                  </motion.button>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Preview panel */}
           <div className="lg:sticky lg:top-24">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeFeature.id}
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.98 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.985 }}
                 transition={panelTransition}
-                className="space-y-6"
+                className="space-y-4"
               >
-                {/* Preview card */}
-                <div className="relative">
-                  <div
-                    className={cn(
-                      "absolute -inset-1 rounded-2xl bg-gradient-to-r opacity-20 blur-xl",
-                      activeFeature.color
-                    )}
-                  />
-                  <motion.div
-                    key={`${activeFeature.id}-orb-a`}
-                    className="pointer-events-none absolute -top-8 right-10 h-20 w-20 rounded-full bg-primary/10 blur-2xl"
-                    animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.35, 0.55, 0.35] }}
-                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  <motion.div
-                    key={`${activeFeature.id}-orb-b`}
-                    className="pointer-events-none absolute -bottom-10 left-8 h-24 w-24 rounded-full bg-[var(--brand)]/10 blur-2xl"
-                    animate={reduceMotion ? undefined : { y: [0, 10, 0], opacity: [0.25, 0.5, 0.25] }}
-                    transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.25 }}
-                  />
-                  <div className="relative glass-card rounded-xl p-1 border border-border/60 bg-card/80 backdrop-blur-[14px] shadow-[var(--glass-shadow)]">
-                    {activeFeature.preview}
+                <div className="rounded-2xl border border-border/60 bg-card/75 backdrop-blur-[12px] shadow-[var(--glass-shadow)] overflow-hidden">
+                  <div className="border-b border-border/60 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Horus Control Console</p>
+                      <h3 className="text-sm md:text-base font-semibold text-foreground">{activeFeature.title}</h3>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      <CircleDot className="w-3 h-3" />
+                      Stage {executionStage}/4
+                    </span>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="h-1 rounded-full bg-muted overflow-hidden">
-                    <motion.div
-                      key={`feature-progress-${activeFeature.id}`}
-                      className={cn("h-full rounded-full bg-gradient-to-r", activeFeature.color)}
-                      initial={{ width: "0%" }}
-                      animate={{ width: `${((activeFeatureIndex + 1) / features.length) * 100}%` }}
-                      transition={panelTransition}
-                    />
-                  </div>
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Module {activeFeatureIndex + 1} of {features.length}
-                  </p>
-                </div>
+                  <div className="p-3">
+                    <div className="relative mb-4">
+                      <div
+                        className={cn(
+                          "absolute -inset-1 rounded-2xl bg-gradient-to-r opacity-25 blur-xl",
+                          activeFeature.color
+                        )}
+                      />
+                      <motion.div
+                        key={`${activeFeature.id}-orb-a`}
+                        className="pointer-events-none absolute -top-5 right-12 h-16 w-16 rounded-full bg-primary/12 blur-2xl"
+                        animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.35, 0.55, 0.35] }}
+                        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                      <div className="relative rounded-xl border border-border/60 bg-card/90 p-1">
+                        {activeFeature.preview}
+                      </div>
+                    </div>
 
-                {/* Benefits list */}
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
-                    Key Benefits
-                  </h4>
-                  <motion.ul
-                    variants={benefitListVariants}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-2"
-                  >
-                    {activeFeature.benefits.map((benefit, i) => (
-                      <motion.li
-                        key={i}
-                        variants={benefitItemVariants}
-                        className="flex items-center gap-2 text-sm"
+                    <div className="mb-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Execution Flow</p>
+                        <p className="text-[11px] font-medium text-muted-foreground">Module {activeFeatureIndex + 1} of {features.length}</p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute left-4 right-4 top-[18px] h-px bg-border" />
+                        <motion.div
+                          key={`flow-progress-${activeFeature.id}`}
+                          className={cn("absolute left-4 top-[18px] h-px bg-gradient-to-r", activeFeature.color)}
+                          initial={{ width: 0 }}
+                          animate={{ width: `calc(${(executionStage / flowSteps.length) * 100}% - 1rem)` }}
+                          transition={panelTransition}
+                        />
+                        <div className="grid grid-cols-4 gap-2">
+                          {flowSteps.map((step, stepIndex) => {
+                            const StepIcon = step.icon
+                            const isDone = stepIndex < executionStage - 1
+                            const isCurrent = stepIndex === executionStage - 1
+                            return (
+                              <div key={step.label} className="relative pt-8 text-center">
+                                <div className={cn("mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border text-[10px]", isDone ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-600 dark:text-emerald-400" : isCurrent ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground")}>
+                                  <StepIcon className="h-3.5 w-3.5" />
+                                </div>
+                                <p className={cn("text-[11px] font-semibold", isCurrent ? "text-foreground" : "text-muted-foreground")}>{step.label}</p>
+                                <p className="text-[10px] text-muted-foreground/80">{step.hint}</p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Key Benefits</h4>
+                      <motion.ul
+                        variants={benefitListVariants}
+                        initial="hidden"
+                        animate="show"
+                        className="space-y-2"
                       >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>{benefit}</span>
-                      </motion.li>
-                    ))}
-                  </motion.ul>
-                </div>
+                        {activeFeature.benefits.map((benefit, i) => (
+                          <motion.li
+                            key={i}
+                            variants={benefitItemVariants}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <span>{benefit}</span>
+                          </motion.li>
+                        ))}
+                      </motion.ul>
+                    </div>
 
-                {/* CTA */}
-                <Link href="/signup">
-                  <Button className="w-full gap-2">
-                    Try {activeFeature.title}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                    <Link href="/signup" className="mt-4 block">
+                      <Button className="w-full gap-2">
+                        Try {activeFeature.title}
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>

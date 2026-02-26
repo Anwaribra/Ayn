@@ -31,7 +31,6 @@ import {
   RefreshCw,
 } from "lucide-react"
 import type { Standard, Criterion, Evidence } from "@/types"
-import { AmbientBackground } from "@/components/ui/ambient-background"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
 import { CoverageBar } from "@/components/platform/coverage-bar"
@@ -159,8 +158,7 @@ export default function StandardsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen relative overflow-hidden bg-background">
-        <AmbientBackground />
+      <div className="min-h-screen relative overflow-hidden">
 
         <div className="relative z-10">
           <Header

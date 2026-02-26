@@ -28,7 +28,7 @@ export function FinalCtaSection() {
           className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
         >
           <span className="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Start with Horus AI Assistant or Full Agent
+            Start with Horus AI Full Agent
           </span>
         </motion.h2>
         <motion.p

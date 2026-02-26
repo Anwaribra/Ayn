@@ -15,7 +15,6 @@ import {
   History,
   PlusCircle,
   Search,
-  PanelRightOpen,
   ChevronDown,
   ChevronRight,
   Check,
@@ -529,94 +528,6 @@ export default function HorusAIChat() {
 
   // Derive the id of the last assistant message for M1 contextual actions
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
-  const lastAssistantMessage = messages.filter((m) => m.role === "assistant").pop()
-
-  const getQuickActionsForContent = (content: string) => {
-    const actions: { label: string; prompt: string }[] = []
-    if (/(gap|compliance|score|remediate|remediation|shortfall)/i.test(content)) {
-      actions.push({ label: "Generate Remediation Plan", prompt: "Generate Remediation Plan" })
-    }
-    if (/(audit findings|audit report|non-conformity|observation|major|minor)/i.test(content)) {
-      actions.push({ label: "Export Audit Report", prompt: "Export Audit Report" })
-    }
-    if (/(evidence|document|policy|procedure|manual|reviewed files)/i.test(content)) {
-      actions.push({ label: "View Evidence Vault", prompt: "Show me in the Evidence Vault" })
-    }
-    return actions
-  }
-
-  const lastQuickActions = getQuickActionsForContent(lastAssistantMessage?.content || "")
-  const latestStructured = (lastAssistantMessage as any)?.structuredResult as { type: string; payload: any } | undefined
-
-  const usedSignals = (() => {
-    const signals: string[] = []
-    const recentSteps = reasoning?.steps?.slice(-4).map((s) => s.text) || thinkingSteps.slice(-4)
-    signals.push(...recentSteps)
-    if (latestStructured?.type === "gap_table") signals.push("Gap analysis data")
-    if (latestStructured?.type === "audit_report") signals.push("Audit report dataset")
-    if (latestStructured?.type === "remediation_plan") signals.push("Remediation planning logic")
-    if (latestStructured?.type === "job_started") signals.push("Background job orchestration")
-    return Array.from(new Set(signals)).slice(0, 5)
-  })()
-
-  const sessionSummary = messages
-    .filter((m) => m.role === "assistant" && !!m.content)
-    .slice(-4)
-    .map((m) => (m.content || "").split("\n")[0].trim())
-    .filter(Boolean)
-    .map((line) => (line.length > 110 ? `${line.slice(0, 110)}...` : line))
-    .slice(-3)
-
-  const ContextPanel = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className={cn("space-y-4", mobile ? "p-4" : "p-4")}>
-      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/65 p-4">
-        <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">What Horus Used</h3>
-        {usedSignals.length > 0 ? (
-          <div className="space-y-2">
-            {usedSignals.map((signal) => (
-              <p key={signal} className="text-[13px] text-foreground/90 leading-snug">• {signal}</p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground">Waiting for analysis signals...</p>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/65 p-4">
-        <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">Quick Actions</h3>
-        {lastQuickActions.length > 0 ? (
-          <div className="space-y-2">
-            {lastQuickActions.map((action) => (
-              <button
-                key={action.label}
-                onClick={() => handleSendMessage(action.prompt)}
-                className="w-full text-left px-3 py-2.5 min-h-[44px] rounded-xl border border-[var(--border-subtle)] bg-[var(--surface)]/45 text-[13px] font-medium text-foreground hover:border-primary/40 hover:bg-[var(--surface-modal)] transition-colors"
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground">No contextual actions yet.</p>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/65 p-4">
-        <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">Session Summary</h3>
-        {sessionSummary.length > 0 ? (
-          <div className="space-y-2">
-            {sessionSummary.map((line, idx) => (
-              <p key={`${idx}-${line.slice(0, 12)}`} className="text-[13px] text-foreground/90 leading-snug">
-                {idx + 1}. {line}
-              </p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted-foreground">Conversation summary will appear here.</p>
-        )}
-      </div>
-    </div>
-  )
 
   const isEmpty = messages.length === 0 && !reasoning
   const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
@@ -625,23 +536,6 @@ export default function HorusAIChat() {
     <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       {/* New + History + Export as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
-        {/* Mobile Context Drawer */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="xl:hidden h-11 w-11 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Context">
-              <PanelRightOpen className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[88vw] sm:w-[420px] p-0 border-l border-border bg-[var(--layer-0)]">
-            <div className="p-4 border-b border-border">
-              <h2 className="text-sm font-bold text-foreground">Horus Context</h2>
-            </div>
-            <ScrollArea className="h-[calc(100vh-60px)]">
-              <ContextPanel mobile />
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
-
         {/* M8: Export chat — only visible when conversation has messages */}
         {!isEmpty && (
           <Button variant="ghost" size="sm" onClick={handleExportChat} className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Export chat (.txt)">
@@ -721,22 +615,13 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
-        {/* Desktop Context Panel */}
-        <aside className="hidden xl:block fixed right-3 top-20 bottom-4 w-[320px] z-10">
-          <div className="h-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/40 backdrop-blur-md overflow-hidden">
-            <ScrollArea className="h-full">
-              <ContextPanel />
-            </ScrollArea>
-          </div>
-        </aside>
-
         <div
           className={cn(
             "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
             isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-36 md:pb-28"
           )}
         >
-          <div className={cn("flex-1 w-full max-w-[760px] xl:mr-[340px] flex flex-col", isEmpty ? "min-h-0" : "gap-10 pb-4")}>
+          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-10 pb-4")}>
             {isEmpty ? (
               // M3: Example prompts empty state — replaces the spinning AI loader
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">

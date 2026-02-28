@@ -10,7 +10,7 @@ import { Hero } from "@/components/landing/Hero"
 import { HorusIntelligenceSection } from "@/components/landing/HorusIntelligenceSection"
 import { AboutSection } from "@/components/landing/AboutSection"
 import { FinalCtaSection } from "@/components/landing/FinalCtaSection"
-import { FeatureShowcase } from "@/components/landing/feature-showcase"
+import { CyberneticBentoGrid } from "@/components/ui/cybernetic-bento-grid"
 
 export default function Home() {
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function Home() {
       <LandingNavbar />
       <Hero />
       <HorusIntelligenceSection />
-      <FeatureShowcase />
+      <CyberneticBentoGrid />
       <AboutSection />
       <FinalCtaSection />
     </div>

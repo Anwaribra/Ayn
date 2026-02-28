@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import type { LucideIcon } from "lucide-react"
 import {
   LayoutDashboard,
-  BrainCircuit,
+  Brain,
   FileCheck,
   Scale,
   Microscope,
@@ -45,7 +45,7 @@ type NavItemConfig = {
 // Grouped Menu Items for better visual hierarchy
 const MAIN_MENU: NavItemConfig[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
-  { id: "horus-ai", icon: BrainCircuit, label: "Horus AI", href: "/platform/horus-ai" },
+  { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
 ]
 
 const COMPLIANCE_WORKFLOW: NavItemConfig[] = [

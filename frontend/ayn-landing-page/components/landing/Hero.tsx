@@ -231,6 +231,8 @@ export function Hero() {
       <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
         {/* Seamless gradient fading into next section — no hard edge */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/0 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,hsl(var(--primary)/0.07),transparent_42%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_84%_84%,hsl(var(--primary)/0.06),transparent_44%)]" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-[var(--spacing-content)]">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -243,11 +245,10 @@ export function Hero() {
                 transition={{ duration: 0.4 }}
                 className="mb-3 flex items-center justify-center lg:justify-start gap-2"
               >
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-[0.15em]">
-                  <Sparkles className="w-3 h-3" />
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-xs font-bold uppercase tracking-[0.13em]">
                   Ayn
                 </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold uppercase tracking-[0.12em]">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-[11px] font-semibold uppercase tracking-[0.11em]">
                   Full Agent Mode
                 </span>
               </motion.div>

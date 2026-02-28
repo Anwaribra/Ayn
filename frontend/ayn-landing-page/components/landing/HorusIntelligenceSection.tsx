@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { motion } from "framer-motion"
-import { BrainCircuit, FolderLock, GitCompare, ShieldCheck, Sparkles } from "lucide-react"
+import { Brain, FolderLock, GitCompare, ShieldCheck, Sparkles } from "lucide-react"
 import { AnimatedBeam } from "@/components/ui/animated-beam"
 import { cn } from "@/lib/utils"
 
@@ -46,7 +46,7 @@ const NodeCard = ({
           {/* Center card — Liquid Glass */}
           <div className="relative rounded-3xl bg-card/80 backdrop-blur-[16px] border border-border/60 shadow-[var(--glass-shadow)] p-12">
             <div className="relative w-28 h-28 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group">
-              <BrainCircuit className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
+              <Brain className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
               <div className="absolute inset-0 rounded-2xl border border-primary/30 animate-ping opacity-20" />
             </div>
             <div className="relative z-10 text-center">
@@ -109,9 +109,8 @@ export function HorusIntelligenceSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-4"
+            className="inline-flex items-center px-3 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-xs font-medium mb-4 tracking-[0.11em] uppercase"
           >
-            <BrainCircuit className="w-3.5 h-3.5" />
             Central Intelligence
           </motion.div>
           <motion.h2
@@ -215,7 +214,7 @@ export function HorusIntelligenceSection() {
             <div className="col-start-2 col-span-2 row-start-1 row-span-2 flex items-center justify-center">
               <NodeCard
                 nodeRef={centerRef}
-                icon={BrainCircuit}
+                icon={Brain}
                 title="Horus AI"
                 description=""
                 position="center"
@@ -255,7 +254,7 @@ export function HorusIntelligenceSection() {
             <div className="relative rounded-2xl bg-card/80 backdrop-blur-[14px] border border-border/60 shadow-[var(--glass-shadow)] p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <BrainCircuit className="w-8 h-8 text-primary" />
+                  <Brain className="w-8 h-8 text-primary" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">

@@ -9,12 +9,21 @@ import { fadeInUp, ShinyButton, staggerContainer } from "./landing-utils"
 export function FinalCtaSection() {
   return (
     <section className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-      <div
-        className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "1.5s" }}
-      />
       <div className="absolute inset-0 bg-gradient-to-t from-muted/30 via-background to-background" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,hsl(var(--primary)/0.10),transparent_38%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_82%,hsl(var(--primary)/0.08),transparent_42%)]" />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
+        animate={{ x: [0, 26, 0], y: [0, -18, 0], opacity: [0.22, 0.42, 0.22] }}
+        transition={{ duration: 7.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-primary/8 blur-3xl"
+        animate={{ x: [0, -22, 0], y: [0, 14, 0], opacity: [0.18, 0.36, 0.18] }}
+        transition={{ duration: 8.1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+      />
 
       <motion.div
         initial="hidden"

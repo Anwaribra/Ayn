@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Scope check (user_id/chat_id) prevents cross-user execution.
 PENDING_ACTION_CONFIRMATIONS: dict[str, dict[str, Any]] = {}
 PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
-STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started"}
+STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started", "analytics_report"}
 
 
 class Observation(BaseModel):

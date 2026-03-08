@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Analytics | Ayn Platform",
-  description: "Compliance insights, readiness metrics, and quality trends.",
+  title: "Analytics & Intelligence | Ayn Platform",
+  description: "Deep compliance analytics with automated trend detection, anomaly alerts, KPI tracking, and actionable AI-powered insights.",
 }
 
 export default function AnalyticsLayout({

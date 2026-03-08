@@ -25,6 +25,7 @@ from app.platform_state.router import router as platform_state_router
 from app.horus.router import router as horus_router
 from app.activity.router import router as activity_router
 from app.compliance.router import router as compliance_router
+from app.analytics.router import router as analytics_router
 
 # Configure logging
 logging.basicConfig(
@@ -157,6 +158,7 @@ app.include_router(platform_state_router, prefix="/api", tags=["Platform State"]
 app.include_router(horus_router, prefix="/api", tags=["Horus"])
 app.include_router(activity_router, prefix="/api", tags=["Activities"])
 app.include_router(compliance_router, prefix="/api", tags=["Compliance"])
+app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 
 @app.get("/")

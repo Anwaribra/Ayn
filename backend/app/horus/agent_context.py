@@ -97,6 +97,55 @@ async def build_agent_context(
 
     standards_summary = list(by_standard.values())[:8]
 
+    # ── Analytics summary (lightweight — reuses data already fetched) ────
+    all_ga = await db.gapanalysis.find_many(
+        where={"institutionId": institution_id} if institution_id else {"institutionId": "__none__"},
+        include={"standard": True},
+        order={"createdAt": "desc"},
+    )
+    ga_scores = [r.overallScore for r in all_ga]
+    ga_total = len(ga_scores)
+    ga_avg = round(sum(ga_scores) / ga_total, 1) if ga_total > 0 else 0
+    ga_latest = round(ga_scores[0], 1) if ga_scores else 0
+    ga_unique_stds = len({r.standardId for r in all_ga if r.standardId})
+
+    total_evidence_all = await db.evidence.count(
+        where={"OR": [
+            {"uploadedById": user_id},
+            {"ownerId": institution_id} if institution_id else {"uploadedById": user_id},
+        ]}
+    )
+
+    # Growth (compare first half vs second half)
+    mid = ga_total // 2
+    first_half = ga_scores[mid:] if mid > 0 else []
+    second_half = ga_scores[:mid] if mid > 0 else []
+    first_avg = sum(first_half) / len(first_half) if first_half else 0
+    second_avg = sum(second_half) / len(second_half) if second_half else 0
+    growth_pct = round(((second_avg - first_avg) / first_avg) * 100, 1) if first_avg > 0 else 0
+
+    # Top/bottom standard
+    std_avgs = {}
+    for sid, row in by_standard.items():
+        total_mapped = row["total_mapped"]
+        if total_mapped > 0:
+            std_avgs[row["standard_title"]] = round(row["met"] / total_mapped * 100, 1)
+
+    top_std = max(std_avgs, key=std_avgs.get) if std_avgs else None
+    bottom_std = min(std_avgs, key=std_avgs.get) if std_avgs else None
+
+    analytics_summary = {
+        "total_reports": ga_total,
+        "avg_score": ga_avg,
+        "latest_score": ga_latest,
+        "unique_standards_analyzed": ga_unique_stds,
+        "total_evidence": total_evidence_all,
+        "growth_percent": growth_pct,
+        "growth_direction": "up" if growth_pct > 2 else ("down" if growth_pct < -2 else "stable"),
+        "top_standard": {"name": top_std, "score": std_avgs.get(top_std)} if top_std else None,
+        "bottom_standard": {"name": bottom_std, "score": std_avgs.get(bottom_std)} if bottom_std else None,
+    }
+
     return {
         "state_summary": {
             "total_files": summary.total_files,
@@ -129,6 +178,7 @@ async def build_agent_context(
             "linked_count": len(standards),
             "mapped_overview": standards_summary,
         },
+        "analytics": analytics_summary,
         "notifications": {
             "unread_count": unread_notifications,
         },

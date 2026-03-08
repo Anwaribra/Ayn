@@ -152,6 +152,12 @@ class ApiClient {
     return this.request<import("./types").DashboardMetrics>("/dashboard/metrics")
   }
 
+  // Analytics
+  async getAnalytics(periodDays?: number | null) {
+    const query = periodDays != null ? `?period=${periodDays}` : ""
+    return this.request<any>(`/analytics${query}`)
+  }
+
   // Institutions
   async getInstitutions() {
     return this.request<import("./types").Institution[]>("/institutions")

@@ -165,6 +165,36 @@ async def tool_generate_report_export_link(
     }
 
 
+async def tool_get_analytics_report(
+    *,
+    db: Any,
+    user_id: str,
+    institution_id: str | None,
+    current_user: dict,
+    args: dict,
+) -> dict:
+    """Fetch full analytics computed from real data for the current user."""
+    from app.analytics.service import AnalyticsService
+
+    period_days = args.get("period_days", 30)
+    if period_days is not None:
+        try:
+            period_days = int(period_days)
+        except (ValueError, TypeError):
+            period_days = 30
+
+    analytics = await AnalyticsService.get_analytics(current_user, period_days=period_days)
+    data = analytics.model_dump()
+    # Convert datetimes to ISO strings for JSON serialization
+    if data.get("generatedAt"):
+        data["generatedAt"] = data["generatedAt"].isoformat()
+    for a in data.get("anomalies", []):
+        if a.get("createdAt"):
+            a["createdAt"] = a["createdAt"].isoformat() if hasattr(a["createdAt"], "isoformat") else str(a["createdAt"])
+
+    return {"type": "analytics_report", "payload": data}
+
+
 TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "get_platform_snapshot": {
         "mutating": False,
@@ -221,6 +251,14 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "description": "Create an export link for an existing gap analysis report id.",
         "args_schema": {"report_id": "string"},
         "handler": tool_generate_report_export_link,
+    },
+    "get_analytics_report": {
+        "mutating": False,
+        "title": "Get analytics report",
+        "prepare_text": "the compliance analytics report",
+        "description": "Fetch comprehensive analytics: KPIs, score trends, standard performance, anomaly detection, growth metrics, evidence trends, and auto-generated insights. Use this when the user asks for analytics, reports, statistics, trends, or performance summaries.",
+        "args_schema": {"period_days": "integer (optional, default 30)"},
+        "handler": tool_get_analytics_report,
     },
 }
 

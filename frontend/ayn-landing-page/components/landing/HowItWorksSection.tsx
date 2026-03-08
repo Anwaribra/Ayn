@@ -1,269 +1,158 @@
 "use client"
 
-import { useRef } from "react"
 import { motion } from "framer-motion"
-import { workflowSteps } from "./landing-data"
-import { fadeInUp, staggerContainer } from "./landing-utils"
-import { AnimatedBeam } from "@/components/ui/animated-beam"
-import { cn } from "@/lib/utils"
+import { Database, BrainCircuit } from "lucide-react"
 
-const StepCard = ({
-  ref,
-  step,
-  index,
-  className,
-}: {
-  ref: React.RefObject<HTMLDivElement | null>
-  step: (typeof workflowSteps)[0]
-  index: number
-  className?: string
-}) => {
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
-      className={cn("relative group", className)}
-    >
-      {/* Step Number Badge */}
-      <motion.div
-        initial={{ scale: 0 }}
-        whileInView={{ scale: 1 }}
-        viewport={{ once: true }}
-        transition={{
-          type: "spring",
-          stiffness: 500,
-          damping: 30,
-          delay: 0.3 + index * 0.15,
-        }}
-        className="absolute -top-3 -left-3 z-20 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
-      >
-        {index + 1}
-      </motion.div>
-
-      {/* Card */}
-      <motion.div
-        whileHover={{ y: -8, scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className="relative h-full rounded-2xl border border-border bg-card p-6 transition-shadow duration-500 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30"
-      >
-        {/* Glow effect on hover */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        {/* Large background number */}
-        <div className="absolute top-3 right-3 text-5xl font-bold text-foreground/5 group-hover:text-primary/10 transition-colors duration-300 select-none">
-          {String(index + 1).padStart(2, "0")}
-        </div>
-
-        {/* Icon */}
-        <motion.div
-          whileHover={{ rotate: 5, scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          className="relative w-14 h-14 rounded-xl mb-4 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20"
-        >
-          <step.icon className="w-7 h-7 text-primary" />
-        </motion.div>
-
-        {/* Content */}
-        <h3 className="relative text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-          {step.title}
-        </h3>
-        <p className="relative text-sm text-muted-foreground leading-relaxed">
-          {step.description}
-        </p>
-      </motion.div>
-    </motion.div>
-  )
-}
+const STEPS = [
+  {
+    number: "01",
+    title: "Upload Evidence",
+    description:
+      "Drag in your documents, policies, and records. Ayn auto-organises and tags every file to the right compliance criterion. No provisioning, no manual sorting.",
+  },
+  {
+    number: "02",
+    title: "Horus takes over",
+    description:
+      "It reads across all your evidence, maps gaps to ISO, NCAAA, and global frameworks, and surfaces prioritised insights. It operates across your secure internal workspace.",
+  },
+  {
+    number: "03",
+    title: "Execute Actions",
+    description:
+      "Turn Horus recommendations into traceable workflow steps. Assign, review, and close compliance actions from one unified view.",
+  },
+]
 
 export function HowItWorksSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const step1Ref = useRef<HTMLDivElement>(null)
-  const step2Ref = useRef<HTMLDivElement>(null)
-  const step3Ref = useRef<HTMLDivElement>(null)
-  const step4Ref = useRef<HTMLDivElement>(null)
-
   return (
-    <section
-      id="how-it-works"
-      className="relative py-[var(--spacing-section-lg)] md:py-32 px-[var(--spacing-content)] overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/5 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,var(--primary)_0.08,transparent_50%)] pointer-events-none" />
-
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
-          variants={staggerContainer}
-          className="text-center mb-16 md:mb-20"
-        >
-          <motion.div
-            variants={fadeInUp}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-semibold uppercase tracking-wider mb-4"
-          >
-            Process
-          </motion.div>
-          <motion.h2
-            variants={fadeInUp}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
-          >
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary/90 bg-clip-text text-transparent">
-              How it works
-            </span>
-          </motion.h2>
-          <motion.p
-            variants={fadeInUp}
-            className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto"
-          >
-            Four steps from evidence to compliance. Simple, transparent, and
-            built for quality teams.
-          </motion.p>
-        </motion.div>
-
-        {/* Desktop Layout with Animated Beams */}
-        <div
-          ref={containerRef}
-          className="hidden lg:block relative"
-        >
-          {/* Animated Beams */}
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={step1Ref}
-            toRef={step2Ref}
-            curvature={20}
-            duration={3}
-            delay={0}
-            gradientStartColor="#3b82f6"
-            gradientStopColor="#8b5cf6"
-            pathWidth={3}
-          />
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={step2Ref}
-            toRef={step3Ref}
-            curvature={20}
-            duration={3}
-            delay={0.5}
-            gradientStartColor="#3b82f6"
-            gradientStopColor="#8b5cf6"
-            pathWidth={3}
-          />
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={step3Ref}
-            toRef={step4Ref}
-            curvature={20}
-            duration={3}
-            delay={1}
-            gradientStartColor="#3b82f6"
-            gradientStopColor="#8b5cf6"
-            pathWidth={3}
-          />
-
-          {/* Cards Row */}
-          <div className="grid grid-cols-4 gap-8 relative z-10">
-            <StepCard
-              ref={step1Ref}
-              step={workflowSteps[0]}
-              index={0}
-            />
-            <StepCard
-              ref={step2Ref}
-              step={workflowSteps[1]}
-              index={1}
-            />
-            <StepCard
-              ref={step3Ref}
-              step={workflowSteps[2]}
-              index={2}
-            />
-            <StepCard
-              ref={step4Ref}
-              step={workflowSteps[3]}
-              index={3}
-            />
-          </div>
-        </div>
-
-        {/* Mobile/Tablet Grid - No beams */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-6">
-          {workflowSteps.map((step, index) => (
-            <motion.div
-              key={step.title}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="relative group"
-            >
-              {/* Step Number Badge */}
-              <div className="absolute -top-3 -left-1 z-20">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                    delay: 0.3 + index * 0.1,
-                  }}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/25"
-                >
-                  {index + 1}
-                </motion.div>
-              </div>
-
-              {/* Card */}
-              <div className="relative h-full rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 transition-all duration-500 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 group/card">
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
-
-                {/* Left border accent */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-gradient-to-b from-primary via-primary/50 to-primary opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
-
-                {/* Large background number */}
-                <div className="absolute top-4 right-4 text-6xl font-bold text-foreground/5 group-hover/card:text-primary/10 transition-colors duration-300 select-none">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-
-                {/* Icon */}
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  className="relative z-10 w-16 h-16 rounded-2xl mb-6 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/20 shadow-inner"
-                >
-                  <step.icon className="w-8 h-8 text-primary" />
-                </motion.div>
-
-                {/* Content */}
-                <h3 className="relative z-10 text-xl font-bold text-foreground mb-2 group-hover/card:text-primary transition-colors duration-300">
-                  {step.title}
-                </h3>
-                <p className="relative z-10 text-muted-foreground text-sm md:text-base leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Bottom CTA */}
+    <section id="how-it-works" className="relative py-24 md:py-32 px-6 overflow-hidden">
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-16 text-center"
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-24"
         >
-          <p className="text-muted-foreground text-sm">
-            Start your compliance journey today
+          <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-400 mb-4">
+            How it works
+          </span>
+          <h2 className="text-4xl md:text-5xl lg:text-5xl font-bold tracking-tight text-white mb-6">
+            From evidence to action <span className="text-white/40">in minutes.</span>
+          </h2>
+          <p className="text-white/40 text-sm md:text-base">
+            Three steps. Whether it's a single policy or a full institutional audit.
           </p>
         </motion.div>
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          
+          {/* Left Column: Steps */}
+          <div className="space-y-16">
+            {STEPS.map((step, idx) => (
+              <motion.div 
+                key={step.number}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.5, delay: idx * 0.15 }}
+                className="flex gap-6 md:gap-8"
+              >
+                <div className="text-sm font-mono font-bold text-white/20 mt-1 select-none">
+                  {step.number}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-white/40 leading-relaxed text-sm md:text-base">
+                    {step.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Right Column: Node Diagram */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="relative lg:h-[500px] flex items-center justify-center"
+          >
+            {/* Background grid pattern matching style */}
+            <div 
+              className="absolute inset-0 pointer-events-none opacity-20"
+              style={{
+                backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px)`,
+                backgroundSize: '24px 24px',
+                maskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 70%)',
+              }}
+            />
+            
+            {/* Radar circles */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-white/5" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full border border-white/5" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-white/[0.02]" />
+
+            {/* Nodes Structure */}
+            <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
+              
+              {/* Top Node */}
+              <div className="flex flex-col items-center">
+                <div className="w-full relative px-6 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                  <span className="text-sm font-bold text-white mb-1">Evidence Vault</span>
+                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono">Upload • Auto-Tag</span>
+                  <Database className="absolute -right-3 -top-3 w-6 h-6 text-emerald-500/50" />
+                </div>
+                {/* Connecting Line */}
+                <div className="w-px h-12 bg-gradient-to-b from-emerald-500/30 to-white/10" />
+              </div>
+
+              {/* Middle Node */}
+              <div className="flex flex-col items-center w-full">
+                <div className="w-full relative px-6 py-4 rounded-xl border border-white/15 bg-white/5 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                  <span className="text-sm font-bold text-white mb-1">Horus AI Agent</span>
+                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono">Analyze • Map Gaps</span>
+                  <BrainCircuit className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-white/20" />
+                </div>
+                
+                {/* Fork Line */}
+                <div className="relative w-full h-12 flex justify-center">
+                  <div className="absolute top-0 w-px h-6 bg-white/10" />
+                  <div className="absolute top-6 w-[70%] h-px bg-white/10" />
+                  <div className="absolute top-6 left-[15%] w-px h-6 bg-white/10" />
+                  <div className="absolute top-6 right-[15%] w-px h-6 bg-white/10" />
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 text-[10px] text-white/20 uppercase tracking-widest font-mono bg-transparent px-2">Action Workflows</div>
+                </div>
+              </div>
+
+              {/* Bottom Nodes */}
+              <div className="flex justify-between w-full w-[85%] mt-2">
+                <div className="px-4 py-3 rounded-xl border border-white/10 bg-black/40 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                   <span className="text-xs font-bold text-white/80 mb-1">ISO 21001</span>
+                   <span className="text-[9px] text-white/30 uppercase tracking-widest font-mono">Policy Update</span>
+                </div>
+                <div className="px-4 py-3 rounded-xl border border-white/10 bg-black/40 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                   <span className="text-xs font-bold text-white/80 mb-1">NCAAA</span>
+                   <span className="text-[9px] text-white/30 uppercase tracking-widest font-mono">Course Report</span>
+                </div>
+              </div>
+              
+               <div className="absolute -bottom-16 text-[10px] text-white/20 font-mono tracking-widest uppercase">
+                  Traceable actions. Full compliance.
+               </div>
+            </div>
+
+          </motion.div>
+
+        </div>
       </div>
     </section>
   )

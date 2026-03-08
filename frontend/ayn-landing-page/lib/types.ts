@@ -101,3 +101,94 @@ export interface StateSummary {
   orphan_files: PlatformFile[]
   addressable_gaps: PlatformGap[]
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPLIANCE TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CommandCenter {
+  evidenceCount: number
+  processingEvidenceCount: number
+  staleEvidenceCount: number
+  openGapsCount: number
+  addressedGapsCount: number
+  closedGapsCount: number
+  pendingReviewsCount: number
+  overdueTasksCount: number
+  auditReadinessScore: number
+  forecastDaysToReadiness?: number
+  computedAt: string
+}
+
+export interface ReviewQueueItem {
+  mappingId: string
+  criterionId: string
+  criterionTitle: string
+  standardId: string
+  standardTitle: string
+  status: string
+  confidenceScore: number
+  aiReasoning: string
+  evidenceId?: string
+  reviewed: boolean
+}
+
+export interface ActionPlanTask {
+  id: string
+  title: string
+  description?: string
+  ownerId?: string
+  dueDate?: string
+  status: "todo" | "in_progress" | "blocked" | "done" | "archived"
+  priority: "low" | "medium" | "high" | "critical"
+  gapId?: string
+  criterionId?: string
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+  metadata: Record<string, unknown>
+}
+
+export interface WorkflowRun {
+  id: string
+  workflowName: string
+  status: "queued" | "running" | "success" | "failed" | "canceled"
+  trigger: string
+  startedAt: string
+  endedAt?: string
+  startedBy: string
+  message?: string
+  metadata: Record<string, unknown>
+}
+
+export interface AuditTrailItem {
+  id: string
+  type: string
+  title: string
+  description?: string
+  entityId?: string
+  entityType?: string
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
+export interface CollaborationComment {
+  id: string
+  entityType: string
+  entityId: string
+  text: string
+  mentions: string[]
+  authorId: string
+  createdAt: string
+}
+
+export interface VersionEntry {
+  id: string
+  kind: string
+  entityType: string
+  entityId: string
+  createdAt: string
+  actorId?: string
+  snapshot: Record<string, unknown>
+  diff?: Record<string, unknown>
+}

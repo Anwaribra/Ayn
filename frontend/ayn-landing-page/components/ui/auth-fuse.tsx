@@ -140,7 +140,9 @@ function SignInForm(props: {
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <AynLogo size="md" heroStyle />
+                <span className="text-2xl font-bold tracking-tight text-foreground select-none">
+                    Ayn
+                </span>
             </div>
 
             <div className="flex flex-col gap-2 text-center">
@@ -155,29 +157,31 @@ function SignInForm(props: {
             )}
 
             {/* Google OAuth — First for lowest friction */}
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
+            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 transition-colors">
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
             </Button>
 
             <div className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
+                    <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or sign in with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-[#f5f5f3] uppercase tracking-widest text-[10px]">Or sign in with email</span>
             </div>
 
             {/* Email / Password fields */}
             <div className="grid gap-4">
                 <div className="grid gap-2">
-                    <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="text-xs text-foreground/80">Email</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Password</Label>
-                    <PasswordInput name="password" required placeholder="Password" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label className="text-xs text-foreground/80">Password</Label>
+                    <div className="relative">
+                       <Input name="password" required placeholder="Password" type="password" className="pe-10 h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
+                    </div>
                 </div>
-                <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
+                <Button type="submit" className="h-11 rounded-lg bg-[#111] hover:bg-black text-white font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -236,7 +240,9 @@ function SignUpForm(props: {
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <AynLogo size="md" heroStyle />
+                <span className="text-2xl font-bold tracking-tight text-foreground select-none">
+                    Ayn
+                </span>
             </div>
 
             <div className="flex flex-col gap-2 text-center">
@@ -251,34 +257,36 @@ function SignUpForm(props: {
             )}
 
             {/* Google OAuth — First */}
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-border bg-transparent hover:bg-muted transition-colors">
+            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 transition-colors">
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Continue with Google
             </Button>
 
             <div className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
+                    <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 bg-background px-3 text-muted-foreground uppercase tracking-widest text-[10px]">Or create with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-[#f5f5f3] uppercase tracking-widest text-[10px]">Or create with email</span>
             </div>
 
             <div className="grid gap-4">
                 <div className="grid gap-2">
-                    <Label htmlFor={nameId} className="text-xs text-muted-foreground">Full Name</Label>
-                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={nameId} className="text-xs text-foreground/80">Full Name</Label>
+                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor={emailId} className="text-xs text-muted-foreground">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-border" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="text-xs text-foreground/80">Email</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Password</Label>
-                    <PasswordInput
+                    <Label className="text-xs text-foreground/80">Password</Label>
+                    <Input
                         name="password"
+                        type="password"
                         required
                         placeholder="Password"
                         minLength={8}
+                        className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                         aria-invalid={!!props.err}
                         disabled={props.loading}
                         value={password}
@@ -308,7 +316,7 @@ function SignUpForm(props: {
                     )}
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
+                    <Label className="text-xs text-foreground/80">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
                     <div className="flex flex-wrap gap-2">
                         {[
                             { value: "STUDENT", label: "Student" },
@@ -325,8 +333,8 @@ function SignUpForm(props: {
                                 className={cn(
                                     "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
                                     selectedRole === role.value
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                                        ? "bg-primary text-white border-primary"
+                                        : "bg-white text-muted-foreground border-black/10 hover:border-black/30"
                                 )}
                             >
                                 {role.label}
@@ -334,7 +342,7 @@ function SignUpForm(props: {
                         ))}
                     </div>
                 </div>
-                <Button type="submit" className="h-11 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium" disabled={props.loading}>
+                <Button type="submit" className="h-11 rounded-lg bg-[#111] hover:bg-black text-white font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -461,9 +469,9 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex bg-background">
-            {/* Left — Form */}
-            <div className="flex w-full items-center justify-center p-6 md:w-1/2 md:p-[var(--spacing-content)] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex bg-[#050810]">
+            {/* Left — Form (LIGHT THEME) */}
+            <div className="flex w-full items-center justify-center p-6 md:w-1/2 md:p-[var(--spacing-content)] overflow-y-auto bg-[#f5f5f3] text-foreground">
                 <div className="w-full max-w-[400px]">
                     {isSignIn ? (
                         <SignInForm
@@ -485,30 +493,30 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 </div>
             </div>
 
-            {/* Right — Static Benefit Cards (Liquid Glass) */}
-            <div className="relative hidden w-1/2 md:flex flex-col justify-center p-12 lg:p-16 border-l border-border overflow-hidden bg-muted/20">
+            {/* Right — Static Benefit Cards (DARK THEME Glass) */}
+            <div className="relative hidden w-1/2 md:flex flex-col justify-center p-12 lg:p-16 border-l border-white/5 overflow-hidden bg-[#050810]">
                 {/* Subtle background glow */}
-                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06)_0%,transparent_70%)] pointer-events-none" />
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1)_0%,transparent_70%)] pointer-events-none" />
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px]" />
 
                 <div className="relative z-10">
                     {/* Header */}
                     <div className="mb-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 mb-4 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                             <Shield className="w-3.5 h-3.5 text-primary" />
                             <span className="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Ayn Platform</span>
                         </div>
-                        <h2 className="text-2xl font-bold text-foreground mb-2">
+                        <h2 className="text-2xl font-bold text-white mb-2">
                             Quality compliance,<br />
-                            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">powered by AI.</span>
+                            <span className="bg-gradient-to-r from-primary to-[#818cf8] bg-clip-text text-transparent">powered by AI.</span>
                         </h2>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-white/60">
                             Join institutions already using Ayn to streamline their accreditation journey.
                         </p>
                     </div>
 
-                    {/* 3 Static Benefit Cards — Liquid Glass */}
+                    {/* 3 Static Benefit Cards — Dark Glass */}
                     <div className="space-y-4">
                         {benefits.map((benefit, i) => (
                             <motion.div
@@ -516,14 +524,14 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                                className="group flex items-start gap-4 p-5 rounded-2xl bg-white/60 backdrop-blur-[16px] border border-white/40 shadow-lg hover:shadow-xl hover:scale-[1.01] hover:border-white/60 transition-all duration-300"
+                                className="group flex items-start gap-4 p-5 rounded-2xl bg-white/[0.03] backdrop-blur-[16px] border border-white/[0.08] shadow-lg hover:shadow-2xl hover:scale-[1.01] hover:border-white/[0.15] hover:bg-white/[0.05] transition-all duration-300"
                             >
-                                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border", benefit.bg, benefit.border)}>
+                                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-white/10", benefit.bg)}>
                                     <benefit.icon className={cn("w-5 h-5", benefit.color)} />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-semibold text-foreground mb-1">{benefit.title}</h3>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">{benefit.description}</p>
+                                    <h3 className="text-sm font-semibold text-white mb-1">{benefit.title}</h3>
+                                    <p className="text-xs text-white/50 leading-relaxed">{benefit.description}</p>
                                 </div>
                             </motion.div>
                         ))}

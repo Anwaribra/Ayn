@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
 /* 
   🛑 PROHIBITION RULE 🛑
   Hardcoded color classes (e.g. bg-white, text-zinc-900, border-slate-200) are PROHIBITED.

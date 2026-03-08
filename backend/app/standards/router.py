@@ -305,25 +305,37 @@ async def get_mapping_status(
         
     db = get_db()
     for _ in [1]:
+        # Resolve standard by id or code to match behavior of other mapping endpoints.
+        standard = await db.standard.find_first(
+            where={
+                "OR": [
+                    {"id": standard_id},
+                    {"code": standard_id},
+                    {"code": standard_id.upper()}
+                ]
+            },
+            include={"criteria": True}
+        )
+        if not standard:
+            raise HTTPException(status_code=404, detail="Standard not found")
+
+        resolved_standard_id = standard.id
+
         # Using prisma to count mappings
         mappings = await db.criteriamapping.find_many(
             where={
-                "standardId": standard_id,
+                "standardId": resolved_standard_id,
                 "institutionId": institution_id
             }
         )
-        
-        standard = await db.standard.find_unique(where={"id": standard_id}, include={"criteria": True})
-        if not standard:
-            raise HTTPException(status_code=404, detail="Standard not found")
-            
+
         total = len(standard.criteria) if standard.criteria else 0
         mapped_count = len(mappings)
         
         # Check GapAnalysis mapping for this standard/institution to indicate completeness
         gap_record = await db.gapanalysis.find_first(
             where={
-                "standardId": standard_id,
+                "standardId": resolved_standard_id,
                 "institutionId": institution_id
             },
             order={"createdAt": "desc"}

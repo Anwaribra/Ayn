@@ -129,26 +129,58 @@ async def chat_with_files(
                     if has_analysis:
                         async def process_analysis(parsed_data, usr_id):
                             try:
-                                from app.gap_analysis.service import GapOneService
+                                import logging
+                                import json
                                 from app.platform_state.service import StateService
-                                
-                                gap_service = GapOneService(db)
-                                state_service = StateService(db)
-                                
-                                await gap_service.create_analysis(
-                                    user_id=usr_id,
-                                    standard_id=None, 
-                                    score=float(parsed_data["score"]),
-                                    gaps=parsed_data["gaps"],
-                                    summary=parsed_data.get("summary", "AI Generated Analysis"),
-                                    recommendations=parsed_data.get("recommendations", [])
+
+                                # Persist ad-hoc analysis as a GapAnalysis record for the user's institution.
+                                user = await db.user.find_unique(where={"id": usr_id})
+                                if not user or not getattr(user, "institutionId", None):
+                                    logging.getLogger(__name__).warning(
+                                        "Skipping analysis persistence for user %s: no institution.",
+                                        usr_id,
+                                    )
+                                    return
+
+                                score = float(parsed_data.get("score") or 0.0)
+                                gaps = parsed_data.get("gaps") or []
+                                if not isinstance(gaps, list):
+                                    gaps = []
+
+                                recommendations = parsed_data.get("recommendations") or []
+                                if not isinstance(recommendations, list):
+                                    recommendations = []
+
+                                summary_text = parsed_data.get("summary") or "AI Generated Analysis"
+                                institution_standard = await db.institutionstandard.find_first(
+                                    where={"institutionId": user.institutionId}
                                 )
-                                
+                                standard_id = institution_standard.standardId if institution_standard else None
+
+                                record = await db.gapanalysis.create(
+                                    data={
+                                        "institutionId": user.institutionId,
+                                        "standardId": standard_id,
+                                        "overallScore": score,
+                                        "summary": summary_text,
+                                        "status": "completed",
+                                        "gapsJson": json.dumps(gaps),
+                                        "recommendationsJson": json.dumps(recommendations),
+                                    }
+                                )
+
+                                state_service = StateService(db)
                                 await state_service.record_metric_update(
                                     user_id=usr_id,
                                     metric_id="alignment_score",
-                                    value=float(parsed_data["score"]),
+                                    name="Compliance Alignment Score",
+                                    value=score,
                                     source_module="gap_analysis"
+                                )
+                                logging.getLogger(__name__).info(
+                                    "Saved chat-with-files analysis record %s for user %s",
+                                    record.id,
+                                    usr_id,
                                 )
                             except Exception as db_err:
                                 import logging

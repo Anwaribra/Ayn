@@ -2,11 +2,9 @@
 
 import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AynLogo } from "@/components/ayn-logo"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,273 +14,288 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/lib/auth-context"
-import { NavLink, MagneticButton } from "./landing-utils"
 import { cn } from "@/lib/utils"
 
 function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+  return name.trim().split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
 }
 
+/**
+ * Navbar — three-column: Logo | Pill | CTA
+ *
+ * Since the page background is now always off-white, the pill and logo
+ * are always dark-on-light. No adaptive colour switching needed.
+ *
+ * Behaviour:
+ *  • At the very top → pill is white with a subtle border, no shadow
+ *  • After 60 px scroll → pill gets a slightly stronger shadow to "float"
+ *  • Scrolling down fast → navbar slides away; scrolling up → reappears
+ */
 export function LandingNavbar() {
   const { user, logout } = useAuth()
-  const [scrolled, setScrolled] = useState(false)
-  const [hidden, setHidden] = useState(false)
+  const [scrolled, setScrolled]   = useState(false)
+  const [hidden,   setHidden]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isOverDark, setIsOverDark] = useState(false)
+  
   const lastScrollY = useRef(0)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef     = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      if (currentScrollY > lastScrollY.current && currentScrollY > 250) {
-        setHidden(true)
-      } else {
-        setHidden(false)
-      }
-      setScrolled(currentScrollY > 50)
-      lastScrollY.current = currentScrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y > lastScrollY.current && y > 200) setHidden(true)
+      else setHidden(false)
+      setScrolled(y > 60)
+      lastScrollY.current = y
+
+      // Check if navbar intersects with a dark section
+      let overDark = false
+      const headerCenterY = 32 // Approximately half height + 16px padding
+      const darkSections = document.querySelectorAll('[data-section-theme="dark"]')
+      
+      darkSections.forEach(section => {
+        const rect = section.getBoundingClientRect()
+        // If the checking point (headerCenterY) falls between the top and bottom of the element
+        if (rect.top <= headerCenterY && rect.bottom >= headerCenterY) {
+          overDark = true
+        }
+      })
+      
+      setIsOverDark(overDark)
     }
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    
+    // Initial check
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
+  /* focus trap for mobile menu */
   useEffect(() => {
     if (!mobileOpen) return
-    const dialog = dialogRef.current
+    const dialog    = dialogRef.current
     if (!dialog) return
-    const menuButton = menuButtonRef.current
-    const focusable = dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
-    const list = Array.from(focusable)
-    const first = list[0]
-    if (first) requestAnimationFrame(() => first.focus())
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const menuBtn   = menuButtonRef.current
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"))
+    if (focusable[0]) requestAnimationFrame(() => focusable[0].focus())
+    const trap = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return
-      const current = document.activeElement
-      const idx = list.indexOf(current as HTMLElement)
-      if (idx === -1) return
-      if (e.shiftKey) {
-        if (idx === 0) {
-          e.preventDefault()
-          list[list.length - 1].focus()
-        }
-      } else {
-        if (idx === list.length - 1) {
-          e.preventDefault()
-          list[0].focus()
-        }
-      }
+      const idx = focusable.indexOf(document.activeElement as HTMLElement)
+      if (e.shiftKey && idx === 0)                { e.preventDefault(); focusable[focusable.length - 1].focus() }
+      else if (!e.shiftKey && idx === focusable.length - 1) { e.preventDefault(); focusable[0].focus() }
     }
-    dialog.addEventListener("keydown", handleKeyDown)
-    return () => {
-      dialog.removeEventListener("keydown", handleKeyDown)
-      menuButton?.focus()
-    }
+    dialog.addEventListener("keydown", trap)
+    return () => { dialog.removeEventListener("keydown", trap); menuBtn?.focus() }
   }, [mobileOpen])
 
-  const closeMobile = () => setMobileOpen(false)
+  const closeMobile  = () => setMobileOpen(false)
+  const handleLogout = async () => { await logout(); window.location.href = "/" }
 
-  const handleLogout = async () => {
-    await logout()
-    window.location.href = "/"
-  }
+  /* nav items */
+  const navItems = [
+    { label: "Platform", href: "/#main-content"       },
+    { label: "Horus",    href: "/#horus-intelligence" },
+    { label: "Features", href: "/#how-it-works"       },
+    { label: "About",    href: "/#about"              },
+    { label: "FAQ",      href: "/faq"                 },
+  ]
+
+  /* pill style — always light since page bg is off-white */
+  const pillCls = scrolled
+    ? "bg-white border-black/10 shadow-md shadow-black/8 backdrop-blur-xl"
+    : "bg-white/80 border-black/8 backdrop-blur-lg"
 
   return (
-    <motion.div
+    <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: hidden ? 0 : 1, y: hidden ? -100 : 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4"
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="fixed top-0 left-0 right-0 z-50 px-5 pt-4"
     >
-      <nav
-        className={cn(
-          "flex items-center justify-between gap-6 px-4 py-2.5 rounded-full border transition-all duration-500",
-          scrolled
-            ? "bg-background/80 backdrop-blur-xl border-border/50 shadow-lg shadow-black/10"
-            : "bg-background/50 backdrop-blur-md border-border/30"
-        )}
-        style={{ maxWidth: "720px", width: "100%" }}
-      >
-        <Link href="/" className="flex items-center shrink-0" aria-label="Ayn home">
-          <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
-            <AynLogo size="sm" withGlow={false} heroStyle />
-          </motion.div>
+      {/* Three-column: Logo │ Pill nav │ CTA */}
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+
+        {/* ── LEFT: Logo ── */}
+        <Link href="/" aria-label="Ayn home" className="shrink-0 group z-50">
+          <motion.span
+            whileHover={{ scale: 1.04 }}
+            transition={{ type: "spring", stiffness: 400 }}
+            className={cn(
+               "text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto",
+               isOverDark ? "text-white" : "text-black drop-shadow-sm" 
+            )}
+          >
+            Ayn
+          </motion.span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
-          <NavLink href="#horus-intelligence">Horus</NavLink>
-          <NavLink href="#features">Features</NavLink>
-          <NavLink href="#about">About</NavLink>
-        </div>
+        {/* ── CENTRE: Floating pill ── */}
+        <nav
+          className={cn(
+            "hidden md:flex items-center gap-0.5 px-2.5 py-2 rounded-full border transition-all duration-400",
+            pillCls
+          )}
+        >
+          {navItems.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/65 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+            >
+              {label}
+            </Link>
+          ))}
 
-        <div className="flex items-center gap-4 shrink-0">
+          {/* separator */}
+          <div className="w-px h-4 mx-1.5 bg-black/12 shrink-0" />
+
+          {/* Log in ─ inside pill */}
+          {!user && (
+            <Link
+              href="/login"
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/65 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+            >
+              Log in
+            </Link>
+          )}
+
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 px-2 rounded-full hover:bg-black/5 gap-1.5">
+                  <span className="h-6 w-6 rounded-full bg-primary/15 text-xs font-bold text-primary flex items-center justify-center">
+                    {getInitials(user.name)}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-foreground/50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
+                <DropdownMenuLabel className="font-normal">
+                  <p className="font-medium truncate">{user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/platform/dashboard" className="flex items-center gap-2 cursor-pointer">
+                    <LayoutDashboard className="h-4 w-4" /> Go to Platform
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="h-4 w-4" /> Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </nav>
+
+        {/* ── RIGHT: CTA button ── */}
+        <div className="flex items-center gap-3 shrink-0 z-50">
+          {/* Mobile hamburger */}
           <Button
             ref={menuButtonRef}
             variant="ghost"
             size="icon"
-            className="md:hidden h-9 w-9"
-            onClick={() => setMobileOpen(!mobileOpen)}
+            className={cn(
+              "md:hidden h-9 w-9 rounded-full transition-colors pointer-events-auto",
+              isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5"
+            )}
+            onClick={() => setMobileOpen(p => !p)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
 
-          <div className="hidden md:block w-px h-5 bg-border/50" aria-hidden />
-
+          {/* Desktop CTA */}
           {user ? (
-            <>
-              <MagneticButton
-                asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-2 h-9 rounded-full hidden md:inline-flex font-medium"
-              >
-                <Link href="/platform/dashboard">Platform</Link>
-              </MagneticButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="hidden md:flex items-center gap-2 h-9 px-2 py-1.5 rounded-full hover:bg-accent/50 data-[state=open]:bg-accent/50"
-                    aria-label="User menu"
-                  >
-                    <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-foreground"
-                      aria-hidden
-                    >
-                      {getInitials(user.name)}
-                    </span>
-                    <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
-                      {user.name}
-                    </span>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-0.5">
-                      <p className="font-medium text-foreground truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/platform/dashboard" className="flex items-center gap-2 cursor-pointer">
-                      <LayoutDashboard className="h-4 w-4" />
-                      Go to Platform
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    className="cursor-pointer focus:bg-destructive/10 focus:text-destructive"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
+            <Link
+              href="/platform/dashboard"
+              className={cn(
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-md",
+                isOverDark ? "bg-white text-black" : "bg-[#111] text-white"
+              )}
+            >
+              Platform
+            </Link>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 px-2 py-1.5 hidden md:inline rounded-md hover:bg-accent/50"
-              >
-                Log in
-              </Link>
-              <MagneticButton
-                asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-4 py-2 h-9 rounded-full hidden md:inline-flex font-medium"
-              >
-                <Link href="/signup">Get Started</Link>
-              </MagneticButton>
-            </>
+             <Link
+              href="/signup"
+              className={cn(
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-md",
+                isOverDark ? "bg-white text-black" : "bg-[#111] text-white"
+              )}
+            >
+              Get Started
+            </Link>
           )}
         </div>
-      </nav>
+      </div>
 
-      {mobileOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden top-20"
-            aria-hidden
-            onClick={closeMobile}
-          />
-          <motion.div
-            ref={dialogRef}
-            role="dialog"
-            aria-label="Mobile menu"
-            aria-modal="true"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed left-4 right-4 top-[72px] z-50 md:hidden rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-xl py-4 px-4"
-          >
-            <div className="flex flex-col gap-0">
-              <NavLink href="#horus-intelligence" onClick={closeMobile}>
-                Horus
-              </NavLink>
-              <NavLink href="#features" onClick={closeMobile}>
-                Features
-              </NavLink>
-              <NavLink href="#about" onClick={closeMobile}>
-                About
-              </NavLink>
-              <div className="border-t border-border my-3" />
-              {user ? (
-                <>
-                  <div className="px-3 py-2 rounded-lg bg-muted/50 mb-2">
-                    <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
+      {/* ── Mobile menu ── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 top-16 z-40 bg-black/20 backdrop-blur-sm md:hidden"
+              onClick={closeMobile}
+            />
+            <motion.div
+              key="panel"
+              ref={dialogRef}
+              role="dialog" aria-modal="true" aria-label="Mobile menu"
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ duration: 0.18 }}
+              className="fixed left-4 right-4 top-[68px] z-50 md:hidden rounded-2xl border border-black/8 bg-white/98 backdrop-blur-2xl shadow-2xl p-3"
+            >
+              <div className="flex flex-col gap-0.5">
+                {navItems.map(({ label, href }) => (
                   <Link
-                    href="/platform/dashboard"
-                    className="flex items-center gap-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-3 px-4 rounded-lg"
+                    key={label}
+                    href={href}
                     onClick={closeMobile}
+                    className="px-4 py-3 rounded-xl text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all"
                   >
-                    <LayoutDashboard className="h-4 w-4 shrink-0" />
-                    Go to Platform
+                    {label}
                   </Link>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 py-3 px-4 rounded-lg w-full text-left mt-1"
-                    onClick={async () => {
-                      closeMobile()
-                      await handleLogout()
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 shrink-0" />
-                    Log out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="text-sm text-muted-foreground hover:text-foreground py-3 px-4 rounded-lg hover:bg-accent block"
-                    onClick={closeMobile}
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 py-3 px-4 rounded-lg text-center block mt-1"
-                    onClick={closeMobile}
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </motion.div>
+                ))}
+                <div className="my-2 border-t border-black/8" />
+                {user ? (
+                  <>
+                    <div className="px-4 py-1.5 text-xs text-muted-foreground">{user.name}</div>
+                    <Link href="/platform/dashboard" onClick={closeMobile}
+                      className="px-4 py-3 rounded-xl text-sm font-semibold text-center"
+                      style={{ background: "#111", color: "#fff" }}>
+                      Go to Platform
+                    </Link>
+                    <button onClick={async () => { closeMobile(); await handleLogout() }}
+                      className="px-4 py-3 rounded-xl text-sm text-left text-muted-foreground hover:text-destructive hover:bg-destructive/8">
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={closeMobile}
+                      className="px-4 py-3 rounded-xl text-sm text-foreground/70 hover:text-foreground hover:bg-black/5">
+                      Log in
+                    </Link>
+                    <Link href="/signup" onClick={closeMobile}
+                      className="px-4 py-3 rounded-xl text-sm font-semibold text-center mt-1"
+                      style={{ background: "#111", color: "#fff" }}>
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </motion.header>
   )
 }

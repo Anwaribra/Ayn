@@ -286,45 +286,54 @@ async def get_workflows(
     db: Prisma = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get system workflows status."""
-    from datetime import datetime, timezone
-    
-    # helper for time ago
+    """Get data-backed workflow status for system pipelines."""
+    from datetime import datetime, timedelta, timezone
+
     def time_ago(dt):
-        if not dt: return "Never"
-        # dt is likely timezone aware (Prisma), so make 'now' aware
+        if not dt:
+            return "Never"
         now = datetime.now(timezone.utc) if dt.tzinfo else datetime.utcnow()
         diff = now - dt
         seconds = diff.total_seconds()
-        if seconds < 60: return "Just now"
-        if seconds < 3600: return f"{int(seconds // 60)} mins ago"
-        if seconds < 86400: return f"{int(seconds // 3600)} hours ago"
+        if seconds < 60:
+            return "Just now"
+        if seconds < 3600:
+            return f"{int(seconds // 60)} mins ago"
+        if seconds < 86400:
+            return f"{int(seconds // 3600)} hours ago"
         return f"{int(seconds // 86400)} days ago"
 
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-    
-    # Fetch latest activities to determine "last run"
-    last_file = await db.platformfile.find_first(
-        where={"userId": user_id},
+    institution_id = current_user.get("institutionId") if isinstance(current_user, dict) else getattr(current_user, "institutionId", None)
+    since_24h = datetime.utcnow() - timedelta(hours=24)
+
+    last_file = await db.platformfile.find_first(where={"userId": user_id}, order={"createdAt": "desc"})
+    last_evidence = await db.evidence.find_first(where={"uploadedById": user_id}, order={"updatedAt": "desc"})
+    last_gap = await db.platformgap.find_first(where={"userId": user_id}, order={"createdAt": "desc"})
+    last_report = await db.gapanalysis.find_first(
+        where={"institutionId": institution_id} if institution_id else {"id": "__none__"},
         order={"createdAt": "desc"}
     )
-    
-    last_evidence = await db.evidence.find_first(
-        where={"uploadedById": user_id},
-        order={"updatedAt": "desc"}
-    )
-    
-    last_gap = await db.platformgap.find_first(
-        where={"userId": user_id},
-        order={"createdAt": "desc"}
-    )
-    
+    last_notification = await db.notification.find_first(where={"userId": user_id}, order={"createdAt": "desc"})
+
+    uploads_24h = await db.platformfile.count(where={"userId": user_id, "createdAt": {"gte": since_24h}})
+    processing_evidence = await db.evidence.count(where={"uploadedById": user_id, "status": "processing"})
+    reports_running = await db.gapanalysis.count(
+        where={"institutionId": institution_id, "status": {"in": ["pending", "running"]}}
+    ) if institution_id else 0
+    unread_notifications = await db.notification.count(where={"userId": user_id, "isRead": False})
+
+    sync_status = "active" if (uploads_24h > 0 or processing_evidence > 0) else "paused"
+    evidence_status = "active" if last_evidence else "draft"
+    report_status = "active" if reports_running > 0 else ("paused" if last_report else "draft")
+    digest_status = "active" if unread_notifications > 0 else "draft"
+
     return [
         {
             "id": "wf-001",
             "name": "Evidence Compliance Sync",
             "description": "Sync evidence files to cloud storage and update indices",
-            "status": "active",
+            "status": sync_status,
             "trigger": "On Upload",
             "lastRun": time_ago(last_file.createdAt) if last_file else "Never",
             "icon": "Zap",
@@ -334,10 +343,10 @@ async def get_workflows(
         {
             "id": "wf-002",
             "name": "Evidence Sync Pipeline",
-            "description": "Daily synchronization of institutional evidence assets",
-            "status": "active",
-            "trigger": "Daily at 02:00",
-            "lastRun": time_ago(last_evidence.updatedAt) if last_evidence else "6 hours ago",
+            "description": "Synchronize institutional evidence assets",
+            "status": evidence_status,
+            "trigger": "On Evidence Update",
+            "lastRun": time_ago(last_evidence.updatedAt) if last_evidence else "Never",
             "icon": "Activity",
             "color": "text-blue-500",
             "bg": "bg-blue-500/10"
@@ -345,10 +354,10 @@ async def get_workflows(
         {
             "id": "wf-003",
             "name": "Alignment Report Generator",
-            "description": "Generate weekly framework alignment summary reports",
-            "status": "paused",
-            "trigger": "Weekly on Monday",
-            "lastRun": time_ago(last_gap.createdAt) if last_gap else "5 days ago",
+            "description": "Generate alignment and gap reports from latest evidence",
+            "status": report_status,
+            "trigger": "On Analysis Request",
+            "lastRun": time_ago(last_report.createdAt) if last_report else (time_ago(last_gap.createdAt) if last_gap else "Never"),
             "icon": "Workflow",
             "color": "text-emerald-500",
             "bg": "bg-emerald-500/10"
@@ -356,10 +365,10 @@ async def get_workflows(
         {
             "id": "wf-004",
             "name": "Notification Digest",
-            "description": "Send daily notification digest to inactive users",
-            "status": "draft",
-            "trigger": "Manual",
-            "lastRun": "Never",
+            "description": "Deliver notification digest for pending platform events",
+            "status": digest_status,
+            "trigger": "On New Notifications",
+            "lastRun": time_ago(last_notification.createdAt) if last_notification else "Never",
             "icon": "Clock",
             "color": "text-purple-500",
             "bg": "bg-purple-500/10"

@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from typing import List
 import json
 import logging
+import asyncio
 from app.core.db import get_db
 from app.gap_analysis.models import (
     GapAnalysisRequest,
@@ -135,7 +136,20 @@ class GapAnalysisService:
                 )
                 evidence.extend(legacy_evidence)
 
-            result = await ai_generate_gap_analysis(standard, criteria, evidence)
+            result = None
+            last_error = None
+            for attempt in range(3):
+                try:
+                    result = await ai_generate_gap_analysis(standard, criteria, evidence)
+                    break
+                except Exception as ai_err:
+                    last_error = ai_err
+                    if attempt < 2:
+                        await asyncio.sleep(1.5 * (attempt + 1))
+                        continue
+                    raise
+            if result is None:
+                raise RuntimeError(f"Gap analysis failed after retries: {last_error}")
 
             # Update the stub record with real results
             await db.gapanalysis.update(

@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 from app.core.db import get_db
 
-from app.ai.service import get_gemini_client, ISO_21001_KNOWLEDGE, NAQAAE_KNOWLEDGE
+from app.ai.service import get_gemini_client, ISO_21001_KNOWLEDGE, ISO_9001_KNOWLEDGE, NAQAAE_KNOWLEDGE
 from prisma.models import Standard, Criterion, Evidence, CriteriaMapping, GapAnalysis
 
 logger = logging.getLogger(__name__)
@@ -310,8 +310,8 @@ async def analyze_standard_criteria(standard_id: str, institution_id: str, evide
                     "standardId": standard_id,
                     "overallScore": overall_score,
                     "summary": summary,
-                    "gapsJson": "{}", # simplified
-                    "recommendationsJson": "{}" # simplified
+                    "gapsJson": "[]",
+                    "recommendationsJson": "[]"
                 }
             )
             

@@ -425,6 +425,134 @@ class ApiClient {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // COMPLIANCE APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getCommandCenter() {
+    return this.request<import("./types").CommandCenter>("/compliance/command-center")
+  }
+
+  async getReviewQueue() {
+    return this.request<import("./types").ReviewQueueItem[]>("/compliance/review-queue")
+  }
+
+  async decideReview(mappingId: string, data: {
+    decision: "approve" | "reject" | "edit"
+    note?: string
+    statusOverride?: string
+    evidenceIdOverride?: string
+  }) {
+    return this.request<{
+      mappingId: string
+      decision: "approve" | "reject" | "edit"
+      status: string
+      reviewedAt: string
+    }>(`/compliance/review-queue/${mappingId}/decision`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getActionPlanTasks() {
+    return this.request<import("./types").ActionPlanTask[]>("/compliance/action-plans")
+  }
+
+  async createActionPlanTask(data: {
+    title: string
+    description?: string
+    ownerId?: string
+    dueDate?: string
+    priority?: "low" | "medium" | "high" | "critical"
+    gapId?: string
+    criterionId?: string
+    metadata?: Record<string, unknown>
+  }) {
+    return this.request<import("./types").ActionPlanTask>("/compliance/action-plans", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateActionPlanTask(taskId: string, data: {
+    title?: string
+    description?: string
+    ownerId?: string
+    dueDate?: string
+    status?: "todo" | "in_progress" | "blocked" | "done" | "archived"
+    priority?: "low" | "medium" | "high" | "critical"
+    metadata?: Record<string, unknown>
+  }) {
+    return this.request<import("./types").ActionPlanTask>(`/compliance/action-plans/${taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getWorkflowRuns() {
+    return this.request<import("./types").WorkflowRun[]>("/compliance/workflows/runs")
+  }
+
+  async startWorkflowRun(data: {
+    workflowName: string
+    trigger?: string
+    message?: string
+    metadata?: Record<string, unknown>
+  }) {
+    return this.request<import("./types").WorkflowRun>("/compliance/workflows/runs", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateWorkflowRun(runId: string, data: {
+    status: "queued" | "running" | "success" | "failed" | "canceled"
+    message?: string
+    metadata?: Record<string, unknown>
+  }) {
+    return this.request<import("./types").WorkflowRun>(`/compliance/workflows/runs/${runId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getAuditTrail(params?: {
+    take?: number
+    skip?: number
+    entity_type?: string
+    entity_id?: string
+    event_type?: string
+  }) {
+    const query = new URLSearchParams()
+    if (params?.take !== undefined) query.set("take", String(params.take))
+    if (params?.skip !== undefined) query.set("skip", String(params.skip))
+    if (params?.entity_type) query.set("entity_type", params.entity_type)
+    if (params?.entity_id) query.set("entity_id", params.entity_id)
+    if (params?.event_type) query.set("event_type", params.event_type)
+    const qs = query.toString()
+    return this.request<import("./types").AuditTrailItem[]>(`/compliance/audit-trail${qs ? `?${qs}` : ""}`)
+  }
+
+  async postCollaborationComment(data: {
+    entityType: string
+    entityId: string
+    text: string
+    mentions?: string[]
+  }) {
+    return this.request<import("./types").CollaborationComment>("/compliance/collaboration/comments", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getCollaborationComments(entityType: string, entityId: string) {
+    return this.request<import("./types").CollaborationComment[]>(`/compliance/collaboration/comments/${entityType}/${entityId}`)
+  }
+
+  async getEntityVersions(entityType: string, entityId: string) {
+    return this.request<import("./types").VersionEntry[]>(`/compliance/versions/${entityType}/${entityId}`)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // HORUS APIs (Read-only observations)
   // ═══════════════════════════════════════════════════════════════════════════
 

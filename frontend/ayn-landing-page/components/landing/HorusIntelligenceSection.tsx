@@ -90,11 +90,8 @@ export function HorusIntelligenceSection() {
   return (
     <section
       id="horus-intelligence"
-      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden bg-muted/5"
+      className="relative py-[var(--spacing-section-lg)] px-[var(--spacing-content)] overflow-hidden"
     >
-      {/* Adaptive gradient orbs */}
-      <div className="absolute top-0 left-0 w-full h-[500px] bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08)_0%,transparent_50%)] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-full h-[600px] bg-[radial-gradient(circle_at_bottom_right,hsl(var(--primary)/0.04)_0%,transparent_50%)] pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Section header */}

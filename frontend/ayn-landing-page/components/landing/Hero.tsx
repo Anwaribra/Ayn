@@ -1,392 +1,255 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, Brain, ChevronDown, FileCheck, Lock, Shield, Sparkles, Play, X } from "lucide-react"
+import { ArrowRight, ChevronDown, X, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ShinyButton } from "./landing-utils"
+import { useState, useRef, useCallback, useEffect } from "react"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { cn } from "@/lib/utils"
+const Spline = dynamic(() => import("@splinetool/react-spline"), { ssr: false })
+
+/**
+ * Hero background — must match the Spline scene's own bg.
+ * Also injected into <html>/<body> in layout.tsx to prevent white flash.
+ */
+const BG = "#050810"
+
+/** Phrases that cycle in the typewriter headline */
+const HEADLINE_PHRASES = [
+  "Quality Standard.",
+  "Compliance Gap.",
+  "ISO Criterion.",
+  "NCAAA Indicator.",
+]
+
+/** Simple character-by-character typewriter hook */
+function useTypewriter(phrases: string[], typingMs = 55, pauseMs = 2200, erasingMs = 30) {
+  const [displayed, setDisplayed]   = useState("")
+  const [phraseIdx, setPhraseIdx]   = useState(0)
+  const [charIdx,   setCharIdx]     = useState(0)
+  const [erasing,   setErasing]     = useState(false)
+
+  useEffect(() => {
+    const phrase = phrases[phraseIdx]
+    let timer: ReturnType<typeof setTimeout>
+
+    if (!erasing) {
+      if (charIdx < phrase.length) {
+        timer = setTimeout(() => setCharIdx((c) => c + 1), typingMs)
+      } else {
+        timer = setTimeout(() => setErasing(true), pauseMs)
+      }
+    } else {
+      if (charIdx > 0) {
+        timer = setTimeout(() => setCharIdx((c) => c - 1), erasingMs)
+      } else {
+        setErasing(false)
+        setPhraseIdx((i) => (i + 1) % phrases.length)
+      }
+    }
+
+    setDisplayed(phrase.slice(0, charIdx))
+    return () => clearTimeout(timer)
+  }, [charIdx, erasing, phraseIdx, phrases, typingMs, pauseMs, erasingMs])
+
+  return displayed
+}
 
 function scrollToFeatures() {
   document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
 }
 
-const FOCUSABLE = "button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])"
+const FOCUSABLE = "button,[href],input,select,textarea,[tabindex]:not([tabindex='-1'])"
 
-// Interactive Demo Modal – with focus trap, Escape, exit animation, focus return
-function DemoModal({ onClose, returnFocusRef }: { onClose: () => void; returnFocusRef?: React.RefObject<HTMLElement | null> }) {
-  const overlayRef = useRef<HTMLDivElement>(null)
+function DemoModal({
+  onClose,
+  returnFocusRef,
+}: {
+  onClose: () => void
+  returnFocusRef?: React.RefObject<HTMLElement | null>
+}) {
   const panelRef = useRef<HTMLDivElement>(null)
-
   const getFocusables = useCallback(() => {
     const el = panelRef.current
     if (!el) return []
     return Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-      (node) => !node.hasAttribute("disabled") && node.getAttribute("aria-hidden") !== "true"
+      (n) => !n.hasAttribute("disabled") && n.getAttribute("aria-hidden") !== "true"
     )
   }, [])
-
   useEffect(() => {
-    const focusables = getFocusables()
-    const first = focusables[0]
-    if (first) {
-      requestAnimationFrame(() => first.focus())
-    }
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        returnFocusRef?.current?.focus()
-        onClose()
-        return
-      }
+    const list = getFocusables()
+    if (list[0]) requestAnimationFrame(() => list[0].focus())
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { returnFocusRef?.current?.focus(); onClose(); return }
       if (e.key !== "Tab") return
-      const list = getFocusables()
-      if (list.length === 0) return
-      const current = document.activeElement as HTMLElement | null
-      const idx = list.indexOf(current as HTMLElement)
-      if (idx === -1) return
-      if (e.shiftKey) {
-        if (idx === 0) {
-          e.preventDefault()
-          list[list.length - 1].focus()
-        }
-      } else {
-        if (idx === list.length - 1) {
-          e.preventDefault()
-          list[0].focus()
-        }
-      }
+      const all = getFocusables()
+      const idx = all.indexOf(document.activeElement as HTMLElement)
+      if (e.shiftKey && idx === 0) { e.preventDefault(); all[all.length - 1].focus() }
+      else if (!e.shiftKey && idx === all.length - 1) { e.preventDefault(); all[0].focus() }
     }
-    document.addEventListener("keydown", onKeyDown)
-    return () => document.removeEventListener("keydown", onKeyDown)
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
   }, [onClose, getFocusables, returnFocusRef])
-
-  const handleClose = useCallback(() => {
-    returnFocusRef?.current?.focus()
-    onClose()
-  }, [onClose, returnFocusRef])
-
   return (
     <motion.div
-      ref={overlayRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={handleClose}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={() => { returnFocusRef?.current?.focus(); onClose() }}
     >
       <motion.div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="demo-modal-title"
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/40 bg-white/60 backdrop-blur-[16px]"
+        ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="demo-title"
+        initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+        className="relative w-full max-w-lg rounded-2xl p-10 text-center shadow-2xl border border-white/10"
+        style={{ background: "rgba(5,8,16,0.95)", backdropFilter: "blur(20px)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          type="button"
-          onClick={handleClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/50 backdrop-blur-sm border border-white/40 hover:bg-white/70 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          aria-label="Close modal"
+          onClick={() => { returnFocusRef?.current?.focus(); onClose() }}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20"
+          aria-label="Close"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4 text-white" />
         </button>
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-20 h-20 rounded-2xl bg-white/50 backdrop-blur-sm border border-white/40 shadow-lg flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-10 h-10 text-primary" />
-            </div>
-            <h3 id="demo-modal-title" className="text-2xl font-bold mb-2">Interactive Demo Coming Soon</h3>
-            <p className="text-muted-foreground mb-6">Experience the full platform with our guided tour</p>
-            <Link href="/signup">
-              <Button className="gap-2">
-                Try Platform Now
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
+        <div className="w-16 h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-4">
+          <Sparkles className="w-8 h-8 text-primary" />
         </div>
+        <h3 id="demo-title" className="text-xl font-bold mb-2 text-white">Demo Coming Soon</h3>
+        <p className="text-white/60 mb-6 text-sm">Experience the full Ayn platform</p>
+        <Link href="/signup"><Button className="gap-2">Try Now <ArrowRight className="w-4 h-4" /></Button></Link>
       </motion.div>
     </motion.div>
   )
 }
 
-// Interactive Demo Preview
-function InteractiveDemoPreview({ onClick }: { onClick: () => void }) {
-  const [isHovered, setIsHovered] = useState(false)
-
-  return (
-    <motion.div
-      className="relative hidden md:block cursor-pointer"
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      onClick={onClick}
-    >
-      {/* Glow */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 blur-3xl scale-110"
-        animate={{
-          opacity: isHovered ? 0.6 : 0.4,
-          scale: isHovered ? 1.15 : 1.1,
-        }}
-        transition={{ duration: 0.4 }}
-      />
-
-      {/* Browser mockup - Liquid Glass */}
-      <motion.div
-        className="relative z-10 rounded-xl overflow-hidden border border-white/40 shadow-xl bg-white/60 backdrop-blur-[16px]"
-        animate={{
-          y: isHovered ? -8 : 0,
-          scale: isHovered ? 1.01 : 1,
-        }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-      >
-        {/* Browser header */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-white/40 backdrop-blur-sm border-b border-white/30">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-400/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-400/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-400/80" />
-          </div>
-          <div className="flex-1 flex justify-center">
-            <div className="px-3 py-1 rounded-md bg-white/50 backdrop-blur-sm text-[10px] text-muted-foreground border border-white/40">
-              app.aynplatform.com
-            </div>
-          </div>
-        </div>
-
-        {/* Demo content */}
-        <div className="relative aspect-[16/10] bg-white/30 backdrop-blur-sm p-6">
-          <div className="grid grid-cols-3 gap-4 h-full">
-            {/* Sidebar mock */}
-            <div className="col-span-1 space-y-3">
-              <div className="h-8 w-8 rounded-lg bg-white/60 border border-white/40 shadow-sm flex items-center justify-center">
-                <span className="text-sm font-bold text-foreground">A</span>
-              </div>
-              <div className="space-y-2">
-                <div className="h-2 w-full rounded bg-muted/60" />
-                <div className="h-2 w-3/4 rounded bg-muted/50" />
-                <div className="h-2 w-1/2 rounded bg-muted/40" />
-              </div>
-            </div>
-            {/* Main content mock */}
-            <div className="col-span-2 space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1 h-16 rounded-lg bg-white/60 border border-white/40 shadow-sm p-3">
-                  <div className="h-2 w-12 rounded bg-muted/60 mb-2" />
-                  <div className="h-4 w-8 rounded bg-primary/20" />
-                </div>
-                <div className="flex-1 h-16 rounded-lg bg-white/60 border border-white/40 shadow-sm p-3">
-                  <div className="h-2 w-12 rounded bg-muted/60 mb-2" />
-                  <div className="h-4 w-8 rounded bg-emerald-500/20" />
-                </div>
-              </div>
-              <div className="h-32 rounded-lg bg-white/60 border border-white/40 shadow-sm p-4">
-                <div className="h-2 w-24 rounded bg-muted/50 mb-4" />
-                <div className="flex items-end gap-2 h-16">
-                  <div className="flex-1 h-8 rounded-t bg-primary/30" />
-                  <div className="flex-1 h-12 rounded-t bg-primary/50" />
-                  <div className="flex-1 h-10 rounded-t bg-primary/40" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Play button overlay */}
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-[2px]"
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <motion.div
-              className="w-16 h-16 rounded-full bg-white/60 border-2 border-white/40 backdrop-blur-sm flex items-center justify-center shadow-lg"
-              animate={{ scale: isHovered ? 1.1 : 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Play className="w-6 h-6 text-primary ml-1 fill-primary" />
-            </motion.div>
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-
+/* ═══════════════════════════════════════════════════════
+   HERO — dark rounded card
+   Changes from previous version:
+   • Removed "AYN" badge (kept "Full Agent Mode" only)
+   • Discover moved into text flow (not separate at bottom)
+   • Veil extended to 80% so animation reveals more on the right
+   • Removed bottom fade — clean edge matches the white page gap
+   • Spline offset via translateX to push scene further right
+═══════════════════════════════════════════════════════ */
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
-  const demoTriggerRef = useRef<HTMLDivElement>(null)
-
-
+  const demoRef    = useRef<HTMLDivElement>(null)
+  const typedText  = useTypewriter(HEADLINE_PHRASES)
 
   return (
     <>
-      <section id="main-content" className="relative min-h-[85vh] flex items-center overflow-hidden pt-24 pb-[var(--spacing-section)]">
-        {/* Seamless gradient fading into next section — no hard edge */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/0 pointer-events-none" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,hsl(var(--primary)/0.07),transparent_42%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_84%_84%,hsl(var(--primary)/0.06),transparent_44%)]" />
+      <section
+        id="main-content"
+        className="relative flex min-h-screen overflow-hidden"
+        style={{ backgroundColor: BG }}
+      >
+        {/* Subtle blue ambient glow */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 55% 55% at 5% 55%, rgba(37,99,235,0.07) 0%, transparent 70%)`,
+          }}
+        />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-[var(--spacing-content)]">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="text-center lg:text-left">
-
-              {/* Brand label above headline */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="mb-3 flex items-center justify-center lg:justify-start gap-2"
-              >
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-xs font-bold uppercase tracking-[0.13em]">
-                  Ayn
-                </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/8 border border-primary/20 text-primary text-[11px] font-semibold uppercase tracking-[0.11em]">
-                  Full Agent Mode
-                </span>
-              </motion.div>
-
-              {/* Main headline */}
-              <motion.h1
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-5 tracking-tight leading-[1.1]"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.05 }}
-              >
-                Your Eye on Every
-                <br />
-                <span className="bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent">
-                  Quality Standard.
-                </span>
-              </motion.h1>
-
-              {/* Subtitle */}
-              <motion.p
-                className="text-base md:text-lg text-muted-foreground mb-5 max-w-lg mx-auto lg:mx-0 leading-relaxed"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-              >
-                Map evidence to ISO, NCAAA, and global frameworks, then run guided compliance actions from the same AI workflow.
-              </motion.p>
-
-
-
-              {/* CTAs */}
-              <motion.div
-                className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <ShinyButton
-                  href="/signup"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 px-8 py-6 text-base font-bold w-full sm:w-auto min-h-[44px] shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-glow-hover)]"
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </ShinyButton>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={scrollToFeatures}
-                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 px-8 py-6 text-base font-medium bg-transparent w-full sm:w-auto min-h-[44px]"
-                >
-                  Explore Platform
-                </Button>
-              </motion.div>
-
-              {/* Trust badges */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-                className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-muted-foreground/70"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-primary" />
-                  <span>Assistant + Agent Modes</span>
-                </div>
-                <div className="w-px h-3 bg-border" />
-                <div className="flex items-center gap-1.5">
-                  <FileCheck className="w-3.5 h-3.5 text-primary" />
-                  <span>Quality Standards Support</span>
-                </div>
-                <div className="w-px h-3 bg-border" />
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-primary" />
-                  <span>Framework Ready</span>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Interactive Demo Preview */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <div
-                ref={demoTriggerRef}
-                tabIndex={0}
-                role="button"
-                aria-label="Open interactive demo modal"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    setDemoOpen(true)
-                  }
-                }}
-              >
-                <InteractiveDemoPreview onClick={() => setDemoOpen(true)} />
-              </div>
-            </motion.div>
-
-            {/* Mobile fallback */}
-            <div className="relative flex md:hidden justify-center mt-4">
-              <Link
-                href="/signup"
-                className="flex flex-col items-center justify-center gap-3 w-full max-w-xs py-8 px-6 rounded-2xl border border-white/40 bg-white/60 backdrop-blur-[16px] shadow-lg hover:border-primary/40 transition-all min-h-[44px]"
-              >
-                <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Lock className="w-7 h-7 text-primary/80" />
-                </div>
-                <span className="text-sm font-medium text-foreground">Get Started Free</span>
-                <span className="text-xs text-muted-foreground">Try the platform today</span>
-              </Link>
-            </div>
-          </div>
+        {/* ════ SPLINE — pushed further right via translateX ════ */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            pointerEvents: "none",
+            transform: "translateX(12%)", /* shift scene right */
+          }}
+        >
+          <Spline
+            scene="https://prod.spline.design/aysDxqUIU16cNzmO/scene.splinecode"
+            style={{ width: "100%", height: "100%", display: "block" }}
+          />
         </div>
 
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-          <button
-            type="button"
-            onClick={scrollToFeatures}
-            className="text-muted-foreground hover:text-foreground transition-colors flex flex-col items-center gap-2"
-            aria-label="Scroll to features"
+        {/* ════ LEFT VEIL — wider (80%) so more animation shows on right ════ */}
+        <div
+          className="absolute inset-y-0 left-0 z-10 pointer-events-none"
+          style={{
+            width: "80%",
+            background: `linear-gradient(to right, ${BG} 0%, ${BG} 50%, transparent 100%)`,
+          }}
+        />
+
+        {/* ════ TEXT CONTENT ════ */}
+        <div className="relative z-30 flex flex-col justify-center w-full lg:w-1/2 px-8 lg:px-16 xl:px-24 pt-24 pb-20">
+
+          {/* Badge — only "Full Agent Mode", removed "AYN" */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+            className="flex items-center gap-2 mb-6"
           >
-            <span className="text-[10px] uppercase tracking-widest font-medium opacity-50">Discover</span>
-            <ChevronDown className="w-5 h-5 animate-bounce" />
-          </button>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Full Agent Mode
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            className="text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.08] mb-6"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}
+          >
+            <span className="text-white">Your Eye on Every</span>
+            <span className="block bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent min-h-[1.1em]">
+              {typedText}
+              {/* blinking cursor */}
+              <span
+                className="inline-block w-[3px] h-[0.85em] bg-blue-400 ml-1 align-middle"
+                style={{ animation: "blink 1s step-end infinite" }}
+              />
+            </span>
+          </motion.h1>
+
+          {/* Subtitle */}
+          <motion.p
+            className="text-lg text-white/60 mb-8 leading-relaxed max-w-md"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.18 }}
+          >
+            Map evidence to ISO, NCAAA, and global frameworks, then run guided compliance actions from the same AI workflow.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            className="flex flex-col sm:flex-row gap-3 mb-10"
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.28 }}
+          >
+            <ShinyButton
+              href="/signup"
+              className="bg-primary text-white px-8 py-5 text-base font-bold shadow-[0_0_24px_rgba(59,111,217,0.4)] hover:shadow-[0_0_36px_rgba(59,111,217,0.6)] hover:bg-primary/90 transition-all w-full sm:w-auto"
+            >
+              Get Started
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </ShinyButton>
+            <Button
+              size="lg" variant="outline" onClick={scrollToFeatures}
+              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/30 px-8 py-5 text-base font-medium bg-transparent w-full sm:w-auto transition-all"
+            >
+              Explore Platform
+            </Button>
+          </motion.div>
+
+          {/* Discover — inline in text flow (not at very bottom) */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }}
+          >
+            <button
+              onClick={scrollToFeatures}
+              className="flex items-center gap-2 text-white/35 hover:text-white/60 transition-colors text-xs uppercase tracking-widest"
+              aria-label="Scroll to features"
+            >
+              Discover <ChevronDown className="w-4 h-4 animate-bounce" />
+            </button>
+          </motion.div>
         </div>
       </section>
 
-      {/* Demo Modal */}
       <AnimatePresence mode="wait">
-        {demoOpen && (
-          <DemoModal
-            key="demo-modal"
-            onClose={() => setDemoOpen(false)}
-            returnFocusRef={demoTriggerRef}
-          />
-        )}
+        {demoOpen && <DemoModal key="demo" onClose={() => setDemoOpen(false)} returnFocusRef={demoRef} />}
       </AnimatePresence>
     </>
   )

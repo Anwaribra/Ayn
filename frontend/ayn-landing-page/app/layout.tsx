@@ -81,8 +81,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#05070A" media="(prefers-color-scheme: dark)" />
+        {/* ❌ No white flash: force dark bg BEFORE any JS/React paint */}
+        <style dangerouslySetInnerHTML={{ __html: "html,body{background:#050810}" }} />
+        <meta name="theme-color" content="#050810" />
       </head>
       <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <AuthProvider>

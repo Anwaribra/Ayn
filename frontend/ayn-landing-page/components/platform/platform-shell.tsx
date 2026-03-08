@@ -206,7 +206,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300 text-foreground",
+        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300",
       )}
       data-platform-theme={mounted ? (resolvedTheme ?? "dark") : undefined}
       data-platform-page={platformVisualMode}
@@ -248,7 +248,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Open sidebar when it's overlay (below lg) */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
+              className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 transition-colors min-h-[44px] min-w-[44px]"
               aria-label="Open sidebar"
             >
               <PanelLeft className="w-5 h-5" />
@@ -257,11 +257,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {/* Navigation / Command Palette */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/60 hover:bg-white/90 border border-slate-200/60 text-slate-500 text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
             >
-              <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
+              <Search className="w-4 h-4 group-hover:text-slate-900 transition-colors" />
               <span className="hidden md:inline font-medium">Search...</span>
-              <kbd className="hidden md:flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-muted border border-border text-sm font-mono text-muted-foreground font-bold">
+              <kbd className="hidden md:flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-sm font-mono text-slate-500 font-bold">
                 <span className="text-base">⌘</span>K
               </kbd>
             </button>
@@ -272,14 +272,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             <div className="relative notification-dropdown-container">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
+                className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 transition-all min-h-[44px] min-w-[44px]"
                 aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                 aria-haspopup="true"
                 aria-expanded={showNotifications}
               >
                 <Bell className="w-5 h-5" />
                 {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-layer-1" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white" />
                 )}
               </button>
 
@@ -397,7 +397,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               }
               className={cn(
                 "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95 min-h-[44px] min-w-[44px]",
-                "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50",
               )}
               title={
                 resolvedTheme === "dark"
@@ -418,7 +418,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 ))}
             </button>
 
-            <div className="w-px h-4 bg-[var(--glass-border)]" />
+            <div className="w-px h-4 bg-slate-200" />
           </div>
         </header>
 

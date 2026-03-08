@@ -13,6 +13,7 @@ from app.standards.models import (
 import logging
 import json
 from app.ai.service import get_gemini_client
+from app.activity.service import ActivityService
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,29 @@ class StandardService:
                     "estimatedSetup": request.estimatedSetup,
                 }
             )
+            try:
+                admin = await db.user.find_unique(where={"email": admin_email})
+                if admin:
+                    await ActivityService.log_activity(
+                        user_id=admin.id,
+                        type="standard_snapshot_created",
+                        title=f"Standard created: {standard.title}",
+                        description=f"Code: {standard.code or 'N/A'}",
+                        entity_id=standard.id,
+                        entity_type="standard",
+                        metadata={
+                            "snapshot": {
+                                "id": standard.id,
+                                "title": standard.title,
+                                "code": standard.code,
+                                "category": standard.category,
+                                "description": standard.description,
+                                "region": standard.region,
+                            }
+                        },
+                    )
+            except Exception:
+                pass
             logger.info(f"Admin {admin_email} created standard: {standard.id}")
             return StandardResponse.model_validate(standard)
         except Exception as e:
@@ -106,10 +130,50 @@ class StandardService:
             )
         
         try:
+            before = {
+                "title": standard.title,
+                "code": standard.code,
+                "category": standard.category,
+                "description": standard.description,
+                "region": standard.region,
+                "icon": standard.icon,
+                "color": standard.color,
+                "features": standard.features,
+                "estimatedSetup": standard.estimatedSetup,
+            }
             updated = await db.standard.update(
                 where={"id": standard_id},
                 data=update_data
             )
+            try:
+                admin = await db.user.find_unique(where={"email": admin_email})
+                if admin:
+                    diff = {}
+                    for key, old_value in before.items():
+                        new_value = getattr(updated, key, None)
+                        if new_value != old_value:
+                            diff[key] = {"from": old_value, "to": new_value}
+                    await ActivityService.log_activity(
+                        user_id=admin.id,
+                        type="standard_snapshot_updated",
+                        title=f"Standard updated: {updated.title}",
+                        description=f"Updated {len(diff)} field(s)",
+                        entity_id=standard_id,
+                        entity_type="standard",
+                        metadata={
+                            "snapshot": {
+                                "id": updated.id,
+                                "title": updated.title,
+                                "code": updated.code,
+                                "category": updated.category,
+                                "description": updated.description,
+                                "region": updated.region,
+                            },
+                            "diff": diff,
+                        },
+                    )
+            except Exception:
+                pass
             logger.info(f"Admin {admin_email} updated standard: {standard_id}")
             return StandardResponse.model_validate(updated)
         except Exception as e:

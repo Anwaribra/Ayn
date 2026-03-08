@@ -18,6 +18,7 @@ from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.activity.service import ActivityService
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,27 @@ class EvidenceService:
                     "status": "processing"
                 }
             )
+            try:
+                await ActivityService.log_activity(
+                    user_id=current_user["id"],
+                    type="evidence_snapshot_created",
+                    title=f"Evidence created: {evidence.title or evidence.originalFilename or evidence.id}",
+                    description="Initial evidence record created",
+                    entity_id=evidence.id,
+                    entity_type="evidence",
+                    metadata={
+                        "snapshot": {
+                            "id": evidence.id,
+                            "title": evidence.title,
+                            "status": evidence.status,
+                            "documentType": evidence.documentType,
+                            "confidenceScore": evidence.confidenceScore,
+                            "fileUrl": evidence.fileUrl,
+                        }
+                    },
+                )
+            except Exception:
+                pass
             logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
             
             # 2.5 Trigger Notification & Activity
@@ -146,6 +168,20 @@ class EvidenceService:
             )
 
     @staticmethod
+    async def _chat_with_files_with_retry(client, message: str, files_payload: List[dict], retries: int = 2) -> str:
+        """AI call with bounded retries for transient provider failures."""
+        last_error = None
+        for attempt in range(retries + 1):
+            try:
+                return await client.chat_with_files(message=message, files=files_payload)
+            except Exception as e:
+                last_error = e
+                if attempt < retries:
+                    await asyncio.sleep(1.5 * (attempt + 1))
+                    continue
+                raise last_error
+
+    @staticmethod
     async def analyze_evidence_task(evidence_id: str, file_content: bytes, filename: str, mime_type: str, user_id: str):
         """
         Background task: Analyze evidence using AI and update state.
@@ -196,7 +232,7 @@ class EvidenceService:
             }]
 
             # FIX P1.1: chat_with_files is async — await it directly, never wrap in asyncio.to_thread
-            raw_response = await client.chat_with_files(message=prompt, files=files_payload)
+            raw_response = await EvidenceService._chat_with_files_with_retry(client, prompt, files_payload, retries=2)
 
             # 2. Parse Response
             match = re.search(r'(\{.*\}|\[.*\])', raw_response, re.DOTALL)
@@ -231,6 +267,29 @@ class EvidenceService:
                     "updatedAt": datetime.utcnow()
                 }
             )
+            try:
+                updated_evidence = await prisma_client.evidence.find_unique(where={"id": evidence_id})
+                if updated_evidence:
+                    await ActivityService.log_activity(
+                        user_id=user_id,
+                        type="evidence_snapshot_updated",
+                        title=f"Evidence analyzed: {updated_evidence.title or updated_evidence.id}",
+                        description=f"Status changed to {updated_evidence.status}",
+                        entity_id=evidence_id,
+                        entity_type="evidence",
+                        metadata={
+                            "snapshot": {
+                                "id": updated_evidence.id,
+                                "title": updated_evidence.title,
+                                "summary": updated_evidence.summary,
+                                "status": updated_evidence.status,
+                                "documentType": updated_evidence.documentType,
+                                "confidenceScore": updated_evidence.confidenceScore,
+                            }
+                        },
+                    )
+            except Exception:
+                pass
 
             # 4. Criteria Mapping
             mapped_codes = parsed.get("mapped_criteria", [])
@@ -385,6 +444,28 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         
         try:
+            try:
+                await ActivityService.log_activity(
+                    user_id=current_user["id"],
+                    type="evidence_snapshot_deleted",
+                    title=f"Evidence deleted: {evidence.title or evidence.originalFilename or evidence.id}",
+                    description="Evidence record removed",
+                    entity_id=evidence_id,
+                    entity_type="evidence",
+                    metadata={
+                        "snapshot": {
+                            "id": evidence.id,
+                            "title": evidence.title,
+                            "status": evidence.status,
+                            "documentType": evidence.documentType,
+                            "confidenceScore": evidence.confidenceScore,
+                            "fileUrl": evidence.fileUrl,
+                        }
+                    },
+                )
+            except Exception:
+                pass
+
             file_url = evidence.fileUrl
             file_path = None
             if "/public/" in file_url:
@@ -417,7 +498,32 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Criterion not found")
             
         try:
+            # Keep legacy single-link field in sync for backward compatibility,
+            # but persist the canonical many-to-many relation used by coverage/mapping.
             await db.evidence.update(where={"id": evidence_id}, data={"criterionId": request.criterionId})
+            try:
+                await db.evidencecriterion.create(
+                    data={"evidenceId": evidence_id, "criterionId": request.criterionId}
+                )
+            except Exception:
+                # Ignore duplicates if link already exists.
+                pass
+            try:
+                await ActivityService.log_activity(
+                    user_id=current_user["id"],
+                    type="evidence_snapshot_updated",
+                    title=f"Evidence linked to criterion",
+                    description=f"Linked evidence {evidence_id} to criterion {request.criterionId}",
+                    entity_id=evidence_id,
+                    entity_type="evidence",
+                    metadata={
+                        "diff": {
+                            "criterionId": {"to": request.criterionId}
+                        }
+                    },
+                )
+            except Exception:
+                pass
             return AttachEvidenceResponse(message="Attached successfully", evidenceId=evidence_id, criterionId=request.criterionId)
         except Exception as e:
             logger.error(f"Attach error: {e}")
@@ -459,4 +565,3 @@ class EvidenceService:
         except Exception as e:
             logger.error(f"List error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="List failed")
-

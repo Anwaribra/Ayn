@@ -1,7 +1,21 @@
 """Pytest configuration and fixtures."""
+import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
+import sys
+from pathlib import Path
+
+# Minimal test env so Settings() can load during imports.
+os.environ["JWT_SECRET"] = os.environ.get("JWT_SECRET", "test-jwt-secret")
+os.environ["SUPABASE_URL"] = os.environ.get("SUPABASE_URL", "https://example.supabase.co")
+os.environ["SUPABASE_KEY"] = os.environ.get("SUPABASE_KEY", "test-supabase-key")
+os.environ["DEBUG"] = "false"
+
+# Ensure `app` and `main` imports resolve regardless of pytest cwd.
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 # Patch DB before importing app so lifespan and get_db use mocks
 @pytest.fixture(scope="session")

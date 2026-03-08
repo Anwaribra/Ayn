@@ -187,7 +187,7 @@ export function NavLink({
     <Link
       href={href}
       onClick={handleClick}
-      className="relative text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 py-1 group"
+      className="relative text-sm text-white/70 hover:text-white transition-colors duration-300 py-1 group"
     >
       {children}
       <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-gradient-to-r from-blue-400 to-sky-300 group-hover:w-full transition-all duration-300" />

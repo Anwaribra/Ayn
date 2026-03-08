@@ -260,15 +260,11 @@ export function CyberneticBentoGrid() {
         .main-container {
           width: 100%;
           padding: 2rem 1rem;
-          width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background:
-            radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.08), transparent 35%),
-            radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.07), transparent 42%);
         }
 
         .bento-grid {
@@ -313,12 +309,6 @@ export function CyberneticBentoGrid() {
 
         .bento-item:hover::before {
           opacity: 1;
-        }
-
-        .dark .main-container {
-          background:
-            radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.16), transparent 35%),
-            radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.14), transparent 42%);
         }
 
         .dark .bento-item {

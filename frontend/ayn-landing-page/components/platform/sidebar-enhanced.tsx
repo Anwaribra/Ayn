@@ -96,26 +96,26 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
           isCollapsed && "justify-center px-0 mx-auto w-11",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           active
-            ? "bg-primary/15 text-primary border border-primary/40 shadow-md shadow-primary/20"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/50"
+            ? "bg-white/10 text-white shadow-md shadow-black/20"
+            : "text-zinc-400 hover:text-white hover:bg-white/5"
         )}
       >
         {active && (
           <>
             <motion.div
               layoutId="active-indicator"
-              className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-primary/80 shadow-[0_0_12px_rgba(59,111,217,0.75)]"
+              className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
             />
             {/* Subtle glow effect */}
-            <div className="absolute inset-0 rounded-2xl bg-primary/5 pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
           </>
         )}
 
         <item.icon
           className={cn(
             "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
-            active ? "text-primary" : "group-hover:text-foreground"
+            active ? "text-white" : "group-hover:text-white"
           )}
           strokeWidth={2.1}
         />
@@ -146,12 +146,12 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     <aside
       className={cn(
         "fixed inset-y-0 left-0 z-50 flex flex-col",
-        "glass-layer-1",
+        "bg-[#050810] text-[#f5f5f3] border-r border-white/5", // FORCED DARK STYLE
         "rounded-r-2xl transition-all duration-250 ease-in-out",
         "h-[100dvh]",
         // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
         open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
-        open ? "translate-x-0 shadow-lg dark:shadow-black/30" : "max-lg:pointer-events-none",
+        open ? "translate-x-0 shadow-lg shadow-black/30" : "max-lg:pointer-events-none",
         // Desktop (lg+ only): static + collapse width so main sits beside sidebar
         "lg:translate-x-0 lg:rounded-none lg:shadow-none lg:visible",
         open ? "lg:w-64" : "lg:w-[72px]",
@@ -173,7 +173,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-11 w-11 lg:h-9 lg:w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-muted/50 dark:bg-muted/50 text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary hover:bg-muted dark:hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--layer-0)]"
+          className="inline-flex h-11 w-11 lg:h-9 lg:w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 shadow-sm transition-all hover:border-white/20 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#050810]"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -196,7 +196,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
-            <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <p className="px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
               Compliance Core
             </p>
           )}
@@ -207,7 +207,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
 
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
-            <p className="px-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <p className="px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
               Reporting & Automation
             </p>
           )}
@@ -240,7 +240,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         {/* User Row */}
         <div
           className={cn(
-            "group flex items-center rounded-2xl p-2 hover:bg-muted/50 transition",
+            "group flex items-center rounded-2xl p-2 hover:bg-white/5 transition border border-transparent hover:border-white/5",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
@@ -253,14 +253,14 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             )}
             title="Go to profile"
           >
-            <UserCircle2 className="h-6 w-6 text-muted-foreground shrink-0" />
+            <UserCircle2 className="h-6 w-6 text-zinc-400 group-hover:text-white shrink-0 transition-colors" />
 
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">
-                <p className="text-sm font-semibold truncate">
+                <p className="text-sm font-semibold truncate text-white">
                   {user?.name ?? "System User"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-zinc-500 truncate">
                   {user?.email ?? "System User"}
                 </p>
               </div>
@@ -274,7 +274,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
                 e.stopPropagation()
                 handleLogout()
               }}
-              className="ml-2 shrink-0 inline-flex h-11 w-11 lg:h-8 lg:w-8 items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-500 transition"
+              className="ml-2 shrink-0 inline-flex h-11 w-11 lg:h-8 lg:w-8 items-center justify-center rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />

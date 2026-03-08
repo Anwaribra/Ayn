@@ -8,18 +8,18 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
     const hasData = data && data.length > 0;
 
     return (
-        <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm h-[300px] w-full p-6 relative overflow-hidden">
+        <div className="glass-card h-[300px] w-full p-6 rounded-3xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">Horus Activity</h3>
-                    <p className="text-sm text-slate-400">Real-time analysis load</p>
+                    <h3 className="text-lg font-semibold tracking-tight text-foreground">Horus Activity</h3>
+                    <p className="text-sm text-muted-foreground">Real-time analysis load</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="flex h-3 w-3 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: "var(--status-success)" }}></span>
                     </span>
-                    <span className="text-xs font-medium text-emerald-600">Live</span>
+                    <span className="text-xs font-medium" style={{ color: "var(--status-success)" }}>Live</span>
                 </div>
             </div>
 
@@ -29,20 +29,20 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                         <AreaChart data={data}>
                             <defs>
                                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="var(--accent-blue, #3B82F6)" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="var(--accent-blue, #3B82F6)" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                             <XAxis
                                 dataKey="time"
-                                stroke="#94a3b8"
+                                stroke="var(--text-secondary)"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
                             />
                             <YAxis
-                                stroke="#94a3b8"
+                                stroke="var(--text-secondary)"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
@@ -50,18 +50,18 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: '#ffffff',
-                                    borderColor: '#e2e8f0',
+                                    backgroundColor: 'var(--popover)',
+                                    borderColor: 'var(--border)',
+                                    backdropFilter: 'blur(8px)',
                                     borderRadius: '12px',
-                                    color: '#0f172a',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                    fontSize: '13px'
+                                    color: 'var(--foreground)',
+                                    boxShadow: 'var(--glass-shadow-soft)',
                                 }}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="value"
-                                stroke="#3B82F6"
+                                stroke="var(--accent-blue, #3B82F6)"
                                 strokeWidth={2.5}
                                 fillOpacity={1}
                                 fill="url(#colorValue)"
@@ -70,7 +70,7 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                     </ResponsiveContainer>
                 ) : (
                     <div className="flex items-center justify-center h-full">
-                        <p className="text-slate-400 text-sm">No activity recorded</p>
+                        <p className="text-muted-foreground text-sm">No activity recorded</p>
                     </div>
                 )}
             </div>

@@ -80,19 +80,19 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
   }
 
   return (
-    <div className={cn("bg-white rounded-3xl border border-slate-200/60 p-6 shadow-sm", className)}>
+    <div className={cn("glass-card rounded-3xl p-6", className)}>
       {showHeader && (
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+            <div className="w-8 h-8 rounded-xl status-info border flex items-center justify-center">
               <Activity className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Neural Stream</h3>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Live Platform Activity</p>
+              <h3 className="text-sm font-bold text-foreground">Neural Stream</h3>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Live Platform Activity</p>
             </div>
           </div>
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Live" />
+          <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title="Live" />
         </div>
       )}
 
@@ -113,7 +113,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
             return (
               <div
                 key={log.id}
-                className="group flex items-start gap-4 p-3.5 rounded-2xl transition-all hover:bg-slate-50 border border-transparent hover:border-slate-100"
+                className="group flex items-start gap-4 p-3.5 rounded-2xl transition-all hover:bg-muted/50 border border-transparent hover:border-border"
               >
                 <div className={cn(
                   "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border",
@@ -123,7 +123,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs font-bold text-slate-900 truncate">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {log.title}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
@@ -140,12 +140,12 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
         )}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+      <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Cpu className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ayn Neural Core</span>
+          <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Ayn Neural Core</span>
         </div>
-        <span className="text-[9px] text-slate-300 font-mono">256-BIT SECURE</span>
+        <span className="text-[9px] text-muted-foreground font-mono">256-BIT SECURE</span>
       </div>
     </div>
   )

@@ -116,7 +116,152 @@
   color-scheme: light;
 }
 
-/* Remove the separate light-mode override block entirely, since the platform will be exclusively using the Inverse High-Contrast Theme */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDE — activates when user toggles to dark
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-section="platform"] [data-platform-theme="dark"] {
+  --layer-0: #050810;
+  --layer-1: #0a0d14;
+  --layer-2: rgba(20, 24, 32, 0.65);
+  --layer-3: rgba(25, 30, 40, 0.90);
+  --layer-4: #1E293B;
+
+  --glass-bg: rgba(30, 40, 60, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
+  --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  --bg-deep: var(--layer-0);
+  --sidebar-bg: var(--layer-1);
+  --surface: var(--layer-2);
+  --surface-card: var(--layer-2);
+  --surface-modal: var(--layer-3);
+
+  --accent-blue: #3B6FD9;
+  --accent-emerald: #0EA47A;
+
+  --status-info: var(--accent-blue);
+  --status-info-bg: rgba(59, 111, 217, 0.12);
+  --status-info-border: rgba(59, 111, 217, 0.25);
+  --status-success: var(--accent-emerald);
+  --status-success-bg: rgba(14, 164, 122, 0.12);
+  --status-success-border: rgba(14, 164, 122, 0.25);
+  --status-warning: #D4941E;
+  --status-warning-bg: rgba(212, 148, 30, 0.12);
+  --status-warning-border: rgba(212, 148, 30, 0.25);
+  --status-critical: #C9424A;
+  --status-critical-bg: rgba(201, 66, 74, 0.12);
+  --status-critical-border: rgba(201, 66, 74, 0.25);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #64748B;
+
+  --border-subtle: var(--glass-border);
+  --border-light: rgba(255, 255, 255, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  --background: var(--layer-0);
+  --foreground: #F1F5F9;
+  --card: var(--layer-2);
+  --card-foreground: #F1F5F9;
+  --popover: var(--layer-3);
+  --popover-foreground: #F1F5F9;
+  --primary: #3B6FD9;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #9CA3AF;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #6B7280;
+  --accent: rgba(255, 255, 255, 0.08);
+  --accent-foreground: #F1F5F9;
+  --destructive: #C9424A;
+  --destructive-foreground: #ffffff;
+  --border: var(--glass-border);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(59, 111, 217, 0.35);
+
+  --surface-fade: linear-gradient(to top, var(--layer-0) 0%, transparent 100%);
+
+  color-scheme: dark;
+}
+
+/* Dark mode: glass-card & glass-panel revert to translucent dark */
+[data-section="platform"] [data-platform-theme="dark"] .glass-card,
+[data-section="platform"] [data-platform-theme="dark"] .glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+/* Dark mode: elevation levels revert */
+[data-section="platform"] [data-platform-theme="dark"] .elevation-1 {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+[data-section="platform"] [data-platform-theme="dark"] .elevation-2 {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-section="platform"] [data-platform-theme="dark"] .elevation-3 {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+[data-section="platform"] [data-platform-theme="dark"] .elevation-modal {
+  background: #141820;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode: cinematic bg */
+[data-section="platform"] [data-platform-theme="dark"] .cinematic-bg {
+  background-color: #050810;
+  background-image:
+    radial-gradient(circle at 62% 24%, rgba(37, 99, 235, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 24% 76%, rgba(99, 102, 241, 0.14) 0%, transparent 46%),
+    linear-gradient(110deg, #070A13 0%, #0B1230 42%, #06141B 100%);
+}
+
+/* Dark mode: platform header */
+[data-section="platform"] [data-platform-theme="dark"] .platform-header {
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 8, 16, 0.48),
+    rgba(5, 8, 16, 0.30)
+  );
+  backdrop-filter: blur(22px) saturate(1.05);
+  -webkit-backdrop-filter: blur(22px) saturate(1.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+[data-section="platform"] [data-platform-theme="dark"] .platform-header.platform-header-scrolled {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode: scrollbar */
+[data-section="platform"] [data-platform-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-section="platform"] [data-platform-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode: modal */
+[data-section="platform"] [data-platform-theme="dark"] .modal-container {
+  background: #0D1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+}
+
+/* Dark mode: btn-destructive */
+[data-section="platform"] [data-platform-theme="dark"] .btn-destructive {
+  background: #A83B42;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
 
 /* 3️⃣ UTILITY CLASSES - GLASS SYSTEM
    Must be used in place of raw bg-classes

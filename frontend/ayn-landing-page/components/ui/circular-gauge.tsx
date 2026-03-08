@@ -44,7 +44,7 @@ export function CircularGauge({
                         stroke="currentColor"
                         strokeWidth="8"
                         fill="transparent"
-                        className="text-slate-200"
+                        className="text-muted/30"
                     />
                     {/* Progress Ring */}
                     <motion.circle
@@ -65,7 +65,7 @@ export function CircularGauge({
 
                 {/* Inner Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    {icon && <div className="mb-1 text-slate-500">{icon}</div>}
+                    {icon && <div className="mb-1 text-muted-foreground">{icon}</div>}
                     <span className="text-xl font-bold tracking-tight">{value}{sublabel && <span className="text-xs font-normal text-muted-foreground ml-0.5">{sublabel}</span>}</span>
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</span>
                 </div>

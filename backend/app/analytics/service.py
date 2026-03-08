@@ -124,7 +124,6 @@ class AnalyticsService:
         all_evidence = await db.evidence.find_many(
             where=ev_where_all,
             order={"createdAt": "asc"},
-            select={"createdAt": True},
         )
 
         # Group by date

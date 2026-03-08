@@ -202,73 +202,42 @@
 
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow-strong);
-}
-
-[data-section="platform"] [data-platform-theme="light"] .glass-panel {
   background: #ffffff;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   border: 1px solid var(--glass-border);
-  box-shadow:
-    0 4px 20px rgba(15, 23, 42, 0.08),
-    0 0 0 1px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--glass-shadow-soft);
 }
 
-/* ─── Light mode typography remap (keep structure, fix contrast) ───────────── */
-[data-section="platform"] [data-platform-theme="light"] .text-white {
-  color: var(--text-primary);
+[data-section="platform"] .glass-card {
+  background: #ffffff;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: none;
 }
 
-[data-section="platform"] [data-platform-theme="light"] .text-zinc-400,
-[data-section="platform"] [data-platform-theme="light"] .text-zinc-500 {
-  color: var(--text-secondary);
-}
+/* Typography remap not needed — platform is now light-first */
 
-[data-section="platform"] [data-platform-theme="light"] .text-zinc-600,
-[data-section="platform"] [data-platform-theme="light"] .text-zinc-700,
-[data-section="platform"] [data-platform-theme="light"] .text-zinc-800 {
-  color: var(--text-tertiary);
-}
-
-/* ─── Elevation Levels ────────────────────────────────────────────────────── */
+/* ─── Elevation Levels (Light-first) ────────────────────────────────────── */
 [data-section="platform"] .elevation-1 {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: var(--shadow-sm);
 }
 
 [data-section="platform"] .elevation-2 {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: var(--shadow-md);
 }
 
 [data-section="platform"] .elevation-3 {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
   box-shadow: var(--shadow-lg);
 }
 
 [data-section="platform"] .elevation-modal {
-  background: #141820;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-[data-section="platform"] [data-platform-theme="light"] .elevation-1,
-[data-section="platform"] [data-platform-theme="light"] .elevation-2,
-[data-section="platform"] [data-platform-theme="light"] .elevation-3 {
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-}
-
-[data-section="platform"] [data-platform-theme="light"] .elevation-modal {
   background: #ffffff;
-  border-color: rgba(15, 23, 42, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.10);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
@@ -352,12 +321,12 @@
 }
 
 [data-section="platform"] ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.08);
   border-radius: 10px;
 }
 
 [data-section="platform"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(15, 23, 42, 0.18);
 }
 
 /* Light mode overrides for general scrollbar */
@@ -382,12 +351,12 @@
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.08);
   border-radius: 10px;
 }
 
 [data-section="platform"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(15, 23, 42, 0.18);
 }
 
 /* Light mode override for custom-scrollbar */
@@ -411,11 +380,11 @@
   background: transparent;
 }
 [data-section="platform"] .content-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(15, 23, 42, 0.06);
   border-radius: 4px;
 }
 [data-section="platform"] .content-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.12);
 }
 [data-section="platform"]
   [data-platform-theme="light"]
@@ -496,17 +465,17 @@
 }
 
 [data-section="platform"] .modal-container {
-  background: #0d1118;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.2);
   z-index: 70;
 }
 
 /* ─── Button variants ─────────────────────────────────────────────────────── */
 [data-section="platform"] .btn-destructive {
-  background: #a83b42;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  background: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ffffff;
 }
 
 /* ─── Micro-interactions & Animations ─────────────────────────────────────── */
@@ -949,40 +918,20 @@
 [data-section="platform"] .platform-header {
   background: linear-gradient(
     to bottom,
-    color-mix(in oklab, var(--layer-0) 48%, transparent),
-    color-mix(in oklab, var(--layer-0) 30%, transparent)
+    rgba(245, 245, 243, 0.85),
+    rgba(245, 245, 243, 0.72)
   );
-  backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(1.05);
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(1.05);
-  border-bottom: 1px solid var(--glass-border);
-}
-
-/* Light mode header */
-[data-section="platform"] [data-platform-theme="light"] .platform-header {
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.72),
-    rgba(255, 255, 255, 0.58)
-  );
-  border-bottom-color: var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 [data-section="platform"] .platform-header.platform-header-scrolled {
-  border-bottom-color: color-mix(
-    in oklab,
-    var(--glass-border) 88%,
-    transparent
-  );
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.12);
-}
-
-[data-section="platform"]
-  [data-platform-theme="light"]
-  .platform-header.platform-header-scrolled {
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.84),
-    rgba(255, 255, 255, 0.74)
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.85)
   );
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-bottom-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
 }

@@ -44,7 +44,7 @@ export function CircularGauge({
                         stroke="currentColor"
                         strokeWidth="8"
                         fill="transparent"
-                        className="text-white/5"
+                        className="text-slate-200"
                     />
                     {/* Progress Ring */}
                     <motion.circle
@@ -59,13 +59,13 @@ export function CircularGauge({
                         fill="transparent"
                         strokeDasharray={circumference}
                         strokeLinecap="round"
-                        className="filter drop-shadow-[0_0_4px_rgba(255,255,255,0.2)]"
+                        className="filter drop-shadow-[0_0_6px_rgba(0,0,0,0.08)]"
                     />
                 </svg>
 
                 {/* Inner Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    {icon && <div className="mb-1 text-white/80">{icon}</div>}
+                    {icon && <div className="mb-1 text-slate-500">{icon}</div>}
                     <span className="text-xl font-bold tracking-tight">{value}{sublabel && <span className="text-xs font-normal text-muted-foreground ml-0.5">{sublabel}</span>}</span>
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</span>
                 </div>

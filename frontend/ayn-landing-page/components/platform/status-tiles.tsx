@@ -1,8 +1,6 @@
 "use client"
 
-import { GlassCard } from "@/components/ui/glass-card"
 import { cn } from "@/lib/utils"
-import { AlertCircle, CheckCircle2, Clock, Activity } from "lucide-react"
 import { LucideIcon } from "lucide-react"
 
 interface StatTile {
@@ -17,32 +15,32 @@ interface StatusTilesProps {
     stats?: StatTile[]
 }
 
-const defaultTiles: StatTile[] = []
+const statusStyles: Record<string, { bg: string; border: string; text: string }> = {
+    critical: { bg: "bg-red-50", border: "border-red-200/60", text: "text-red-600" },
+    warning: { bg: "bg-amber-50", border: "border-amber-200/60", text: "text-amber-600" },
+    success: { bg: "bg-emerald-50", border: "border-emerald-200/60", text: "text-emerald-600" },
+    neutral: { bg: "bg-slate-50", border: "border-slate-200/60", text: "text-slate-500" },
+}
 
-export function StatusTiles({ stats = defaultTiles }: StatusTilesProps) {
+export function StatusTiles({ stats = [] }: StatusTilesProps) {
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((tile, i) => {
-                const statusClass = tile.status === "critical" ? "status-critical" :
-                    tile.status === "warning" ? "status-warning" :
-                        tile.status === "success" ? "status-success" : "status-info"
+                const style = statusStyles[tile.status ?? "neutral"] ?? statusStyles.neutral
 
                 return (
-                    <GlassCard
+                    <div
                         key={i}
-                        variant={2}
-                        hoverEffect
-                        shine
-                        className="flex flex-col items-center justify-center p-4 text-center gap-3 aspect-auto min-h-[140px] sm:aspect-square lg:aspect-auto lg:h-32"
+                        className="bg-white rounded-3xl border border-slate-200/60 shadow-sm flex flex-col items-center justify-center p-5 text-center gap-3 min-h-[140px] hover:-translate-y-0.5 transition-transform duration-300"
                     >
-                        <div className={cn("p-2.5 rounded-xl border", statusClass)}>
+                        <div className={cn("p-2.5 rounded-xl border", style.bg, style.border, style.text)}>
                             <tile.icon className="w-5 h-5" />
                         </div>
                         <div>
-                            <div className="text-2xl font-bold tracking-tight">{tile.value}</div>
-                            <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{tile.label}</div>
+                            <div className="text-2xl font-bold tracking-tight text-slate-900">{tile.value}</div>
+                            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{tile.label}</div>
                         </div>
-                    </GlassCard>
+                    </div>
                 )
             })}
         </div>

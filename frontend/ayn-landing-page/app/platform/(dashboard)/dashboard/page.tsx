@@ -86,36 +86,37 @@ function DashboardContent() {
       {/* Header Section with Gauges */}
       <section className="flex flex-col xl:flex-row gap-6">
         {/* Main Welcome Card */}
-        <div className="flex-1 relative overflow-hidden rounded-[40px] glass-card p-8 md:p-12 flex flex-col justify-center min-h-[300px]">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+        <div className="flex-1 relative overflow-hidden rounded-3xl bg-white border border-slate-200/60 p-8 md:p-12 flex flex-col justify-center min-h-[300px] shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-72 h-72 bg-blue-100/30 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full status-info border mb-6 w-fit">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 mb-6 w-fit">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-info)" }}></span>
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--status-info)" }}></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">Ayn Brain Live</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Ayn Brain Live</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mb-4 leading-tight">
               {greeting}, <br />
-              <span className="text-muted-foreground font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
+              <span className="text-slate-400 font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
             </h1>
-            <p className="text-muted-foreground font-medium max-w-md">
-              Horus is active. Your compliance framework is mapped with <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span> accuracy.
+            <p className="text-slate-500 font-medium max-w-md">
+              Horus is active. Your compliance framework is mapped with <span className="text-slate-900 font-bold">{Math.round(alignmentScore)}%</span> accuracy.
             </p>
           </div>
         </div>
 
         {/* Dashdot Gauges */}
         <div className="flex flex-col sm:flex-row xl:flex-col gap-4 shrink-0">
-          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
+          <div className="bg-white rounded-3xl border border-slate-200/60 p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px] shadow-sm">
             <CircularGauge value={Math.round(alignmentScore)} label="System Health" icon={<Cpu className="w-5 h-5" />} color="#3B82F6" />
             <div className="flex flex-col justify-center">
-              <span className="text-2xl font-bold tracking-tight">Good</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Optimal State</span>
+              <span className="text-2xl font-bold tracking-tight text-slate-900">Good</span>
+              <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Optimal State</span>
             </div>
           </div>
-          <div className="glass-layer-2 rounded-[32px] p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
+          <div className="bg-white rounded-3xl border border-slate-200/60 p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px] shadow-sm">
             <CircularGauge
               value={metrics?.totalGapAnalyses ?? 0}
               max={20}
@@ -124,10 +125,10 @@ function DashboardContent() {
               color="#10B981"
             />
             <div className="flex flex-col justify-center">
-              <span className="text-2xl font-bold tracking-tight">
+              <span className="text-2xl font-bold tracking-tight text-slate-900">
                 {metrics?.totalGapAnalyses ?? 0}
               </span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Reports</span>
+              <span className="text-xs text-slate-400 uppercase tracking-wider font-medium">Total Reports</span>
             </div>
           </div>
         </div>
@@ -167,20 +168,20 @@ function DashboardContent() {
 
       {/* ─── Standards Progress ─── */}
       {publicStandards.length > 0 && (
-        <section className="glass-layer-2 p-8 rounded-[40px]">
+        <section className="bg-white border border-slate-200/60 p-8 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Standards Progress</h3>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Criteria coverage by evidence</p>
+                <h3 className="text-lg font-bold text-slate-900">Standards Progress</h3>
+                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Criteria coverage by evidence</p>
               </div>
             </div>
             <Link
               href="/platform/standards"
-              className="flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+              className="flex items-center gap-1 text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline"
             >
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
@@ -190,10 +191,10 @@ function DashboardContent() {
             {publicStandards.slice(0, 6).map((standard: Standard) => (
               <div key={standard.id} className="group">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate mr-4">
+                  <span className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors truncate mr-4">
                     {standard.title}
                   </span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
                     {standard.code ?? standard.category ?? "Standard"}
                   </span>
                 </div>
@@ -221,10 +222,10 @@ function DashboardContent() {
           <ActivityChart data={metrics?.recentScores ?? []} />
 
           {/* Recent Evidence List */}
-          <div className="glass-layer-2 p-8 rounded-[40px]">
+          <div className="bg-white border border-slate-200/60 p-8 rounded-3xl shadow-sm">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-foreground">Recent Evidence</h3>
-              <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
+              <h3 className="text-lg font-bold text-slate-900">Recent Evidence</h3>
+              <Link href="/platform/evidence" className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">View Library</Link>
             </div>
             <div className="space-y-3">
               {(metrics?.recentEvidence?.length ?? 0) === 0 ? (
@@ -237,15 +238,15 @@ function DashboardContent() {
                 </div>
               ) : (
                 metrics?.recentEvidence?.map((ev: any) => (
-                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl glass-layer-3 hover:bg-muted/50 transition-all group cursor-pointer">
-                    <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-slate-100/80 transition-all group cursor-pointer">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mt-0.5">{ev.status}</p>
+                      <h4 className="font-semibold text-sm text-slate-900 truncate">{ev.title || ev.originalFilename}</h4>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium mt-0.5">{ev.status}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                   </div>
                 ))
               )}

@@ -98,17 +98,12 @@ export function LandingNavbar() {
     { label: "FAQ",      href: "/faq"                 },
   ]
 
-  /* full width navbar style */
-  const headerCls = scrolled
-    ? "bg-background/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 shadow-sm"
-    : "bg-transparent border-b border-transparent"
-
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className={cn("sticky top-0 left-0 right-0 z-50 px-5 pt-4 pb-4 transition-all duration-300", headerCls)}
+      className="sticky top-0 left-0 right-0 z-50 px-5 pt-4 pb-4 transition-all duration-300 bg-transparent"
     >
       {/* Three-column: Logo │ Links │ CTA */}
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
@@ -129,39 +124,26 @@ export function LandingNavbar() {
 
         {/* ── CENTRE: Nav Links ── */}
         <nav
-          className={cn(
-            "hidden md:flex items-center gap-1 rounded-full px-2 py-1 transition-all duration-300",
-            scrolled ? "text-foreground" : (isOverDark ? "text-white" : "text-black")
-          )}
+          className="hidden md:flex items-center gap-1 rounded-full transition-all duration-300 bg-white/60 dark:bg-black/60 backdrop-blur-md border border-black/5 dark:border-white/10 px-6 py-2 shadow-sm"
         >
           {navItems.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
-                scrolled 
-                  ? "text-foreground/75 hover:text-foreground hover:bg-black/5" 
-                  : (isOverDark ? "text-white/80 hover:text-white hover:bg-white/10" : "text-black/75 hover:text-black hover:bg-black/5")
-              )}
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all duration-150"
             >
               {label}
             </Link>
           ))}
 
           {/* separator */}
-          <div className={cn("w-px h-4 mx-2 shrink-0 transition-colors", scrolled ? "bg-black/12" : (isOverDark ? "bg-white/20" : "bg-black/12"))} />
+          <div className="w-px h-4 mx-2 shrink-0 bg-black/12 dark:bg-white/20 transition-colors" />
 
           {/* Log in ─ inside pill */}
           {!user && (
             <Link
               href="/login"
-              className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
-                scrolled 
-                  ? "text-foreground/75 hover:text-foreground hover:bg-black/5" 
-                  : (isOverDark ? "text-white/80 hover:text-white hover:bg-white/10" : "text-black/75 hover:text-black hover:bg-black/5")
-              )}
+              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all duration-150"
             >
               Log in
             </Link>
@@ -170,11 +152,11 @@ export function LandingNavbar() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5", scrolled ? "hover:bg-black/5" : (isOverDark ? "hover:bg-white/10" : "hover:bg-black/5"))}>
-                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors", scrolled ? "bg-primary/15 text-primary" : (isOverDark ? "bg-white/15 text-white" : "bg-primary/15 text-primary"))}>
+                <Button variant="ghost" className="h-8 px-2 rounded-full gap-1.5 hover:bg-black/5">
+                  <span className="h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors bg-primary/15 text-primary">
                     {getInitials(user.name)}
                   </span>
-                  <ChevronDown className={cn("h-3 w-3", scrolled ? "text-foreground/50" : (isOverDark ? "text-white/60" : "text-foreground/50"))} />
+                  <ChevronDown className="h-3 w-3 text-foreground/50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52" sideOffset={10}>

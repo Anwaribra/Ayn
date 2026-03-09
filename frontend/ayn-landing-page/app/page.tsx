@@ -16,6 +16,7 @@ import { AnalysisEngineFeatures }  from "@/components/landing/AnalysisEngineFeat
 import { AboutSection }            from "@/components/landing/AboutSection"
 import { FinalCtaSection }         from "@/components/landing/FinalCtaSection"
 import { LandingFooter }           from "@/components/landing/LandingFooter"
+import { ScrollDrivenExpansion }   from "@/components/landing/scroll-driven-expansion"
 
 /** Off-white page background */
 const PAGE_BG = "#f5f5f3"
@@ -36,19 +37,16 @@ const darkCardBase: React.CSSProperties = {
 
 /**
  * Scroll-triggered reveal for dark cards.
- * scale + y + fade in when the card enters the viewport.
+ * Replaces the static motion.div reveal with strict scroll-driven 
+ * scrubbed values using framer-motion useScroll and useTransform.
  */
 function DarkCardReveal({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40, scale: 0.97 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-      style={darkCardBase}
-    >
-      {children}
-    </motion.div>
+    <ScrollDrivenExpansion bgMatchClass="bg-[#f5f5f3]" className="dark-card-base">
+      <div style={darkCardBase}>
+        {children}
+      </div>
+    </ScrollDrivenExpansion>
   )
 }
 

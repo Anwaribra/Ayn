@@ -16,47 +16,6 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), { ssr: false })
  */
 const BG = "#050810"
 
-/** Phrases that cycle in the typewriter headline */
-const HEADLINE_PHRASES = [
-  "Quality Standard.",
-  "Compliance Gap.",
-  "ISO Criterion.",
-  "NCAAA Indicator.",
-]
-
-/** Simple character-by-character typewriter hook */
-function useTypewriter(phrases: string[], typingMs = 55, pauseMs = 2200, erasingMs = 30) {
-  const [displayed, setDisplayed]   = useState("")
-  const [phraseIdx, setPhraseIdx]   = useState(0)
-  const [charIdx,   setCharIdx]     = useState(0)
-  const [erasing,   setErasing]     = useState(false)
-
-  useEffect(() => {
-    const phrase = phrases[phraseIdx]
-    let timer: ReturnType<typeof setTimeout>
-
-    if (!erasing) {
-      if (charIdx < phrase.length) {
-        timer = setTimeout(() => setCharIdx((c) => c + 1), typingMs)
-      } else {
-        timer = setTimeout(() => setErasing(true), pauseMs)
-      }
-    } else {
-      if (charIdx > 0) {
-        timer = setTimeout(() => setCharIdx((c) => c - 1), erasingMs)
-      } else {
-        setErasing(false)
-        setPhraseIdx((i) => (i + 1) % phrases.length)
-      }
-    }
-
-    setDisplayed(phrase.slice(0, charIdx))
-    return () => clearTimeout(timer)
-  }, [charIdx, erasing, phraseIdx, phrases, typingMs, pauseMs, erasingMs])
-
-  return displayed
-}
-
 function scrollToFeatures() {
   document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
 }
@@ -135,7 +94,6 @@ function DemoModal({
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
   const demoRef    = useRef<HTMLDivElement>(null)
-  const typedText  = useTypewriter(HEADLINE_PHRASES)
 
   return (
     <>
@@ -191,17 +149,12 @@ export function Hero() {
 
           {/* Headline */}
           <motion.h1
-            className="text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.08] mb-6"
+            className="text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.08] mb-6 flex flex-wrap gap-x-3"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}
           >
             <span className="text-white">Your Eye on Every</span>
-            <span className="block bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent min-h-[1.1em]">
-              {typedText}
-              {/* blinking cursor */}
-              <span
-                className="inline-block w-[3px] h-[0.85em] bg-blue-400 ml-1 align-middle"
-                style={{ animation: "blink 1s step-end infinite" }}
-              />
+            <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent pb-2">
+              Standard.
             </span>
           </motion.h1>
 

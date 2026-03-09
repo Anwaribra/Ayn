@@ -136,7 +136,7 @@ export function HorusIntelligenceSection() {
         </motion.div>
 
         {/* Animated connection diagram - Desktop */}
-        <div ref={containerRef} className="hidden lg:block relative">
+        <div ref={containerRef} className="hidden md:block relative">
           <AnimatedBeam
             containerRef={containerRef}
             fromRef={leftTop}
@@ -240,7 +240,7 @@ export function HorusIntelligenceSection() {
         </div>
 
         {/* Mobile fallback */}
-        <div className="lg:hidden space-y-6">
+        <div className="block md:hidden space-y-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}

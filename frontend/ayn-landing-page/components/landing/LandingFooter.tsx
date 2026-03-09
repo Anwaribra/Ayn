@@ -89,12 +89,19 @@ export function LandingFooter() {
               <ul className="space-y-2.5">
                 {items.map(({ label, href }) => (
                   <li key={label}>
-                    <Link
-                      href={href}
-                      className="text-sm text-white/45 hover:text-white transition-colors duration-200"
-                    >
-                      {label}
-                    </Link>
+                    {href === "#" ? (
+                      <span className="flex items-center gap-2 text-sm text-white/30 cursor-not-allowed group" title="Coming Soon">
+                        {label}
+                        <span className="text-[9px] uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded opacity-50 group-hover:opacity-100 transition-opacity">Soon</span>
+                      </span>
+                    ) : (
+                      <Link
+                        href={href}
+                        className="text-sm text-white/45 hover:text-white transition-colors duration-200"
+                      >
+                        {label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -108,10 +115,10 @@ export function LandingFooter() {
           <p className="text-xs text-white/25">
             © {new Date().getFullYear()} Ayn Platform. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-xs text-white/25">
-            <Link href="#" className="hover:text-white/50 transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-white/50 transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-white/50 transition-colors">Security</Link>
+          <div className="flex items-center gap-4 text-xs text-white/30">
+            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Privacy Policy</span>
+            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Terms of Service</span>
+            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Security</span>
           </div>
         </div>
       </div>

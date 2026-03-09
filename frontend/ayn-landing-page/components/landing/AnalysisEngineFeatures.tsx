@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Database, BrainCircuit, GitMerge, LineChart, Terminal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
+import { SpotlightWrapper } from "./spotlight-wrapper"
 
 const FEATURES = [
   {
@@ -111,15 +112,16 @@ export function AnalysisEngineFeatures() {
             const Icon = feature.icon
             return (
               <StaggerItem key={feature.id} yOffset={20}>
-                <button
-                  onClick={() => setActiveFeature(feature.id)}
-                  className={cn(
-                    "w-full relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-                    isActive 
-                      ? "bg-emerald-500/10 border-emerald-500/30" 
-                      : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
-                  )}
-                >
+                <SpotlightWrapper className="rounded-xl overflow-hidden" spotlightColor="rgba(16, 185, 129, 0.15)">
+                  <button
+                    onClick={() => setActiveFeature(feature.id)}
+                    className={cn(
+                      "w-full h-full relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                      isActive 
+                        ? "bg-emerald-500/10 border-emerald-500/30" 
+                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                    )}
+                  >
                   {/* Active Indicator Line */}
                   {isActive && (
                     <motion.div 
@@ -144,12 +146,13 @@ export function AnalysisEngineFeatures() {
                       )}>
                         {feature.title}
                       </h3>
-                      <p className="text-sm text-white/50 leading-relaxed font-medium">
+                      <p className="text-sm text-white/50 leading-relaxed font-medium mt-1">
                         {feature.description}
                       </p>
                     </div>
                   </div>
                 </button>
+              </SpotlightWrapper>
               </StaggerItem>
             )
           })}

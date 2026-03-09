@@ -27,28 +27,24 @@ function getInitials(name: string): string {
  * are always dark-on-light. No adaptive colour switching needed.
  *
  * Behaviour:
- *  • At the very top → pill is white with a subtle border, no shadow
- *  • After 60 px scroll → pill gets a slightly stronger shadow to "float"
- *  • Scrolling down fast → navbar slides away; scrolling up → reappears
+ * Behaviour:
+ *  • At the very top → transparent
+ *  • After scrolls down → full width backdrop-blur-md glassmorphism border
+ *  • No floating pill layout anymore.
  */
 export function LandingNavbar() {
   const { user, logout } = useAuth()
   const [scrolled, setScrolled]   = useState(false)
-  const [hidden,   setHidden]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isOverDark, setIsOverDark] = useState(false)
   
-  const lastScrollY = useRef(0)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const dialogRef     = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY
-      if (y > lastScrollY.current && y > 200) setHidden(true)
-      else setHidden(false)
-      setScrolled(y > 60)
-      lastScrollY.current = y
+      setScrolled(y > 20)
 
       // Check if navbar intersects with a dark section
       let overDark = false
@@ -102,19 +98,19 @@ export function LandingNavbar() {
     { label: "FAQ",      href: "/faq"                 },
   ]
 
-  /* pill style — always light since page bg is off-white */
-  const pillCls = scrolled
-    ? "bg-white border-black/10 shadow-md shadow-black/8 backdrop-blur-xl"
-    : "bg-white/80 border-black/8 backdrop-blur-lg"
+  /* full width navbar style */
+  const headerCls = scrolled
+    ? "bg-background/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 shadow-sm"
+    : "bg-transparent border-b border-transparent"
 
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: hidden ? 0 : 1, y: hidden ? -100 : 0 }}
-      transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="fixed top-0 left-0 right-0 z-50 px-5 pt-4"
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className={cn("sticky top-0 left-0 right-0 z-50 px-5 pt-4 pb-4 transition-all duration-300", headerCls)}
     >
-      {/* Three-column: Logo │ Pill nav │ CTA */}
+      {/* Three-column: Logo │ Links │ CTA */}
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
 
         {/* ── LEFT: Logo ── */}
@@ -131,31 +127,41 @@ export function LandingNavbar() {
           </motion.span>
         </Link>
 
-        {/* ── CENTRE: Floating pill ── */}
+        {/* ── CENTRE: Nav Links ── */}
         <nav
           className={cn(
-            "hidden md:flex items-center gap-0.5 px-2.5 py-2 rounded-full border transition-all duration-400",
-            pillCls
+            "hidden md:flex items-center gap-1 rounded-full px-2 py-1 transition-all duration-300",
+            scrolled ? "text-foreground" : (isOverDark ? "text-white" : "text-black")
           )}
         >
           {navItems.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/65 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
+                scrolled 
+                  ? "text-foreground/75 hover:text-foreground hover:bg-black/5" 
+                  : (isOverDark ? "text-white/80 hover:text-white hover:bg-white/10" : "text-black/75 hover:text-black hover:bg-black/5")
+              )}
             >
               {label}
             </Link>
           ))}
 
           {/* separator */}
-          <div className="w-px h-4 mx-1.5 bg-black/12 shrink-0" />
+          <div className={cn("w-px h-4 mx-2 shrink-0 transition-colors", scrolled ? "bg-black/12" : (isOverDark ? "bg-white/20" : "bg-black/12"))} />
 
           {/* Log in ─ inside pill */}
           {!user && (
             <Link
               href="/login"
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/65 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
+                scrolled 
+                  ? "text-foreground/75 hover:text-foreground hover:bg-black/5" 
+                  : (isOverDark ? "text-white/80 hover:text-white hover:bg-white/10" : "text-black/75 hover:text-black hover:bg-black/5")
+              )}
             >
               Log in
             </Link>
@@ -164,11 +170,11 @@ export function LandingNavbar() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 px-2 rounded-full hover:bg-black/5 gap-1.5">
-                  <span className="h-6 w-6 rounded-full bg-primary/15 text-xs font-bold text-primary flex items-center justify-center">
+                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5", scrolled ? "hover:bg-black/5" : (isOverDark ? "hover:bg-white/10" : "hover:bg-black/5"))}>
+                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors", scrolled ? "bg-primary/15 text-primary" : (isOverDark ? "bg-white/15 text-white" : "bg-primary/15 text-primary"))}>
                     {getInitials(user.name)}
                   </span>
-                  <ChevronDown className="h-3 w-3 text-foreground/50" />
+                  <ChevronDown className={cn("h-3 w-3", scrolled ? "text-foreground/50" : (isOverDark ? "text-white/60" : "text-foreground/50"))} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
@@ -200,7 +206,7 @@ export function LandingNavbar() {
             size="icon"
             className={cn(
               "md:hidden h-9 w-9 rounded-full transition-colors pointer-events-auto",
-              isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5"
+              scrolled ? "text-black hover:bg-black/5" : (isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5")
             )}
             onClick={() => setMobileOpen(p => !p)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -213,8 +219,8 @@ export function LandingNavbar() {
             <Link
               href="/platform/dashboard"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-md",
-                isOverDark ? "bg-white text-black" : "bg-[#111] text-white"
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm",
+                scrolled ? "bg-[#111] text-white" : (isOverDark ? "bg-white text-black" : "bg-[#111] text-white")
               )}
             >
               Platform
@@ -223,8 +229,8 @@ export function LandingNavbar() {
              <Link
               href="/signup"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-md",
-                isOverDark ? "bg-white text-black" : "bg-[#111] text-white"
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm",
+                scrolled ? "bg-[#111] text-white" : (isOverDark ? "bg-white text-black" : "bg-[#111] text-white")
               )}
             >
               Get Started

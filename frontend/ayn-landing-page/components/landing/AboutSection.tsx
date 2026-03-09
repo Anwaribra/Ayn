@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { School, GraduationCap, Library, CheckCircle2, ArrowRight, ShieldCheck, Award, Users } from "lucide-react"
+import { School, GraduationCap, Library, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
+import { SpotlightWrapper } from "./spotlight-wrapper"
 
 const AUDIENCES = [
   {
@@ -85,10 +86,11 @@ export function AboutSection() {
               const Icon = item.icon
               return (
                 <StaggerItem key={item.id} yOffset={20}>
+                <SpotlightWrapper className="rounded-2xl" spotlightColor="rgba(0,0,0,0.05)">
                   <button
                     onClick={() => setActiveTab(item.id)}
                     className={cn(
-                      "w-full relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
+                      "w-full h-full relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
                       isActive 
                         ? "bg-white border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
                         : "bg-white/40 border-black/5 hover:bg-white/60 hover:scale-[1.01]"
@@ -117,7 +119,8 @@ export function AboutSection() {
                       {item.title}
                     </h3>
                   </button>
-                </StaggerItem>
+                </SpotlightWrapper>
+              </StaggerItem>
               )
             })}
           </StaggerContainer>

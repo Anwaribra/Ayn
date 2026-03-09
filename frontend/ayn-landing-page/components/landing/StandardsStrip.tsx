@@ -48,7 +48,7 @@ export function StandardsStrip() {
         style={{ background: "linear-gradient(to left, #f5f5f3, transparent)" }}
       />
 
-      <div className="flex" style={{ width: "max-content" }}>
+      <div className="flex group w-max">
         {/* First copy */}
         <div className="flex items-center standards-marquee">
           {STANDARDS.map((s) => (
@@ -71,8 +71,8 @@ export function StandardsStrip() {
         .standards-marquee {
           animation: marquee 28s linear infinite;
         }
-        /* Pause on hover */
-        .standards-marquee:hover {
+        /* Pause on hover inside the group */
+        .group:hover .standards-marquee {
           animation-play-state: paused;
         }
       `}</style>

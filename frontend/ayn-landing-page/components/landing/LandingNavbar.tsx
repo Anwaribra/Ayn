@@ -113,7 +113,10 @@ export function LandingNavbar() {
           <motion.span
             whileHover={{ scale: 1.04 }}
             transition={{ type: "spring", stiffness: 400 }}
-            className="text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto mix-blend-difference text-white"
+            className={cn(
+              "text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto",
+              isOverDark ? "text-white" : "text-black drop-shadow-sm" 
+            )}
           >
             Ayn
           </motion.span>
@@ -121,26 +124,39 @@ export function LandingNavbar() {
 
         {/* ── CENTRE: Nav Links ── */}
         <nav
-          className="hidden md:flex items-center gap-1 rounded-full transition-all duration-300 bg-white/60 dark:bg-black/60 backdrop-blur-md border border-black/5 dark:border-white/10 px-6 py-2 shadow-sm"
+          className={cn(
+            "hidden md:flex items-center gap-1 rounded-full transition-all duration-300 backdrop-blur-md px-6 py-2 shadow-sm border",
+            isOverDark ? "bg-black/50 border-white/10" : "bg-white/50 border-black/10"
+          )}
         >
           {navItems.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
-              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 text-foreground/75 dark:text-gray-200 hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
+                isOverDark 
+                  ? "text-white/80 hover:text-white hover:bg-white/10" 
+                  : "text-black/75 hover:text-black hover:bg-black/5"
+              )}
             >
               {label}
             </Link>
           ))}
 
           {/* separator */}
-          <div className="w-px h-4 mx-2 shrink-0 bg-black/12 dark:bg-white/20 transition-colors" />
+          <div className={cn("w-px h-4 mx-2 shrink-0 transition-colors duration-300", isOverDark ? "bg-white/20" : "bg-black/12")} />
 
           {/* Log in ─ inside pill */}
           {!user && (
             <Link
               href="/login"
-              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 text-foreground/75 dark:text-gray-200 hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
+                isOverDark 
+                  ? "text-white/80 hover:text-white hover:bg-white/10" 
+                  : "text-black/75 hover:text-black hover:bg-black/5"
+              )}
             >
               Log in
             </Link>
@@ -149,11 +165,11 @@ export function LandingNavbar() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 px-2 rounded-full gap-1.5 hover:bg-black/5 dark:hover:bg-white/10">
-                  <span className="h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
+                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5 transition-colors duration-300", isOverDark ? "hover:bg-white/10" : "hover:bg-black/5")}>
+                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/15 text-white" : "bg-primary/15 text-primary")}>
                     {getInitials(user.name)}
                   </span>
-                  <ChevronDown className="h-3 w-3 text-foreground/50 dark:text-white/60" />
+                  <ChevronDown className={cn("h-3 w-3 transition-colors duration-300", isOverDark ? "text-white/60" : "text-black/50")} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
@@ -184,8 +200,8 @@ export function LandingNavbar() {
             variant="ghost"
             size="icon"
             className={cn(
-              "md:hidden h-9 w-9 rounded-full transition-colors pointer-events-auto",
-              scrolled ? "text-black hover:bg-black/5" : (isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5")
+              "md:hidden h-9 w-9 rounded-full transition-colors duration-300 pointer-events-auto",
+              isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5"
             )}
             onClick={() => setMobileOpen(p => !p)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -198,8 +214,8 @@ export function LandingNavbar() {
             <Link
               href="/platform/dashboard"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm",
-                scrolled ? "bg-[#111] text-white" : (isOverDark ? "bg-white text-black" : "bg-[#111] text-white")
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm duration-300",
+                isOverDark ? "bg-white text-black hover:bg-white/90" : "bg-[#111] text-white hover:bg-black/90"
               )}
             >
               Platform
@@ -208,8 +224,8 @@ export function LandingNavbar() {
              <Link
               href="/signup"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm",
-                scrolled ? "bg-[#111] text-white" : (isOverDark ? "bg-white text-black" : "bg-[#111] text-white")
+                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm duration-300",
+                isOverDark ? "bg-white text-black hover:bg-white/90" : "bg-[#111] text-white hover:bg-black/90"
               )}
             >
               Get Started

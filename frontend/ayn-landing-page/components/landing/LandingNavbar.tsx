@@ -113,10 +113,7 @@ export function LandingNavbar() {
           <motion.span
             whileHover={{ scale: 1.04 }}
             transition={{ type: "spring", stiffness: 400 }}
-            className={cn(
-               "text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto",
-               isOverDark ? "text-white" : "text-black drop-shadow-sm" 
-            )}
+            className="text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto mix-blend-difference text-white"
           >
             Ayn
           </motion.span>
@@ -130,7 +127,7 @@ export function LandingNavbar() {
             <Link
               key={label}
               href={href}
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 text-foreground/75 dark:text-gray-200 hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
             >
               {label}
             </Link>
@@ -143,7 +140,7 @@ export function LandingNavbar() {
           {!user && (
             <Link
               href="/login"
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all duration-150"
+              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 text-foreground/75 dark:text-gray-200 hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
             >
               Log in
             </Link>
@@ -152,11 +149,11 @@ export function LandingNavbar() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 px-2 rounded-full gap-1.5 hover:bg-black/5">
-                  <span className="h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors bg-primary/15 text-primary">
+                <Button variant="ghost" className="h-8 px-2 rounded-full gap-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+                  <span className="h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
                     {getInitials(user.name)}
                   </span>
-                  <ChevronDown className="h-3 w-3 text-foreground/50" />
+                  <ChevronDown className="h-3 w-3 text-foreground/50 dark:text-white/60" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52" sideOffset={10}>

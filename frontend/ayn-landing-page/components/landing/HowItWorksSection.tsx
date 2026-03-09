@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Database, BrainCircuit } from "lucide-react"
+import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
 
 const STEPS = [
   {
@@ -30,13 +31,7 @@ export function HowItWorksSection() {
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-24"
-        >
+        <FadeUp className="text-center mb-24">
           <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-400 mb-4">
             How it works
           </span>
@@ -46,22 +41,15 @@ export function HowItWorksSection() {
           <p className="text-white/40 text-sm md:text-base">
             Three steps. Whether it's a single policy or a full institutional audit.
           </p>
-        </motion.div>
+        </FadeUp>
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           
           {/* Left Column: Steps */}
-          <div className="space-y-16">
+          <StaggerContainer className="space-y-16" delayChildren={0.2} staggerChildren={0.15}>
             {STEPS.map((step, idx) => (
-              <motion.div 
-                key={step.number}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className="flex gap-6 md:gap-8"
-              >
+              <StaggerItem key={step.number} className="flex gap-6 md:gap-8">
                 <div className="text-sm font-mono font-bold text-white/20 mt-1 select-none">
                   {step.number}
                 </div>
@@ -73,18 +61,12 @@ export function HowItWorksSection() {
                     {step.description}
                   </p>
                 </div>
-              </motion.div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
 
           {/* Right Column: Node Diagram */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="relative lg:h-[500px] flex items-center justify-center"
-          >
+          <FadeUp delay={0.3} className="relative lg:h-[500px] flex items-center justify-center">
             {/* Background grid pattern matching style */}
             <div 
               className="absolute inset-0 pointer-events-none opacity-20"
@@ -150,7 +132,7 @@ export function HowItWorksSection() {
                </div>
             </div>
 
-          </motion.div>
+          </FadeUp>
 
         </div>
       </div>

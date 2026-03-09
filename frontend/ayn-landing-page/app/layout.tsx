@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider"
 import "./globals.css"
 
 const geist = Geist({
@@ -86,13 +87,15 @@ export default function RootLayout({
         <meta name="theme-color" content="#050810" />
       </head>
       <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
-        <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
-            <Toaster richColors position="top-right" />
-          </ThemeProvider>
-        </AuthProvider>
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <SmoothScrollProvider>
+          <AuthProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              {children}
+              <Toaster richColors position="top-right" />
+            </ThemeProvider>
+          </AuthProvider>
+          {process.env.NODE_ENV === "production" && <Analytics />}
+        </SmoothScrollProvider>
       </body>
     </html>
   )

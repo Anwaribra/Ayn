@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { School, GraduationCap, Library, CheckCircle2, ArrowRight, ShieldCheck, Award, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
 
 const AUDIENCES = [
   {
@@ -63,13 +64,7 @@ export function AboutSection() {
       <div className="max-w-6xl mx-auto relative z-10">
         
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16 md:mb-24"
-        >
+        <FadeUp className="text-center mb-16 md:mb-24">
           <span className="inline-flex items-center px-3 py-1 rounded-full border border-black/10 text-xs font-bold uppercase tracking-[0.15em] text-primary mb-4">
             Built for you
           </span>
@@ -79,55 +74,56 @@ export function AboutSection() {
           <p className="text-foreground/50 text-base md:text-lg max-w-2xl mx-auto">
             One intelligent assistant that adapts to your institution's needs.
           </p>
-        </motion.div>
+        </FadeUp>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 lg:h-[480px]">
           
           {/* Left: Interactive Tabs */}
-          <div className="flex flex-col gap-3 lg:w-1/3 z-20">
+          <StaggerContainer className="flex flex-col gap-3 lg:w-1/3 z-20" delayChildren={0.2} staggerChildren={0.1}>
             {AUDIENCES.map((item) => {
               const isActive = activeTab === item.id
               const Icon = item.icon
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
-                    isActive 
-                      ? "bg-white border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
-                      : "bg-white/40 border-black/5 hover:bg-white/60 hover:scale-[1.01]"
-                  )}
-                >
-                  {/* Indicator Line */}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="aboutTabIndicator"
-                      className={cn("absolute left-0 top-0 bottom-0 w-1.5", item.accent)}
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
+                <StaggerItem key={item.id} yOffset={20}>
+                  <button
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "w-full relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
+                      isActive 
+                        ? "bg-white border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
+                        : "bg-white/40 border-black/5 hover:bg-white/60 hover:scale-[1.01]"
+                    )}
+                  >
+                    {/* Indicator Line */}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="aboutTabIndicator"
+                        className={cn("absolute left-0 top-0 bottom-0 w-1.5", item.accent)}
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    )}
 
-                  <div className={cn(
-                    "p-3 rounded-xl flex items-center justify-center transition-colors duration-300",
-                    isActive ? "bg-black/5 text-foreground" : "bg-black/5 text-foreground/40 group-hover:text-foreground/70"
-                  )}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className={cn(
-                    "font-bold text-lg transition-colors duration-300",
-                    isActive ? "text-foreground" : cn("text-foreground/50", item.textHover)
-                  )}>
-                    {item.title}
-                  </h3>
-                </button>
+                    <div className={cn(
+                      "p-3 rounded-xl flex items-center justify-center transition-colors duration-300",
+                      isActive ? "bg-black/5 text-foreground" : "bg-black/5 text-foreground/40 group-hover:text-foreground/70"
+                    )}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className={cn(
+                      "font-bold text-lg transition-colors duration-300",
+                      isActive ? "text-foreground" : cn("text-foreground/50", item.textHover)
+                    )}>
+                      {item.title}
+                    </h3>
+                  </button>
+                </StaggerItem>
               )
             })}
-          </div>
+          </StaggerContainer>
 
           {/* Right: Dynamic Display View */}
-          <div className="lg:w-2/3 h-full relative rounded-3xl border border-black/10 bg-white shadow-xl overflow-hidden z-20">
+          <FadeUp delay={0.4} className="lg:w-2/3 h-full relative rounded-3xl border border-black/10 bg-white shadow-xl overflow-hidden z-20" width="100%">
             
             {/* Dynamic Background Pattern */}
             <AnimatePresence mode="popLayout">
@@ -195,7 +191,7 @@ export function AboutSection() {
                 WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
               }}
             />
-          </div>
+          </FadeUp>
         </div>
 
       </div>

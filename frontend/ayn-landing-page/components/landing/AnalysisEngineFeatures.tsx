@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Database, BrainCircuit, GitMerge, LineChart, Terminal } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
 
 const FEATURES = [
   {
@@ -93,68 +94,69 @@ export function AnalysisEngineFeatures() {
 
   return (
     <section id="features" className="relative py-16 px-6 max-w-6xl mx-auto z-10 scroll-mt-24 pb-32">
-      <div className="text-center mb-16">
+      <FadeUp className="text-center mb-16">
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4">
           Core Engine Features
         </h2>
         <p className="text-white/50 text-base md:text-lg max-w-2xl mx-auto">
           Select a module to see how Horus handles complex compliance tasks in real-time.
         </p>
-      </div>
+      </FadeUp>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Sidebar: Tabs */}
-        <div className="lg:col-span-4 flex flex-col gap-3 relative z-20">
+        <StaggerContainer className="lg:col-span-4 flex flex-col gap-3 relative z-20">
           {FEATURES.map((feature) => {
             const isActive = activeFeature === feature.id
             const Icon = feature.icon
             return (
-              <button
-                key={feature.id}
-                onClick={() => setActiveFeature(feature.id)}
-                className={cn(
-                  "relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-                  isActive 
-                    ? "bg-emerald-500/10 border-emerald-500/30" 
-                    : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
-                )}
-              >
-                {/* Active Indicator Line */}
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeTabIndicator"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                )}
-                
-                <div className="flex items-start gap-4">
-                  <div className={cn(
-                    "p-2 rounded-lg flex shrink-0 transition-colors",
-                    isActive ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "bg-white/5 text-white/40 group-hover:text-white/60 group-hover:bg-white/10"
-                  )}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className={cn(
-                      "font-semibold mb-1 transition-colors text-base",
-                      isActive ? "text-emerald-400" : "text-white/80 group-hover:text-white"
+              <StaggerItem key={feature.id} yOffset={20}>
+                <button
+                  onClick={() => setActiveFeature(feature.id)}
+                  className={cn(
+                    "w-full relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                    isActive 
+                      ? "bg-emerald-500/10 border-emerald-500/30" 
+                      : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                  )}
+                >
+                  {/* Active Indicator Line */}
+                  {isActive && (
+                    <motion.div 
+                      layoutId="activeTabIndicator"
+                      className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "p-2 rounded-lg flex shrink-0 transition-colors",
+                      isActive ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "bg-white/5 text-white/40 group-hover:text-white/60 group-hover:bg-white/10"
                     )}>
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-white/50 leading-relaxed font-medium">
-                      {feature.description}
-                    </p>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className={cn(
+                        "font-semibold mb-1 transition-colors text-base",
+                        isActive ? "text-emerald-400" : "text-white/80 group-hover:text-white"
+                      )}>
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-white/50 leading-relaxed font-medium">
+                        {feature.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              </StaggerItem>
             )
           })}
-        </div>
+        </StaggerContainer>
 
         {/* Right Side: Terminal Window */}
-        <div className="lg:col-span-8 flex flex-col h-[400px] shadow-2xl relative z-20">
+        <FadeUp delay={0.2} className="lg:col-span-8 flex flex-col h-[400px] shadow-2xl relative z-20" width="100%">
           {/* Mac-style Window header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#0c121e]/80 backdrop-blur-md border border-white/10 border-b-0 rounded-t-xl z-10">
             <div className="flex gap-2">
@@ -228,7 +230,7 @@ export function AnalysisEngineFeatures() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </FadeUp>
       </div>
     </section>
   )

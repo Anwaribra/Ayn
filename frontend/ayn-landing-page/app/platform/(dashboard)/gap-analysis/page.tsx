@@ -23,7 +23,9 @@ import {
   Lightbulb,
   Check,
   ArrowRight,
+  Download,
 } from "lucide-react"
+import { exportToPDF } from "@/lib/pdf-export"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
@@ -307,7 +309,8 @@ function GapAnalysisContent() {
   const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.severity === "Low").length / gaps.length) * 100) : 94
 
   return (
-    <div className="animate-fade-in-up pb-20">
+    <div className="animate-fade-in-up pb-20 relative">
+      <div id="gap-analysis-report-content">
       <header className="mb-10 pt-6 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -317,8 +320,15 @@ function GapAnalysisContent() {
             <div className="h-px w-6 bg-border" />
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Evidence vs Standards</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] relative">
             Compliance Gap <span className="text-[var(--text-tertiary)] font-light">Center</span>
+            <button 
+              onClick={() => exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")}
+              data-html2canvas-ignore="true"
+              className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20"
+            >
+              <Download className="w-4 h-4" /> Export Report (PDF)
+            </button>
           </h1>
         </div>
 
@@ -619,6 +629,7 @@ function GapAnalysisContent() {
           )}
         </>
       )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (

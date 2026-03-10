@@ -4,15 +4,45 @@ import { useState, useMemo, useEffect } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
-import useSWR, { mutate } from "swr"
+import useSWR, { mutate as globalMutate } from "swr"
 import { Evidence } from "@/types"
 import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
+import { DocumentEditor } from "@/components/platform/document-editor" // <-- Import Dialog
 import { GlassCard } from "@/components/ui/glass-card"
 import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+// Demo Document content blocks mapped to gaps
+const DEMO_DOCUMENT = [
+  { id: "p1", text: "ISO 21001 Quality Policy Statement. This document outlines our institutional commitment to educational excellence and international standards. We strive to provide accessible, equitable, and learner-centric education across all our academic programs." },
+  { id: "c1", text: "1. Scope & Context: The institution acknowledges its responsibility to internal and external stakeholders. However, specifics regarding external regulatory bodies and demographic shifts are handled by individual departments." },
+  { id: "p2", text: "2. Leadership & Commitment: Top management is fully accountable for the effectiveness of the educational organization management system (EOMS). We ensure that the quality policy and objectives are established and are compatible with the strategic direction of the institution." },
+  { id: "c3", text: "3. Organizational Knowledge: Faculty are encouraged to share their experiences and teaching methodologies. We hold annual summits to discuss best practices, but there is currently no centralized digital repository for capturing departing faculty knowledge." },
+  { id: "p4", text: "4. Performance Evaluation: Student feedback is collected at the end of every semester. The results are shared with instructors to improve course delivery. Internal audits of the EOMS are conducted annually to ensure conformity." }
+];
+
+// Mock gaps for the right pane of the split-view
+const MOCK_GAPS = [
+  {
+    id: "g1",
+    targetId: "c1",
+    title: "Section 4.1: Missing Context Parameters",
+    severity: "High",
+    alignment: "Not Aligned",
+    desc: "Policy lacks clear definition of external issues (e.g., regulatory changes, demographic shifts).",
+  },
+  {
+    id: "g2",
+    targetId: "c3",
+    title: "Section 7.1.6: Organizational Knowledge Risk",
+    severity: "Medium",
+    alignment: "Partially Aligned",
+    desc: "No formal process or centralized repository defined for securing intellectual capital and faculty knowledge.",
+  },
+];
 
 export default function EvidencePage() {
   return (
@@ -24,6 +54,76 @@ export default function EvidencePage() {
 
 function EvidenceContent() {
   const { user } = useAuth()
+  const { data: evidenceList, isLoading, error, mutate: localMutate } = useSWR<Evidence[]>(
+    user ? [`evidence`, user.id] : null,
+    () => api.getEvidence()
+  )
+
+  const handleDemoLoad = () => {
+    if (!user) return;
+    
+    toast.info("Initializing Live Demo Mode...", { duration: 1500 });
+    
+    const demoEvidenceId = "demo-iso-21001";
+    const demoGapAnalysisId = "demo-gap-report-1";
+    
+    const mockEvidence: any = {
+      id: demoEvidenceId,
+      institutionId: user.institutionId || "",
+      fileName: "ISO_21001_Quality_Policy_Final.pdf",
+      originalFilename: "ISO_21001_Quality_Policy_Final.pdf",
+      title: "ISO 21001 Quality Policy",
+      content: "",
+      fileUrl: "#",
+      status: "analyzed",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      confidenceScore: 92,
+      fileSize: 1024 * 1024 * 2.5,
+      mimeType: "application/pdf"
+    };
+
+    const mockGapListItem: any = {
+      id: demoGapAnalysisId,
+      standardId: "demo-std-1",
+      standardTitle: "ISO 21001:2018 (EOMS)",
+      status: "completed",
+      overallScore: 82,
+      createdAt: new Date().toISOString(),
+    };
+
+    const mockMetrics: any = {
+      totalGapAnalyses: 1,
+      evidenceCount: 1,
+      alignmentPercentage: 82,
+      unreadNotificationsCount: 3,
+      recentScores: [
+        { date: "2026-01-01", score: 45 },
+        { date: "2026-02-01", score: 60 },
+        { date: "2026-03-01", score: 82 },
+      ],
+      recentEvidence: [
+        {
+          id: demoEvidenceId,
+          title: "ISO 21001 Quality Policy",
+          originalFilename: "ISO_21001_Quality_Policy_Final.pdf",
+          status: "analyzed",
+        }
+      ]
+    };
+
+    // Update global SWR cache instantly
+    globalMutate([`evidence`, user.id], [mockEvidence], false);
+    globalMutate("gap-analyses", [mockGapListItem], false);
+    globalMutate([`dashboard-metrics`, user.id], mockMetrics, false);
+
+    setTimeout(() => {
+      toast.success("Demo Data Loaded", {
+        description: "Evidence added and gap analysis generated at 82%.",
+      });
+    }, 1500);
+  };
+ 
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -33,10 +133,6 @@ function EvidenceContent() {
   const [statusFilter, setStatusFilter] = useState<any>("")
   const [standardFilter, setStandardFilter] = useState("")
 
-  const { data: evidenceList, isLoading, error, mutate } = useSWR<Evidence[]>(
-    user ? [`evidence`, user.id] : null,
-    () => api.getEvidence()
-  )
 
   const { data: standards } = useSWR<any[]>(
     "standards",
@@ -61,6 +157,9 @@ function EvidenceContent() {
   const [selectedStandardId, setSelectedStandardId] = useState<string>("all")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [evidenceToDelete, setEvidenceToDelete] = useState<Evidence | null>(null)
+  
+  // Split-view highlight state
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,6 +170,7 @@ function EvidenceContent() {
           setEvidenceToDelete(null)
         } else if (selectedEvidence && !isAnalyzeModalOpen) {
           setSelectedEvidence(null)
+          setActiveHighlightId(null)
         }
       }
     }
@@ -110,7 +210,7 @@ function EvidenceContent() {
       if (selectedEvidence?.id === evidenceToDelete.id) {
         setSelectedEvidence(null)
       }
-      mutate()
+      localMutate()
     } catch (error) {
       toast.error("Failed to delete evidence", { description: "Please try again." })
     } finally {
@@ -129,7 +229,7 @@ function EvidenceContent() {
       toast.success("Evidence uploaded successfully", {
         description: "Horus is analyzing the document for compliance standards."
       })
-      mutate()
+      localMutate()
     } catch (error) {
       toast.error("Upload failed", { description: "Please try again." })
     } finally {
@@ -149,7 +249,7 @@ function EvidenceContent() {
       toast.success("Evidence uploaded successfully", {
         description: "Horus is analyzing the document for compliance standards."
       })
-      mutate()
+      localMutate()
     } catch {
       toast.error("Upload failed", { description: "Please try again." })
     } finally {
@@ -227,7 +327,7 @@ function EvidenceContent() {
           <p className="text-muted-foreground text-center mb-4">Failed to load evidence.</p>
           <button
             type="button"
-            onClick={() => mutate()}
+            onClick={() => localMutate()}
             className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
             Retry
@@ -241,7 +341,7 @@ function EvidenceContent() {
         </div>
       ) : evidenceList?.length === 0 ? (
         <div className="mt-8">
-          <EmptyState type="evidence" />
+          <EmptyState type="evidence" onDemoLoad={handleDemoLoad} />
         </div>
       ) : (
         <>
@@ -279,122 +379,153 @@ function EvidenceContent() {
         </>
       )}
 
-      {/* Quick Preview Modal Overlay */}
+      {/* Full-Screen Split-View Evidence Analysis Overlay */}
       {selectedEvidence && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" style={{ margin: 0 }}>
-          <div
-            className="absolute inset-0 bg-[#000000]/60 backdrop-blur-md transition-opacity"
-            onClick={() => setSelectedEvidence(null)}
-            aria-hidden="true"
-          />
-          <div 
-            className="relative w-full max-w-2xl glass-layer-3 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 border border-border"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="preview-modal-title"
-          >
-            <div className="p-6 border-b border-border flex items-start justify-between bg-muted/30">
-              <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-2xl status-info border flex items-center justify-center shrink-0">
-                  <FileText className="w-6 h-6" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 id="preview-modal-title" className="text-lg font-bold text-foreground leading-tight mb-1">{selectedEvidence.title}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
-                      ['linked', 'analyzed'].includes(selectedEvidence.status)
-                        ? "status-success"
-                        : selectedEvidence.status === 'processing'
-                          ? "status-warning"
-                          : "bg-muted text-muted-foreground border-border"
-                    )}>
-                      {selectedEvidence.status}
-                    </span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <span className="text-xs text-muted-foreground font-medium">Added {new Date(selectedEvidence.createdAt).toLocaleDateString()}</span>
-                  </div>
+        <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-background/95 backdrop-blur-xl" style={{ margin: 0 }}>
+          {/* Top Bar Navigation for the Split View */}
+          <div className="absolute top-0 left-0 right-0 h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-6 z-20">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-foreground" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground leading-tight">{selectedEvidence.title || selectedEvidence.originalFilename}</h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={cn(
+                    "px-2 py-px rounded text-[10px] font-bold uppercase tracking-wider border",
+                    ['linked', 'analyzed'].includes(selectedEvidence.status) ? "status-success" : "bg-muted text-muted-foreground border-border"
+                  )}>
+                    {selectedEvidence.status}
+                  </span>
+                  <span className="text-xs text-muted-foreground">• Analysis Mode</span>
                 </div>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setSelectedEvidence(null)}
+                type="button"
+                onClick={() => setIsAnalyzeModalOpen(true)}
+                className="px-4 py-2 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-primary/20"
+              >
+                <Sparkles className="w-4 h-4" /> Run Horus Scan
+              </button>
+              <button
+                onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null); }}
                 className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Close preview"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+          </div>
 
-            <div className="p-6 overflow-y-auto space-y-6">
-              <div>
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Linked Standards</h4>
-                {(selectedEvidence.criteria?.length ?? 0) > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedEvidence.criteria?.map(ref => (
-                      <div key={ref.id || ref} className="px-3 py-1.5 rounded-lg status-info border text-xs font-bold">
-                        {ref.title || ref.id || "Standard Link"}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">No standards linked yet. Run Horus analysis to map this document.</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-muted/50 border border-border">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
-                  <div className="text-xl font-black text-foreground capitalize">{selectedEvidence.status}</div>
+          {/* LEFT PANE: Document Viewer */}
+          <div className="w-1/2 h-full pt-16 border-r border-border flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
+              <div className="max-w-3xl mx-auto rounded-xl bg-background border border-border shadow-2xl p-8 lg:p-12 min-h-full">
+                <div className="mb-10 pb-6 border-b border-border text-center">
+                  <h1 className="text-3xl font-serif font-black text-foreground mb-4">{selectedEvidence.title || "Institutional Default Policy"}</h1>
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Document ID: {selectedEvidence.id.slice(0, 8)}</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-muted/50 border border-border">
-                  <div className="text-xs font-medium text-muted-foreground mb-1">Confidence</div>
-                  <div className={cn(
-                    "text-2xl font-black",
-                    selectedEvidence.confidenceScore === undefined || selectedEvidence.confidenceScore === null ? "text-muted-foreground" :
-                      (selectedEvidence.confidenceScore > 1 ? selectedEvidence.confidenceScore : selectedEvidence.confidenceScore * 100) > 80 ? "text-emerald-500" :
-                        (selectedEvidence.confidenceScore > 1 ? selectedEvidence.confidenceScore : selectedEvidence.confidenceScore * 100) > 40 ? "text-amber-500" : "text-destructive"
-                  )}>
-                    {selectedEvidence.confidenceScore
-                      ? `${selectedEvidence.confidenceScore > 1
-                        ? Math.round(selectedEvidence.confidenceScore)
-                        : Math.round(selectedEvidence.confidenceScore * 100)}%`
-                      : "N/A"}
-                  </div>
+                
+                <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/80">
+                  {DEMO_DOCUMENT.map((block) => {
+                    const isHighlighted = activeHighlightId === block.id;
+                    return (
+                      <p
+                        key={block.id}
+                        className={cn(
+                          "transition-all duration-500 rounded-lg p-3 -mx-3 border",
+                          isHighlighted 
+                            ? "bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.1)] text-foreground scale-[1.02]" 
+                            : "border-transparent"
+                        )}
+                        style={{
+                          textShadow: isHighlighted ? "0 0 1px rgba(var(--foreground),0.1)" : "none"
+                        }}
+                      >
+                        {block.text}
+                      </p>
+                    )
+                  })}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row gap-3 justify-end items-center">
-              <div className="flex-1 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsAnalyzeModalOpen(true)}
-                  className="w-full sm:w-auto px-4 py-3 min-h-[44px] text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Analyze Automatically
-                </button>
+          {/* RIGHT PANE: Horus AI Analysis */}
+          <div className="w-1/2 h-full pt-16 flex flex-col bg-background/50 relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
+              
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-black text-foreground">Horus AI Analysis</h2>
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">Compliance verification and gap detection.</p>
               </div>
 
-              <div className="flex gap-3 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => handleDelete(selectedEvidence)}
-                  className="flex-1 sm:flex-none px-4 py-3 min-h-[44px] text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
-                <a
-                  href={selectedEvidence.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 sm:flex-none px-6 py-3 min-h-[44px] bg-muted text-foreground font-bold rounded-xl text-sm hover:bg-muted/80 transition-all border border-border flex items-center justify-center gap-2"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open File
-                </a>
+              {/* Confidence Score Card */}
+              <div className="p-6 rounded-3xl glass-layer-2 border border-border mb-8 flex items-center gap-6">
+                <div className="w-16 h-16 shrink-0">
+                  {/* Mock Circular Progress */}
+                  <svg viewBox="0 0 36 36" className="w-full h-full text-primary -rotate-90">
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="4"
+                    />
+                    <path
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray={`${selectedEvidence.confidenceScore || 85}, 100`}
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-foreground">{selectedEvidence.confidenceScore || 85}%</div>
+                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Overall Alignment Score</div>
+                </div>
               </div>
+
+              {/* Interactive Gaps List */}
+              <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Identified Context Gaps</h3>
+              <div className="space-y-4">
+                {MOCK_GAPS.map((gap) => (
+                  <div
+                    key={gap.id}
+                    className={cn(
+                      "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-muted/50",
+                      activeHighlightId === gap.targetId ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border glass-panel"
+                    )}
+                    onClick={() => setActiveHighlightId(gap.targetId)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
+                        {gap.severity === "High" ? <AlertCircle className="w-4 h-4 text-destructive" /> : <AlertCircle className="w-4 h-4 text-warning" />}
+                        {gap.title}
+                      </h4>
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                        gap.severity === "High" ? "status-critical" : "status-warning"
+                      )}>
+                        {gap.severity} Priority
+                      </span>
+                    </div>
+                    <p className="text-[13px] font-medium text-muted-foreground leading-relaxed mb-4">
+                      {gap.desc}
+                    </p>
+                    <div className="flex items-center justify-between mt-4">
+                       <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                        Click to view source →
+                      </span>
+                       <button className="px-3 py-1.5 rounded-lg bg-background border border-border text-[10px] font-bold uppercase hover:bg-muted transition-colors text-foreground">
+                        Draft AI Fix
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
             </div>
           </div>
         </div>

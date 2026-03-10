@@ -18,6 +18,7 @@ interface EmptyStateProps {
   type: "evidence" | "standards" | "gap-analysis" | "dashboard" | "reports"
   title?: string
   description?: string
+  onDemoLoad?: () => void
 }
 
 const emptyStateConfig = {
@@ -160,7 +161,7 @@ const illustrations: Record<string, () => React.ReactElement> = {
   reports: ReportsIllustration,
 }
 
-export function EmptyState({ type, title, description }: EmptyStateProps) {
+export function EmptyState({ type, title, description, onDemoLoad }: EmptyStateProps) {
   const config = emptyStateConfig[type]
   const Icon = config.icon
   const Illustration = illustrations[config.illustration]
@@ -215,6 +216,23 @@ export function EmptyState({ type, title, description }: EmptyStateProps) {
           {config.tip}
         </p>
       </div>
+
+      {/* Demo Mode Button */
+      type === "evidence" && onDemoLoad && (
+        <div className="mt-12 pt-8 border-t border-[var(--border-subtle)] w-full max-w-md">
+          <p className="text-xs text-[var(--text-secondary)] mb-3 font-medium uppercase tracking-widest text-center">
+            Live Presentation Mode
+          </p>
+          <Button
+            variant="outline"
+            className="w-full py-6 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--surface-modal)] text-[var(--text-primary)] font-bold text-sm shadow-sm transition-all group"
+            onClick={onDemoLoad}
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-primary group-hover:animate-pulse" />
+            Load Sample ISO 21001 Policy (Demo)
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

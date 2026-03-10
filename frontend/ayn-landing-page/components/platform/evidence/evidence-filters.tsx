@@ -56,7 +56,7 @@ export function EvidenceFilters({
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Search evidence by title, content, or ID..."
-                    className="w-full pl-11 pr-4 py-3 glass-layer-2 rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                    className="w-full pl-11 pr-4 py-3 glass-layer-2 rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
                 />
                 {query && (
                     <button
@@ -75,10 +75,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStatusMenu(!showStatusMenu); setShowStandardMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-3 min-h-[44px] glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
+                            "flex items-center gap-2 px-5 py-3 min-h-[44px] glass-layer-2 rounded-full text-sm font-bold transition-all shadow-sm hover:border-primary/30 hover:shadow-md",
                             activeStatus
-                                ? "text-primary border border-primary/40 bg-primary/5"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
+                                : "text-muted-foreground border-border hover:text-foreground hover:bg-muted/30"
                         )}
                     >
                         <SlidersHorizontal className="w-4 h-4" />
@@ -93,13 +93,13 @@ export function EvidenceFilters({
                         )}
                     </button>
                     {showStatusMenu && (
-                        <div className="absolute top-full left-0 mt-1 z-30 glass-layer-3 rounded-xl border border-border shadow-2xl min-w-[140px] py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                        <div className="absolute top-full left-0 mt-2 z-30 glass-layer-3 rounded-2xl border border-[var(--border-subtle)] shadow-2xl min-w-[160px] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
                             {STATUSES.map((s) => (
                                 <button
                                     key={s}
                                     onClick={() => { onStatusChange(s); setShowStatusMenu(false) }}
                                     className={cn(
-                                        "w-full text-left px-4 py-2 text-sm font-medium capitalize hover:bg-muted/50 transition-colors",
+                                        "w-full text-left px-5 py-2.5 text-sm font-medium capitalize hover:bg-[var(--surface-modal)] transition-colors first:rounded-t-2xl last:rounded-b-2xl",
                                         activeStatus === s ? "text-primary font-bold" : "text-foreground"
                                     )}
                                 >
@@ -115,10 +115,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStandardMenu(!showStandardMenu); setShowStatusMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-3 min-h-[44px] glass-layer-2 rounded-xl text-sm font-bold transition-all shadow-sm",
+                            "flex items-center gap-2 px-5 py-3 min-h-[44px] glass-layer-2 rounded-full text-sm font-bold transition-all shadow-sm hover:border-primary/30 hover:shadow-md",
                             activeStandard
-                                ? "text-primary border border-primary/40 bg-primary/5"
-                                : "text-muted-foreground hover:text-foreground"
+                                ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
+                                : "text-muted-foreground border-border hover:text-foreground hover:bg-muted/30"
                         )}
                     >
                         <Filter className="w-4 h-4" />
@@ -135,16 +135,16 @@ export function EvidenceFilters({
                         )}
                     </button>
                     {showStandardMenu && (
-                        <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-1 z-30 glass-layer-3 rounded-xl border border-border shadow-2xl min-w-[200px] max-w-[calc(100vw-2rem)] py-1 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-30 glass-layer-3 rounded-2xl border border-[var(--border-subtle)] shadow-2xl min-w-[220px] max-w-[calc(100vw-2rem)] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
                             {!standards || standards.length === 0 ? (
-                                <p className="px-4 py-3 text-sm text-muted-foreground">No standards configured</p>
+                                <p className="px-5 py-4 text-sm text-muted-foreground text-center">No standards configured</p>
                             ) : (
                                 standards.map((s: any) => (
                                     <button
                                         key={s.id}
                                         onClick={() => { onStandardChange(s.id); setShowStandardMenu(false) }}
                                         className={cn(
-                                            "w-full text-left px-4 py-2 text-sm hover:bg-muted/50 transition-colors",
+                                            "w-full text-left px-5 py-3 text-sm hover:bg-[var(--surface-modal)] transition-colors first:rounded-t-2xl last:rounded-b-2xl group",
                                             activeStandard === s.id ? "text-primary font-bold" : "text-foreground font-medium"
                                         )}
                                     >
@@ -161,7 +161,7 @@ export function EvidenceFilters({
                 {hasActiveFilters && (
                     <button
                         onClick={clearAll}
-                        className="flex items-center gap-1.5 px-3 py-3 min-h-[44px] text-xs font-bold text-muted-foreground hover:text-destructive transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-3 min-h-[44px] rounded-full text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
                         Clear

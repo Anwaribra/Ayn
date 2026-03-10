@@ -336,7 +336,24 @@ function EvidenceContent() {
       ) : isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="h-64 rounded-3xl glass-layer-1 animate-pulse" />
+            <div key={i} className="flex flex-col justify-between p-5 rounded-3xl glass-layer-2 animate-pulse h-[220px] border border-border/50">
+              <div className="flex justify-between items-start mb-4">
+                <div className="h-6 w-24 bg-muted/60 rounded-full" />
+                <div className="h-6 w-6 rounded-full bg-muted/40" />
+              </div>
+              <div className="space-y-3 mb-4 flex-1 mt-2">
+                <div className="h-5 bg-muted/60 rounded-lg w-3/4" />
+                <div className="h-5 bg-muted/60 rounded-lg w-1/2" />
+                <div className="h-3 bg-muted/40 rounded-lg w-full mt-4" />
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
+                <div className="flex -space-x-2">
+                  <div className="w-6 h-6 rounded-full bg-muted/60 border-2 border-[var(--surface-modal)]" />
+                  <div className="w-6 h-6 rounded-full bg-muted/40 border-2 border-[var(--surface-modal)]" />
+                </div>
+                <div className="h-3 w-16 bg-muted/40 rounded-lg" />
+              </div>
+            </div>
           ))}
         </div>
       ) : evidenceList?.length === 0 ? (

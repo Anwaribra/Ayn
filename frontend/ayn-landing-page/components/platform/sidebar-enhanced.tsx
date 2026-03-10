@@ -143,11 +143,14 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
   }
 
   return (
-    <aside
+    <motion.aside
+      layout
+      initial={false}
+      transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col",
+        "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
         "bg-[#050810] text-[#f5f5f3] border-r border-white/5", // FORCED DARK STYLE
-        "rounded-r-2xl transition-all duration-250 ease-in-out",
+        "rounded-r-2xl",
         "h-[100dvh]",
         // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
         open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
@@ -283,6 +286,6 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         </div>
       </div>
 
-    </aside>
+    </motion.aside>
   )
 }

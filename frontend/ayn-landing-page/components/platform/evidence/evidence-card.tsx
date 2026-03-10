@@ -8,22 +8,7 @@ interface EvidenceCardProps {
 }
 
 export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
-    const statusClasses = {
-        defined: "badge-pending",
-        linked: "badge-analyzed",
-        complete: "badge-verified",
-        void: "badge-failed",
-    }
-
-    const statusIcons = {
-        defined: AlertCircle,
-        linked: FileText,
-        complete: CheckCircle2,
-        void: ShieldAlert,
-    }
-
-    // Normalize data access
-    const status = evidence.status as keyof typeof statusIcons
+    const status = evidence.status
     const title = evidence.title || "Untitled Document"
 
     // Handle different date formats
@@ -40,8 +25,15 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
         ? evidence.source_file_ids.length
         : 0
 
-    const StatusIcon = statusIcons[status] || FileText
-    const statusClass = statusClasses[status] || "badge-pending"
+    const isSuccess = ['complete', 'analyzed', 'linked'].includes(status)
+    const isError = ['void', 'failed'].includes(status)
+    
+    const dotColor = isSuccess ? "bg-emerald-500" : isError ? "bg-destructive" : "bg-amber-500"
+    const badgeStyle = isSuccess 
+      ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" 
+      : isError 
+        ? "text-destructive bg-destructive/10 border-destructive/20" 
+        : "text-amber-500 bg-amber-500/10 border-amber-500/20"
 
     return (
         <div
@@ -50,13 +42,16 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
         >
             <div className="flex justify-between items-start mb-4">
                 <div className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5",
-                    statusClass
+                    "px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-2",
+                    badgeStyle
                 )}>
-                    <StatusIcon className="w-3 h-3" />
+                    <div className="relative flex h-2 w-2 items-center justify-center">
+                      <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", dotColor)} />
+                      <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)} />
+                    </div>
                     {evidence.status}
                 </div>
-                <button className="p-1.5 rounded-full hover:bg-layer-3 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
+                <button className="p-1.5 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
                     <MoreVertical className="w-4 h-4" />
                 </button>
             </div>

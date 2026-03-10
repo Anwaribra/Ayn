@@ -29,17 +29,18 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                         <AreaChart data={data}>
                             <defs>
                                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="var(--accent-blue, #3B82F6)" stopOpacity={0.2} />
-                                    <stop offset="95%" stopColor="var(--accent-blue, #3B82F6)" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} opacity={0.5} />
                             <XAxis
                                 dataKey="time"
                                 stroke="var(--text-secondary)"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
+                                tickMargin={10}
                             />
                             <YAxis
                                 stroke="var(--text-secondary)"
@@ -49,22 +50,31 @@ export function ActivityChart({ data = [] }: ActivityChartProps) {
                                 tickFormatter={(value: number) => `${value / 1000}k`}
                             />
                             <Tooltip
+                                cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '4 4' }}
                                 contentStyle={{
-                                    backgroundColor: 'var(--popover)',
-                                    borderColor: 'var(--border)',
-                                    backdropFilter: 'blur(8px)',
+                                    backgroundColor: 'rgba(5, 8, 16, 0.8)',
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
                                     borderRadius: '12px',
-                                    color: 'var(--foreground)',
-                                    boxShadow: 'var(--glass-shadow-soft)',
+                                    color: '#f5f5f3',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                                    padding: '12px',
+                                    fontSize: '12px',
+                                    fontWeight: '600'
                                 }}
+                                itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '800' }}
+                                labelStyle={{ color: 'var(--text-secondary)', marginBottom: '4px' }}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="value"
-                                stroke="var(--accent-blue, #3B82F6)"
-                                strokeWidth={2.5}
+                                stroke="var(--primary)"
+                                strokeWidth={3}
                                 fillOpacity={1}
                                 fill="url(#colorValue)"
+                                animationDuration={2500}
+                                animationEasing="ease-in-out"
                             />
                         </AreaChart>
                     </ResponsiveContainer>

@@ -4,6 +4,7 @@ import useSWR from "swr"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { ShieldCheck } from "lucide-react"
+import { motion } from "framer-motion"
 
 interface CoverageResult {
     standardId: string
@@ -60,10 +61,12 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
         // One-liner: "[bar] 47/80 (59%)"
         return (
             <div className={cn("flex items-center gap-3", className)}>
-                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                        className={cn("h-full rounded-full transition-all duration-700", statusColor)}
-                        style={{ width: `${pct}%` }}
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden relative">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className={cn("absolute top-0 left-0 h-full rounded-full", statusColor)}
                     />
                 </div>
                 <span className="text-[10px] font-bold tabular-nums text-muted-foreground whitespace-nowrap">
@@ -91,10 +94,12 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
                     /{totalCriteria} covered
                 </span>
             </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                    className={cn("h-full rounded-full transition-all duration-700", statusColor)}
-                    style={{ width: `${pct}%` }}
+            <div className="h-2.5 rounded-full bg-muted overflow-hidden relative">
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className={cn("absolute top-0 left-0 h-full rounded-full shadow-inner", statusColor)}
                 />
             </div>
         </div>

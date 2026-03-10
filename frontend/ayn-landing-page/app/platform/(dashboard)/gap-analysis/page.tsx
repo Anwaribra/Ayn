@@ -322,29 +322,31 @@ function GapAnalysisContent() {
           </div>
           <h1 className="text-4xl font-black tracking-tight text-[var(--text-primary)] relative">
             Compliance Gap <span className="text-[var(--text-tertiary)] font-light">Center</span>
-            <button 
-              onClick={() => exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")}
-              data-html2canvas-ignore="true"
-              className="absolute right-0 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20"
-            >
-              <Download className="w-4 h-4" /> Export Report (PDF)
-            </button>
           </h1>
         </div>
 
-        <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 border-[var(--border-subtle)]">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+          <button 
+            onClick={() => exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")}
+            data-html2canvas-ignore="true"
+            className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20"
           >
-            All Gaps
+            <Download className="w-4 h-4" /> Export Report (PDF)
           </button>
-          <button
-            onClick={() => setActiveTab("urgent")}
-            className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
-          >
-            High Severity
-          </button>
+          <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 border-[var(--border-subtle)]">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+            >
+              All Gaps
+            </button>
+            <button
+              onClick={() => setActiveTab("urgent")}
+              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+            >
+              High Severity
+            </button>
+          </div>
         </div>
       </header>
 

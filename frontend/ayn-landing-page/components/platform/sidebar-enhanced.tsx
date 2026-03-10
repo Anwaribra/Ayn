@@ -59,103 +59,109 @@ const INSIGHTS_TOOLS: NavItemConfig[] = [
   { id: "reports", icon: BarChart4, label: "Analytics", href: "/platform/analytics" },
 ]
 
-export default function PlatformSidebar({ open, onToggle, notificationCount }: SidebarProps) {
+import React, { useCallback, useMemo, memo } from "react"
+
+export const SidebarItem = memo(function SidebarItem({
+  item,
+  isCollapsed,
+  pathname,
+  onNavClick,
+}: {
+  item: NavItemConfig
+  isCollapsed: boolean
+  pathname: string
+  onNavClick: () => void
+}) {
+  const active =
+    pathname.includes(item.id) || (item.id === "reports" && pathname.includes("analytics"))
+
+  const content = (
+    <Link
+      href={item.href}
+      onClick={onNavClick}
+      className={cn(
+        "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 min-h-[44px] text-sm transition-all duration-300",
+        isCollapsed && "justify-center px-0 mx-auto w-11",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        active
+          ? "bg-white/10 text-white shadow-md shadow-black/20"
+          : "text-zinc-400 hover:text-white hover:bg-white/5"
+      )}
+    >
+      {active && (
+        <>
+          <motion.div
+            layoutId="active-indicator"
+            className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            layoutDependency={false}
+          />
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
+        </>
+      )}
+
+      <item.icon
+        className={cn(
+          "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
+          active ? "text-white" : "group-hover:text-white"
+        )}
+        strokeWidth={2.1}
+      />
+
+      {!isCollapsed && (
+        <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
+          {item.label}
+          {item.id === "horus-ai" && (
+            <span className="flex items-center">
+              <span className="relative flex h-2 w-2 mr-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+              </span>
+              <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]">New</span>
+            </span>
+          )}
+        </span>
+      )}
+    </Link>
+  )
+
+  if (isCollapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
+          {item.label}
+          {item.id === "horus-ai" && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+            </span>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return content
+})
+
+function PlatformSidebarComponent({ open, onToggle, notificationCount }: SidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
 
   const isCollapsed = !open
-
-  const isActive = (item: NavItemConfig) =>
-    pathname.includes(item.id) ||
-    (item.id === "reports" && pathname.includes("analytics"))
 
   const handleLogout = async () => {
     await logout()
     window.location.href = "/"
   }
 
-  const handleNavClick = () => {
+  const handleNavClick = useCallback(() => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       onToggle()
     }
-  }
-
-  const SidebarItem = ({
-    item,
-  }: {
-    item: NavItemConfig
-  }) => {
-    const active = isActive(item)
-
-    const content = (
-      <Link
-        href={item.href}
-        onClick={handleNavClick}
-        className={cn(
-          "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 min-h-[44px] text-sm transition-all duration-300",
-          isCollapsed && "justify-center px-0 mx-auto w-11",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-          active
-            ? "bg-white/10 text-white shadow-md shadow-black/20"
-            : "text-zinc-400 hover:text-white hover:bg-white/5"
-        )}
-      >
-        {active && (
-          <>
-            <motion.div
-              layoutId="active-indicator"
-              className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
-              transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            />
-            {/* Subtle glow effect */}
-            <div className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
-          </>
-        )}
-
-        <item.icon
-          className={cn(
-            "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
-            active ? "text-white" : "group-hover:text-white"
-          )}
-          strokeWidth={2.1}
-        />
-
-        {!isCollapsed && (
-          <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
-            {item.label}
-            {item.id === "horus-ai" && (
-              <span className="flex items-center">
-                <span className="relative flex h-2 w-2 mr-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
-                </span>
-                <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]">New</span>
-              </span>
-            )}
-          </span>
-        )}
-      </Link>
-    )
-
-    if (isCollapsed) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
-            {item.label}
-            {item.id === "horus-ai" && (
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
-              </span>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      )
-    }
-
-    return content
-  }
+  }, [onToggle])
 
   return (
     <motion.aside
@@ -163,6 +169,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       initial={false}
       transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
       className={cn(
+        "will-change-transform",
         "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
         "bg-[#050810] text-[#f5f5f3] border-r border-white/5", // FORCED DARK STYLE
         "rounded-r-2xl",
@@ -208,7 +215,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       <nav className={cn("flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {MAIN_MENU.map((item) => (
-            <SidebarItem key={item.id} item={item} />
+            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
         </div>
 
@@ -219,7 +226,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             </p>
           )}
           {COMPLIANCE_WORKFLOW.map((item) => (
-            <SidebarItem key={item.id} item={item} />
+            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
         </div>
 
@@ -230,7 +237,7 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             </p>
           )}
           {INSIGHTS_TOOLS.map((item) => (
-            <SidebarItem key={item.id} item={item} />
+            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
         </div>
 
@@ -245,6 +252,9 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             label: "Archive",
             href: "/platform/archive",
           }}
+          isCollapsed={isCollapsed}
+          pathname={pathname}
+          onNavClick={handleNavClick}
         />
         <SidebarItem
           item={{
@@ -253,6 +263,9 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
             label: "Settings",
             href: "/platform/settings",
           }}
+          isCollapsed={isCollapsed}
+          pathname={pathname}
+          onNavClick={handleNavClick}
         />
 
         {/* User Row */}
@@ -304,3 +317,5 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
     </motion.aside>
   )
 }
+
+export default memo(PlatformSidebarComponent)

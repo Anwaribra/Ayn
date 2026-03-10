@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import React, { useState, useRef, useEffect, useCallback, memo } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import {
   ArrowUpIcon,
@@ -122,7 +122,7 @@ function InlineText({ content }: { content: string }) {
   )
 }
 
-export default function FloatingAIBar() {
+const FloatingAIBarComponent = () => {
   const pathname = usePathname()
   const router = useRouter()
   const [query, setQuery] = useState("")
@@ -329,7 +329,7 @@ export default function FloatingAIBar() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 24, scale: 0.98 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="w-[440px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-hidden rounded-[34px] bg-[var(--surface-modal)]/95 border border-[var(--border-subtle)] shadow-2xl backdrop-blur-2xl"
+            className="w-[440px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-hidden rounded-[34px] bg-[var(--surface-modal)]/95 sm:backdrop-blur-lg border border-[var(--border-subtle)] shadow-2xl will-change-transform"
           >
             <div className="p-6 pb-3 flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -481,3 +481,5 @@ export default function FloatingAIBar() {
     </div>
   )
 }
+
+export default memo(FloatingAIBarComponent)

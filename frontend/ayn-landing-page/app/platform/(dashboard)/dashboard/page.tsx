@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -80,7 +80,37 @@ function DashboardContent() {
     return "Good evening"
   })()
 
-  const publicStandards = standards?.filter((s: Standard) => s.isPublic) ?? []
+  const publicStandards = useMemo(
+    () => standards?.filter((s: Standard) => s.isPublic) ?? [],
+    [standards]
+  )
+
+  const dashboardStats = useMemo(() => [
+    {
+      label: "Total Evidence",
+      value: metrics?.evidenceCount?.toString() || "0",
+      icon: FileText,
+      status: "warning" as const
+    },
+    {
+      label: "Active Alerts",
+      value: metrics?.unreadNotificationsCount?.toString() || "0",
+      icon: AlertTriangle,
+      status: ((metrics?.unreadNotificationsCount ?? 0) > 0 ? "critical" : "success") as "critical" | "success"
+    },
+    {
+      label: "Compliance Score",
+      value: `${Math.round(alignmentScore)}%`,
+      icon: Activity,
+      status: (alignmentScore > 80 ? "success" : "warning") as "success" | "warning"
+    },
+    {
+      label: "Total Analyses",
+      value: metrics?.totalGapAnalyses?.toString() || "0",
+      icon: Cpu,
+      status: "neutral" as const
+    }
+  ], [metrics, alignmentScore])
 
   return (
     <div className="animate-fade-in-up space-y-8 pb-20 relative">
@@ -148,32 +178,7 @@ function DashboardContent() {
       {/* Status Tiles Grid */}
       <section>
         <StatusTiles
-          stats={[
-            {
-              label: "Total Evidence",
-              value: metrics?.evidenceCount?.toString() || "0",
-              icon: FileText,
-              status: "warning"
-            },
-            {
-              label: "Active Alerts",
-              value: metrics?.unreadNotificationsCount?.toString() || "0",
-              icon: AlertTriangle,
-              status: (metrics?.unreadNotificationsCount ?? 0) > 0 ? "critical" : "success"
-            },
-            {
-              label: "Compliance Score",
-              value: `${Math.round(alignmentScore)}%`,
-              icon: Activity,
-              status: alignmentScore > 80 ? "success" : "warning"
-            },
-            {
-              label: "Total Analyses",
-              value: metrics?.totalGapAnalyses?.toString() || "0",
-              icon: Cpu,
-              status: "neutral"
-            }
-          ]}
+          stats={dashboardStats}
         />
       </section>
 

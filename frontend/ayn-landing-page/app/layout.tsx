@@ -33,7 +33,7 @@ const playfairDisplay = Playfair_Display({
 
 const siteDescription =
   "Powered by Horus Engine for ISO 21001 & NAQAAE Standards. The comprehensive platform for educational quality assurance and compliance excellence."
-const siteTitle = "Ayn — Education Quality & Compliance Platform"
+const siteTitle = "Ayn | AI-Powered Quality & Compliance"
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ayn-edu.com"
 
 export const viewport = {

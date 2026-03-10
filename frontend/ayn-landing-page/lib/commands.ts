@@ -263,6 +263,19 @@ export const actionCommands: Command[] = [
     keywords: ["automate", "workflow", "process", "tasks"],
     badge: "Beta",
   },
+  {
+    id: "reset-demo",
+    title: "Reset Demo",
+    description: "Clear all local data and reset the platform state",
+    icon: Zap,
+    category: "Actions",
+    action: () => {
+      localStorage.clear();
+      window.location.href = "/login";
+    },
+    keywords: ["reset", "clear", "demo", "start over", "clean"],
+    badge: "New",
+  },
 ]
 
 export const preferenceCommands: Command[] = [

@@ -100,11 +100,16 @@ function ReasoningBlock({
             </p>
           </div>
         </div>
-        {reasoning.isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        )}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground mr-1">
+            {reasoning.isExpanded ? "Hide Reasoning" : "View Reasoning"}
+          </span>
+          {reasoning.isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
       </div>
 
       <div

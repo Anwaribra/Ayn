@@ -144,7 +144,7 @@ export const AIChatInput = ({
                     "w-full max-w-[900px] backdrop-blur-3xl transition-all duration-300",
                     "bg-white/95 border border-black/10 text-black shadow-[0_8px_26px_rgba(2,6,23,0.08)]", // Light mode
                     "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white dark:shadow-[0_8px_30px_rgba(2,6,23,0.45)]",
-                    (isActive || inputValue) && "ring-1 ring-primary/35 border-primary/40"
+                    (isActive || inputValue) && "ring-2 ring-primary/50 border-primary/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
                 )}
                 onClick={handleActivate}
             >

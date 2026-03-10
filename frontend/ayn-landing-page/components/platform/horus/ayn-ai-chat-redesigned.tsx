@@ -81,9 +81,13 @@ function ReasoningBlock({
       >
         <div className="flex items-center gap-3 min-w-0">
           {reasoning.isComplete ? (
-            <Check className="w-4 h-4 text-green-500" />
+            <div className="relative flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-500/10 shrink-0">
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
           ) : (
-            <Brain className="w-4 h-4 text-primary animate-pulse" />
+            <div className="relative flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse">
+              <Brain className="w-3.5 h-3.5 text-primary" />
+            </div>
           )}
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[var(--text-primary)] tracking-tight truncate">

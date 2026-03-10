@@ -37,15 +37,27 @@ export function HorusMarkdown({
                         if (href?.startsWith('ACTION:')) {
                             const [_, type, payload] = href.split(':');
                             return (
-                                <Button
-                                    size="sm"
-                                    variant="outline"
+                                <div 
                                     onClick={() => onAction?.(type, payload)}
-                                    className="mx-1 h-7 px-3 rounded-lg border-primary/30 bg-primary/5 text-primary hover:bg-primary/20 hover:text-primary font-black uppercase text-[10px] tracking-wider transition-all"
+                                    className="inline-flex items-center gap-3 p-2.5 pr-4 my-2 align-middle glass-layer-2 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:border-primary/40 hover:shadow-md transition-all group cursor-pointer w-fit"
                                 >
-                                    {type === 'gap_report' ? <FileText className="w-3 h-3 mr-1.5" /> : null}
-                                    {children}
-                                </Button>
+                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 relative">
+                                        <FileText className="w-4 h-4 text-primary" />
+                                        <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: "var(--status-success)" }}></span>
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col min-w-0 pr-2">
+                                        <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">{children}</span>
+                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
+                                            {type === 'view_gap' ? 'View Document' : type === 'gap_report' ? 'Gap Report' : type.replace('_', ' ')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[var(--surface-modal)] text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                    </div>
+                                </div>
                             )
                         }
                         return (

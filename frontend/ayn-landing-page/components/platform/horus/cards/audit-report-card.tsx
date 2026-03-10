@@ -1,6 +1,7 @@
 "use client"
 
 import { Check, X, AlertTriangle, TrendingUp, BarChart3, ListChecks, ExternalLink } from "lucide-react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 interface AuditReportPayload {
@@ -83,13 +84,15 @@ export function AuditReportCard({ payload }: { payload: AuditReportPayload }) {
           <div className="relative w-24 h-24">
             <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" strokeWidth="8" className="text-[var(--border-subtle)]" />
-              <circle
+              <motion.circle
                 cx="50" cy="50" r={radius} fill="none"
                 strokeWidth="8"
                 strokeDasharray={circumference}
-                strokeDashoffset={dashOffset}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: dashOffset }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
                 strokeLinecap="round"
-                className={cn("transition-all duration-700", ringColor)}
+                className={cn(ringColor)}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">

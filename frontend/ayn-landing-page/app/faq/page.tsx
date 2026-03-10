@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, Globe, Sparkles } from "lucide-react"
+import { ChevronDown, Globe, Sparkles, Search } from "lucide-react"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { cn } from "@/lib/utils"
@@ -197,13 +197,13 @@ function AccordionItem({ q, a, lang }: { q: string; a: string; lang: Language })
   const isArabic = lang === "ar"
 
   return (
-    <div className="border-b border-black/10 last:border-0">
+    <div className="border-b border-black/5 dark:border-white/10 last:border-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full py-6 flex items-center justify-between text-left focus:outline-none group"
+        className="w-full py-5 flex items-center justify-between text-left focus:outline-none group"
       >
         <h3 className={cn(
-          "text-lg font-medium text-foreground group-hover:text-primary transition-colors",
+          "text-base md:text-lg font-medium text-foreground group-hover:text-primary transition-colors",
           isArabic && "font-arabic text-right w-full ml-4"
         )}>
           {q}
@@ -211,7 +211,7 @@ function AccordionItem({ q, a, lang }: { q: string; a: string; lang: Language })
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className={cn("flex-shrink-0 text-foreground/50", isArabic && "order-first")}
+          className={cn("flex-shrink-0 text-foreground/40 group-hover:text-primary transition-colors", isArabic && "order-first")}
         >
           <ChevronDown className="w-5 h-5" />
         </motion.div>
@@ -227,7 +227,7 @@ function AccordionItem({ q, a, lang }: { q: string; a: string; lang: Language })
             className="overflow-hidden"
           >
             <div className={cn(
-              "pb-6 text-foreground/70 leading-relaxed",
+              "pb-5 text-foreground/60 leading-relaxed text-sm md:text-base",
               isArabic && "font-arabic text-right text-lg"
             )}>
               {a}
@@ -241,27 +241,41 @@ function AccordionItem({ q, a, lang }: { q: string; a: string; lang: Language })
 
 export default function FAQPage() {
   const [lang, setLang] = useState<Language>("en")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  
   const content = FAQ_CONTENT[lang]
   const isArabic = lang === "ar"
 
   const toggleLanguage = () => {
     setLang(prev => prev === "en" ? "ar" : "en")
+    setSearchQuery("")
+    setActiveCategory(null)
   }
+
+  // Filter categories and questions based on search
+  const filteredCategories = content.categories.map(cat => ({
+    ...cat,
+    questions: cat.questions.filter(
+      item => item.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              item.a.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(cat => cat.questions.length > 0)
+     .filter(cat => activeCategory && !searchQuery ? cat.name === activeCategory : true)
 
   return (
     <div style={{ backgroundColor: PAGE_BG, minHeight: "100vh" }} className="flex flex-col">
       <LandingNavbar />
 
       <main className="flex-1 pt-32 pb-24 md:pt-40 md:pb-32 px-5">
-        <div className="max-w-4xl mx-auto relative">
+        <div className="max-w-6xl mx-auto relative">
           
-          {/* Header */}
-          <div className="text-center mb-16 md:mb-24 relative z-10">
-            {/* Language Toggle */}
+          {/* Hero Header & Search */}
+          <div className="text-center mb-16 relative z-10 max-w-2xl mx-auto">
             <div className="flex justify-center mb-8">
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 bg-white shadow-sm hover:shadow-md transition-all text-sm font-medium text-foreground hover:bg-black/5"
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md transition-all text-sm font-medium text-foreground hover:bg-white"
               >
                 <Globe className="w-4 h-4" />
                 <span className={isArabic ? "font-sans" : "font-arabic"}>
@@ -275,57 +289,109 @@ export default function FAQPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/10 text-xs font-bold uppercase tracking-[0.15em] text-primary mb-6 bg-white shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
-                Knowledge Base
-              </span>
               <h1 className={cn(
-                "text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-6",
+                "text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6",
                 isArabic && "font-arabic leading-tight"
               )}>
-                {content.title}
+                {isArabic ? "كيف يمكننا مساعدتك؟" : "How can we help?"}
               </h1>
-              <p className={cn(
-                "text-lg md:text-xl text-foreground/60 max-w-2xl mx-auto",
-                isArabic && "font-arabic leading-relaxed"
-              )}>
-                {content.subtitle}
-              </p>
+              
+              <div className="relative mt-8 group">
+                <Search className={cn("absolute top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40", isArabic ? "right-6" : "left-6")} />
+                <input 
+                  type="text"
+                  placeholder={isArabic ? "ابحث عن إجابات..." : "Search for answers..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={cn(
+                    "w-full h-14 rounded-full border border-black/10 bg-white/80 backdrop-blur-md text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm group-hover:shadow-md",
+                    isArabic ? "pr-14 pl-6 text-right font-arabic" : "pl-14 pr-6"
+                  )}
+                />
+              </div>
             </motion.div>
           </div>
 
-          {/* FAQ Content */}
-          <div className="space-y-12 relative z-10">
-            {content.categories.map((category, idx) => (
-              <motion.div 
-                key={category.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-white rounded-3xl p-6 md:p-10 shadow-xl shadow-black/5 border border-black/5"
-              >
-                <h2 className={cn(
-                  "text-2xl font-bold text-foreground mb-6",
-                  isArabic && "font-arabic text-right w-full"
-                )}>
-                  {category.name}
-                </h2>
-                <div className="flex flex-col">
-                  {category.questions.map((item, i) => (
-                    <AccordionItem key={i} q={item.q} a={item.a} lang={lang} />
+          {/* Main Layout: Sticky Sidebar + Content */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 relative z-10 items-start">
+            
+            {/* Left Sidebar (Categories) */}
+            <div className={cn("col-span-1 md:sticky top-32 space-y-2", isArabic && "md:col-start-4 md:row-start-1")}>
+              <h3 className={cn("text-xs font-bold uppercase tracking-wider text-foreground/40 mb-4 px-3", isArabic && "text-right font-arabic")}>
+                {isArabic ? "الاقسام" : "Categories"}
+              </h3>
+              <div className="space-y-1 flex flex-col items-stretch">
+                <button
+                  onClick={() => { setActiveCategory(null); setSearchQuery(""); }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                    !activeCategory && !searchQuery ? "bg-black/5 text-foreground" : "text-foreground/60 hover:bg-black/5 hover:text-foreground",
+                    isArabic && "text-right font-arabic"
+                  )}
+                >
+                  {isArabic ? "الكل" : "All Questions"}
+                </button>
+                {content.categories.map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => {
+                        setActiveCategory(cat.name)
+                        setSearchQuery("")
+                    }}
+                    className={cn(
+                      "w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                      activeCategory === cat.name && !searchQuery ? "bg-black/5 text-foreground" : "text-foreground/60 hover:bg-black/5 hover:text-foreground",
+                      isArabic && "text-right font-arabic"
+                    )}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Content (Questions) */}
+            <div className={cn("col-span-1 md:col-span-3", isArabic && "md:col-start-1 md:row-start-1")}>
+              {filteredCategories.length === 0 ? (
+                <div className="text-center py-20">
+                  <p className={cn("text-foreground/50", isArabic && "font-arabic")}>
+                    {isArabic ? "لم يتم العثور على نتائج بحث تطابق استفسارك." : "No results found for your search."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-10 md:space-y-12">
+                  {filteredCategories.map((category, idx) => (
+                    <motion.div 
+                      key={category.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: idx * 0.1 }}
+                      className="bg-white/50 backdrop-blur-sm rounded-3xl p-6 md:p-10 shadow-sm border border-black/5"
+                    >
+                      <h2 className={cn(
+                        "text-xl font-bold text-foreground mb-6",
+                        isArabic && "font-arabic text-right w-full"
+                      )}>
+                        {category.name}
+                      </h2>
+                      <div className="flex flex-col">
+                        {category.questions.map((item, i) => (
+                          <AccordionItem key={i} q={item.q} a={item.a} lang={lang} />
+                        ))}
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-              </motion.div>
-            ))}
+              )}
+            </div>
+            
           </div>
 
-          {/* Background Decorative Blur */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
         </div>
       </main>
 
       {/* Footer wrapped in dark theme data attribute */}
-      <div className="px-3 md:px-5 py-4">
+      <div className="px-3 md:px-5 py-4 mt-auto">
         <div data-section-theme="dark" style={{ borderRadius: "1.75rem", overflow: "hidden", backgroundColor: DARK_BG }}>
           <LandingFooter />
         </div>

@@ -24,8 +24,10 @@ import {
   GraduationCap,
   Scale,
   Lightbulb,
+  Monitor,
   type LucideIcon,
 } from "lucide-react"
+import { toggleDemoMode, isDemoMode } from "./demo"
 
 export type CommandCategory =
   | "Navigation"
@@ -275,6 +277,23 @@ export const actionCommands: Command[] = [
     },
     keywords: ["reset", "clear", "demo", "start over", "clean"],
     badge: "New",
+  },
+  {
+    id: "toggle-demo-mode",
+    title: "Toggle Demo Mode",
+    description: "Enable/disable offline demo mode with mock responses",
+    icon: Monitor,
+    category: "Preferences",
+    action: () => {
+      const enabled = toggleDemoMode()
+      const status = enabled ? "ENABLED" : "DISABLED"
+      // Force a re-render or notification if needed
+      window.dispatchEvent(new CustomEvent("demo-mode-changed", { detail: { enabled } }))
+      // In a real app we might use a toast here
+      alert(`Demo Mode ${status}`)
+    },
+    keywords: ["demo", "offline", "mock", "presentation"],
+    badge: "Beta",
   },
 ]
 

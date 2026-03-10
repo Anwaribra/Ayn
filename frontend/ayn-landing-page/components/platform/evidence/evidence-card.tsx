@@ -1,4 +1,4 @@
-import { FileText, MoreVertical, ShieldAlert, CheckCircle2, AlertCircle } from "lucide-react"
+import { FileText, MoreVertical, ShieldAlert, CheckCircle2, AlertCircle, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlatformEvidence, Evidence } from "@/types"
 
@@ -51,6 +51,12 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                     </div>
                     {evidence.status}
                 </div>
+                {isSuccess && (
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary animate-pulse">
+                    <Sparkles className="w-3 h-3" />
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Ayn Verified</span>
+                  </div>
+                )}
                 <button className="p-1.5 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
                     <MoreVertical className="w-4 h-4" />
                 </button>

@@ -6,6 +6,8 @@ import { api } from "@/lib/api"
 import useSWR from "swr"
 import { useState, useCallback, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { toast } from "sonner"
 import {
   AlertTriangle,
@@ -24,6 +26,7 @@ import {
   Check,
   ArrowRight,
   Download,
+  ExternalLink,
 } from "lucide-react"
 import { exportToPDF } from "@/lib/pdf-export"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
@@ -62,6 +65,7 @@ export default function GapAnalysisPage() {
 function GapAnalysisContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
+  usePageTitle("Gap Analysis")
   const [activeTab, setActiveTab] = useState<"all" | "urgent">("all")
   const [selectedStandard, setSelectedStandard] = useState("")
   const [generating, setGenerating] = useState(false)
@@ -550,13 +554,27 @@ function GapAnalysisContent() {
                         )}
                         Draft Fix
                       </button>
-                      <button
-                        onClick={() => handleRemediateClick(gap.original)}
-                        className="flex items-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        Link Evidence
-                      </button>
+                      <div className="flex gap-2">
+                        {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
+                          <Link
+                            href={`/platform/evidence?highlight=${gap.original.criterionId}`}
+                            className="flex-1 flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-muted/50 text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-muted transition-all border justify-center"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Evidence
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => handleRemediateClick(gap.original)}
+                          className={cn(
+                            "flex items-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center",
+                            (gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") ? "flex-1" : "w-full"
+                          )}
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          Link
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

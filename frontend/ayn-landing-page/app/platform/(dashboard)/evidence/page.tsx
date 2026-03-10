@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -9,7 +11,7 @@ import { Evidence } from "@/types"
 import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
-import { DocumentEditor } from "@/components/platform/document-editor" // <-- Import Dialog
+import { DocumentEditor } from "@/components/platform/document-editor"
 import { GlassCard } from "@/components/ui/glass-card"
 import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
@@ -54,6 +56,7 @@ export default function EvidencePage() {
 
 function EvidenceContent() {
   const { user } = useAuth()
+  usePageTitle("Evidence Vault")
   const { data: evidenceList, isLoading, error, mutate: localMutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
     () => api.getEvidence()
@@ -160,6 +163,8 @@ function EvidenceContent() {
   
   // Split-view highlight state
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const highlightId = searchParams.get("highlight")
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -387,7 +392,10 @@ function EvidenceContent() {
                 hoverEffect
                 shine
                 onClick={() => setSelectedEvidence(evidence)}
-                className="cursor-pointer group p-0"
+                className={cn(
+                  "cursor-pointer group p-0 relative",
+                  highlightId === evidence.id && "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all"
+                )}
               >
                 <EvidenceCard evidence={evidence} onClick={() => setSelectedEvidence(evidence)} />
               </GlassCard>

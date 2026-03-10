@@ -1,6 +1,7 @@
 // API client for Horus Engine Platform
 
 import { log } from "./logger"
+import { isDemoMode, getMockResponse } from "./demo"
 
 // Use relative /api path so requests go through Next.js rewrites (same-origin, no CORS).
 // The rewrite in next.config.mjs proxies /api/* to the Railway backend.
@@ -26,6 +27,16 @@ class ApiClient {
 
     const fullUrl = `${API_BASE_URL}${endpoint}`
     log(`[API Request] ${options.method || "GET"} ${fullUrl}`)
+
+    if (isDemoMode() && endpoint.startsWith("/ai/")) {
+      log(`[Demo Mode] Intercepting AI request to ${endpoint}`)
+      // Return a mock response for common AI endpoints
+      return {
+        content: getMockResponse(options.body ? JSON.parse(options.body as string).prompt || "" : ""),
+        status: "success",
+        timestamp: Date.now()
+      } as any
+    }
 
     const response = await fetch(fullUrl, {
       ...options,
@@ -681,6 +692,20 @@ class ApiClient {
       files.forEach((file) => {
         formData.append("files", file)
       })
+    }
+
+    if (isDemoMode()) {
+      log(`[Demo Mode] Intercepting chat stream`)
+      const mockText = getMockResponse(message)
+      if (onChunk) onChunk("__THINKING__:Analyzing platform state...\n")
+      await new Promise(r => setTimeout(r, 800))
+      
+      const words = mockText.split(" ")
+      for (let i = 0; i < words.length; i++) {
+        if (onChunk) onChunk(words[i] + (i === words.length - 1 ? "" : " "))
+        await new Promise(r => setTimeout(r, 20))
+      }
+      return mockText
     }
 
     const response = await fetch(`${API_BASE_URL}/horus/chat/stream`, {

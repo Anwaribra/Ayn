@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
+import { usePageTitle } from "@/hooks/use-page-title"
 import Link from "next/link"
 import {
   ChevronRight,
@@ -38,6 +39,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user } = useAuth()
+  usePageTitle("Dashboard")
 
   const { data: metrics, isLoading, error, mutate } = useSWR<DashboardMetrics>(
     user ? [`dashboard-metrics`, user.id] : null,

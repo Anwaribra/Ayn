@@ -76,6 +76,16 @@ const GoogleIcon = (props: React.ComponentProps<"svg">) => (
     </svg>
 );
 
+// Microsoft Icon
+const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" {...props}>
+    <path fill="#f25022" d="M1 1h9v9H1z"/>
+    <path fill="#00a4ef" d="M1 11h9v9H1z"/>
+    <path fill="#7fba00" d="M11 1h9v9h-9z"/>
+    <path fill="#ffb900" d="M11 11h9v9h-9z"/>
+  </svg>
+);
+
 
 // Static benefit cards data for right panel
 const benefits = [
@@ -156,11 +166,18 @@ function SignInForm(props: {
                 </div>
             )}
 
-            {/* Google OAuth — First for lowest friction */}
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 transition-colors">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continue with Google
-            </Button>
+            <div className="flex flex-col gap-3">
+                {/* Google OAuth */}
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
+                    <GoogleIcon className="mr-2 h-4 w-4" />
+                    Continue with Google
+                </Button>
+                {/* Microsoft OAuth - currently using same handler as placeholder */}
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
+                    <MicrosoftIcon className="mr-2 h-4 w-4" />
+                    Continue with Microsoft
+                </Button>
+            </div>
 
             <div className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
@@ -170,16 +187,14 @@ function SignInForm(props: {
             </div>
 
             {/* Email / Password fields */}
-            <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label htmlFor={emailId} className="text-xs text-foreground/80">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
+            <div className="grid gap-4 mt-2">
+                <div className="relative group">
+                    <Input id={emailId} name="email" type="email" required placeholder=" " className="peer h-14 rounded-xl border border-black/10 bg-white text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
                 </div>
-                <div className="grid gap-2">
-                    <Label className="text-xs text-foreground/80">Password</Label>
-                    <div className="relative">
-                       <Input name="password" required placeholder="Password" type="password" className="pe-10 h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
-                    </div>
+                <div className="relative group">
+                    <PasswordInput name="password" required placeholder=" " className="peer h-14 rounded-xl border border-black/10 bg-white text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                 </div>
                 <Button type="submit" className="h-11 rounded-lg bg-[#111] hover:bg-black text-white font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
@@ -256,11 +271,18 @@ function SignUpForm(props: {
                 </div>
             )}
 
-            {/* Google OAuth — First */}
-            <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 transition-colors">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continue with Google
-            </Button>
+            <div className="flex flex-col gap-3">
+                {/* Google OAuth */}
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
+                    <GoogleIcon className="mr-2 h-4 w-4" />
+                    Continue with Google
+                </Button>
+                {/* Microsoft OAuth - currently using same handler as placeholder */}
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
+                    <MicrosoftIcon className="mr-2 h-4 w-4" />
+                    Continue with Microsoft
+                </Button>
+            </div>
 
             <div className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
@@ -269,29 +291,28 @@ function SignUpForm(props: {
                 <span className="relative z-10 px-3 text-muted-foreground bg-[#f5f5f3] uppercase tracking-widest text-[10px]">Or create with email</span>
             </div>
 
-            <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label htmlFor={nameId} className="text-xs text-foreground/80">Full Name</Label>
-                    <Input id={nameId} name="name" type="text" required placeholder="Full Name" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
+            <div className="grid gap-4 mt-2">
+                <div className="relative group">
+                    <Input id={nameId} name="name" type="text" required placeholder=" " className="peer h-14 rounded-xl border border-black/10 bg-white text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={nameId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Full Name</Label>
                 </div>
-                <div className="grid gap-2">
-                    <Label htmlFor={emailId} className="text-xs text-foreground/80">Email</Label>
-                    <Input id={emailId} name="email" type="email" required placeholder="you@example.com" className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary" aria-invalid={!!props.err} disabled={props.loading} />
+                <div className="relative group">
+                    <Input id={emailId} name="email" type="email" required placeholder=" " className="peer h-14 rounded-xl border border-black/10 bg-white text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
                 </div>
-                <div className="grid gap-2">
-                    <Label className="text-xs text-foreground/80">Password</Label>
-                    <Input
+                <div className="relative group">
+                    <PasswordInput
                         name="password"
-                        type="password"
                         required
-                        placeholder="Password"
+                        placeholder=" "
                         minLength={8}
-                        className="h-11 rounded-lg border-black/10 bg-white text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="peer h-14 rounded-xl border border-black/10 bg-white text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all"
                         aria-invalid={!!props.err}
                         disabled={props.loading}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
+                    <Label className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                     {password.length > 0 && (
                         <div className="flex flex-col gap-1 mt-1">
                             <div className="flex items-center gap-2 text-xs">
@@ -469,9 +490,9 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex bg-[#050810]">
+        <div className="min-h-screen w-full flex bg-[#f5f5f3]">
             {/* Left — Form (LIGHT THEME) */}
-            <div className="flex w-full items-center justify-center p-6 md:w-1/2 md:p-[var(--spacing-content)] overflow-y-auto bg-[#f5f5f3] text-foreground">
+            <div className="flex w-full items-center justify-center p-6 md:w-1/2 overflow-y-auto">
                 <div className="w-full max-w-[400px]">
                     {isSignIn ? (
                         <SignInForm

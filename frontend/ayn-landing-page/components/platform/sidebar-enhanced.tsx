@@ -121,8 +121,17 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
         />
 
         {!isCollapsed && (
-          <span className="truncate font-medium tracking-wide">
+          <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
             {item.label}
+            {item.id === "horus-ai" && (
+              <span className="flex items-center">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+                </span>
+                <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]">New</span>
+              </span>
+            )}
           </span>
         )}
       </Link>
@@ -132,8 +141,14 @@ export default function PlatformSidebar({ open, onToggle, notificationCount }: S
       return (
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10} className="text-xs font-medium">
+          <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
             {item.label}
+            {item.id === "horus-ai" && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+              </span>
+            )}
           </TooltipContent>
         </Tooltip>
       )

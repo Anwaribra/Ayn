@@ -114,7 +114,7 @@ function CommandItem({
 
       <div className="flex items-center gap-2 shrink-0">
         {showShortcut && command.shortcut && (
-          <kbd className="hidden sm:flex h-6 items-center gap-0.5 rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">
+          <kbd className="hidden sm:flex h-6 items-center gap-0.5 rounded border border-black/10 dark:border-white/10 bg-white dark:bg-black/40 px-1.5 text-[10px] font-bold text-muted-foreground shadow-sm drop-shadow-sm">
             {command.shortcut.split("").map((key, i) => (
               <span key={i}>{key}</span>
             ))}
@@ -481,7 +481,7 @@ export function CommandPalette() {
                     <X className="h-3 w-3" />
                   </button>
                 )}
-                <kbd className="hidden sm:flex h-7 items-center gap-0.5 rounded border border-border bg-muted px-2 text-[11px] font-medium text-muted-foreground">
+                <kbd className="hidden sm:flex h-7 items-center gap-0.5 rounded-md border border-black/10 dark:border-white/10 bg-white dark:bg-black/40 px-2 text-[11px] font-bold text-muted-foreground shadow-sm drop-shadow-sm">
                   <Command className="h-3 w-3" />
                   <span>K</span>
                 </kbd>
@@ -538,7 +538,7 @@ export function CommandPaletteTrigger() {
     >
       <Search className="h-4 w-4" />
       <span className="hidden lg:inline">Search...</span>
-      <kbd className="hidden lg:flex h-5 items-center gap-0.5 rounded border border-border bg-background px-1.5 text-[10px] font-medium">
+      <kbd className="hidden lg:flex h-5 items-center gap-0.5 rounded shadow-sm drop-shadow-sm border border-black/10 dark:border-white/10 bg-white dark:bg-black/40 px-1.5 text-[10px] font-bold">
         <Command className="h-2.5 w-2.5" />
         <span>K</span>
       </kbd>

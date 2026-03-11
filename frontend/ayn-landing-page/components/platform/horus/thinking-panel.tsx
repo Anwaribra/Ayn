@@ -13,6 +13,34 @@ export type ReasoningState = {
   tempUserMessage: string | null
 }
 
+const FILE_PATTERN = /([a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv))/i;
+
+function renderLinkedText(text: string) {
+  if (!text) return null;
+  
+  // Splitting with a capturing group will interleave the captured filename with the rest of the text.
+  const parts = text.split(/([a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv))/gi);
+  
+  return parts.map((part, i) => {
+    // Check if this part matches our file pattern
+    if (/^[a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv)$/i.test(part)) {
+      return (
+        <a
+          key={i}
+          href={`/platform/evidence?highlight=${encodeURIComponent(part.trim())}`}
+          className="text-primary hover:text-primary/80 hover:underline font-bold transition-colors cursor-pointer"
+          title={`Open ${part.trim()} in Evidence Vault`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 interface ThinkingPanelProps {
   reasoning: ReasoningState | null
   status: string
@@ -101,7 +129,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
                         : "text-muted-foreground/40"
                     )}
                   >
-                    {step.text}
+                    {renderLinkedText(step.text)}
                   </span>
                 </motion.div>
               ))}

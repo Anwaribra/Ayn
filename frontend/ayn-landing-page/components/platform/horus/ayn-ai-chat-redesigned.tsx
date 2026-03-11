@@ -552,6 +552,12 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
+        {/* Ambient Thinking Glow */}
+        {status === "generating" && (
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
+            <div className="w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] bg-primary/10 rounded-full blur-[120px] animate-pulse opacity-60" />
+          </div>
+        )}
         <div
           className={cn(
             "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",

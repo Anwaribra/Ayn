@@ -1,8 +1,10 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Brain, Check, X } from "lucide-react"
+import { Brain, Check, X, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useEffect, useRef } from "react"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 export type ReasoningState = {
   steps: { text: string; status: "pending" | "active" | "done" }[]
@@ -25,16 +27,33 @@ function renderLinkedText(text: string) {
     // Check if this part matches our file pattern
     if (/^[a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv)$/i.test(part)) {
       return (
-        <a
-          key={i}
-          href={`/platform/evidence?highlight=${encodeURIComponent(part.trim())}`}
-          className="text-primary hover:text-primary/80 hover:underline font-bold transition-colors cursor-pointer"
-          title={`Open ${part.trim()} in Evidence Vault`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {part}
-        </a>
+        <HoverCard key={i}>
+          <HoverCardTrigger asChild>
+            <a
+              href={`/platform/evidence?highlight=${encodeURIComponent(part.trim())}`}
+              className="text-primary hover:text-primary/80 hover:underline font-bold transition-colors cursor-pointer"
+              title={`Open ${part.trim()} in Evidence Vault`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {part}
+            </a>
+          </HoverCardTrigger>
+          <HoverCardContent side="top" align="start" className="w-64 z-[60] bg-[var(--surface-modal)]/95 backdrop-blur-md border-[var(--border-subtle)] shadow-xl p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
+             <div className="flex items-start gap-3">
+               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                 <FileText className="w-4 h-4 text-primary" />
+               </div>
+               <div>
+                  <h4 className="text-xs font-bold text-foreground line-clamp-2">{part.trim()}</h4>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1 tracking-wider">Known Evidence</p>
+               </div>
+             </div>
+             <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                <p className="text-xs text-muted-foreground">Click to open this file natively inside the platform Evidence Vault Split-View.</p>
+             </div>
+          </HoverCardContent>
+        </HoverCard>
       );
     }
     return <span key={i}>{part}</span>;
@@ -50,6 +69,13 @@ interface ThinkingPanelProps {
 export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps) {
   // Show if reasoning exists and has steps
   const isOpen = reasoning !== null && reasoning.steps.length > 0 && reasoning.isExpanded
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [reasoning?.steps?.length, reasoning?.isExpanded])
 
   return (
     <AnimatePresence>
@@ -94,7 +120,10 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
           </div>
 
           {/* Steps */}
-          <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 custom-scrollbar">
+          <div 
+            className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 custom-scrollbar"
+            style={{ maskImage: 'linear-gradient(to bottom, transparent, black 5%, black 95%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 5%, black 95%, transparent 100%)' }}
+          >
             {/* The line connecting the dots */}
             <div className="absolute left-[33px] top-8 bottom-10 w-[2px] bg-[var(--border-subtle)]" />
             
@@ -133,6 +162,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
                   </span>
                 </motion.div>
               ))}
+              <div ref={scrollRef} className="h-4" />
             </div>
           </div>
         </motion.div>

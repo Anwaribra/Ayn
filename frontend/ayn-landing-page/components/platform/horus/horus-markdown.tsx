@@ -2,6 +2,8 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { motion } from "framer-motion"
 
 export function HorusMarkdown({
     content,
@@ -15,11 +17,11 @@ export function HorusMarkdown({
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    h2: ({ children }: any) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
-                    h3: ({ children }: any) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
-                    p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</p>,
-                    ul: ({ children }: any) => <ul className="mb-3 space-y-1 text-muted-foreground">{children}</ul>,
-                    li: ({ children }: any) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
+                    h2: ({ children }: any) => <motion.h2 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</motion.h2>,
+                    h3: ({ children }: any) => <motion.h3 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</motion.h3>,
+                    p: ({ children }: any) => <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</motion.p>,
+                    ul: ({ children }: any) => <motion.ul initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mb-3 space-y-1 text-muted-foreground">{children}</motion.ul>,
+                    li: ({ children }: any) => <motion.li initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="pl-1"><span className="mr-2">•</span>{children}</motion.li>,
                     code: ({ inline, children }: any) =>
                         inline ? (
                             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border">{children}</code>
@@ -60,10 +62,41 @@ export function HorusMarkdown({
                                 </div>
                             )
                         }
+                        
+                        // Check if it's a file link for the Evidence Vault
+                        if (/^[a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv)$/i.test(children as string)) {
+                           return (
+                                <HoverCard>
+                                  <HoverCardTrigger asChild>
+                                    <a
+                                        href={`/platform/evidence?highlight=${encodeURIComponent((children as string).trim())}`}
+                                        className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all cursor-pointer"
+                                    >
+                                        {children}
+                                    </a>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent side="top" align="start" className="w-64 z-[60] bg-[var(--surface-modal)]/95 backdrop-blur-md border-[var(--border-subtle)] shadow-xl p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
+                                     <div className="flex items-start gap-3">
+                                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                         <FileText className="w-4 h-4 text-primary" />
+                                       </div>
+                                       <div>
+                                          <h4 className="text-xs font-bold text-foreground line-clamp-2">{children as string}</h4>
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1 tracking-wider">Known Evidence</p>
+                                       </div>
+                                     </div>
+                                     <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                                        <p className="text-xs text-muted-foreground">Click to open this file natively inside the platform Evidence Vault Split-View.</p>
+                                     </div>
+                                  </HoverCardContent>
+                                </HoverCard>
+                           )
+                        }
+
                         return (
                             <a
                                 href={href}
-                                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all"
+                                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all cursor-pointer"
                             >
                                 {children}
                             </a>

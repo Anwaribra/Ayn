@@ -244,12 +244,12 @@ async def generate_remediation_report(user_id: str, institution_id: Optional[str
             for i, g in enumerate(gaps)
         )
 
-        prompt = f"""You are a compliance remediation specialist for educational institutions.
+        prompt = f"""You are Horus, a Senior Quality Assurance Auditor & Compliance Expert.
 
 Below is a list of compliance gaps. For EACH gap, write exactly ONE concise actionable sentence 
 (max 20 words) that tells the institution what specific action to take immediately.
 
-Be direct and prescriptive. Do NOT repeat the gap description. 
+Be direct, prescriptive, and maintain a professional, surgical precision (no fluff). Do NOT repeat the gap description. 
 Start each with an action verb (e.g. "Develop", "Implement", "Assign", "Document", "Create").
 
 Output ONLY a numbered list matching the input exactly:

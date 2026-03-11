@@ -38,8 +38,9 @@ Return your response as valid JSON with this exact structure (no markdown fences
       "status": "<one of: aligned, partially_aligned, needs_improvement, no_evidence>",
       "currentState": "<what the institution currently has for this criterion based on evidence>",
       "gap": "<what is missing or where alignment is weak>",
-      "recommendation": "<specific, actionable insight for improvement>",
-      "priority": "<one of: high, medium, low>"
+      "evidenceCited": "<explicitly name the documents from the Evidence Vault that support this claim>",
+      "recommendation": "<specific, actionable insight for improvement (Remediation Roadmap step)>",
+      "priority": "<one of: High, Medium, Low>"
     }}
   ],
   "recommendations": [
@@ -54,9 +55,11 @@ Rules:
 - Status "partially_aligned" = some evidence exists but incomplete
 - Status "needs_improvement" = evidence exists but doesn't meet the criterion
 - Status "no_evidence" = no evidence linked for this criterion
+- EVIDENCE-FIRST: You cannot make a claim without citing a specific document from the EVIDENCE PROVIDED. Fill this in "evidenceCited".
 - Overall score should be calculated as: (aligned*100 + partially_aligned*50) / total_criteria
-- Insights should be specific and actionable, referencing framework best practices
-- Return ONLY the JSON, no additional text before or after
+- Priority acts as Severity Mapping (High/Medium/Low).
+- Insights should be specific and actionable, referencing framework best practices.
+- Return ONLY the JSON, no additional text before or after.
 """
 
 
@@ -128,9 +131,9 @@ def _parse_gap_response(response_text: str) -> dict:
         status = gap.get("status", "no_evidence")
         if status not in ("aligned", "partially_aligned", "needs_improvement", "no_evidence"):
             status = "no_evidence"
-        priority = gap.get("priority", "medium")
-        if priority not in ("high", "medium", "low"):
-            priority = "medium"
+        priority = gap.get("priority", "Medium").title()
+        if priority not in ("High", "Medium", "Low"):
+            priority = "Medium"
 
         gaps.append({
             "criterionId": gap.get("criterionId", ""),
@@ -138,6 +141,7 @@ def _parse_gap_response(response_text: str) -> dict:
             "status": status,
             "currentState": gap.get("currentState", ""),
             "gap": gap.get("gap", ""),
+            "evidenceCited": gap.get("evidenceCited", ""),
             "recommendation": gap.get("recommendation", ""),
             "priority": priority,
         })

@@ -36,15 +36,7 @@ import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
-
-type ReasoningState = {
-  steps: { text: string; status: "pending" | "active" | "done" }[]
-  startTime: number
-  duration: number | null
-  isExpanded: boolean
-  isComplete: boolean
-  tempUserMessage: string | null
-}
+import { ThinkingPanel, ReasoningState } from "./thinking-panel"
 
 // Real thinking steps are now driven by __THINKING__: events from the backend.
 // This function is kept as a FALLBACK for when no thinking events arrive within 500ms
@@ -62,95 +54,7 @@ function getReasoningSteps(text: string, hasFiles: boolean) {
   return steps
 }
 
-function ReasoningBlock({
-  reasoning,
-  setReasoning,
-}: {
-  reasoning: ReasoningState
-  setReasoning: React.Dispatch<React.SetStateAction<ReasoningState | null>>
-}) {
-  if (!reasoning) return null
 
-  return (
-    <div className="w-full max-w-3xl bg-[var(--surface)]/65 border border-[var(--border-subtle)] rounded-2xl overflow-hidden shadow-sm transition-all duration-300 mb-4">
-      <div
-        className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-[var(--surface-modal)]/80 transition-colors"
-        onClick={() =>
-          setReasoning((prev) => (prev ? { ...prev, isExpanded: !prev.isExpanded } : prev))
-        }
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          {reasoning.isComplete ? (
-            <div className="relative flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-500/10 shrink-0">
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-          ) : (
-            <div className="relative flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse">
-              <Brain className="w-3.5 h-3.5 text-primary" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] tracking-tight truncate">
-              {reasoning.isComplete
-                ? `Analyzed in ${reasoning.duration?.toFixed(1)} seconds`
-                : "Thinking Process"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {reasoning.steps.length} step{reasoning.steps.length === 1 ? "" : "s"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground mr-1">
-            {reasoning.isExpanded ? "Hide Reasoning" : "View Reasoning"}
-          </span>
-          {reasoning.isExpanded ? (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          )}
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "px-5 pt-2 space-y-3.5 overflow-hidden transition-all duration-300 ease-out",
-          reasoning.isExpanded ? "max-h-[520px] pb-5 opacity-100" : "max-h-0 pb-0 opacity-0 pointer-events-none"
-        )}
-      >
-        {reasoning.steps.map((step, idx) => (
-          <div
-            key={idx}
-            className="flex items-center gap-4 relative before:absolute before:left-[7px] before:top-6 before:bottom-[-16px] before:w-px before:bg-[var(--border-subtle)] last:before:hidden animate-in fade-in slide-in-from-bottom-1 duration-300"
-            style={{ animationDelay: `${Math.min(idx * 40, 220)}ms` }}
-          >
-              <div className="relative z-10 w-4 h-4 flex items-center justify-center bg-[var(--surface)]">
-                {step.status === "done" ? (
-                  <Check className="w-4 h-4 text-emerald-500 animate-in zoom-in-75 duration-200" />
-                ) : step.status === "active" ? (
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                ) : (
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                )}
-              </div>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  step.status === "active"
-                    ? "text-[var(--text-primary)] animate-pulse"
-                    : step.status === "done"
-                    ? "text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)]"
-                )}
-              >
-                {step.text}
-              </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
@@ -560,6 +464,13 @@ export default function HorusAIChat() {
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
+      
+      {/* Side-Panel for Agent Thinking (from Constitution) */}
+      <ThinkingPanel 
+        reasoning={reasoning} 
+        status={status} 
+        onClose={() => setReasoning(prev => prev ? { ...prev, isExpanded: false } : null)} 
+      />
       {/* New + History + Export as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         {/* M8: Export chat — only visible when conversation has messages */}
@@ -719,12 +630,7 @@ export default function HorusAIChat() {
                             <span className="text-sm font-bold text-foreground">Horus</span>
                           </div>
 
-                          {/* Reasoning lives inside the same latest assistant bubble as the response */}
-                          {msg.role === "assistant" &&
-                            msg.id === messages.filter((m) => m.role === "assistant").pop()?.id &&
-                            reasoning && (
-                              <ReasoningBlock reasoning={reasoning} setReasoning={setReasoning} />
-                            )}
+                          {/* The old inline reasoning block has been removed in favor of ThinkingPanel side overlay */}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (

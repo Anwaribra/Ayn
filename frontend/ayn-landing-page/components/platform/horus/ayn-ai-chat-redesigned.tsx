@@ -9,17 +9,12 @@ import { cn } from "@/lib/utils"
 import {
   FileText,
   X,
-  Loader2,
   MessageSquare,
   Trash2,
   History,
   PlusCircle,
   Search,
-  ChevronDown,
-  ChevronRight,
   Check,
-  Brain,
-  ArrowRight,
   ArrowUpRight,
   ThumbsUp,
   ThumbsDown,
@@ -27,17 +22,18 @@ import {
   Download,
   ListChecks,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus } from "@/lib/horus-context"
-import { AiLoader } from "@/components/ui/ai-loader"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
 import { ThinkingPanel, ReasoningState } from "./thinking-panel"
+import { AgentOrb, MiniOrb } from "./agent-orb"
 
 // Real thinking steps are now driven by __THINKING__: events from the backend.
 // This function is kept as a FALLBACK for when no thinking events arrive within 500ms
@@ -101,7 +97,6 @@ export default function HorusAIChat() {
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
-  const [inputValue, setInputValue] = useState("")
   // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
   const [feedbackPersisted, setFeedbackPersisted] = useState<Set<string>>(new Set())
@@ -159,6 +154,7 @@ export default function HorusAIChat() {
         fallbackTimerRef.current = null
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Drive reasoning UI from real backend thinking events.
@@ -343,6 +339,7 @@ export default function HorusAIChat() {
 
     if (files.length + attachedFiles.length > 5) {
       toast.error("Maximum 5 files can be attached at once.")
+      return
     }
 
     // Validate files
@@ -521,7 +518,7 @@ export default function HorusAIChat() {
                         </p>
                         <button
                           onClick={(e) => deleteSession(session.id, e)}
-                          className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-2 min-h-[36px] min-w-[36px]"
+                          className="text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-2 min-h-[36px] min-w-[36px]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -551,14 +548,43 @@ export default function HorusAIChat() {
         </Sheet>
       </div>
 
+      {/* Contextual Immersive Blur — draws focus to active conversation */}
+      <AnimatePresence>
+        {status === "generating" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[5] pointer-events-none"
+            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
-        {/* Ambient Thinking Glow */}
-        {status === "generating" && (
-          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center">
-            <div className="w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] bg-primary/10 rounded-full blur-[120px] animate-pulse opacity-60" />
-          </div>
-        )}
+        {/* Ambient Agent Glow — morphing radial behind content */}
+        <AnimatePresence>
+          {status === "generating" && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.6 }}
+              className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center"
+            >
+              <div
+                className="w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full"
+                style={{
+                  background: "radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(56,189,248,0.05) 40%, transparent 65%)",
+                  animation: "orbMorph 8s ease-in-out infinite, orbBreathe 3s ease-in-out infinite",
+                  filter: "blur(60px)",
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div
           className={cn(
             "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
@@ -567,45 +593,58 @@ export default function HorusAIChat() {
         >
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-10 pb-4")}>
             {isEmpty ? (
-              // M3: Example prompts empty state — replaces the spinning AI loader
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
-                <div className="flex flex-col items-center justify-center gap-6 md:gap-7 w-full min-h-0 max-h-full animate-in fade-in zoom-in-95 py-2">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="lg:hidden">
-                      <AiLoader size={200} text="Horus AI" />
+                <div className="flex flex-col items-center justify-center gap-8 md:gap-10 w-full min-h-0 max-h-full py-2">
+                  {/* The Agent Orb — hero visualization */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex flex-col items-center gap-5"
+                  >
+                    <AgentOrb state="idle" size="hero" />
+                    <div className="flex flex-col items-center gap-1.5 mt-2">
+                      <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Horus AI</h2>
+                      <p className="text-sm text-muted-foreground/80 tracking-wide">
+                        Your compliance intelligence agent
+                      </p>
                     </div>
-                    <div className="hidden lg:block scale-90 2xl:scale-100">
-                      <AiLoader size={300} text="Horus AI" />
-                    </div>
-                    <p className="text-sm md:text-base text-muted-foreground/90 mt-1 tracking-wide">
-                      Your compliance intelligence assistant
-                    </p>
-                  </div>
-                  <div className="w-full max-w-[780px] flex flex-wrap items-center justify-center gap-x-3 gap-y-3">
+                  </motion.div>
+
+                  {/* Quick prompts */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full max-w-[780px] flex flex-wrap items-center justify-center gap-x-3 gap-y-3"
+                  >
                     {[
                       { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
                       { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
                       { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
                       { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                    ].map((item, idx) => (
+                    ].map((item) => (
                       <button
                         key={item.prompt}
-                        onClick={() => {
-                          setInputValue(item.prompt)
-                          handleSendMessage(item.prompt)
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-full text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)]/80 bg-[var(--surface)]/35 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/35 transition-all duration-200 animate-in fade-in slide-in-from-bottom-1"
-                        style={{ animationDelay: `${Math.min(idx * 70, 240)}ms` }}
+                        onClick={() => handleSendMessage(item.prompt)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-full text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)]/80 bg-[var(--surface)]/35 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/35 transition-all duration-200"
                       >
                         <span>{item.label}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
                       </button>
                     ))}
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             ) : (
               <>
+                {messages.length > 30 && (
+                  <div className="flex justify-center py-3">
+                    <span className="text-[11px] text-muted-foreground/60 bg-muted/50 px-3 py-1 rounded-full">
+                      Showing latest 30 of {messages.length} messages
+                    </span>
+                  </div>
+                )}
                 {messages.slice(-30).filter(msg => {
                   if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false;
                   return true;
@@ -620,6 +659,8 @@ export default function HorusAIChat() {
                     )
                   }
 
+                  const isStreamingThis = status === "generating" && msg.role === "assistant" && msg.id === lastAssistantMsgId
+
                   return (
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
@@ -631,10 +672,17 @@ export default function HorusAIChat() {
                       ) : (
                         <div className="w-full py-4 space-y-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-primary/10 text-primary flex-shrink-0">
-                              <Brain className="w-3.5 h-3.5" />
-                            </div>
+                            <MiniOrb
+                              state={status === "generating" && msg.id === lastAssistantMsgId ? status : "idle"}
+                            />
                             <span className="text-sm font-bold text-foreground">Horus</span>
+                            {/* Active action micro-badge — shows current thinking step inline */}
+                            {status === "generating" && msg.id === lastAssistantMsgId && reasoning && !reasoning.isComplete && (
+                              <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary/80 text-[10px] font-semibold tracking-wide">
+                                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                {reasoning.steps.find(s => s.status === "active")?.text || "Thinking..."}
+                              </span>
+                            )}
                           </div>
 
                           {/* The old inline reasoning block has been removed in favor of ThinkingPanel side overlay */}
@@ -670,13 +718,25 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {/* Only show text content if there's something meaningful to show */}
                           {msg.content && (
-                            <div className="text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent animate-in fade-in duration-200">
+                            <div
+                              className={cn(
+                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent",
+                                isStreamingThis && "horus-streaming-active"
+                              )}
+                            >
                               <HorusMarkdown content={msg.content} onAction={handleAction} />
-                              {/* M4: blinking caret during live streaming of THIS message */}
-                              {status === "generating" && msg.id === messages.filter(m => m.role === "assistant").pop()?.id && (
-                                <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-primary align-middle animate-pulse rounded-full" />
+                              {isStreamingThis && (
+                                <span className="inline-flex items-center gap-0.5 ml-1 align-middle">
+                                  <span
+                                    className="inline-block w-[2.5px] h-[1.1em] bg-primary rounded-full"
+                                    style={{ animation: "orbBreathe 1.2s ease-in-out infinite" }}
+                                  />
+                                  <span
+                                    className="inline-block w-[2px] h-[0.8em] bg-primary/50 rounded-full"
+                                    style={{ animation: "orbBreathe 1.2s ease-in-out infinite 0.2s" }}
+                                  />
+                                </span>
                               )}
                             </div>
                           )}
@@ -758,14 +818,16 @@ export default function HorusAIChat() {
                   )
                 })}
 
-                {/* Typing indicator */}
-                {status !== "idle" && (!reasoning || reasoning.isComplete) && status === "searching" && (
+                {/* Searching indicator */}
+                {status === "searching" && (!reasoning || reasoning.isComplete) && (
                   <div className="w-full py-4 animate-in fade-in">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-6 h-6 rounded flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-bold flex-shrink-0">
-                         <Loader2 className="w-3 h-3 animate-spin" />
-                      </div>
-                      <span className="text-sm font-bold text-muted-foreground">System</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <MiniOrb state="searching" />
+                      <span className="text-sm font-bold text-foreground">Horus</span>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary/80 text-[10px] font-semibold">
+                        <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                        Searching
+                      </span>
                     </div>
                     <div className="text-muted-foreground text-[14px] flex items-center gap-2 font-medium">
                       <Search className="w-4 h-4" /> Reading knowledge base…
@@ -779,7 +841,7 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 flex-shrink-0 px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/40 via-background/12 to-transparent">
+        <div className="sticky bottom-0 flex-shrink-0 px-3 sm:px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/60 via-background/20 to-transparent">
           <div className="w-full max-w-[760px] mx-auto space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -793,10 +855,9 @@ export default function HorusAIChat() {
               </div>
             )}
             
-            <div className="-mb-5 sm:-mb-3">
+            <div>
               <AIChatInput
                 onSend={(message) => {
-                  setInputValue("")
                   handleSendMessage(message, attachedFiles.map((af) => af.file));
                 }}
                 onStop={() => {
@@ -807,7 +868,6 @@ export default function HorusAIChat() {
                     target: { files: [file] },
                   } as unknown as React.ChangeEvent<HTMLInputElement>);
                 }}
-                onChange={setInputValue}
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}

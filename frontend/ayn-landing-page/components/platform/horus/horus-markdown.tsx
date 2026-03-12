@@ -1,9 +1,7 @@
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { motion } from "framer-motion"
 
 export function HorusMarkdown({
     content,
@@ -17,19 +15,23 @@ export function HorusMarkdown({
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    h2: ({ children }: any) => <motion.h2 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</motion.h2>,
-                    h3: ({ children }: any) => <motion.h3 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</motion.h3>,
-                    p: ({ children }: any) => <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</motion.p>,
-                    ul: ({ children }: any) => <motion.ul initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="mb-3 space-y-1 text-muted-foreground">{children}</motion.ul>,
-                    li: ({ children }: any) => <motion.li initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="pl-1"><span className="mr-2">•</span>{children}</motion.li>,
-                    code: ({ inline, children }: any) =>
-                        inline ? (
-                            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border">{children}</code>
-                        ) : (
-                            <code className="block rounded-xl glass-layer-2 p-4 font-mono text-[12px] text-muted-foreground overflow-x-auto w-full border border-glass-border">
+                    h2: ({ children }: any) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
+                    h3: ({ children }: any) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
+                    p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</p>,
+                    ul: ({ children }: any) => <ul className="mb-3 space-y-1 text-muted-foreground">{children}</ul>,
+                    li: ({ children }: any) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
+                    code: ({ className, children, ...props }: any) => {
+                        const isBlock = /language-/.test(className || "")
+                        return isBlock ? (
+                            <code className="block rounded-xl glass-layer-2 p-4 font-mono text-[12px] text-muted-foreground overflow-x-auto w-full border border-glass-border" {...props}>
                                 {children}
                             </code>
-                        ),
+                        ) : (
+                            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border" {...props}>
+                                {children}
+                            </code>
+                        )
+                    },
                     blockquote: ({ children }: any) => (
                         <blockquote className="border-l-4 border-primary pl-4 py-1 my-4 bg-primary/5 rounded-r-lg italic text-muted-foreground">
                             {children}
@@ -63,7 +65,6 @@ export function HorusMarkdown({
                             )
                         }
                         
-                        // Check if it's a file link for the Evidence Vault
                         if (/^[a-zA-Z0-9_\-\s\.]+\.(?:pdf|docx|doc|txt|png|jpg|jpeg|csv)$/i.test(children as string)) {
                            return (
                                 <HoverCard>

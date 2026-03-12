@@ -49,39 +49,62 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         // isInitialized.current = true // Removed as per instruction
     }, [])
 
-    // 2. Persistent SSE Event Listener
+    // 2. Persistent SSE Event Listener with reconnection
     useEffect(() => {
         if (!user) return
 
-        // Establish SSE Connection for real-time events
-        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-        const sseUrl = `/api/horus/events${token ? `?token=${token}` : ''}`;
-        const eventSource = new EventSource(sseUrl)
+        let eventSource: EventSource | null = null
+        let retryCount = 0
+        let retryTimer: ReturnType<typeof setTimeout> | null = null
+        const MAX_RETRIES = 10
 
-        eventSource.onmessage = (e) => {
-            try {
-                const event = JSON.parse(e.data)
-                if (event.type === "activity") {
-                    const sysMsg: Message = {
-                        id: `sys-${event.data.id}-${Date.now()}`,
-                        role: "system",
-                        content: `Event: ${event.data.title}. ${event.data.description || ""}`,
-                        timestamp: Date.now()
+        function connect() {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+            const sseUrl = `/api/horus/events${token ? `?token=${token}` : ''}`;
+            eventSource = new EventSource(sseUrl)
+
+            eventSource.onopen = () => {
+                retryCount = 0
+            }
+
+            eventSource.onmessage = (e) => {
+                try {
+                    const event = JSON.parse(e.data)
+                    if (event.type === "activity") {
+                        const sysMsg: Message = {
+                            id: `sys-${event.data.id}-${Date.now()}`,
+                            role: "system",
+                            content: `Event: ${event.data.title}. ${event.data.description || ""}`,
+                            timestamp: Date.now()
+                        }
+                        setMessages(prev => [...prev, sysMsg])
+
+                        toast(event.data.title, {
+                            description: event.data.description,
+                            icon: "🧠"
+                        })
                     }
-                    setMessages(prev => [...prev, sysMsg])
-
-                    // Background Notification
-                    toast(event.data.title, {
-                        description: event.data.description,
-                        icon: "🧠"
-                    })
+                } catch (err) {
+                    console.error("Global Horus SSE Error:", err)
                 }
-            } catch (err) {
-                console.error("Global Horus SSE Error:", err)
+            }
+
+            eventSource.onerror = () => {
+                eventSource?.close()
+                if (retryCount < MAX_RETRIES) {
+                    const delay = Math.min(1000 * Math.pow(2, retryCount), 30000)
+                    retryCount++
+                    retryTimer = setTimeout(connect, delay)
+                }
             }
         }
 
-        return () => eventSource.close()
+        connect()
+
+        return () => {
+            eventSource?.close()
+            if (retryTimer) clearTimeout(retryTimer)
+        }
     }, [user])
 
     // 3. Cleanup effect to stop phantom streams on unmount
@@ -189,8 +212,12 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             )
         } catch (err: any) {
             if (err.name !== 'AbortError') {
-                toast.error("Horus connection interrupted.")
-                setMessages(prev => prev.filter(m => m.id !== assistantMsgId))
+                toast.error("Horus connection interrupted. Please try again.")
+                setMessages(prev => prev.map(m =>
+                    m.id === assistantMsgId
+                        ? { ...m, content: m.content || "Connection was interrupted. Please try sending your message again." }
+                        : m
+                ))
             }
         } finally {
             setStatus("idle")

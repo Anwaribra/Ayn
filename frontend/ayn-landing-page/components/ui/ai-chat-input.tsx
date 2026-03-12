@@ -29,10 +29,10 @@ export const AIChatInput = ({
     onSend,
     onStop,
     onFileAttach,
+    onChange,
     isLoading = false,
     disabled = false,
     hasFiles = false,
-    onChange,
 }: AIChatInputProps) => {
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const [showPlaceholder, setShowPlaceholder] = useState(true);
@@ -142,9 +142,9 @@ export const AIChatInput = ({
                 style={{ overflow: "hidden", borderRadius: 36 }}
                 className={cn(
                     "w-full max-w-[900px] backdrop-blur-3xl transition-all duration-300",
-                    "bg-white/95 border border-black/10 text-black shadow-[0_8px_26px_rgba(2,6,23,0.08)]", // Light mode
+                    "bg-white/95 border border-black/10 text-black shadow-[0_8px_26px_rgba(2,6,23,0.08)]",
                     "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white dark:shadow-[0_8px_30px_rgba(2,6,23,0.45)]",
-                    (isActive || inputValue) && "ring-2 ring-primary/50 border-primary/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                    (isActive || inputValue) && "ring-[1.5px] ring-primary/40 border-primary/40 shadow-[0_0_24px_rgba(59,130,246,0.12),0_0_8px_rgba(59,130,246,0.08)]"
                 )}
                 onClick={handleActivate}
             >
@@ -246,10 +246,10 @@ export const AIChatInput = ({
                         ) : (
                             <motion.button
                                 whileTap={{ scale: 0.94 }}
-                                whileHover={{ scale: !inputValue.trim() && !hasFiles ? 1 : 1.03 }}
+                                whileHover={{ scale: !inputValue.trim() && !hasFiles ? 1 : 1.05 }}
                                 className={cn(
-                                    "flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px]",
-                                    (inputValue.trim() || hasFiles) && "animate-pulse"
+                                    "flex w-[50px] h-[50px] items-center bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed justify-center text-white rounded-full font-bold flex-shrink-0 transition-all shadow-md min-h-[44px] min-w-[44px]",
+                                    (inputValue.trim() || hasFiles) && "shadow-[0_0_16px_rgba(59,130,246,0.4)]"
                                 )}
                                 title="Send"
                                 type="button"

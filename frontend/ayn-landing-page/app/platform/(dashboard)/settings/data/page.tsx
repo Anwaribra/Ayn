@@ -7,23 +7,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-
-const DATA_KEY = "ayn-settings-data"
-
-interface DataSettings {
-  euResidency: boolean
-  bridgeEnabled: boolean
-}
-
-function loadData(): DataSettings {
-  if (typeof window === "undefined") return { euResidency: false, bridgeEnabled: true }
-  try {
-    const s = localStorage.getItem(DATA_KEY)
-    return s ? JSON.parse(s) : { euResidency: false, bridgeEnabled: true }
-  } catch {
-    return { euResidency: false, bridgeEnabled: true }
-  }
-}
+import { api } from "@/lib/api"
 
 export default function DataIntegrityPage() {
   return (
@@ -38,17 +22,16 @@ function DataIntegrityContent() {
   const [bridgeEnabled, setBridgeEnabled] = useState(true)
 
   useEffect(() => {
-    const s = loadData()
-    setEuResidency(s.euResidency)
-    setBridgeEnabled(s.bridgeEnabled)
+    api.getPreferences().then(p => {
+      setEuResidency(p.euResidency ?? false)
+      setBridgeEnabled(p.bridgeEnabled ?? true)
+    }).catch(() => {})
   }, [])
 
-  const update = (key: keyof DataSettings, value: boolean) => {
-    const s = loadData()
-    const next = { ...s, [key]: value }
-    localStorage.setItem(DATA_KEY, JSON.stringify(next))
+  const update = (key: string, value: boolean) => {
     if (key === "euResidency") setEuResidency(value)
     else setBridgeEnabled(value)
+    api.savePreferences({ [key]: value }).catch(() => {})
     toast.success("Settings saved")
   }
 

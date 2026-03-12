@@ -25,6 +25,8 @@ import {
   Scale,
   Lightbulb,
   Monitor,
+  Calendar,
+  Wrench,
   type LucideIcon,
 } from "lucide-react"
 import { toggleDemoMode, isDemoMode } from "./demo"
@@ -61,13 +63,13 @@ export const navigationCommands: Command[] = [
     keywords: ["home", "overview", "stats", "metrics"],
   },
   {
-    id: "assessments",
-    title: "Assessments",
-    description: "Manage quality assessments",
+    id: "gap-analysis-nav",
+    title: "Gap Analysis",
+    description: "AI-powered compliance gap analysis",
     icon: BarChart3,
     category: "Navigation",
-    href: "/platform/assessments",
-    keywords: ["reviews", "evaluations", "audits", "inspections"],
+    href: "/platform/gap-analysis",
+    keywords: ["assessments", "reviews", "evaluations", "audits", "inspections"],
   },
   {
     id: "evidence",
@@ -114,6 +116,25 @@ export const navigationCommands: Command[] = [
     category: "Navigation",
     href: "/platform/notifications",
     keywords: ["alerts", "updates", "messages"],
+  },
+  {
+    id: "ai-tools",
+    title: "AI Tools",
+    description: "Remediation, audit prep & more",
+    icon: Wrench,
+    category: "Navigation",
+    href: "/platform/ai-tools",
+    keywords: ["tools", "remediation", "audit", "ai", "utilities"],
+    badge: "AI",
+  },
+  {
+    id: "calendar",
+    title: "Calendar",
+    description: "View milestones and deadlines",
+    icon: Calendar,
+    category: "Navigation",
+    href: "/platform/calendar",
+    keywords: ["calendar", "milestones", "deadlines", "schedule", "dates"],
   },
   {
     id: "settings",
@@ -217,14 +238,14 @@ export const aiCommands: Command[] = [
 
 export const actionCommands: Command[] = [
   {
-    id: "new-assessment",
-    title: "New Assessment",
-    description: "Create a new quality assessment",
+    id: "new-gap-analysis",
+    title: "Run Gap Analysis",
+    description: "Start a new compliance gap analysis",
     icon: Plus,
     category: "Quick Create",
-    href: "/platform/assessments/new",
+    href: "/platform/gap-analysis",
     shortcut: "⌘⇧A",
-    keywords: ["create", "start", "begin", "assessment", "evaluation"],
+    keywords: ["create", "start", "begin", "assessment", "evaluation", "gap"],
   },
   {
     id: "upload-evidence",
@@ -244,6 +265,16 @@ export const actionCommands: Command[] = [
     category: "Actions",
     href: "/platform/gap-analysis",
     keywords: ["analyze", "check", "compliance", "gaps"],
+    badge: "AI",
+  },
+  {
+    id: "mock-audit",
+    title: "Mock Audit",
+    description: "Practice with an AI-simulated audit session",
+    icon: ClipboardList,
+    category: "Actions",
+    href: "/platform/horus-ai/mock-audit",
+    keywords: ["mock", "audit", "practice", "simulation", "prepare"],
     badge: "AI",
   },
   {

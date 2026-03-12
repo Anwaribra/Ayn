@@ -277,3 +277,74 @@ async def api_mock_audit_message(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/mock-audit/sessions")
+async def list_mock_audit_sessions(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    user_id = current_user["id"]
+    sessions = await db.mockauditsession.find_many(
+        where={"userId": user_id},
+        order={"createdAt": "desc"},
+        include={"standard": True, "_count": {"select": {"messages": True}}},
+    )
+    return [{"id": s.id, "status": s.status, "score": s.score, "summary": s.summary, "standardTitle": s.standard.title if s.standard else None, "messageCount": s.messages_count if hasattr(s, 'messages_count') else 0, "createdAt": s.createdAt.isoformat()} for s in sessions]
+
+@router.get("/mock-audit/sessions/{session_id}")
+async def get_mock_audit_session(session_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    session = await db.mockauditsession.find_unique(
+        where={"id": session_id},
+        include={"messages": {"order_by": {"createdAt": "asc"}}, "standard": True},
+    )
+    if not session or session.userId != current_user["id"]:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {
+        "id": session.id, "status": session.status, "score": session.score, "summary": session.summary,
+        "standardTitle": session.standard.title if session.standard else None,
+        "messages": [{"id": m.id, "role": m.role, "content": m.content, "confidence": m.confidence, "createdAt": m.createdAt.isoformat()} for m in session.messages],
+        "createdAt": session.createdAt.isoformat(),
+    }
+
+@router.post("/mock-audit/sessions/{session_id}/complete")
+async def complete_mock_audit(session_id: str, current_user: dict = Depends(get_current_user)):
+    from app.ai.service import get_gemini_client
+    db = get_db()
+    session = await db.mockauditsession.find_unique(
+        where={"id": session_id},
+        include={"messages": True, "standard": True},
+    )
+    if not session or session.userId != current_user["id"]:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.status == "completed":
+        return {"id": session.id, "score": session.score, "summary": session.summary, "status": "completed"}
+    
+    history_text = "\n".join([f"{m.role}: {m.content}" for m in session.messages[-20:]])
+    standard_name = session.standard.title if session.standard else "general quality assurance"
+    
+    prompt = f"""You are an expert auditor. Based on the following mock audit conversation about {standard_name}, provide:
+1. A score from 0-100 representing how well the user demonstrated compliance knowledge
+2. A brief summary (2-3 sentences) of their performance
+
+Conversation:
+{history_text}
+
+Return ONLY valid JSON: {{"score": number, "summary": "string"}}"""
+    
+    client = get_gemini_client()
+    try:
+        raw = await client.generate_text(prompt=prompt)
+        import json, re
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        parsed = json.loads(match.group()) if match else {"score": 50, "summary": "Session completed."}
+    except Exception:
+        parsed = {"score": 50, "summary": "Session completed. Unable to generate detailed assessment."}
+    
+    score = min(100, max(0, float(parsed.get("score", 50))))
+    summary = parsed.get("summary", "Session completed.")
+    
+    await db.mockauditsession.update(
+        where={"id": session_id},
+        data={"status": "completed", "score": score, "summary": summary}
+    )
+    return {"id": session.id, "score": score, "summary": summary, "status": "completed"}

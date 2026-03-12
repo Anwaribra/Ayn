@@ -966,6 +966,116 @@ class ApiClient {
     document.body.removeChild(a)
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CALENDAR / MILESTONES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getMilestones() {
+    return this.request<any[]>("/calendar")
+  }
+
+  async createMilestone(data: { title: string; description?: string; dueDate: string; category?: string; priority?: string }) {
+    return this.request<any>("/calendar", { method: "POST", body: JSON.stringify(data) })
+  }
+
+  async updateMilestone(id: string, data: any) {
+    return this.request<any>(`/calendar/${id}`, { method: "PATCH", body: JSON.stringify(data) })
+  }
+
+  async deleteMilestone(id: string) {
+    return this.request(`/calendar/${id}`, { method: "DELETE" })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DOCUMENT DRAFTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getDrafts() {
+    return this.request<any[]>("/drafts")
+  }
+
+  async createDraft(data: { title: string; content: string; gapId?: string }) {
+    return this.request<any>("/drafts", { method: "POST", body: JSON.stringify(data) })
+  }
+
+  async getDraft(id: string) {
+    return this.request<any>(`/drafts/${id}`)
+  }
+
+  async updateDraft(id: string, data: { title?: string; content?: string; status?: string }) {
+    return this.request<any>(`/drafts/${id}`, { method: "PATCH", body: JSON.stringify(data) })
+  }
+
+  async deleteDraft(id: string) {
+    return this.request(`/drafts/${id}`, { method: "DELETE" })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USER PREFERENCES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getPreferences() {
+    return this.request<Record<string, any>>("/auth/preferences")
+  }
+
+  async savePreferences(prefs: Record<string, any>) {
+    return this.request<Record<string, any>>("/auth/preferences", { method: "PUT", body: JSON.stringify(prefs) })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOCK AUDIT SESSIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getMockAuditSessions() {
+    return this.request<any[]>("/ai/mock-audit/sessions")
+  }
+
+  async getMockAuditSession(sessionId: string) {
+    return this.request<any>(`/ai/mock-audit/sessions/${sessionId}`)
+  }
+
+  async completeMockAudit(sessionId: string) {
+    return this.request<any>(`/ai/mock-audit/sessions/${sessionId}/complete`, { method: "POST" })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EXPORTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async downloadAnalyticsCSV(periodDays?: number) {
+    const token = this.getToken()
+    const query = periodDays != null ? `?period=${periodDays}` : ""
+    const response = await fetch(`${API_BASE_URL}/analytics/export/csv${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) throw new Error("Download failed")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `ayn-analytics-${periodDays || "all"}d.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
+  async downloadEvidenceCSV() {
+    const token = this.getToken()
+    const response = await fetch(`${API_BASE_URL}/evidence/export/csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) throw new Error("Download failed")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "ayn-evidence-export.csv"
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
 }
 
 export const api = new ApiClient()

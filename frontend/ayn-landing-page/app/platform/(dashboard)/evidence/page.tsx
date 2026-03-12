@@ -17,34 +17,6 @@ import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-// Demo Document content blocks mapped to gaps
-const DEMO_DOCUMENT = [
-  { id: "p1", text: "ISO 21001 Quality Policy Statement. This document outlines our institutional commitment to educational excellence and international standards. We strive to provide accessible, equitable, and learner-centric education across all our academic programs." },
-  { id: "c1", text: "1. Scope & Context: The institution acknowledges its responsibility to internal and external stakeholders. However, specifics regarding external regulatory bodies and demographic shifts are handled by individual departments." },
-  { id: "p2", text: "2. Leadership & Commitment: Top management is fully accountable for the effectiveness of the educational organization management system (EOMS). We ensure that the quality policy and objectives are established and are compatible with the strategic direction of the institution." },
-  { id: "c3", text: "3. Organizational Knowledge: Faculty are encouraged to share their experiences and teaching methodologies. We hold annual summits to discuss best practices, but there is currently no centralized digital repository for capturing departing faculty knowledge." },
-  { id: "p4", text: "4. Performance Evaluation: Student feedback is collected at the end of every semester. The results are shared with instructors to improve course delivery. Internal audits of the EOMS are conducted annually to ensure conformity." }
-];
-
-// Mock gaps for the right pane of the split-view
-const MOCK_GAPS = [
-  {
-    id: "g1",
-    targetId: "c1",
-    title: "Section 4.1: Missing Context Parameters",
-    severity: "High",
-    alignment: "Not Aligned",
-    desc: "Policy lacks clear definition of external issues (e.g., regulatory changes, demographic shifts).",
-  },
-  {
-    id: "g2",
-    targetId: "c3",
-    title: "Section 7.1.6: Organizational Knowledge Risk",
-    severity: "Medium",
-    alignment: "Partially Aligned",
-    desc: "No formal process or centralized repository defined for securing intellectual capital and faculty knowledge.",
-  },
-];
 
 export default function EvidencePage() {
   return (
@@ -476,36 +448,60 @@ function EvidenceContent() {
 
           {/* LEFT PANE: Document Viewer */}
           <div className="w-1/2 h-full pt-16 border-r border-border flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
-              <div className="max-w-3xl mx-auto rounded-xl bg-background border border-border shadow-2xl p-8 lg:p-12 min-h-full">
-                <div className="mb-10 pb-6 border-b border-border text-center">
-                  <h1 className="text-3xl font-serif font-black text-foreground mb-4">{selectedEvidence.title || "Institutional Default Policy"}</h1>
-                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Document ID: {selectedEvidence.id.slice(0, 8)}</p>
-                </div>
-                
-                <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/80">
-                  {DEMO_DOCUMENT.map((block) => {
-                    const isHighlighted = activeHighlightId === block.id;
-                    return (
-                      <p
-                        key={block.id}
-                        className={cn(
-                          "transition-all duration-500 rounded-lg p-3 -mx-3 border",
-                          isHighlighted 
-                            ? "bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.1)] text-foreground scale-[1.02]" 
-                            : "border-transparent"
-                        )}
-                        style={{
-                          textShadow: isHighlighted ? "0 0 1px rgba(var(--foreground),0.1)" : "none"
-                        }}
-                      >
-                        {block.text}
-                      </p>
-                    )
-                  })}
+            {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && selectedEvidence.originalFilename?.toLowerCase().endsWith(".pdf") ? (
+              <iframe src={selectedEvidence.fileUrl} className="w-full h-full" title={selectedEvidence.title || "Document preview"} />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
+                <div className="max-w-3xl mx-auto rounded-xl bg-background border border-border shadow-2xl p-8 lg:p-12 min-h-full">
+                  <div className="mb-10 pb-6 border-b border-border text-center">
+                    <h1 className="text-3xl font-serif font-black text-foreground mb-4">{selectedEvidence.title || "Untitled Document"}</h1>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">ID: {selectedEvidence.id.slice(0, 8)}</span>
+                      {selectedEvidence.documentType && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-muted border border-border text-muted-foreground">{selectedEvidence.documentType}</span>
+                      )}
+                      {selectedEvidence.confidenceScore != null && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider status-success border">{selectedEvidence.confidenceScore}% confidence</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedEvidence.summary ? (
+                    <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/80">
+                      <div className="mb-6">
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Summary</h3>
+                        <p className="text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
+                      </div>
+                      {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
+                        <a
+                          href={selectedEvidence.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+                        >
+                          <ExternalLink className="w-4 h-4" /> Open original file
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground font-medium">No preview available for this document.</p>
+                      {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
+                        <a
+                          href={selectedEvidence.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 mt-4 text-sm font-bold text-primary hover:underline"
+                        >
+                          <ExternalLink className="w-4 h-4" /> Open original file
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* RIGHT PANE: Horus AI Analysis */}
@@ -542,43 +538,52 @@ function EvidenceContent() {
                 </div>
               </div>
 
-              {/* Interactive Gaps List */}
-              <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Identified Context Gaps</h3>
+              {/* Linked Criteria */}
+              <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Linked Criteria</h3>
               <div className="space-y-4">
-                {MOCK_GAPS.map((gap) => (
-                  <div
-                    key={gap.id}
-                    className={cn(
-                      "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-muted/50",
-                      activeHighlightId === gap.targetId ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border glass-panel"
-                    )}
-                    onClick={() => setActiveHighlightId(gap.targetId)}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
-                        {gap.severity === "High" ? <AlertCircle className="w-4 h-4 text-destructive" /> : <AlertCircle className="w-4 h-4 text-warning" />}
-                        {gap.title}
-                      </h4>
-                      <span className={cn(
-                        "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border",
-                        gap.severity === "High" ? "status-critical" : "status-warning"
-                      )}>
-                        {gap.severity} Priority
-                      </span>
+                {selectedEvidence.criteria && selectedEvidence.criteria.length > 0 ? (
+                  selectedEvidence.criteria.map((criterion: any, idx: number) => (
+                    <div
+                      key={criterion.id || idx}
+                      className={cn(
+                        "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-muted/50",
+                        activeHighlightId === criterion.id ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border glass-panel"
+                      )}
+                      onClick={() => setActiveHighlightId(criterion.id)}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-primary" />
+                          {criterion.title}
+                        </h4>
+                        {criterion.standardId && (
+                          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border status-info">
+                            Standard
+                          </span>
+                        )}
+                      </div>
+                      {criterion.description && (
+                        <p className="text-[13px] font-medium text-muted-foreground leading-relaxed mb-4">
+                          {criterion.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                          View criterion →
+                        </span>
+                        <button className="px-3 py-1.5 rounded-lg bg-background border border-border text-[10px] font-bold uppercase hover:bg-muted transition-colors text-foreground">
+                          Draft AI Fix
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-[13px] font-medium text-muted-foreground leading-relaxed mb-4">
-                      {gap.desc}
-                    </p>
-                    <div className="flex items-center justify-between mt-4">
-                       <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                        Click to view source →
-                      </span>
-                       <button className="px-3 py-1.5 rounded-lg bg-background border border-border text-[10px] font-bold uppercase hover:bg-muted transition-colors text-foreground">
-                        Draft AI Fix
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 rounded-2xl border border-dashed border-border text-center">
+                    <AlertCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">No criteria linked yet.</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Run a Horus Scan to map this evidence against standards.</p>
                   </div>
-                ))}
+                )}
               </div>
 
             </div>

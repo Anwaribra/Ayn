@@ -7,8 +7,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-
-const ALERTS_KEY = "ayn-settings-alerts"
+import { api } from "@/lib/api"
 
 interface AlertSettings {
   complianceNotifications: boolean
@@ -24,16 +23,6 @@ const defaults: AlertSettings = {
   evidenceReminders: false,
 }
 
-function loadAlerts(): AlertSettings {
-  if (typeof window === "undefined") return defaults
-  try {
-    const s = localStorage.getItem(ALERTS_KEY)
-    return s ? { ...defaults, ...JSON.parse(s) } : defaults
-  } catch {
-    return defaults
-  }
-}
-
 export default function NeuralAlertsPage() {
   return (
     <ProtectedRoute>
@@ -46,13 +35,20 @@ function NeuralAlertsContent() {
   const [settings, setSettings] = useState<AlertSettings>(defaults)
 
   useEffect(() => {
-    setSettings(loadAlerts())
+    api.getPreferences().then(p => {
+      setSettings({
+        complianceNotifications: p.complianceNotifications ?? defaults.complianceNotifications,
+        horusTriggers: p.horusTriggers ?? defaults.horusTriggers,
+        gapAlerts: p.gapAlerts ?? defaults.gapAlerts,
+        evidenceReminders: p.evidenceReminders ?? defaults.evidenceReminders,
+      })
+    }).catch(() => {})
   }, [])
 
   const update = (key: keyof AlertSettings, value: boolean) => {
     const next = { ...settings, [key]: value }
     setSettings(next)
-    localStorage.setItem(ALERTS_KEY, JSON.stringify(next))
+    api.savePreferences({ [key]: value }).catch(() => {})
     toast.success("Settings saved")
   }
 

@@ -8,24 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Shield } from "lucide-react"
 import { toast } from "sonner"
-
-const SECURITY_KEY = "ayn-settings-security"
-
-interface SecuritySettings {
-  mfaEnabled: boolean
-  sessionTimeout: number
-}
-
-function loadSecurity(): SecuritySettings {
-  if (typeof window === "undefined")
-    return { mfaEnabled: false, sessionTimeout: 24 }
-  try {
-    const s = localStorage.getItem(SECURITY_KEY)
-    return s ? JSON.parse(s) : { mfaEnabled: false, sessionTimeout: 24 }
-  } catch {
-    return { mfaEnabled: false, sessionTimeout: 24 }
-  }
-}
+import { api } from "@/lib/api"
 
 export default function SecurityPage() {
   return (
@@ -40,21 +23,20 @@ function SecurityContent() {
   const [sessionTimeout, setSessionTimeout] = useState(24)
 
   useEffect(() => {
-    const s = loadSecurity()
-    setMfaEnabled(s.mfaEnabled)
-    setSessionTimeout(s.sessionTimeout)
+    api.getPreferences().then(p => {
+      setMfaEnabled(p.mfaEnabled ?? false)
+      setSessionTimeout(p.sessionTimeout ?? 24)
+    }).catch(() => {})
   }, [])
 
   const handleMfaToggle = (v: boolean) => {
     setMfaEnabled(v)
-    const s = loadSecurity()
-    localStorage.setItem(SECURITY_KEY, JSON.stringify({ ...s, mfaEnabled: v }))
+    api.savePreferences({ mfaEnabled: v }).catch(() => {})
     toast.success(v ? "MFA policy enabled. Enforcement begins next login." : "MFA policy disabled")
   }
 
   const handleSaveTimeout = () => {
-    const s = loadSecurity()
-    localStorage.setItem(SECURITY_KEY, JSON.stringify({ ...s, sessionTimeout }))
+    api.savePreferences({ sessionTimeout }).catch(() => {})
     toast.success("Session timeout saved")
   }
 

@@ -58,6 +58,17 @@ class RagService:
                 logger.error(f"RAG: Failed to index chunk {i} for document {document_id}: {str(e)}")
 
 
+    async def delete_document(self, document_id: str):
+        """Remove all chunks for a document from the vector store."""
+        try:
+            await prisma_client.execute_raw(
+                'DELETE FROM "VectorDocument" WHERE "documentId" = $1',
+                document_id
+            )
+            logger.info(f"RAG: Deleted all chunks for document {document_id}")
+        except Exception as e:
+            logger.error(f"RAG: Failed to delete document {document_id}: {e}")
+
     async def retrieve_context(self, query: str, limit: int = 4, document_id: Optional[str] = None) -> str:
         """Embeds a query, searches the vector DB, and returns relevant text chunks."""
         try:

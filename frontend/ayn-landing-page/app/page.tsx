@@ -14,6 +14,7 @@ import { HorusIntelligenceSection} from "@/components/landing/HorusIntelligenceS
 import { HowItWorksSection }       from "@/components/landing/HowItWorksSection"
 import { AnalysisEngineFeatures }  from "@/components/landing/AnalysisEngineFeatures"
 import { AboutSection }            from "@/components/landing/AboutSection"
+import { PricingSection }           from "@/components/landing/PricingSection"
 import { FinalCtaSection }         from "@/components/landing/FinalCtaSection"
 import { LandingFooter }           from "@/components/landing/LandingFooter"
 import { ScrollDrivenExpansion }   from "@/components/landing/scroll-driven-expansion"
@@ -123,6 +124,19 @@ export default function Home() {
       {/* ── Light sections ── */}
       <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
         <AboutSection />
+      </div>
+
+      {/* ── CARD: Dark Pricing & Testimonials (scroll-reveal) ── */}
+      <div className="px-3 md:px-5 py-4">
+        <DarkCardReveal>
+          <div data-section-theme="dark">
+            <PricingSection />
+          </div>
+        </DarkCardReveal>
+      </div>
+
+      {/* ── Light sections ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
         <FinalCtaSection />
       </div>
 

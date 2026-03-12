@@ -113,3 +113,15 @@ async def setup_institution(current_user: dict = Depends(get_current_user)):
     )
     
     return {"message": "Institution created", "institution": default_institution}
+
+
+from app.auth.preferences import PreferencesService
+
+@router.get("/preferences")
+async def get_preferences(current_user: dict = Depends(get_current_user)):
+    return await PreferencesService.get_preferences(current_user["id"])
+
+@router.put("/preferences")
+async def save_preferences(request: Request, current_user: dict = Depends(get_current_user)):
+    body = await request.json()
+    return await PreferencesService.save_preferences(current_user["id"], body)

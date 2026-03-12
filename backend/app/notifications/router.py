@@ -1,5 +1,8 @@
 """Notifications router."""
+import asyncio
+import json
 from fastapi import APIRouter, status, Depends
+from fastapi.responses import StreamingResponse
 from typing import List
 from app.core.middlewares import get_current_user
 from app.auth.dependencies import require_admin
@@ -14,6 +17,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+@router.get("/stream")
+async def stream_notifications(current_user: dict = Depends(get_current_user)):
+    """SSE stream for real-time notifications."""
+    async def event_generator():
+        last_count = await NotificationService.get_unread_count(current_user["id"])
+        yield f"data: {json.dumps({'type': 'init', 'unreadCount': last_count})}\n\n"
+        
+        while True:
+            await asyncio.sleep(5)
+            try:
+                current_count = await NotificationService.get_unread_count(current_user["id"])
+                if current_count != last_count:
+                    notifications = await NotificationService.get_unread(current_user["id"])
+                    yield f"data: {json.dumps({'type': 'update', 'unreadCount': current_count, 'notifications': [{'id': n.id, 'type': n.type, 'title': n.title, 'message': n.message} for n in notifications[:5]]})}\n\n"
+                    last_count = current_count
+                else:
+                    yield f"data: {json.dumps({'type': 'heartbeat'})}\n\n"
+            except Exception:
+                break
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+    )
 
 
 @router.post("", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)

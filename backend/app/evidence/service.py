@@ -302,6 +302,18 @@ class EvidenceService:
             except Exception as e:
                 logger.warning(f"Failed to log evidence analysis activity for {evidence_id}: {e}")
 
+            # 3.5 RAG Indexing - index the AI analysis for semantic search
+            try:
+                from app.rag.service import RagService
+                rag = RagService()
+                rag_content = f"Title: {title}\nType: {doc_type}\n\n{summary}"
+                if raw_response:
+                    rag_content += f"\n\nFull Analysis:\n{raw_response[:3000]}"
+                await rag.index_document(rag_content, document_id=evidence_id)
+                logger.info(f"RAG indexed evidence {evidence_id}")
+            except Exception as e:
+                logger.warning(f"RAG indexing failed for {evidence_id}: {e}")
+
             # 4. Criteria Mapping
             mapped_codes = parsed.get("mapped_criteria", [])
             standard_name = parsed.get("related_standard", "")
@@ -476,6 +488,13 @@ class EvidenceService:
                 )
             except Exception as e:
                 logger.warning(f"Failed to log evidence deletion activity: {e}")
+
+            try:
+                from app.rag.service import RagService
+                rag = RagService()
+                await rag.delete_document(evidence_id)
+            except Exception as e:
+                logger.warning(f"RAG cleanup failed for {evidence_id}: {e}")
 
             file_url = evidence.fileUrl
             file_path = None

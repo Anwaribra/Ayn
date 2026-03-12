@@ -1,4 +1,7 @@
+import csv
+import io
 from fastapi import APIRouter, status, Depends, UploadFile, File, Request, BackgroundTasks, Query
+from fastapi.responses import StreamingResponse
 from typing import List
 from app.core.middlewares import get_current_user
 from app.core.rate_limit import limiter
@@ -28,6 +31,29 @@ async def upload_evidence(
     Upload evidence file.
     """
     return await EvidenceService.upload_evidence(file, current_user, background_tasks)
+
+
+@router.get("/export/csv")
+async def export_evidence_csv(current_user: dict = Depends(get_current_user)):
+    """Export evidence list as CSV."""
+    evidence_list = await EvidenceService.list_evidence(current_user, page=1, limit=1000)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Title", "Document Type", "Status", "Confidence Score", "Original Filename", "Created At"])
+    for ev in evidence_list:
+        writer.writerow([
+            ev.id, ev.title or "", ev.documentType or "", ev.status,
+            ev.confidenceScore or 0, ev.originalFilename or "", 
+            ev.createdAt.isoformat() if ev.createdAt else ""
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ayn-evidence-export.csv"}
+    )
 
 
 @router.delete("/{evidence_id}", status_code=status.HTTP_200_OK)

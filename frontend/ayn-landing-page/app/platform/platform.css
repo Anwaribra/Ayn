@@ -120,13 +120,13 @@
    DARK MODE OVERRIDE — activates when user toggles to dark
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-section="platform"] [data-platform-theme="dark"] {
-  --layer-0: #050810;
-  --layer-1: #0a0d14;
-  --layer-2: rgba(20, 24, 32, 0.65);
-  --layer-3: rgba(25, 30, 40, 0.90);
-  --layer-4: #1E293B;
+  --layer-0: #060608;
+  --layer-1: #0a0a0c;
+  --layer-2: rgba(18, 18, 22, 0.65);
+  --layer-3: rgba(22, 22, 28, 0.90);
+  --layer-4: #1c1c24;
 
-  --glass-bg: rgba(30, 40, 60, 0.25);
+  --glass-bg: rgba(20, 20, 26, 0.3);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
   --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
@@ -212,18 +212,18 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 [data-section="platform"] [data-platform-theme="dark"] .elevation-modal {
-  background: #141820;
+  background: #141416;
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Dark mode: cinematic bg */
 [data-section="platform"] [data-platform-theme="dark"] .cinematic-bg {
-  background-color: #050810;
+  background-color: #060608;
   background-image:
-    radial-gradient(circle at 62% 24%, rgba(37, 99, 235, 0.18) 0%, transparent 42%),
-    radial-gradient(circle at 24% 76%, rgba(99, 102, 241, 0.14) 0%, transparent 46%),
-    linear-gradient(110deg, #070A13 0%, #0B1230 42%, #06141B 100%);
+    radial-gradient(circle at 62% 24%, rgba(37, 99, 235, 0.07) 0%, transparent 42%),
+    radial-gradient(circle at 24% 76%, rgba(99, 102, 241, 0.05) 0%, transparent 46%),
+    linear-gradient(110deg, #08080c 0%, #0a0a12 42%, #080a0e 100%);
 }
 
 /* Dark mode: platform header */

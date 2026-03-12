@@ -27,7 +27,7 @@ const emptyStateConfig = {
     title: "Ready to Audit?",
     description: "Your institutional evidence library is waiting for its first assets. Upload policies, procedures, and documentation to enable Horus AI compliance analysis.",
     ctaText: "Upload First Evidence",
-    ctaHref: "#",
+    ctaHref: "/platform/evidence/upload",
     ctaAction: true,
     tip: "Tip: Uploading your communication policy helps Horus AI identify 20% more compliance gaps automatically.",
     illustration: "evidence",
@@ -57,7 +57,7 @@ const emptyStateConfig = {
     title: "Welcome to Ayn",
     description: "Your AI-powered compliance command center is ready. Begin by uploading evidence or importing standards to activate real-time monitoring.",
     ctaText: "Quick Start Guide",
-    ctaHref: "#",
+    ctaHref: "/platform/standards",
     ctaAction: true,
     tip: "Tip: Complete your profile and upload 3 documents to unlock personalized AI recommendations.",
     illustration: "welcome",
@@ -189,25 +189,15 @@ export function EmptyState({ type, title, description, onDemoLoad }: EmptyStateP
       </p>
 
       {/* CTA Button */}
-      {config.ctaAction ? (
+      <Link href={config.ctaHref}>
         <Button
           size="lg"
           className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm font-bold rounded-xl shadow-xl transition-all hover:scale-105 active:scale-95"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          {config.ctaAction ? <Plus className="w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
           {config.ctaText}
         </Button>
-      ) : (
-        <Link href={config.ctaHref}>
-          <Button
-            size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm font-bold rounded-xl shadow-xl transition-all hover:scale-105 active:scale-95"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            {config.ctaText}
-          </Button>
-        </Link>
-      )}
+      </Link>
 
       {/* Pro Tip */}
       <div className="mt-8 flex items-start gap-3 max-w-sm p-4 rounded-xl status-warning border">

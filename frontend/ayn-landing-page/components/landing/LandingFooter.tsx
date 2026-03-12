@@ -13,10 +13,10 @@ const links = {
     { label: "Get Started",   href: "/signup"             },
   ],
   Standards: [
-    { label: "ISO 21001",         href: "#" },
-    { label: "NCAAA",             href: "#" },
-    { label: "MOE Frameworks",    href: "#" },
-    { label: "Custom Frameworks", href: "#" },
+    { label: "ISO 21001",         href: "/faq#standards" },
+    { label: "NCAAA",             href: "/faq#standards" },
+    { label: "MOE Frameworks",    href: "/faq#standards" },
+    { label: "Custom Frameworks", href: "/faq#standards" },
   ],
   Company: [
     { label: "About",   href: "/#about"                 },
@@ -28,10 +28,10 @@ const links = {
 }
 
 const social = [
-  { icon: Twitter,  href: "#",                         label: "Twitter"  },
-  { icon: Linkedin, href: "#",                         label: "LinkedIn" },
-  { icon: Github,   href: "#",                         label: "GitHub"   },
-  { icon: Mail,     href: "mailto:hello@ayn-edu.com",  label: "Email"    },
+  { icon: Twitter,  href: "https://x.com",              label: "Twitter"  },
+  { icon: Linkedin, href: "https://linkedin.com",       label: "LinkedIn" },
+  { icon: Github,   href: "https://github.com",         label: "GitHub"   },
+  { icon: Mail,     href: "mailto:hello@ayn-edu.com",   label: "Email"    },
 ]
 
 export function LandingFooter() {
@@ -116,9 +116,9 @@ export function LandingFooter() {
             © {new Date().getFullYear()} Ayn Platform. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-white/30">
-            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Privacy Policy</span>
-            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Terms of Service</span>
-            <span className="cursor-not-allowed hover:text-white/50 transition-colors" title="Coming Soon">Security</span>
+            <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white/60 transition-colors">Terms of Service</Link>
+            <Link href="/security" className="hover:text-white/60 transition-colors">Security</Link>
           </div>
         </div>
       </div>

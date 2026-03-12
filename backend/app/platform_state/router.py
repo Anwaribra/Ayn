@@ -292,7 +292,7 @@ async def get_workflows(
     def time_ago(dt):
         if not dt:
             return "Never"
-        now = datetime.now(timezone.utc) if dt.tzinfo else datetime.utcnow()
+        now = datetime.now(timezone.utc) if dt.tzinfo else datetime.now(timezone.utc).replace(tzinfo=None)
         diff = now - dt
         seconds = diff.total_seconds()
         if seconds < 60:
@@ -305,7 +305,7 @@ async def get_workflows(
 
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
     institution_id = current_user.get("institutionId") if isinstance(current_user, dict) else getattr(current_user, "institutionId", None)
-    since_24h = datetime.utcnow() - timedelta(hours=24)
+    since_24h = datetime.now(timezone.utc) - timedelta(hours=24)
 
     last_file = await db.platformfile.find_first(where={"userId": user_id}, order={"createdAt": "desc"})
     last_evidence = await db.evidence.find_first(where={"uploadedById": user_id}, order={"updatedAt": "desc"})

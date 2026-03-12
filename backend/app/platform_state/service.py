@@ -5,7 +5,7 @@ API layer for platform state operations.
 Modules call this to write state.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from .models import PlatformStateManager, PlatformFile, PlatformEvidence, PlatformGap, PlatformMetric, StateSummary
@@ -36,8 +36,8 @@ class StateService:
             "type": file_type,
             "size": size,
             "user_id": user_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         })
         if result: self.redis.delete(f"state_summary:{user_id}")
         return result
@@ -69,8 +69,8 @@ class StateService:
             "type": ev_type,
             "user_id": user_id,
             "criteria_refs": criteria_refs or [],
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         })
         if result: self.redis.delete(f"state_summary:{user_id}")
         return result
@@ -94,7 +94,7 @@ class StateService:
             "description": description,
             "severity": severity,
             "user_id": user_id,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         })
         
         # Notify 
@@ -141,7 +141,7 @@ class StateService:
             "value": value,
             "source_module": source_module,
             "user_id": user_id,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         })
         
         # Notify only on SIGNIFICANT score changes/updates that actually changed the value

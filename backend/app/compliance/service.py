@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException, status
@@ -63,7 +63,7 @@ class ComplianceService:
         else:
             evidence_where = {"uploadedById": user_id}
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         stale_cutoff = now - timedelta(days=90)
 
         evidence_count = await db.evidence.count(where=evidence_where)
@@ -206,7 +206,7 @@ class ComplianceService:
             mappingId=mapping_id,
             decision=body.decision,
             status=current.status if current else (body.statusOverride or mapping.status),
-            reviewedAt=datetime.utcnow(),
+            reviewedAt=datetime.now(timezone.utc),
         )
 
     @staticmethod
@@ -252,7 +252,7 @@ class ComplianceService:
     async def create_action_plan_task(body: ActionPlanCreateRequest, current_user: dict) -> ActionPlanTask:
         user_id, _, _ = ComplianceService._scope(current_user)
         task_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         task = ActionPlanTask(
             id=task_id,
             title=body.title,
@@ -290,7 +290,7 @@ class ComplianceService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
         patch = body.model_dump(exclude_none=True)
-        patch["updatedAt"] = datetime.utcnow().isoformat()
+        patch["updatedAt"] = datetime.now(timezone.utc).isoformat()
         await ActivityService.log_activity(
             user_id=user_id,
             type="action_plan_updated",
@@ -302,7 +302,7 @@ class ComplianceService:
         )
         merged = current.model_dump()
         merged.update(body.model_dump(exclude_none=True))
-        merged["updatedAt"] = datetime.utcnow()
+        merged["updatedAt"] = datetime.now(timezone.utc)
         return ActionPlanTask(**merged)
 
     @staticmethod
@@ -340,7 +340,7 @@ class ComplianceService:
     @staticmethod
     async def create_workflow_run(body: WorkflowRunCreateRequest, current_user: dict) -> WorkflowRun:
         user_id, _, _ = ComplianceService._scope(current_user)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         run = WorkflowRun(
             id=str(uuid.uuid4()),
             workflowName=body.workflowName,
@@ -372,7 +372,7 @@ class ComplianceService:
 
         patch = body.model_dump(exclude_none=True)
         if body.status in {"success", "failed", "canceled"}:
-            patch["endedAt"] = datetime.utcnow().isoformat()
+            patch["endedAt"] = datetime.now(timezone.utc).isoformat()
         await ActivityService.log_activity(
             user_id=user_id,
             type="workflow_run_updated",
@@ -385,7 +385,7 @@ class ComplianceService:
         merged = current.model_dump()
         merged.update(body.model_dump(exclude_none=True))
         if body.status in {"success", "failed", "canceled"}:
-            merged["endedAt"] = datetime.utcnow()
+            merged["endedAt"] = datetime.now(timezone.utc)
         return WorkflowRun(**merged)
 
     @staticmethod

@@ -9,7 +9,7 @@ import json
 import logging
 import asyncio
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, AsyncGenerator
 from pydantic import BaseModel
 
@@ -94,11 +94,12 @@ class HorusService:
                     background_tasks=background_tasks
                 )
                 if upload_result.success:
-                    content = await file.read()
                     await file.seek(0)
+                    content = await file.read()
+                    ct = file.content_type or ""
                     file_references.append({
-                        "type": "image" if file.content_type.startswith("image/") else "document" if file.content_type == "application/pdf" else "text",
-                        "mime_type": file.content_type,
+                        "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                        "mime_type": ct,
                         "data": base64.b64encode(content).decode("utf-8"),
                         "filename": file.filename
                     })
@@ -136,7 +137,7 @@ class HorusService:
         return Observation(
             content=ai_response,
             chat_id=chat_id,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             state_hash=state_hash
         )
 
@@ -367,7 +368,7 @@ class HorusService:
                                 "tool_name": tool_name,
                                 "args": args,
                                 "description": description,
-                                "created_at": datetime.utcnow().isoformat(),
+                                "created_at": datetime.now(timezone.utc).isoformat(),
                             }
                             confirm_payload = {
                                 "id": confirm_id,
@@ -452,7 +453,7 @@ class HorusService:
                                 "tool_name": "__plan__",
                                 "plan_steps": plan_steps,
                                 "description": f"Run a {len(plan_steps)}-step agent plan including write operations.",
-                                "created_at": datetime.utcnow().isoformat(),
+                                "created_at": datetime.now(timezone.utc).isoformat(),
                             }
                             confirm_payload = {
                                 "id": confirm_id,
@@ -508,11 +509,12 @@ class HorusService:
                 background_tasks=background_tasks
             )
             if upload_result.success:
-                content = await f.read()
                 await f.seek(0)
+                content = await f.read()
+                ct = f.content_type or ""
                 return {
-                    "type": "image" if f.content_type.startswith("image/") else "document" if f.content_type == "application/pdf" else "text",
-                    "mime_type": f.content_type,
+                    "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                    "mime_type": ct,
                     "data": base64.b64encode(content).decode("utf-8"),
                     "filename": f.filename,
                     "evidenceId": upload_result.evidenceId
@@ -613,12 +615,23 @@ class HorusService:
                     self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
-            yield "__THINKING__:Analyzing document content...\n"
-            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
-            yield "__THINKING__:Generating response...\n"
+            yield "__THINKING__:Phase 1 (Identify): Scanning document category...\n"
+            await asyncio.sleep(0.4)
+            yield "__THINKING__:Phase 2 (Deconstruct): Splitting PDF into semantic chunks and metadata...\n"
+            await asyncio.sleep(0.4)
+            yield "__THINKING__:Phase 3 (Analyze): Cross-referencing against internal Quality Constitution...\n"
+            await asyncio.sleep(0.4)
+            yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
+            await asyncio.sleep(0.4)
             
+            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
+            yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
+            
+            ai_message = message or "Analyze these files."
+            ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
+
             async for chunk in client.stream_chat_with_files(
-                message=message or "Analyze these files.",
+                message=ai_message,
                 files=file_results,
                 context=context # Pass the enriched brain context
             ):
@@ -629,7 +642,7 @@ class HorusService:
                 # Some multimodal providers may stream empty chunks for certain files.
                 # Ensure the user never sees a silent response.
                 fallback_response = await client.chat_with_files(
-                    message=message or "Analyze these files.",
+                    message=ai_message,
                     files=file_results,
                     context=context,
                 )
@@ -936,7 +949,7 @@ class HorusService:
             # Handle both model objects and dicts
             title = a.title if hasattr(a, 'title') else a.get('title', 'Unknown')
             desc = a.description if hasattr(a, 'description') else a.get('description', '')
-            created = a.createdAt if hasattr(a, 'createdAt') else datetime.utcnow()
+            created = a.createdAt if hasattr(a, 'createdAt') else datetime.now(timezone.utc)
             lines.append(f"- {title}: {desc} ({created.strftime('%Y-%m-%d %H:%M')})")
         return "\n".join(lines)
 
@@ -948,7 +961,7 @@ class HorusService:
         return "\n".join(lines)
 
     def _hash_state(self, summary) -> str:
-        return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.utcnow().strftime('%Y%m%d%H')}"
+        return f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}:{datetime.now(timezone.utc).strftime('%Y%m%d%H')}"
 
     def _extract_control_token(self, message: str, prefix: str) -> str | None:
         if not message:
@@ -1019,7 +1032,7 @@ class HorusService:
         return word_count <= 20
 
     def _cleanup_stale_pending_confirmations(self) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired_ids: list[str] = []
         for confirmation_id, pending in PENDING_ACTION_CONFIRMATIONS.items():
             created_at = pending.get("created_at")

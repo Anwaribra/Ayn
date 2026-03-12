@@ -4,7 +4,7 @@ Platform State Models
 Database-backed state storage for platform modules.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
@@ -174,7 +174,7 @@ class PlatformStateManager:
                     "clauses": analysis.get("clauses", []),
                     "analysisConfidence": analysis.get("confidence", 0),
                     "status": "analyzed",
-                    "updatedAt": datetime.utcnow()
+                    "updatedAt": datetime.now(timezone.utc)
                 },
                 include={"evidence": True, "gaps": True}
             )
@@ -347,7 +347,7 @@ class PlatformStateManager:
                 where={"id": gap_id},
                 data={
                     "status": "closed",
-                    "closedAt": datetime.utcnow()
+                    "closedAt": datetime.now(timezone.utc)
                 }
             )
         except Exception as e:
@@ -426,7 +426,7 @@ class PlatformStateManager:
                     data={
                         "value": metric_data["value"],
                         "previousValue": existing_val,
-                        "updatedAt": datetime.utcnow()
+                        "updatedAt": datetime.now(timezone.utc)
                     }
                 )
             else:
@@ -436,7 +436,7 @@ class PlatformStateManager:
                     "value": metric_data["value"],
                     "sourceModule": metric_data["source_module"],
                     "userId": metric_data["user_id"],
-                    "updatedAt": datetime.utcnow()
+                    "updatedAt": datetime.now(timezone.utc)
                 })
             
             return self._map_metric(metric)

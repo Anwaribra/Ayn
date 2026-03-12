@@ -172,10 +172,11 @@ function SignInForm(props: {
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
-                {/* Microsoft OAuth - currently using same handler as placeholder */}
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
-                    <MicrosoftIcon className="mr-2 h-4 w-4" />
+                {/* Microsoft OAuth */}
+                <Button variant="outline" type="button" disabled className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground/50 cursor-not-allowed justify-center font-medium">
+                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-50" />
                     Continue with Microsoft
+                    <span className="ml-2 text-[9px] uppercase tracking-widest bg-black/5 px-1.5 py-0.5 rounded">Coming Soon</span>
                 </Button>
             </div>
 
@@ -277,10 +278,11 @@ function SignUpForm(props: {
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
-                {/* Microsoft OAuth - currently using same handler as placeholder */}
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground hover:bg-black/5 hover:text-black transition-colors justify-center font-medium">
-                    <MicrosoftIcon className="mr-2 h-4 w-4" />
+                {/* Microsoft OAuth */}
+                <Button variant="outline" type="button" disabled className="w-full h-11 rounded-lg border-black/10 bg-white text-foreground/50 cursor-not-allowed justify-center font-medium">
+                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-50" />
                     Continue with Microsoft
+                    <span className="ml-2 text-[9px] uppercase tracking-widest bg-black/5 px-1.5 py-0.5 rounded">Coming Soon</span>
                 </Button>
             </div>
 

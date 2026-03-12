@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from app.core.db import get_db
 from prisma.models import Chat, Message
@@ -65,7 +65,7 @@ class ChatService:
         )
         await db.chat.update(
             where={"id": chat_id},
-            data={"updatedAt": datetime.utcnow()}
+            data={"updatedAt": datetime.now(timezone.utc)}
         )
         return message
 

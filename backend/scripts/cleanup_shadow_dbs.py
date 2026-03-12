@@ -1,5 +1,6 @@
 import os
 import psycopg2
+from psycopg2 import sql
 from urllib.parse import urlparse
 
 # Get Direct URL from env or use the one we saw
@@ -40,10 +41,9 @@ def main():
             for row in rows:
                 dbname = row[0]
                 print(f"Dropping stuck shadow DB: {dbname}")
-                # Terminate connections to this DB first
-                cur.execute(f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbname}';")
+                cur.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s;", (dbname,))
                 try:
-                    cur.execute(f'DROP DATABASE "{dbname}";')
+                    cur.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(dbname)))
                     print(f"Dropped {dbname}")
                 except Exception as e:
                     print(f"Failed to drop {dbname}: {e}")

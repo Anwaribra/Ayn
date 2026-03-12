@@ -4,7 +4,7 @@ PDF Report Generator for Gap Analysis.
 Generates a professional PDF report from a GapAnalysisResponse using reportlab.
 """
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from reportlab.lib import colors
@@ -159,7 +159,7 @@ def generate_pdf_report(report) -> bytes:
         f"Standard: <b>{getattr(report, 'standardTitle', 'N/A')}</b>",
         styles["ReportSubtitle"]
     ))
-    generated_at = datetime.utcnow().strftime("%B %d, %Y at %H:%M UTC")
+    generated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
     story.append(Paragraph(f"Generated: {generated_at}", styles["SmallMuted"]))
     story.append(HRFlowable(width="100%", thickness=1, color=BRAND_BORDER, spaceAfter=12))
 

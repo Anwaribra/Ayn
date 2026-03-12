@@ -2,7 +2,7 @@
 import base64
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, status, UploadFile, BackgroundTasks
 from typing import List
 from app.core.db import get_db
@@ -28,7 +28,7 @@ ALLOWED_FILE_TYPES = {
     "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/plain",
 }
-MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_FILE_SIZE = 25 * 1024 * 1024
 
 class EvidenceService:
     """Service for evidence management business logic."""
@@ -93,15 +93,12 @@ class EvidenceService:
                         }
                     },
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to log evidence creation activity: {e}")
             logger.info(f"User {current_user.get('email', 'unknown')} uploaded: {evidence.id}")
             
             # 2.5 Trigger Notification & Activity
             try:
-                from datetime import timedelta
-                
-                # Check for existing notification in last 24h
                 existing = await db.notification.find_first(
                     where={
                         "userId": current_user["id"],
@@ -109,7 +106,7 @@ class EvidenceService:
                         "title": "Evidence Uploaded",
                         "relatedEntityId": evidence.id,
                         "createdAt": {
-                            "gte": datetime.utcnow() - timedelta(hours=24)
+                            "gte": datetime.now(timezone.utc) - timedelta(hours=24)
                         }
                     }
                 )
@@ -209,6 +206,9 @@ class EvidenceService:
             2. Specific Standards & Clauses it likely supports.
             3. A confidence score (0-100) based on content relevance.
             4. A clear, concise summary of the document content.
+            5. overall_score (0-100)
+            6. key_findings (List of strengths and weaknesses strings)
+            7. improvement_suggestions (List of actionable steps format strings)
 
             CRITICAL: Return ONLY valid JSON. No markdown. No code blocks.
             Format:
@@ -219,7 +219,10 @@ class EvidenceService:
                "confidence": number,
                "risk_flag": boolean,
                "summary": "string",
-               "title": "Suggested Title (e.g. 'Strategic Plan 2024')"
+               "title": "Suggested Title (e.g. 'Strategic Plan 2024')",
+               "overall_score": number,
+               "key_findings": ["string"],
+               "improvement_suggestions": ["string"]
             }
             """
 
@@ -239,7 +242,7 @@ class EvidenceService:
             if not match:
                 logger.warning(f"No JSON found in AI response for {evidence_id}")
                 await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
-                await _notify_error(user_id, evidence_id, f"AI could not extract data from '{filename}'.")
+                await EvidenceService._notify_error(user_id, evidence_id, f"AI could not extract data from '{filename}'.")
                 return
 
             try:
@@ -247,13 +250,21 @@ class EvidenceService:
             except json.JSONDecodeError:
                 logger.error(f"AI returned invalid JSON for {evidence_id}")
                 await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
-                await _notify_error(user_id, evidence_id, f"AI could not analyze '{filename}'. Invalid response format.")
+                await EvidenceService._notify_error(user_id, evidence_id, f"AI could not analyze '{filename}'. Invalid response format.")
                 return
 
             doc_type = parsed.get("document_type", "Unknown")
             summary = parsed.get("summary", "No summary provided.")
             title = parsed.get("title", filename)
-            confidence = float(parsed.get("confidence", 0))
+            confidence = float(parsed.get("overall_score", parsed.get("confidence", 0)))
+            
+            # Format the robust findings into the markdown summary so it can be viewed natively in the Vault
+            key_findings = parsed.get("key_findings", [])
+            improvement_suggestions = parsed.get("improvement_suggestions", [])
+            
+            if key_findings or improvement_suggestions:
+                summary += "\n\n### Key Findings\n" + "\n".join([f"- {f}" for f in key_findings])
+                summary += "\n\n### Improvement Suggestions\n" + "\n".join([f"- {i}" for i in improvement_suggestions])
 
             # 3. Update Evidence Record with AI results
             await prisma_client.evidence.update(
@@ -264,7 +275,7 @@ class EvidenceService:
                     "documentType": doc_type,
                     "confidenceScore": confidence,
                     "status": "analyzed",
-                    "updatedAt": datetime.utcnow()
+                    "updatedAt": datetime.now(timezone.utc)
                 }
             )
             try:
@@ -288,8 +299,8 @@ class EvidenceService:
                             }
                         },
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to log evidence analysis activity for {evidence_id}: {e}")
 
             # 4. Criteria Mapping
             mapped_codes = parsed.get("mapped_criteria", [])
@@ -323,8 +334,8 @@ class EvidenceService:
                             await prisma_client.evidencecriterion.create(
                                 data={"evidenceId": evidence_id, "criterionId": crit_id}
                             )
-                        except Exception:
-                            pass  # Ignore duplicates
+                        except Exception as e:
+                            logger.debug(f"Duplicate evidence-criterion link skipped: {e}")
 
             await prisma_client.evidence.update(
                 where={"id": evidence_id},
@@ -388,8 +399,8 @@ class EvidenceService:
                         relatedEntityId=evidence_id,
                         relatedEntityType="gap"
                     ))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to send gap-addressed notification for {evidence_id}: {e}")
 
             # 7. Notify success
             try:
@@ -401,8 +412,8 @@ class EvidenceService:
                     relatedEntityId=evidence_id,
                     relatedEntityType="evidence"
                 ))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to send analysis-complete notification for {evidence_id}: {e}")
 
         except Exception as e:
             # Top-level safety net — never crash the background worker
@@ -413,9 +424,9 @@ class EvidenceService:
                         where={"id": evidence_id},
                         data={"status": "failed"}
                     )
-                    await _notify_error(user_id, evidence_id, f"System error while processing '{filename}'.")
-            except Exception:
-                pass
+                    await EvidenceService._notify_error(user_id, evidence_id, f"System error while processing '{filename}'.")
+            except Exception as inner_e:
+                logger.error(f"Failed to update evidence status to 'failed' for {evidence_id}: {inner_e}")
 
     @staticmethod
     async def _notify_error(user_id: str, evidence_id: str, message: str):
@@ -429,8 +440,8 @@ class EvidenceService:
                 relatedEntityId=evidence_id,
                 relatedEntityType="evidence"
             ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to send error notification for {evidence_id}: {e}")
 
     @staticmethod
     async def delete_evidence(evidence_id: str, current_user: dict):
@@ -463,8 +474,8 @@ class EvidenceService:
                         }
                     },
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to log evidence deletion activity: {e}")
 
             file_url = evidence.fileUrl
             file_path = None
@@ -505,9 +516,8 @@ class EvidenceService:
                 await db.evidencecriterion.create(
                     data={"evidenceId": evidence_id, "criterionId": request.criterionId}
                 )
-            except Exception:
-                # Ignore duplicates if link already exists.
-                pass
+            except Exception as e:
+                logger.debug(f"Duplicate evidence-criterion link skipped on attach: {e}")
             try:
                 await ActivityService.log_activity(
                     user_id=current_user["id"],
@@ -522,8 +532,8 @@ class EvidenceService:
                         }
                     },
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to log evidence attach activity: {e}")
             return AttachEvidenceResponse(message="Attached successfully", evidenceId=evidence_id, criterionId=request.criterionId)
         except Exception as e:
             logger.error(f"Attach error: {e}")

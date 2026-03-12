@@ -25,6 +25,7 @@ import {
   ThumbsDown,
   Copy,
   Download,
+  ListChecks,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
@@ -680,36 +681,23 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {/* M1: Contextual Action Cards — only on the LAST assistant message */}
+                          {/* The 'Dual Action' Footer (Spec-Driven Workflow) */}
                           {msg.role === "assistant" && status !== "generating" && msg.id === lastAssistantMsgId && (
-                            <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                              {/(gap|compliance|score|remediate|remediation|shortfall)/i.test(msg.content) && (
-                                <button
-                                  onClick={() => handleSendMessage("Generate Remediation Plan")}
-                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
-                                >
-                                  Generate Remediation Plan
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {/(audit findings|audit report|non-conformity|observation|major|minor)/i.test(msg.content) && (
-                                <button
-                                  onClick={() => handleSendMessage("Export Audit Report")}
-                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
-                                >
-                                  Export Audit Report
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {/(evidence|document|policy|procedure|manual|reviewed files)/i.test(msg.content) && (
-                                <button
-                                  onClick={() => handleSendMessage("Show me in the Evidence Vault")}
-                                  className="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-semibold rounded-md transition-colors shadow-sm"
-                                >
-                                  View in Evidence Vault
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+                            <div className="mt-6 flex flex-wrap gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                              <button
+                                onClick={() => handleSendMessage("Generate Export Audit Report for this analysis")}
+                                className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-[var(--surface-modal)] hover:bg-primary/10 border border-[var(--border-subtle)] hover:border-primary/40 text-foreground font-semibold text-[13px] rounded-xl shadow-sm transition-all group"
+                              >
+                                <FileText className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                                Export Audit Report
+                              </button>
+                              <button
+                                onClick={() => handleSendMessage("Apply Recommendations to optimize this document")}
+                                className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-[var(--surface-modal)] hover:bg-emerald-500/10 border border-[var(--border-subtle)] hover:border-emerald-500/40 text-foreground font-semibold text-[13px] rounded-xl shadow-sm transition-all group"
+                              >
+                                <ListChecks className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
+                                Apply Recommendations
+                              </button>
                             </div>
                           )}
 

@@ -6,7 +6,7 @@ Conversational AI with streaming, persistence, and platform awareness.
 
 import logging
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from pydantic import BaseModel
 import json
@@ -181,7 +181,7 @@ async def horus_observe(
         content += f" Query focus: {query}"
     return {
         "content": content,
-        "timestamp": datetime.utcnow().timestamp(),
+        "timestamp": datetime.now(timezone.utc).timestamp(),
         "state_hash": f"{summary.total_files}:{summary.total_evidence}:{summary.total_gaps}",
     }
 
@@ -306,7 +306,7 @@ async def submit_message_feedback(
         "chat_id": body.chat_id,
         "rating": body.rating,
         "comment": body.comment,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     # Persist to a simple JSONL log — zero schema migration required.

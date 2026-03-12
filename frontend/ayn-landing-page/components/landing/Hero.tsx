@@ -10,6 +10,70 @@ import { useState, useRef, useCallback, useEffect } from "react"
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), { ssr: false })
 
+function useIsMobile(breakpoint = 1024) {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [breakpoint])
+  return isMobile
+}
+
+function StaticHeroBackground() {
+  return (
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* Primary radial glow */}
+      <div
+        className="absolute w-[600px] h-[600px] rounded-full"
+        style={{
+          top: "10%",
+          right: "-10%",
+          background: "radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(37,99,235,0.05) 40%, transparent 70%)",
+        }}
+      />
+      {/* Secondary accent glow */}
+      <div
+        className="absolute w-[400px] h-[400px] rounded-full"
+        style={{
+          bottom: "5%",
+          right: "5%",
+          background: "radial-gradient(circle, rgba(56,189,248,0.1) 0%, transparent 60%)",
+        }}
+      />
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
+        }}
+      />
+      {/* Floating orbs */}
+      <motion.div
+        className="absolute w-3 h-3 rounded-full bg-primary/30"
+        style={{ top: "25%", right: "20%" }}
+        animate={{ y: [0, -15, 0], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute w-2 h-2 rounded-full bg-cyan-400/25"
+        style={{ top: "55%", right: "30%" }}
+        animate={{ y: [0, 12, 0], opacity: [0.2, 0.5, 0.2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      />
+      <motion.div
+        className="absolute w-2.5 h-2.5 rounded-full bg-blue-300/20"
+        style={{ top: "40%", right: "12%" }}
+        animate={{ y: [0, -10, 0], opacity: [0.25, 0.45, 0.25] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      />
+    </div>
+  )
+}
+
 /**
  * Hero background — must match the Spline scene's own bg.
  * Also injected into <html>/<body> in layout.tsx to prevent white flash.
@@ -94,6 +158,7 @@ function DemoModal({
 export function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
   const demoRef    = useRef<HTMLDivElement>(null)
+  const isMobile   = useIsMobile()
 
   return (
     <>
@@ -110,31 +175,37 @@ export function Hero() {
           }}
         />
 
-        {/* ════ SPLINE — pushed further right via translateX ════ */}
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            pointerEvents: "none",
-            transform: "translateX(12%)", /* shift scene right */
-          }}
-        >
-          <Spline
-            scene="https://prod.spline.design/aysDxqUIU16cNzmO/scene.splinecode"
-            style={{ width: "100%", height: "100%", display: "block" }}
-          />
-        </div>
+        {isMobile ? (
+          <StaticHeroBackground />
+        ) : (
+          <>
+            {/* ════ SPLINE — desktop only ════ */}
+            <div
+              className="absolute inset-0 z-0"
+              style={{
+                pointerEvents: "none",
+                transform: "translateX(12%)",
+              }}
+            >
+              <Spline
+                scene="https://prod.spline.design/aysDxqUIU16cNzmO/scene.splinecode"
+                style={{ width: "100%", height: "100%", display: "block" }}
+              />
+            </div>
 
-        {/* ════ LEFT VEIL — wider (80%) so more animation shows on right ════ */}
-        <div
-          className="absolute inset-y-0 left-0 z-10 pointer-events-none"
-          style={{
-            width: "80%",
-            background: `linear-gradient(to right, ${BG} 0%, ${BG} 50%, transparent 100%)`,
-          }}
-        />
+            {/* ════ LEFT VEIL — desktop only ════ */}
+            <div
+              className="absolute inset-y-0 left-0 z-10 pointer-events-none"
+              style={{
+                width: "80%",
+                background: `linear-gradient(to right, ${BG} 0%, ${BG} 50%, transparent 100%)`,
+              }}
+            />
+          </>
+        )}
 
         {/* ════ TEXT CONTENT ════ */}
-        <div className="relative z-30 flex flex-col justify-center w-full lg:w-1/2 px-8 lg:px-16 xl:px-24 pt-24 pb-20">
+        <div className="relative z-30 flex flex-col justify-center items-start w-full lg:w-1/2 px-6 sm:px-8 lg:px-16 xl:px-24 pt-24 pb-20">
 
           {/* Badge — only "Full Agent Mode", removed "AYN" */}
           <motion.div

@@ -32,8 +32,83 @@ import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
-import { ThinkingPanel, ReasoningState } from "./thinking-panel"
 import { AgentOrb, MiniOrb } from "./agent-orb"
+
+export type ReasoningState = {
+  steps: { text: string; status: "pending" | "active" | "done" }[]
+  startTime: number
+  duration: number | null
+  isExpanded: boolean
+  isComplete: boolean
+  tempUserMessage: string | null
+}
+
+// ─── Inline Thinking Bubble ──────────────────────────────────────────────────
+function InlineThinking({ reasoning }: { reasoning: ReasoningState | null }) {
+  const [expanded, setExpanded] = useState(false)
+
+  if (!reasoning || reasoning.steps.length === 0) return null
+
+  const isActive = !reasoning.isComplete
+  const activeStep = reasoning.steps.find(s => s.status === "active")
+
+  // Auto-expand while actively thinking, allow manual toggle once done
+  const isOpen = isActive || expanded
+
+  return (
+    <div className="mb-2">
+      <button
+        onClick={() => { if (!isActive) setExpanded(prev => !prev) }}
+        className={cn(
+          "inline-flex items-center gap-2 text-[13px] font-medium transition-colors",
+          isActive
+            ? "text-muted-foreground cursor-default"
+            : "text-muted-foreground/70 hover:text-muted-foreground cursor-pointer"
+        )}
+      >
+        {isActive ? (
+          <>
+            <span className="w-3.5 h-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <span>{activeStep?.text || "Thinking..."}</span>
+          </>
+        ) : (
+          <>
+            <Check className="w-3.5 h-3.5 text-muted-foreground/50" />
+            <span>Thought for {reasoning.duration?.toFixed(1)}s</span>
+            <svg
+              className={cn("w-3 h-3 text-muted-foreground/40 transition-transform", isOpen && "rotate-180")}
+              viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
+            >
+              <path d="M3 5l3 3 3-3" />
+            </svg>
+          </>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="mt-2 ml-1 pl-3 border-l-2 border-[var(--border-subtle)] space-y-1.5">
+          {reasoning.steps.map((step, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-[12px]">
+              {step.status === "done" ? (
+                <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+              ) : step.status === "active" ? (
+                <span className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <span className="w-3 h-3 rounded-full border border-[var(--border-subtle)] shrink-0" />
+              )}
+              <span className={cn(
+                "font-medium",
+                step.status === "active" ? "text-foreground" : "text-muted-foreground"
+              )}>
+                {step.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Real thinking steps are now driven by __THINKING__: events from the backend.
 // This function is kept as a FALLBACK for when no thinking events arrive within 500ms
@@ -463,12 +538,6 @@ export default function HorusAIChat() {
   return (
     <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
-      {/* Side-Panel for Agent Thinking (from Constitution) */}
-      <ThinkingPanel 
-        reasoning={reasoning} 
-        status={status} 
-        onClose={() => setReasoning(prev => prev ? { ...prev, isExpanded: false } : null)} 
-      />
       {/* New + History + Export as floating top-right (no header bar) */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
         {/* M8: Export chat — only visible when conversation has messages */}
@@ -548,20 +617,6 @@ export default function HorusAIChat() {
         </Sheet>
       </div>
 
-      {/* Contextual Immersive Blur — draws focus to active conversation */}
-      <AnimatePresence>
-        {status === "generating" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed inset-0 z-[5] pointer-events-none"
-            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
-          />
-        )}
-      </AnimatePresence>
-
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
         {/* Ambient Agent Glow — morphing radial behind content */}
@@ -600,15 +655,9 @@ export default function HorusAIChat() {
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex flex-col items-center gap-5"
+                    className="flex items-center justify-center"
                   >
                     <AgentOrb state="idle" size="hero" />
-                    <div className="flex flex-col items-center gap-1.5 mt-2">
-                      <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Horus AI</h2>
-                      <p className="text-sm text-muted-foreground/80 tracking-wide">
-                        Your compliance intelligence agent
-                      </p>
-                    </div>
                   </motion.div>
 
                   {/* Quick prompts */}
@@ -676,16 +725,12 @@ export default function HorusAIChat() {
                               state={status === "generating" && msg.id === lastAssistantMsgId ? status : "idle"}
                             />
                             <span className="text-sm font-bold text-foreground">Horus</span>
-                            {/* Active action micro-badge — shows current thinking step inline */}
-                            {status === "generating" && msg.id === lastAssistantMsgId && reasoning && !reasoning.isComplete && (
-                              <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary/80 text-[10px] font-semibold tracking-wide">
-                                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                                {reasoning.steps.find(s => s.status === "active")?.text || "Thinking..."}
-                              </span>
-                            )}
                           </div>
 
-                          {/* The old inline reasoning block has been removed in favor of ThinkingPanel side overlay */}
+                          {/* Inline thinking — appears above the response */}
+                          {msg.id === lastAssistantMsgId && reasoning && reasoning.steps.length > 0 && (
+                            <InlineThinking reasoning={reasoning} />
+                          )}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (

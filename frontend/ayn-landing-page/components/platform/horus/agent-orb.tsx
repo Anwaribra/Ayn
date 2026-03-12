@@ -9,19 +9,18 @@ type OrbState = "idle" | "searching" | "generating" | "error"
 interface AgentOrbProps {
   state: OrbState
   size?: "sm" | "md" | "lg" | "hero"
-  actionLabel?: string | null
   className?: string
 }
 
 const STATE_PARAMS: Record<OrbState, { speed: number; spikes: number; processing: number; color: number; emissive: number; emissiveIntensity: number }> = {
-  idle:       { speed: 10,  spikes: 0.45, processing: 0.8,  color: 0xE4ECFA, emissive: 0x1a3a5c, emissiveIntensity: 0.1 },
-  searching:  { speed: 25,  spikes: 0.75, processing: 1.15, color: 0xBDD4FF, emissive: 0x1e40af, emissiveIntensity: 0.2 },
-  generating: { speed: 40,  spikes: 1.0,  processing: 1.35, color: 0x93B4FF, emissive: 0x2563eb, emissiveIntensity: 0.25 },
+  idle:       { speed: 10,  spikes: 0.45, processing: 0.8,  color: 0x8B5CF6, emissive: 0x4338CA, emissiveIntensity: 0.18 },
+  searching:  { speed: 25,  spikes: 0.75, processing: 1.15, color: 0x6D28D9, emissive: 0x2563EB, emissiveIntensity: 0.28 },
+  generating: { speed: 40,  spikes: 1.0,  processing: 1.35, color: 0x7C3AED, emissive: 0x0EA5E9, emissiveIntensity: 0.35 },
   error:      { speed: 18,  spikes: 0.55, processing: 1.0,  color: 0xFCA5A5, emissive: 0x991b1b, emissiveIntensity: 0.2 },
 }
 
-const CANVAS_SIZES: Record<string, number> = { sm: 56, md: 80, lg: 160, hero: 280 }
-const CANVAS_SIZES_MOBILE: Record<string, number> = { sm: 56, md: 80, lg: 120, hero: 200 }
+const CANVAS_SIZES: Record<string, number> = { sm: 56, md: 80, lg: 160, hero: 400 }
+const CANVAS_SIZES_MOBILE: Record<string, number> = { sm: 56, md: 80, lg: 120, hero: 300 }
 
 function useCanvasSize(size: string) {
   const sizeRef = useRef(
@@ -83,15 +82,19 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
       emissiveIntensity: startParams.emissiveIntensity,
     })
 
-    const lightTop = new THREE.DirectionalLight(0xFFFFFF, 0.7)
+    const lightTop = new THREE.DirectionalLight(0xE0E7FF, 0.8)
     lightTop.position.set(0, 500, 200)
     scene.add(lightTop)
 
-    const lightBottom = new THREE.DirectionalLight(0xFFFFFF, 0.25)
+    const lightBottom = new THREE.DirectionalLight(0x38BDF8, 0.4)
     lightBottom.position.set(0, -500, 400)
     scene.add(lightBottom)
 
-    const ambientLight = new THREE.AmbientLight(0x798296)
+    const lightSide = new THREE.DirectionalLight(0xA78BFA, 0.35)
+    lightSide.position.set(-400, 100, 300)
+    scene.add(lightSide)
+
+    const ambientLight = new THREE.AmbientLight(0x6366F1, 0.3)
     scene.add(ambientLight)
 
     const sphere = new THREE.Mesh(geometry, material)
@@ -180,43 +183,29 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
 
 // ─── Main AgentOrb ────────────────────────────────────────────────────────────
 
-function AgentOrbInner({ state, size = "hero", actionLabel, className }: AgentOrbProps) {
+function AgentOrbInner({ state, size = "hero", className }: AgentOrbProps) {
   const canvasSize = useCanvasSize(size)
   const isActive = state === "generating" || state === "searching"
 
   return (
     <div className={cn("relative flex items-center justify-center select-none", className)}>
-      {/* Ambient glow halo behind the 3D orb */}
+      {/* Ambient glow halo — plasma palette */}
       <div
         className={cn(
           "absolute rounded-full transition-all duration-700 pointer-events-none",
-          isActive ? "opacity-30 scale-110" : "opacity-15 scale-100",
+          isActive ? "opacity-35 scale-110" : "opacity-20 scale-100",
         )}
         style={{
-          width: canvasSize * 1.4,
-          height: canvasSize * 1.4,
+          width: canvasSize * 1.5,
+          height: canvasSize * 1.5,
           background: state === "error"
             ? "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(59,130,246,0.35) 0%, rgba(56,189,248,0.15) 40%, transparent 70%)",
-          filter: "blur(30px)",
+            : "radial-gradient(circle, rgba(124,58,237,0.35) 0%, rgba(14,165,233,0.15) 40%, rgba(59,130,246,0.08) 60%, transparent 75%)",
+          filter: "blur(40px)",
         }}
       />
 
-      {/* The Three.js canvas */}
       <ThreeOrb state={state} canvasSize={canvasSize} />
-
-      {/* Action label badge — floats below the orb (lg/hero only) */}
-      {(size === "lg" || size === "hero") && actionLabel && (
-        <div
-          className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
-          style={{ animation: "orbFadeFloat 3s ease-in-out infinite" }}
-        >
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold tracking-wide backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {actionLabel}
-          </span>
-        </div>
-      )}
     </div>
   )
 }

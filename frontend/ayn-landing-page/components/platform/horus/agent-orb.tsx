@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { memo, useRef, useEffect, useCallback } from "react"
+import type { BufferAttribute } from "three"
 
 type OrbState = "idle" | "searching" | "generating" | "error"
 
@@ -96,7 +97,7 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
     const sphere = new THREE.Mesh(geometry, material)
     scene.add(sphere)
 
-    const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute
+    const posAttr = geometry.getAttribute("position") as BufferAttribute
     const basePositions = new Float32Array(posAttr.array.length)
     basePositions.set(posAttr.array)
 

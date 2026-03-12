@@ -66,26 +66,6 @@ const plans = [
   },
 ]
 
-const testimonials = [
-  {
-    quote: "Horus AI reduced our accreditation preparation time by 60%. What used to take months now takes weeks.",
-    author: "Dr. Sarah Al-Rashid",
-    role: "Quality Director",
-    institution: "King Saud University",
-  },
-  {
-    quote: "The gap analysis feature identified compliance blind spots we'd missed for years. Game-changing.",
-    author: "Prof. Ahmed Hassan",
-    role: "Dean of Academic Affairs",
-    institution: "Cairo University",
-  },
-  {
-    quote: "Finally, a platform that understands educational quality standards natively. Not just a generic tool.",
-    author: "Dr. Fatima Al-Harbi",
-    role: "Accreditation Lead",
-    institution: "Princess Nourah University",
-  },
-]
 
 export function PricingSection() {
   return (
@@ -169,31 +149,6 @@ export function PricingSection() {
           </div>
         </div>
 
-        {/* Social Proof / Testimonials */}
-        <div className="text-center mb-12">
-          <span className="inline-block text-[10px] uppercase tracking-[0.3em] text-primary font-bold mb-3 bg-primary/10 px-3 py-1 rounded-full border border-primary/20">Testimonials</span>
-          <h2 className="text-2xl font-bold text-white mb-3">Trusted by leading institutions</h2>
-          <p className="text-white/40 text-sm">See what quality professionals are saying about Ayn</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
-            >
-              <p className="text-sm text-white/60 leading-relaxed mb-4">&ldquo;{t.quote}&rdquo;</p>
-              <div>
-                <p className="text-sm font-semibold text-white">{t.author}</p>
-                <p className="text-xs text-white/40">{t.role}, {t.institution}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </div>
     </section>
   )

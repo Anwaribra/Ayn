@@ -277,7 +277,7 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
       targetEmissive.set(target.emissive)
       material.emissive.lerp(targetEmissive, 0.035)
       targetSpecular.set(target.specular)
-      ;(material as THREE.MeshPhongMaterial).specular.lerp(targetSpecular, 0.035)
+      material.specular.lerp(targetSpecular, 0.035)
       material.emissiveIntensity += (target.emissiveIntensity - material.emissiveIntensity) * L
 
       // Core vertex displacement via simplex noise

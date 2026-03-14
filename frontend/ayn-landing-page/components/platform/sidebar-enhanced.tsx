@@ -15,7 +15,7 @@ import {
   Settings,
   UserCircle2,
   LogOut,
-  PanelLeft,
+  PanelLeft, 
   ShieldCheck,
   Layers,
   History,
@@ -118,7 +118,7 @@ export const SidebarItem = memo(function SidebarItem({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
                 <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
               </span>
-              <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]">New</span>
+              <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]"></span>
             </span>
           )}
         </span>

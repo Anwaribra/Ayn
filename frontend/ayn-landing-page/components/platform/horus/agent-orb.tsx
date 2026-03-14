@@ -24,10 +24,10 @@ type StateParams = {
 }
 
 const STATE_PARAMS: Record<OrbState, StateParams> = {
-  idle:       { speed: 0.3, coreDistortion: 0.12, coreGlow: 0.3,  particleSpeed: 0.2, radialPull: 0,     breathStrength: 0.04, turbulence: 0.02, ringSpeed: 0.3, ringOpacity: 0.15 },
-  searching:  { speed: 0.8, coreDistortion: 0.20, coreGlow: 0.55, particleSpeed: 0.6, radialPull: 0.12,  breathStrength: 0.08, turbulence: 0.05, ringSpeed: 0.8, ringOpacity: 0.3  },
-  generating: { speed: 1.2, coreDistortion: 0.30, coreGlow: 0.85, particleSpeed: 1.0, radialPull: -0.08, breathStrength: 0.06, turbulence: 0.08, ringSpeed: 1.5, ringOpacity: 0.45 },
-  error:      { speed: 0.5, coreDistortion: 0.15, coreGlow: 0.4,  particleSpeed: 0.3, radialPull: 0.05,  breathStrength: 0.10, turbulence: 0.12, ringSpeed: 0.2, ringOpacity: 0.1  },
+  idle:       { speed: 0.3, coreDistortion: 0.12, coreGlow: 0.25, particleSpeed: 0.2, radialPull: 0,     breathStrength: 0.04, turbulence: 0.02, ringSpeed: 0.3, ringOpacity: 0.35 },
+  searching:  { speed: 0.8, coreDistortion: 0.20, coreGlow: 0.45, particleSpeed: 0.6, radialPull: 0.12,  breathStrength: 0.08, turbulence: 0.05, ringSpeed: 0.8, ringOpacity: 0.55 },
+  generating: { speed: 1.2, coreDistortion: 0.30, coreGlow: 0.65, particleSpeed: 1.0, radialPull: -0.08, breathStrength: 0.06, turbulence: 0.08, ringSpeed: 1.5, ringOpacity: 0.7  },
+  error:      { speed: 0.5, coreDistortion: 0.15, coreGlow: 0.35, particleSpeed: 0.3, radialPull: 0.05,  breathStrength: 0.10, turbulence: 0.12, ringSpeed: 0.2, ringOpacity: 0.2  },
 }
 
 const CANVAS_SIZES: Record<string, number> = { sm: 56, md: 80, lg: 160, hero: 400 }
@@ -77,19 +77,17 @@ varying vec2 vUv;
 void main() {
   vec3 v = normalize(vViewPos);
   vec3 n = normalize(vNormal);
-  float fresnel = pow(1.0 - abs(dot(v, n)), 2.8);
-  float shift = dot(v, n) * 0.5 + 0.5 + sin(uTime * 0.4) * 0.12;
+  float fresnel = pow(1.0 - abs(dot(v, n)), 3.2);
+  float shift = dot(v, n) * 0.5 + 0.5 + sin(uTime * 0.4) * 0.1;
   vec3 col = mix(uColor1, uColor2, shift);
   float irid = sin(dot(v, n) * 6.0 + uTime * 0.6) * 0.5 + 0.5;
-  col = mix(col, uGlowColor, irid * 0.15);
-  float flow = sin(vUv.x * 14.0 + uTime * 0.7) * cos(vUv.y * 14.0 + uTime * 0.5) * 0.06;
+  col = mix(col, uGlowColor * 0.6, irid * 0.1);
+  float flow = sin(vUv.x * 14.0 + uTime * 0.7) * cos(vUv.y * 14.0 + uTime * 0.5) * 0.025;
   col += flow * uGlowColor;
-  col += fresnel * uGlowColor * uGlow * 1.8;
+  col = mix(col, uGlowColor, fresnel * uGlow * 0.5);
   vec3 h = normalize(v + normalize(vec3(0.3, 1.0, 0.5)));
-  col += pow(max(dot(n, h), 0.0), 48.0) * 0.35 * uGlowColor;
-  col.r += fresnel * 0.04;
-  col.b += fresnel * 0.02;
-  gl_FragColor = vec4(col, 0.88 + fresnel * 0.12);
+  col += pow(max(dot(n, h), 0.0), 80.0) * 0.12 * uGlowColor;
+  gl_FragColor = vec4(col, 0.9);
 }
 `
 
@@ -110,10 +108,12 @@ void main() {
   float ph = aPhase * 6.2832;
   vec3 pos = position;
   float a = t * (0.08 + aPhase * 0.15) + ph;
-  float ca = cos(a), sa = sin(a);
+  float ca = cos(a);
+  float sa = sin(a);
   pos = vec3(ca*pos.x + sa*pos.z, pos.y, -sa*pos.x + ca*pos.z);
   float b = t * 0.05 + ph * 0.5;
-  float cb = cos(b), sb = sin(b);
+  float cb = cos(b);
+  float sb = sin(b);
   pos = vec3(pos.x, cb*pos.y - sb*pos.z, sb*pos.y + cb*pos.z);
   pos *= 1.0 + sin(t * 1.5 + ph) * uBreathStrength;
   pos += normalize(pos + vec3(0.0001)) * uRadialPull * (0.5 + aPhase);
@@ -121,7 +121,7 @@ void main() {
   pos.y += cos(t*0.5 + pos.z*3.0 + ph) * uTurbulence;
   pos.z += sin(t*0.6 + pos.x*3.0 + ph) * uTurbulence;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  gl_PointSize = aSize * uDpr * (200.0 / -mv.z);
+  gl_PointSize = aSize * uDpr * (300.0 / -mv.z);
   gl_Position = projectionMatrix * mv;
 }
 `
@@ -149,7 +149,7 @@ varying float vOpacity;
 void main() {
   vOpacity = aOpacity;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = aSize * uDpr * (120.0 / -mv.z);
+  gl_PointSize = aSize * uDpr * (200.0 / -mv.z);
   gl_Position = projectionMatrix * mv;
 }
 `
@@ -250,8 +250,8 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
         positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
         positions[i * 3 + 2] = r * Math.cos(phi)
         phases[i] = Math.random()
-        sizes[i] = 1.0 + Math.random() * 2.8
-        opacities[i] = 0.12 + Math.random() * 0.5
+        sizes[i] = 2.5 + Math.random() * 4.5
+        opacities[i] = 0.25 + Math.random() * 0.6
       }
 
       const pGeo = new THREE.BufferGeometry()
@@ -300,8 +300,8 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
           pos[i * 3] = Math.cos(angle) * radius
           pos[i * 3 + 1] = 0
           pos[i * 3 + 2] = Math.sin(angle) * radius
-          op[i] = 0.25 + Math.random() * 0.45
-          sz[i] = 1.2 + Math.random() * 1.5
+          op[i] = 0.4 + Math.random() * 0.5
+          sz[i] = 2.5 + Math.random() * 3.0
         }
         const geo = new THREE.BufferGeometry()
         geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3))

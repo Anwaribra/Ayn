@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useId } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, ArrowLeft, FileCheck, BarChart3, Brain } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,43 +78,6 @@ const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
 );
 
 
-const featurePills = [
-    { icon: FileCheck, label: "115+ Standards" },
-    { icon: BarChart3, label: "AI Gap Analysis" },
-    { icon: Brain, label: "Horus AI Agent" },
-];
-
-function BrowserMockup({ className }: { className?: string }) {
-    return (
-        <div className={cn("rounded-2xl overflow-hidden border border-white/[0.1] bg-[#0c0c1a]", className)}
-            style={{ boxShadow: "0 25px 80px -12px rgba(0,0,0,.7), 0 8px 24px -8px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05)" }}>
-            {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 h-10 bg-[#111127]/95 border-b border-white/[0.06]">
-                <div className="flex items-center gap-[7px]">
-                    <span className="w-3 h-3 rounded-full bg-[#ff5f57] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
-                    <span className="w-3 h-3 rounded-full bg-[#febc2e] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
-                    <span className="w-3 h-3 rounded-full bg-[#28c840] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                    <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white/[0.05] border border-white/[0.05] max-w-[260px] w-full">
-                        <svg className="w-3 h-3 text-white/25 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                        <span className="text-[11px] text-white/35 font-medium tracking-wide truncate">ayn.vercel.app/platform/dashboard</span>
-                    </div>
-                </div>
-                <div className="w-[52px]" />
-            </div>
-            {/* Screenshot */}
-            <img
-                src="/dashboard-preview.png"
-                alt="Ayn Platform Dashboard"
-                className="w-full h-auto block"
-                loading="eager"
-                draggable={false}
-            />
-        </div>
-    );
-}
-
 // Sign In Form
 function SignInForm(props: {
     handleGoogle: () => void;
@@ -184,7 +147,7 @@ function SignInForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground bg-[#f5f5f3] uppercase tracking-widest text-[10px]">Or sign in with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-white/95 uppercase tracking-widest text-[10px]">Or sign in with email</span>
             </div>
 
             {/* Email / Password fields */}
@@ -290,7 +253,7 @@ function SignUpForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground bg-[#f5f5f3] uppercase tracking-widest text-[10px]">Or create with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-white/95 uppercase tracking-widest text-[10px]">Or create with email</span>
             </div>
 
             <div className="grid gap-4 mt-2">
@@ -492,23 +455,33 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#f5f5f3]">
-            {/* Mobile — compact tilted preview above form */}
-            <div className="lg:hidden relative w-full bg-[#050810] pt-8 pb-5 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_60%,rgba(59,130,246,0.12)_0%,transparent_65%)] pointer-events-none" />
-                <div className="relative z-10 flex flex-col items-center px-8">
-                    <p className="text-[11px] text-white/35 uppercase tracking-[0.15em] font-semibold mb-5">Platform Preview</p>
-                    <div style={{ perspective: "600px" }} className="w-full max-w-xs">
-                        <div style={{ transform: "rotateY(-8deg) rotateX(4deg)", transformOrigin: "30% center" }}>
-                            <BrowserMockup />
-                        </div>
-                    </div>
-                </div>
+        <div className="relative min-h-screen w-full overflow-hidden bg-[#060a14]">
+            {/* Full-screen dashboard background */}
+            <div className="absolute inset-0">
+                <img
+                    src="/dashboard-preview.png"
+                    alt=""
+                    className="w-full h-full object-cover object-top"
+                    draggable={false}
+                    aria-hidden="true"
+                />
+                {/* Dim + blur overlay */}
+                <div className="absolute inset-0 bg-[#060a14]/60 backdrop-blur-[2px]" />
+                {/* Subtle color tint */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(59,130,246,0.08)_0%,transparent_60%)]" />
             </div>
 
-            {/* Left — Form (generous 55-60% width) */}
-            <div className="relative flex w-full items-center justify-center px-8 py-10 lg:px-16 lg:py-0 lg:w-[56%] xl:w-[54%] overflow-y-auto min-h-0 lg:min-h-screen">
-                <div className="w-full max-w-[420px]">
+            {/* Glass form card — centered */}
+            <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full max-w-[440px] rounded-2xl border border-white/[0.08] bg-white/[0.95] p-8 sm:p-10 backdrop-blur-xl"
+                    style={{
+                        boxShadow: "0 25px 60px -12px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05)",
+                    }}
+                >
                     {isSignIn ? (
                         <SignInForm
                             handleGoogle={handleGoogleSignIn}
@@ -526,94 +499,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                             toggle={() => setIsSignIn(true)}
                         />
                     )}
-                </div>
-            </div>
-
-            {/* Right — Product Showcase (Desktop) */}
-            <div className="relative hidden lg:flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#050810]">
-                {/* Glow behind the mockup */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_55%,rgba(59,130,246,0.10)_0%,transparent_70%)] pointer-events-none" />
-                <div className="absolute top-[30%] left-[25%] w-[350px] h-[350px] bg-blue-500/[0.06] rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute bottom-[20%] right-[20%] w-[250px] h-[250px] bg-indigo-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
-
-                {/* Dot pattern */}
-                <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
-                    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)",
-                    backgroundSize: "32px 32px",
-                }} />
-
-                <div className="relative z-10 flex flex-col items-center w-full max-w-lg xl:max-w-xl px-8">
-                    {/* Headline */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center mb-8"
-                    >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.07] mb-5">
-                            <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-                            </span>
-                            <span className="text-white/45 text-[9px] uppercase tracking-[0.2em] font-semibold">Live Platform</span>
-                        </div>
-                        <h2 className="text-2xl xl:text-[28px] font-bold text-white leading-tight tracking-tight mb-2.5">
-                            Quality compliance,<br />
-                            <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent">powered by AI.</span>
-                        </h2>
-                        <p className="text-[13px] text-white/35 leading-relaxed max-w-sm mx-auto">
-                            Join institutions using Ayn to streamline their accreditation journey.
-                        </p>
-                    </motion.div>
-
-                    {/* Tilted Browser Mockup — contained, floating */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative w-full"
-                        style={{ perspective: "1200px" }}
-                    >
-                        <motion.div
-                            animate={{ y: [0, -7, 0] }}
-                            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <div style={{
-                                transform: "rotateY(-10deg) rotateX(3deg)",
-                                transformOrigin: "50% 50%",
-                                transformStyle: "preserve-3d",
-                            }}>
-                                <BrowserMockup />
-                            </div>
-                        </motion.div>
-
-                        {/* Shadow beneath mockup */}
-                        <div className="absolute -bottom-4 left-[12%] right-[12%] h-12 rounded-[50%] pointer-events-none"
-                            style={{
-                                background: "radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.35) 0%, transparent 75%)",
-                                filter: "blur(12px)",
-                            }}
-                        />
-                    </motion.div>
-
-                    {/* Feature pills */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.5 }}
-                        className="flex items-center gap-2.5 mt-8"
-                    >
-                        {featurePills.map((pill) => (
-                            <div
-                                key={pill.label}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06]"
-                            >
-                                <pill.icon className="w-3 h-3 text-blue-400/60" />
-                                <span className="text-[10px] text-white/40 font-medium">{pill.label}</span>
-                            </div>
-                        ))}
-                    </motion.div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );

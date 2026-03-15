@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useId } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Brain, FileCheck, BarChart3, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,13 +77,6 @@ const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
   </svg>
 );
 
-
-// Floating feature pills for the preview panel
-const featurePills = [
-    { icon: FileCheck, label: "115+ Standards" },
-    { icon: BarChart3, label: "AI Gap Analysis" },
-    { icon: Brain, label: "Horus Brain" },
-];
 
 function BrowserMockup({ className }: { className?: string }) {
     return (
@@ -494,26 +487,23 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     return (
         <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#f5f5f3]">
-            {/* Mobile/Tablet preview — above form on small screens */}
-            <div className="lg:hidden relative w-full bg-[#050810] pt-10 pb-6 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_30%,rgba(59,130,246,0.18)_0%,transparent_65%)] pointer-events-none" />
-                <div className="relative z-10 px-6">
-                    <div className="text-center mb-5">
-                        <h2 className="text-lg font-bold text-white">
-                            Quality compliance, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">powered by AI.</span>
-                        </h2>
-                    </div>
-                    <div className="relative -mr-8" style={{ perspective: "600px" }}>
-                        <div style={{ transform: "rotateY(-6deg) rotateX(3deg)", transformOrigin: "left center" }}>
-                            <BrowserMockup className="min-w-[420px]" />
+            {/* Mobile/Tablet preview — compact hero above form */}
+            <div className="lg:hidden relative w-full bg-[#050810] pt-8 pb-4 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_40%,rgba(59,130,246,0.15)_0%,transparent_60%)] pointer-events-none" />
+                <div className="relative z-10 px-5">
+                    <p className="text-center text-xs text-white/40 mb-4 font-medium tracking-wide">See what you get with Ayn</p>
+                    <div className="relative -mr-6" style={{ perspective: "500px" }}>
+                        <div style={{ transform: "rotateY(-8deg) rotateX(4deg)", transformOrigin: "20% center" }}>
+                            <BrowserMockup className="min-w-[380px]" />
                         </div>
+                        <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#050810] to-transparent pointer-events-none" />
                     </div>
                 </div>
             </div>
 
-            {/* Left — Form */}
-            <div className="flex w-full items-center justify-center p-6 lg:w-[480px] xl:w-[520px] lg:min-w-[480px] overflow-y-auto min-h-0 lg:min-h-screen">
-                <div className="w-full max-w-[400px] py-8 lg:py-0">
+            {/* Left — Form (generous width) */}
+            <div className="relative flex w-full items-center justify-center p-8 lg:p-12 lg:w-[55%] xl:w-1/2 overflow-y-auto min-h-0 lg:min-h-screen">
+                <div className="w-full max-w-[420px] py-6 lg:py-0">
                     {isSignIn ? (
                         <SignInForm
                             handleGoogle={handleGoogleSignIn}
@@ -534,96 +524,53 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 </div>
             </div>
 
-            {/* Right — Immersive 3D Product Preview */}
-            <div className="relative hidden lg:block flex-1 overflow-hidden bg-[#050810]">
-                {/* Layered ambient glow */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_30%_45%,rgba(59,130,246,0.14)_0%,transparent_70%)] pointer-events-none" />
-                <div className="absolute top-[5%] left-[10%] w-[600px] h-[600px] bg-blue-600/[0.08] rounded-full blur-[140px] pointer-events-none" />
-                <div className="absolute bottom-[10%] right-[20%] w-[400px] h-[400px] bg-indigo-500/[0.06] rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute top-[40%] left-[40%] w-[300px] h-[300px] bg-violet-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
+            {/* Right — 3D Tilted Product Preview */}
+            <div className="relative hidden lg:flex flex-1 items-center overflow-hidden bg-[#050810]">
+                {/* Ambient glow — focused behind the mockup */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_40%_50%,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+                <div className="absolute top-[20%] left-[15%] w-[400px] h-[400px] bg-blue-500/[0.07] rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-[15%] left-[30%] w-[300px] h-[300px] bg-indigo-500/[0.05] rounded-full blur-[80px] pointer-events-none" />
 
-                {/* Dot grid */}
-                <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{
-                    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px)",
-                    backgroundSize: "28px 28px",
+                {/* Subtle dot grid */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+                    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)",
+                    backgroundSize: "32px 32px",
                 }} />
 
-                {/* Content wrapper — vertically centered */}
-                <div className="relative z-10 flex flex-col justify-center h-full pl-12 xl:pl-16 py-12">
-                    {/* Header text */}
+                {/* Mockup — tilted, oversized, bleeds off right & bottom */}
+                <motion.div
+                    initial={{ opacity: 0, x: 40, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="relative z-10 w-full pl-10 xl:pl-14"
+                    style={{ perspective: "1400px" }}
+                >
                     <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="mb-10"
+                        animate={{ y: [0, -7, 0] }}
+                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.07] mb-5">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-                            </span>
-                            <span className="text-white/50 text-[10px] uppercase tracking-[0.2em] font-semibold">Live Platform</span>
-                        </div>
-                        <h2 className="text-[26px] xl:text-[30px] font-bold text-white leading-tight tracking-tight mb-3">
-                            Quality compliance,<br />
-                            <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent">powered by AI.</span>
-                        </h2>
-                        <p className="text-[13px] text-white/40 max-w-sm leading-relaxed">
-                            Join institutions already using Ayn to streamline their accreditation journey.
-                        </p>
-
-                        {/* Feature pills */}
-                        <div className="flex items-center gap-2.5 mt-6">
-                            {featurePills.map((pill, i) => (
-                                <motion.div
-                                    key={pill.label}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: 0.4 + i * 0.08 }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.07]"
-                                >
-                                    <pill.icon className="w-3 h-3 text-blue-400/70" />
-                                    <span className="text-[10px] text-white/45 font-medium">{pill.label}</span>
-                                </motion.div>
-                            ))}
+                        <div style={{
+                            transform: "rotateY(-16deg) rotateX(4deg)",
+                            transformOrigin: "15% 50%",
+                            transformStyle: "preserve-3d",
+                        }}>
+                            <BrowserMockup className="min-w-[700px] xl:min-w-[820px] 2xl:min-w-[920px]" />
                         </div>
                     </motion.div>
 
-                    {/* 3D tilted dashboard — oversized, bleeds off right edge */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 60 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 1, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative"
-                        style={{ perspective: "1800px" }}
-                    >
-                        <motion.div
-                            animate={{ y: [0, -8, 0] }}
-                            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <div style={{
-                                transform: "rotateY(-14deg) rotateX(3deg)",
-                                transformOrigin: "25% center",
-                                transformStyle: "preserve-3d",
-                            }}>
-                                <BrowserMockup className="min-w-[900px] xl:min-w-[1050px] 2xl:min-w-[1200px]" />
-                            </div>
-                        </motion.div>
+                    {/* Floor shadow */}
+                    <div className="absolute -bottom-6 left-[8%] w-[70%] h-16 pointer-events-none"
+                        style={{
+                            background: "radial-gradient(ellipse at 40% 0%, rgba(59,130,246,0.08) 0%, transparent 70%)",
+                            filter: "blur(16px)",
+                        }}
+                    />
+                </motion.div>
 
-                        {/* Large soft shadow beneath the mockup */}
-                        <div className="absolute -bottom-10 left-[5%] right-0 h-24 pointer-events-none"
-                            style={{
-                                background: "radial-gradient(ellipse 80% 100% at 35% 0%, rgba(59,130,246,0.10) 0%, transparent 70%)",
-                                filter: "blur(20px)",
-                            }}
-                        />
-                    </motion.div>
-                </div>
-
-                {/* Right fade — dashboard bleeding into edge */}
-                <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#050810] to-transparent pointer-events-none z-20" />
-                {/* Bottom fade */}
-                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#050810] to-transparent pointer-events-none z-20" />
+                {/* Edge fades — smooth bleed into background */}
+                <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#050810] to-transparent pointer-events-none z-20" />
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#050810] to-transparent pointer-events-none z-20" />
+                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#050810] to-transparent pointer-events-none z-20" />
             </div>
         </div>
     );

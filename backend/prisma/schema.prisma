@@ -215,6 +215,7 @@ model Message {
   userId    String
   role      String // user, assistant, system
   content   String   @db.Text
+  metadata  Json?    // Structured results, confirmations, tool outputs
   timestamp DateTime @default(now())
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)

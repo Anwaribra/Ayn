@@ -53,16 +53,17 @@ class ChatService:
         )
 
     @staticmethod
-    async def save_message(chat_id: str, user_id: str, role: str, content: str) -> Message:
+    async def save_message(chat_id: str, user_id: str, role: str, content: str, metadata: dict | None = None) -> Message:
         db = get_db()
-        message = await db.message.create(
-            data={
-                "chat": {"connect": {"id": chat_id}},
-                "userId": user_id, 
-                "role": role,
-                "content": content
-            }
-        )
+        data: dict = {
+            "chat": {"connect": {"id": chat_id}},
+            "userId": user_id, 
+            "role": role,
+            "content": content,
+        }
+        if metadata:
+            data["metadata"] = metadata
+        message = await db.message.create(data=data)
         await db.chat.update(
             where={"id": chat_id},
             data={"updatedAt": datetime.now(timezone.utc)}

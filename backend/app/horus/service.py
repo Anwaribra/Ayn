@@ -143,25 +143,96 @@ class HorusService:
         )
 
     async def _resolve_user_identity(self, user_id: str, current_user: Any = None) -> Dict[str, str]:
-        """Fetch user name/email/role for AI context injection."""
+        """Fetch user name/email/role/institution for AI context injection."""
         name = getattr(current_user, "name", None) or (current_user.get("name") if isinstance(current_user, dict) else None)
         email = getattr(current_user, "email", None) or (current_user.get("email") if isinstance(current_user, dict) else None)
         role = getattr(current_user, "role", None) or (current_user.get("role") if isinstance(current_user, dict) else None)
+        institution_name = None
         if not name:
             try:
                 from app.core.db import db as prisma_client
-                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                user_obj = await prisma_client.user.find_unique(
+                    where={"id": user_id},
+                    include={"institution": True},
+                )
                 if user_obj:
                     name = getattr(user_obj, "name", None)
                     email = email or getattr(user_obj, "email", None)
                     role = role or getattr(user_obj, "role", None)
+                    if getattr(user_obj, "institution", None):
+                        institution_name = user_obj.institution.name
             except Exception:
                 pass
         return {
             "name": name or "User",
             "email": email or "",
             "role": str(role or "USER"),
+            "institution": institution_name or "",
         }
+
+    async def _get_conversation_memory(self, user_id: str, exclude_chat_id: str | None = None) -> str:
+        """Build a lightweight memory string from recent chat summaries."""
+        try:
+            from app.core.db import db as prisma_client
+            recent_chats = await prisma_client.chat.find_many(
+                where={"userId": user_id},
+                order={"updatedAt": "desc"},
+                take=6,
+                include={"messages": {"take": -4, "order_by": {"timestamp": "asc"}}},
+            )
+            if not recent_chats:
+                return ""
+
+            memory_lines: list[str] = []
+            for chat in recent_chats:
+                if chat.id == exclude_chat_id:
+                    continue
+                if not chat.messages:
+                    continue
+                summary_parts = []
+                for m in chat.messages[-4:]:
+                    prefix = "User" if m.role == "user" else "Horus"
+                    snippet = m.content[:120].replace("\n", " ")
+                    summary_parts.append(f"{prefix}: {snippet}")
+                if summary_parts:
+                    title = chat.title or "Untitled"
+                    memory_lines.append(f"[{title}] {' | '.join(summary_parts)}")
+                if len(memory_lines) >= 3:
+                    break
+
+            if not memory_lines:
+                return ""
+            return "Recent conversation memory (past sessions):\n" + "\n".join(memory_lines)
+        except Exception as e:
+            logger.error(f"Failed to build conversation memory: {e}")
+            return ""
+
+    async def _generate_chat_title(self, message: str, response: str, background_tasks: Any, chat_id: str) -> None:
+        """Generate a smart 3-5 word title for a chat using AI (only on first exchange)."""
+        try:
+            from app.core.db import db as prisma_client
+            msg_count = await prisma_client.message.count(where={"chatId": chat_id})
+            if msg_count > 3:
+                return
+
+            client = get_gemini_client()
+            prompt = (
+                "Generate a short chat title (3-5 words, no quotes, no punctuation at the end) "
+                "that captures the topic of this conversation.\n\n"
+                f"User: {message[:200]}\n"
+                f"Assistant: {response[:200]}\n\n"
+                "Title:"
+            )
+            title = await client.generate_text(prompt=prompt)
+            title = (title or "").strip().strip('"').strip("'").strip()[:60]
+            if not title:
+                return
+            await prisma_client.chat.update(
+                where={"id": chat_id},
+                data={"title": title},
+            )
+        except Exception as e:
+            logger.error(f"Failed to generate chat title: {e}")
 
     async def stream_chat(
         self, 
@@ -216,14 +287,19 @@ class HorusService:
                 except Exception:
                     pass
 
+                institution_line = f" They belong to institution '{user_identity['institution']}'." if user_identity.get("institution") else ""
+                memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
+                memory_line = f"\n\n{memory}" if memory else ""
+
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
                         f"You are Horus (حورس), the AI assistant for the Ayn platform. "
-                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). "
+                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}).{institution_line} "
                         f"Address them by name when appropriate. "
                         f"Answer conversational and general questions clearly. "
                         f"Do not claim you accessed platform state unless explicitly requested."
+                        f"{memory_line}"
                     ),
                 ):
                     if chunk:
@@ -232,13 +308,18 @@ class HorusService:
             except Exception as fast_err:
                 logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
                 if not full_response:
+                    yield "__STREAM_ERROR__:Connection interrupted. Please try again.\n"
                     full_response = "I’m having trouble right now. Please try again."
                     yield full_response
 
             if full_response and background_tasks:
                 background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+                if message:
+                    background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
             elif full_response:
                 await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+                if message:
+                    asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
             return
 
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
@@ -291,10 +372,11 @@ class HorusService:
                             yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
                         if plan_output["summary_text"]:
                             yield ("\n" if plan_output["last_structured"] else "") + plan_output["summary_text"]
+                        plan_meta = {"structuredResult": plan_output["last_structured"]} if plan_output["last_structured"] else None
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"])
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"], plan_meta)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"])
+                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"], plan_meta)
                         return
                     else:
                         tool_result = await execute_tool(
@@ -328,10 +410,11 @@ class HorusService:
                         if narrative_text:
                             yield ("\n" if tool_result.get("type") in STRUCTURED_RESULT_TYPES else "") + narrative_text
 
+                        msg_metadata = {"structuredResult": tool_result} if tool_result.get("type") in STRUCTURED_RESULT_TYPES else None
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text, msg_metadata)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text, msg_metadata)
                         return
 
                 if message.startswith("__CANCEL_ACTION__:"):
@@ -455,10 +538,11 @@ class HorusService:
                             else:
                                 yield narrative_text
 
+                        msg_metadata = {"structuredResult": tool_result} if tool_result.get("type") in STRUCTURED_RESULT_TYPES else None
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text)
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", narrative_text, msg_metadata)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text)
+                            await ChatService.save_message(chat_id, user_id, "assistant", narrative_text, msg_metadata)
                         return
                 elif plan and plan.get("mode") == "plan":
                     raw_steps = plan.get("steps", [])
@@ -518,10 +602,11 @@ class HorusService:
                             yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
                         if plan_output["summary_text"]:
                             yield ("\n" if plan_output["last_structured"] else "") + plan_output["summary_text"]
+                        plan_meta = {"structuredResult": plan_output["last_structured"]} if plan_output["last_structured"] else None
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"])
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", plan_output["summary_text"], plan_meta)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"])
+                            await ChatService.save_message(chat_id, user_id, "assistant", plan_output["summary_text"], plan_meta)
                         return
             except Exception as agent_err:
                 logger.error(f"Agent planner/tool execution failed: {agent_err}", exc_info=True)
@@ -615,7 +700,10 @@ class HorusService:
                 )
 
         # 3. AI Interaction (Streaming)
+        memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
         context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context, user_identity=user_identity)
+        if memory:
+            context = memory + "\n\n" + context
         
         full_response = ""
         
@@ -681,26 +769,36 @@ class HorusService:
             history = await history_task
             yield "__THINKING__:Searching conversation history...\n"
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
-            # Ensure the current message is included if not already in history (race condition check)
             if message and not any(m["content"] == message for m in messages):
                 messages.append({"role": "user", "content": message})
             yield "__THINKING__:Generating response...\n"
             
-            async for chunk in client.stream_chat(messages=messages, context=context):
-                if chunk:
-                    full_response += chunk
-                    yield chunk
-            if not full_response.strip():
-                fallback_response = await client.chat(messages=messages, context=context)
-                if fallback_response and fallback_response.strip():
-                    full_response = fallback_response.strip()
+            try:
+                async for chunk in client.stream_chat(messages=messages, context=context):
+                    if chunk:
+                        full_response += chunk
+                        yield chunk
+                if not full_response.strip():
+                    fallback_response = await client.chat(messages=messages, context=context)
+                    if fallback_response and fallback_response.strip():
+                        full_response = fallback_response.strip()
+                        yield full_response
+            except Exception as stream_err:
+                logger.error(f"Stream chat failed mid-response: {stream_err}", exc_info=True)
+                if not full_response.strip():
+                    yield "__STREAM_ERROR__:Connection interrupted. Please try again.\n"
+                    full_response = "I encountered an error while generating a response. Please try again."
                     yield full_response
 
         # 4. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:
             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+            if message:
+                background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
         elif full_response:
-             await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+            await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+            if message:
+                asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
 
     async def _execute_brain_pipeline(self, user_id, current_user, file_results, db, needs_analysis: bool = False):
         """
@@ -880,7 +978,8 @@ class HorusService:
 
         user_line = ""
         if user_identity:
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). Address them by name when appropriate."
+            inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
 
         context_parts.append(f"""
         Recent Platform Activities:
@@ -959,7 +1058,8 @@ class HorusService:
 
         user_line = ""
         if user_identity:
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). Address them by name when appropriate."
+            inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
 
         context_parts.append(f"""
         Recent Platform Activities:
@@ -1019,52 +1119,35 @@ class HorusService:
         if lowered.startswith("__confirm_action__:") or lowered.startswith("__cancel_action__:"):
             return False
 
-        platform_keywords = (
-            "gap",
-            "evidence",
-            "standard",
-            "criteria",
-            "criterion",
-            "audit",
-            "remediation",
-            "report",
-            "dashboard",
-            "workflow",
-            "analytics",
-            "compliance",
-            "policy",
-            "document",
-            "vault",
-            "hub",
-            "score",
-            "ncaaa",
-            "iso",
-            "institution",
-            "upload",
-            "export",
-            "task",
+        platform_keywords_en = (
+            "gap", "evidence", "standard", "criteria", "criterion",
+            "audit", "remediation", "report", "dashboard", "workflow",
+            "analytics", "compliance", "policy", "document", "vault",
+            "hub", "score", "ncaaa", "iso", "institution", "upload",
+            "export", "task", "analyze", "analysis",
         )
-        if any(keyword in lowered for keyword in platform_keywords):
+        platform_keywords_ar = (
+            "فجوة", "أدلة", "دليل", "معيار", "معايير", "تقرير",
+            "لوحة", "تحليل", "امتثال", "سياسة", "وثيقة", "مستند",
+            "رفع", "تصدير", "مهمة", "تدقيق", "علاج", "مؤسسة",
+            "درجة", "نتيجة", "جودة", "اعتماد", "تقييم",
+        )
+        if any(keyword in lowered for keyword in platform_keywords_en):
+            return False
+        if any(keyword in msg for keyword in platform_keywords_ar):
             return False
 
         direct_smalltalk = (
-            "hi",
-            "hello",
-            "hey",
-            "thanks",
-            "thank you",
-            "how are you",
-            "good morning",
-            "good evening",
-            "who are you",
-            "what can you do",
+            "hi", "hello", "hey", "thanks", "thank you",
+            "how are you", "good morning", "good evening",
+            "who are you", "what can you do",
+            "مرحبا", "اهلا", "شكرا", "صباح الخير", "مساء الخير",
         )
-        if any(lowered == t or lowered.startswith(f"{t} ") for t in direct_smalltalk):
+        if any(lowered == t or lowered.startswith(f"{t} ") or msg == t or msg.startswith(f"{t} ") for t in direct_smalltalk):
             return True
 
-        # Lightweight default for simple factual/conversational prompts.
         word_count = len(lowered.split())
-        return word_count <= 20
+        return word_count <= 12
 
     def _cleanup_stale_pending_confirmations(self) -> None:
         now = datetime.now(timezone.utc)

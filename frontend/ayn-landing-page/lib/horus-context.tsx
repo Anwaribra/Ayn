@@ -25,9 +25,11 @@ interface HorusContextValue {
     messages: Message[]
     currentChatId: string | null
     status: HorusStatus
-    thinkingSteps: string[]          // Real steps pushed by __THINKING__: events
+    thinkingSteps: string[]
+    streamError: string | null
     sendMessage: (text: string, files?: File[]) => Promise<void>
     resolveActionConfirmation: (id: string, decision: "confirm" | "cancel") => Promise<void>
+    retryLastMessage: () => Promise<void>
     stopGeneration: () => void
     newChat: () => void
     loadChat: (chatId: string) => Promise<void>
@@ -41,6 +43,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [status, setStatus] = useState<HorusStatus>("idle")
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([])
+    const [streamError, setStreamError] = useState<string | null>(null)
+    const lastUserMessageRef = useRef<{ text: string; files?: File[] } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
 
     // 1. Auto-Resume Last Session on mount
@@ -135,6 +139,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         if ((!text && (!files || files.length === 0)) || status !== "idle") return
 
         setThinkingSteps([])
+        setStreamError(null)
 
         if (appendUser) {
             const userMsg: Message = {
@@ -203,6 +208,12 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                         return
                     }
 
+                    if (chunk.startsWith("__STREAM_ERROR__:")) {
+                        const errorMsg = chunk.slice("__STREAM_ERROR__:".length).trim()
+                        setStreamError(errorMsg || "Connection interrupted. Please try again.")
+                        return
+                    }
+
                     fullContent += chunk
                     setMessages(prev => prev.map(m =>
                         m.id === assistantMsgId ? { ...m, content: fullContent } : m
@@ -226,6 +237,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const sendMessage = async (text: string, files?: File[]) => {
+        lastUserMessageRef.current = { text, files }
         const hasFiles = !!files && files.length > 0
         const normalizedText = text?.trim() || ""
         const visibleUserText = hasFiles
@@ -235,6 +247,22 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             : (normalizedText || "📎 Attached files for analysis")
 
         await streamRequest(text, files, { appendUser: true, visibleUserText })
+    }
+
+    const retryLastMessage = async () => {
+        const last = lastUserMessageRef.current
+        if (!last) return
+        setStreamError(null)
+        setMessages(prev => {
+            const lastAssistantIdx = prev.findLastIndex(m => m.role === "assistant")
+            const lastUserIdx = prev.findLastIndex(m => m.role === "user")
+            let filtered = prev
+            if (lastAssistantIdx >= 0 && lastAssistantIdx > lastUserIdx) {
+                filtered = prev.filter((_, i) => i !== lastAssistantIdx)
+            }
+            return filtered
+        })
+        await streamRequest(last.text, last.files, { appendUser: false })
     }
 
     const resolveActionConfirmation = async (id: string, decision: "confirm" | "cancel") => {
@@ -253,11 +281,13 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setCurrentChatId(null)
         setMessages([])
         setThinkingSteps([])
+        setStreamError(null)
     }
 
     const loadChat = async (chatId: string) => {
         stopGeneration()
-        setThinkingSteps([]) // Clear thinking steps when loading a new chat
+        setThinkingSteps([])
+        setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
             setCurrentChatId(chat.id)
@@ -265,7 +295,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 id: m.id,
                 role: m.role,
                 content: m.content,
-                timestamp: new Date(m.timestamp).getTime()
+                timestamp: new Date(m.timestamp).getTime(),
+                structuredResult: m.metadata?.structuredResult || null,
             })))
         } catch (err) {
             toast.error("Failed to load chat history.")
@@ -273,7 +304,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, sendMessage, resolveActionConfirmation, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

@@ -21,6 +21,7 @@ import {
   Copy,
   Download,
   ListChecks,
+  RefreshCw,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { api } from "@/lib/api"
@@ -163,8 +164,10 @@ export default function HorusAIChat() {
     currentChatId,
     status,
     thinkingSteps,
+    streamError,
     sendMessage,
     resolveActionConfirmation,
+    retryLastMessage,
     stopGeneration,
     newChat,
     loadChat
@@ -862,6 +865,22 @@ export default function HorusAIChat() {
                     </div>
                   )
                 })}
+
+                {/* Stream error with retry */}
+                {streamError && status === "idle" && (
+                  <div className="w-full py-4 animate-in fade-in">
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-destructive/20 bg-destructive/5">
+                      <div className="flex-1 text-sm text-destructive font-medium">{streamError}</div>
+                      <button
+                        onClick={() => retryLastMessage()}
+                        className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Searching indicator */}
                 {status === "searching" && (!reasoning || reasoning.isComplete) && (

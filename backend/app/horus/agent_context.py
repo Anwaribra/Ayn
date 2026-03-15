@@ -18,6 +18,7 @@ async def build_agent_context(
     db: Any,
     user_id: str,
     institution_id: str | None,
+    user_identity: Dict[str, str] | None = None,
 ) -> Dict[str, Any]:
     """
     Build a compact platform snapshot for one user/institution.
@@ -146,7 +147,21 @@ async def build_agent_context(
         "bottom_standard": {"name": bottom_std, "score": std_avgs.get(bottom_std)} if bottom_std else None,
     }
 
+    resolved_identity = user_identity or {}
+    if not resolved_identity:
+        try:
+            user_obj = await db.user.find_unique(where={"id": user_id})
+            if user_obj:
+                resolved_identity = {
+                    "name": getattr(user_obj, "name", "User"),
+                    "email": getattr(user_obj, "email", ""),
+                    "role": str(getattr(user_obj, "role", "USER")),
+                }
+        except Exception:
+            resolved_identity = {"name": "User", "email": "", "role": "USER"}
+
     return {
+        "user": resolved_identity,
         "state_summary": {
             "total_files": summary.total_files,
             "analyzed_files": summary.analyzed_files,

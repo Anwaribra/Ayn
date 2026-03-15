@@ -114,7 +114,8 @@ class HorusService:
 
         # 5. AI Interaction
         client = get_gemini_client()
-        context = await self._prepare_context(user_id, summary, message)
+        chat_user_identity = await self._resolve_user_identity(user_id, current_user)
+        context = await self._prepare_context(user_id, summary, message, user_identity=chat_user_identity)
         
         if file_references:
             ai_response = await client.chat_with_files(
@@ -140,6 +141,27 @@ class HorusService:
             timestamp=datetime.now(timezone.utc),
             state_hash=state_hash
         )
+
+    async def _resolve_user_identity(self, user_id: str, current_user: Any = None) -> Dict[str, str]:
+        """Fetch user name/email/role for AI context injection."""
+        name = getattr(current_user, "name", None) or (current_user.get("name") if isinstance(current_user, dict) else None)
+        email = getattr(current_user, "email", None) or (current_user.get("email") if isinstance(current_user, dict) else None)
+        role = getattr(current_user, "role", None) or (current_user.get("role") if isinstance(current_user, dict) else None)
+        if not name:
+            try:
+                from app.core.db import db as prisma_client
+                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                if user_obj:
+                    name = getattr(user_obj, "name", None)
+                    email = email or getattr(user_obj, "email", None)
+                    role = role or getattr(user_obj, "role", None)
+            except Exception:
+                pass
+        return {
+            "name": name or "User",
+            "email": email or "",
+            "role": str(role or "USER"),
+        }
 
     async def stream_chat(
         self, 
@@ -167,6 +189,7 @@ class HorusService:
             yield f"__CHAT_ID__:{chat_id}\n"
 
         client = get_gemini_client()
+        user_identity = await self._resolve_user_identity(user_id, current_user)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if self._should_use_fast_path(message=message, files=files):
@@ -191,15 +214,16 @@ class HorusService:
                         if message and not any(m["content"] == message for m in fast_messages):
                             fast_messages.append({"role": "user", "content": message})
                 except Exception:
-                    # Keep fast path non-blocking; fall back to current user message only.
                     pass
 
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
-                        "You are Horus AI for the Ayn platform. "
-                        "Answer conversational and general questions clearly. "
-                        "Do not claim you accessed platform state unless explicitly requested."
+                        f"You are Horus (حورس), the AI assistant for the Ayn platform. "
+                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). "
+                        f"Address them by name when appropriate. "
+                        f"Answer conversational and general questions clearly. "
+                        f"Do not claim you accessed platform state unless explicitly requested."
                     ),
                 ):
                     if chunk:
@@ -335,6 +359,7 @@ class HorusService:
                     db=prisma_client,
                     user_id=user_id,
                     institution_id=institution_id,
+                    user_identity=user_identity,
                 )
                 plan = await self._plan_agent_action(
                     client=client,
@@ -590,7 +615,7 @@ class HorusService:
                 )
 
         # 3. AI Interaction (Streaming)
-        context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context)
+        context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context, user_identity=user_identity)
         
         full_response = ""
         
@@ -624,7 +649,7 @@ class HorusService:
             yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
             await asyncio.sleep(0.4)
             
-            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context)
+            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context, user_identity=user_identity)
             yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
             
             ai_message = message or "Analyze these files."
@@ -787,7 +812,7 @@ class HorusService:
 
         return results
 
-    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "") -> str:
+    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None) -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:
@@ -853,12 +878,17 @@ class HorusService:
         is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
         language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
 
+        user_line = ""
+        if user_identity:
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). Address them by name when appropriate."
+
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
         
         Instructions for Horus Brain:
-        - You are the central intelligence of the Ayn Platform.
+        - You are Horus (حورس), the central intelligence of the Ayn Platform.
+        {user_line}
         - You process compliance data, analyze evidence, and manage gaps.
         - When files are uploaded, ALWAYS use the brain results provided above.
         - Be concise, professional, and data-driven.
@@ -866,7 +896,7 @@ class HorusService:
         """)
         return "\n".join(context_parts)
 
-    async def _prepare_context(self, user_id: str, summary, message: str = "") -> str:
+    async def _prepare_context(self, user_id: str, summary, message: str = "", user_identity: Dict[str, str] | None = None) -> str:
         """Prepare deep platform state context for AI."""
         # Fetch extra context
         recent_activities = await ActivityService.get_recent_activities(user_id, limit=5)
@@ -927,12 +957,17 @@ class HorusService:
         is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
         language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
 
+        user_line = ""
+        if user_identity:
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}). Address them by name when appropriate."
+
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
         
         Instructions for Horus Brain:
-        - You are the central intelligence of the Ayn Platform.
+        - You are Horus (حورس), the central intelligence of the Ayn Platform.
+        {user_line}
         - You have access to all platform modules (Evidence, Standards, Gap Analysis, Dashboard).
         - You should help the user navigate, analyze their compliance status, and suggest actions.
         - Be proactive. If a file was just analyzed (see Recent Activities), mention it.

@@ -147,7 +147,7 @@ function SignInForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground bg-white/95 uppercase tracking-widest text-[10px]">Or sign in with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-white/70 uppercase tracking-widest text-[10px]">Or sign in with email</span>
             </div>
 
             {/* Email / Password fields */}
@@ -253,7 +253,7 @@ function SignUpForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-black/10" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground bg-white/95 uppercase tracking-widest text-[10px]">Or create with email</span>
+                <span className="relative z-10 px-3 text-muted-foreground bg-white/70 uppercase tracking-widest text-[10px]">Or create with email</span>
             </div>
 
             <div className="grid gap-4 mt-2">
@@ -465,21 +465,21 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     draggable={false}
                     aria-hidden="true"
                 />
-                {/* Dim + blur overlay */}
-                <div className="absolute inset-0 bg-[#060a14]/60 backdrop-blur-[2px]" />
+                {/* Strong blur + dim overlay — hides text/details */}
+                <div className="absolute inset-0 bg-[#060a14]/50 backdrop-blur-[20px] sm:backdrop-blur-[24px]" />
                 {/* Subtle color tint */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(59,130,246,0.08)_0%,transparent_60%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(59,130,246,0.06)_0%,transparent_60%)]" />
             </div>
 
-            {/* Glass form card — centered */}
+            {/* Liquid glass form card — centered */}
             <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-[440px] rounded-2xl border border-white/[0.08] bg-white/[0.95] p-8 sm:p-10 backdrop-blur-xl"
+                    className="w-full max-w-[440px] rounded-2xl border border-white/[0.15] bg-white/[0.65] p-8 sm:p-10 backdrop-blur-2xl"
                     style={{
-                        boxShadow: "0 25px 60px -12px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05)",
+                        boxShadow: "0 25px 60px -12px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12)",
                     }}
                 >
                     {isSignIn ? (

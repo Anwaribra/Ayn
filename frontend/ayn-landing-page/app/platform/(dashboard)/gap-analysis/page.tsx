@@ -28,7 +28,6 @@ import {
   Download,
   ExternalLink,
 } from "lucide-react"
-import { exportToPDF } from "@/lib/pdf-export"
 import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
@@ -331,7 +330,10 @@ function GapAnalysisContent() {
 
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
           <button 
-            onClick={() => exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")}
+            onClick={async () => {
+              const { exportToPDF } = await import("@/lib/pdf-export")
+              exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")
+            }}
             data-html2canvas-ignore="true"
             className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20"
           >

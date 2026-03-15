@@ -4,23 +4,14 @@ import * as React from "react";
 import { useState, useId } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Shield, Brain, FileCheck, BarChart3, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, Brain, FileCheck, BarChart3, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AynLogo } from "@/components/ayn-logo";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { log } from "@/lib/logger";
-import { toast } from "sonner";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 
 // Password Input with visibility toggle
 export interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -87,33 +78,45 @@ const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
 );
 
 
-// Static benefit cards data for right panel
-const benefits = [
-    {
-        icon: FileCheck,
-        title: "115+ Real Standards",
-        description: "ISO 21001, NCAAA, NAQAAE, ABET and more — fully mapped and ready to use.",
-        color: "text-emerald-600",
-        bg: "bg-emerald-500/10",
-        border: "border-emerald-500/20",
-    },
-    {
-        icon: BarChart3,
-        title: "AI-Powered Gap Analysis",
-        description: "Instant compliance insights that identify exactly where you stand — and what to fix first.",
-        color: "text-blue-600",
-        bg: "bg-blue-500/10",
-        border: "border-blue-500/20",
-    },
-    {
-        icon: Brain,
-        title: "Horus Brain Mode",
-        description: "One conversation triggers evidence mapping, report generation, and compliance scoring.",
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/20",
-    },
+// Floating feature pills for the preview panel
+const featurePills = [
+    { icon: FileCheck, label: "115+ Standards" },
+    { icon: BarChart3, label: "AI Gap Analysis" },
+    { icon: Brain, label: "Horus Brain" },
 ];
+
+function BrowserMockup() {
+    return (
+        <div className="w-full rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl shadow-black/40 bg-[#1a1a2e]/80 backdrop-blur-sm">
+            {/* Title bar */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#0d0d1a]/90 border-b border-white/[0.06]">
+                <div className="flex items-center gap-[6px]">
+                    <span className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
+                    <span className="w-[11px] h-[11px] rounded-full bg-[#febc2e] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
+                    <span className="w-[11px] h-[11px] rounded-full bg-[#28c840] shadow-[inset_0_-1px_2px_rgba(0,0,0,.2)]" />
+                </div>
+                <div className="flex-1 flex justify-center">
+                    <div className="flex items-center gap-2 px-4 py-1 rounded-md bg-white/[0.06] border border-white/[0.06] max-w-[240px] w-full">
+                        <svg className="w-3 h-3 text-white/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        <span className="text-[11px] text-white/40 font-medium tracking-wide truncate">ayn.vercel.app/platform/dashboard</span>
+                    </div>
+                </div>
+                <div className="w-[52px]" />
+            </div>
+            {/* Screenshot */}
+            <div className="relative">
+                <img
+                    src="/dashboard-preview.png"
+                    alt="Ayn Platform Dashboard"
+                    className="w-full h-auto block"
+                    loading="eager"
+                    draggable={false}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050810]/60 via-transparent to-transparent pointer-events-none" />
+            </div>
+        </div>
+    );
+}
 
 // Sign In Form
 function SignInForm(props: {
@@ -492,10 +495,27 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="min-h-screen w-full flex bg-[#f5f5f3]">
-            {/* Left — Form (LIGHT THEME) */}
-            <div className="flex w-full items-center justify-center p-6 md:w-1/2 overflow-y-auto">
-                <div className="w-full max-w-[400px]">
+        <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#f5f5f3]">
+            {/* Mobile/Tablet preview — shows above form on small screens */}
+            <div className="lg:hidden relative w-full bg-[#050810] px-6 pt-10 pb-8 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_60%)] pointer-events-none" />
+                <div className="relative z-10 max-w-md mx-auto">
+                    <div className="text-center mb-6">
+                        <h2 className="text-xl font-bold text-white mb-1">
+                            Quality compliance, <span className="bg-gradient-to-r from-primary to-[#818cf8] bg-clip-text text-transparent">powered by AI.</span>
+                        </h2>
+                    </div>
+                    <div className="relative mx-auto max-w-sm" style={{ perspective: "800px" }}>
+                        <div style={{ transform: "rotateX(4deg)", transformOrigin: "center bottom" }}>
+                            <BrowserMockup />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Left — Form */}
+            <div className="flex w-full items-center justify-center p-6 lg:w-[480px] xl:w-[520px] lg:min-w-[480px] overflow-y-auto min-h-0 lg:min-h-screen">
+                <div className="w-full max-w-[400px] py-8 lg:py-0">
                     {isSignIn ? (
                         <SignInForm
                             handleGoogle={handleGoogleSignIn}
@@ -516,49 +536,84 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 </div>
             </div>
 
-            {/* Right — Static Benefit Cards (DARK THEME Glass) */}
-            <div className="relative hidden w-1/2 md:flex flex-col justify-center p-12 lg:p-16 border-l border-white/5 overflow-hidden bg-[#050810]">
-                {/* Subtle background glow */}
-                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1)_0%,transparent_70%)] pointer-events-none" />
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px]" />
+            {/* Right — Product Preview (Desktop) */}
+            <div className="relative hidden lg:flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#050810] border-l border-white/[0.04]">
+                {/* Ambient glow layers */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
+                <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] bg-blue-500/[0.07] rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-[5%] left-[5%] w-[400px] h-[400px] bg-indigo-500/[0.05] rounded-full blur-[100px] pointer-events-none" />
 
-                <div className="relative z-10">
+                {/* Grid dot pattern */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+                    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)",
+                    backgroundSize: "24px 24px",
+                }} />
+
+                <div className="relative z-10 w-full max-w-[680px] xl:max-w-[760px] px-10 xl:px-14">
                     {/* Header */}
-                    <div className="mb-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 mb-4 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                            <Shield className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-primary text-[10px] uppercase tracking-[0.2em] font-bold">Ayn Platform</span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">
-                            Quality compliance,<br />
-                            <span className="bg-gradient-to-r from-primary to-[#818cf8] bg-clip-text text-transparent">powered by AI.</span>
-                        </h2>
-                        <p className="text-sm text-white/60">
-                            Join institutions already using Ayn to streamline their accreditation journey.
-                        </p>
+                    <div className="mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] mb-5">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                                </span>
+                                <span className="text-white/60 text-[10px] uppercase tracking-[0.2em] font-semibold">Live Platform</span>
+                            </div>
+                            <h2 className="text-[28px] xl:text-[32px] font-bold text-white leading-tight tracking-tight mb-3">
+                                Quality compliance,<br />
+                                <span className="bg-gradient-to-r from-blue-400 via-primary to-indigo-400 bg-clip-text text-transparent">powered by AI.</span>
+                            </h2>
+                            <p className="text-sm text-white/45 max-w-md leading-relaxed">
+                                Join institutions already using Ayn to streamline their accreditation journey with intelligent automation.
+                            </p>
+                        </motion.div>
                     </div>
 
-                    {/* 3 Static Benefit Cards — Dark Glass */}
-                    <div className="space-y-4">
-                        {benefits.map((benefit, i) => (
-                            <motion.div
-                                key={benefit.title}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.4, delay: i * 0.1 }}
-                                className="group flex items-start gap-4 p-5 rounded-2xl bg-white/[0.03] backdrop-blur-[16px] border border-white/[0.08] shadow-lg hover:shadow-2xl hover:scale-[1.01] hover:border-white/[0.15] hover:bg-white/[0.05] transition-all duration-300"
+                    {/* 3D Browser Mockup */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30, rotateX: -5 }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="relative"
+                        style={{ perspective: "1200px" }}
+                    >
+                        <motion.div
+                            animate={{ y: [0, -6, 0] }}
+                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                            style={{
+                                transform: "rotateY(-4deg) rotateX(2deg)",
+                                transformStyle: "preserve-3d",
+                            }}
+                        >
+                            <BrowserMockup />
+                        </motion.div>
+
+                        {/* Reflection glow beneath */}
+                        <div className="absolute -bottom-8 left-[10%] right-[10%] h-16 bg-blue-500/[0.08] rounded-full blur-2xl pointer-events-none" />
+                    </motion.div>
+
+                    {/* Feature pills */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.6 }}
+                        className="flex items-center justify-center gap-3 mt-8"
+                    >
+                        {featurePills.map((pill) => (
+                            <div
+                                key={pill.label}
+                                className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm"
                             >
-                                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-white/10", benefit.bg)}>
-                                    <benefit.icon className={cn("w-5 h-5", benefit.color)} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-white mb-1">{benefit.title}</h3>
-                                    <p className="text-xs text-white/50 leading-relaxed">{benefit.description}</p>
-                                </div>
-                            </motion.div>
+                                <pill.icon className="w-3.5 h-3.5 text-primary/80" />
+                                <span className="text-[11px] text-white/50 font-medium">{pill.label}</span>
+                            </div>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </div>
         </div>

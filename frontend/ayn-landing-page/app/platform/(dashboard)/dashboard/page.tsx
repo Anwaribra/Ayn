@@ -17,7 +17,6 @@ import {
   TrendingUp
 } from "lucide-react"
 import { Cpu, Zap, Download } from "lucide-react"
-import { exportToPDF } from "@/lib/pdf-export"
 import type { DashboardMetrics, Standard } from "@/types"
 import { EmptyState } from "@/components/platform/empty-state"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
@@ -53,7 +52,7 @@ function DashboardContent() {
     { revalidateOnFocus: false }
   )
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return <DashboardPageSkeleton />
   }
 
@@ -123,7 +122,10 @@ function DashboardContent() {
         <div className="flex-1 relative overflow-hidden rounded-3xl glass-card p-8 md:p-12 flex flex-col justify-center min-h-[300px]">
           <div className="absolute top-4 right-4 z-50">
              <button 
-               onClick={() => exportToPDF("dashboard-report-content", "Ayn-Horus-Audit-Dashboard.pdf")}
+               onClick={async () => {
+                 const { exportToPDF } = await import("@/lib/pdf-export")
+                 exportToPDF("dashboard-report-content", "Ayn-Horus-Audit-Dashboard.pdf")
+               }}
                data-html2canvas-ignore="true"
                className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl transition-all font-bold text-xs uppercase tracking-widest border border-primary/20 shadow-sm"
              >

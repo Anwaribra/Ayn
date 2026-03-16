@@ -713,6 +713,7 @@ class HorusService:
         if file_results:
             compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis", "audit", "score", "evaluate"]
             needs_analysis = any(kw.lower() in (message or "").lower() for kw in compliance_keywords)
+            visual_only = all((f.get("type") == "image") for f in file_results)
             
             if background_tasks:
                 background_tasks.add_task(
@@ -728,20 +729,34 @@ class HorusService:
                     self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
                 )
             
-            yield "__THINKING__:Phase 1 (Identify): Scanning document category...\n"
-            await asyncio.sleep(0.4)
-            yield "__THINKING__:Phase 2 (Deconstruct): Splitting PDF into semantic chunks and metadata...\n"
-            await asyncio.sleep(0.4)
-            yield "__THINKING__:Phase 3 (Analyze): Cross-referencing against internal Quality Constitution...\n"
-            await asyncio.sleep(0.4)
-            yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
-            await asyncio.sleep(0.4)
+            if visual_only:
+                yield "__THINKING__:Phase 1: Reading visual content...\n"
+                await asyncio.sleep(0.3)
+                yield "__THINKING__:Phase 2: Identifying key UI elements...\n"
+                await asyncio.sleep(0.3)
+                yield "__THINKING__:Phase 3: Summarizing observations...\n"
+                await asyncio.sleep(0.3)
+            else:
+                yield "__THINKING__:Phase 1 (Identify): Scanning document category...\n"
+                await asyncio.sleep(0.4)
+                yield "__THINKING__:Phase 2 (Deconstruct): Splitting PDF into semantic chunks and metadata...\n"
+                await asyncio.sleep(0.4)
+                yield "__THINKING__:Phase 3 (Analyze): Cross-referencing against internal Quality Constitution...\n"
+                await asyncio.sleep(0.4)
+                yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
+                await asyncio.sleep(0.4)
             
             context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context, user_identity=user_identity)
-            yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
+            if visual_only:
+                yield "__THINKING__:Phase 4: Finalizing response...\n"
+            else:
+                yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
             
-            ai_message = message or "Analyze these files."
-            ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
+            if visual_only:
+                ai_message = message or "Please analyze the attached image(s) and respond in plain language. If it's a UI screenshot, summarize the key elements and any obvious issues. Do not return JSON or code."
+            else:
+                ai_message = message or "Analyze these files."
+                ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
 
             async for chunk in client.stream_chat_with_files(
                 message=ai_message,

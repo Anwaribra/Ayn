@@ -105,9 +105,14 @@ export default function WorkflowsPage() {
             <div className="absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-[140px]" />
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-pill text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                  <Sparkles className="w-3 h-3" />
-                  Automation Layer
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-pill text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                    <Sparkles className="w-3 h-3" />
+                    Automation Layer
+                  </div>
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] text-destructive border border-destructive/30 bg-destructive/10">
+                    Beta
+                  </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--text-primary)]">
                   Workflow Engine

@@ -174,7 +174,7 @@ export default function StandardsPage() {
             {/* 1. HERO SECTION (Translucent Glass) */}
             <section className="w-full py-16 px-6 md:px-12 lg:px-20 relative z-10 transition-all duration-300">
               <div className="max-w-7xl mx-auto">
-                <div className="glass-card p-10 md:p-16 rounded-[48px] border-border relative overflow-hidden">
+                <div className="glass-card p-10 md:p-16 rounded-[48px] glass-border relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse-subtle" />
 
                   <div className="space-y-10">
@@ -196,7 +196,7 @@ export default function StandardsPage() {
                           placeholder="Search standards by name, code or category..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full h-16 pl-14 pr-6 rounded-2xl border-2 bg-background/50 backdrop-blur-sm transition-all font-bold placeholder:text-muted-foreground focus:ring-8 focus:ring-primary/5 outline-none border-border group-focus-within:border-primary/50"
+                          className="w-full h-16 pl-14 pr-6 rounded-2xl border-2 glass-input transition-all font-bold placeholder:text-muted-foreground focus:ring-8 focus:ring-primary/5 outline-none group-focus-within:border-primary/50"
                         />
                       </div>
                       <Button
@@ -214,7 +214,7 @@ export default function StandardsPage() {
 
             <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-12 space-y-12">
               {/* 2. TABS SECTION */}
-              <div className="flex flex-wrap items-center gap-4 border-b pb-px border-border">
+              <div className="flex flex-wrap items-center gap-4 border-b pb-px border-[var(--border-subtle)]">
                 {[
                   { id: "popular", label: "Popular" },
                   { id: "all", label: "All Frameworks" },
@@ -239,7 +239,7 @@ export default function StandardsPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-[1]">
                 {isLoading ? (
                   Array(4).fill(0).map((_, i) => (
-                    <div key={i} className="h-[320px] animate-pulse rounded-[48px] border bg-muted/20 border-border" />
+                    <div key={i} className="h-[320px] animate-pulse rounded-[48px] glass-panel glass-border" />
                   ))
                 ) : filteredStandards && filteredStandards.length > 0 ? (
                   filteredStandards.map((standard: Standard) => (
@@ -248,7 +248,7 @@ export default function StandardsPage() {
                       variant={2}
                       hoverEffect
                       shine
-                      className="group border-border rounded-[48px] min-h-[320px] p-12"
+                      className="group glass-border rounded-[48px] min-h-[320px] p-12"
                     >
                       <div className="flex-1 flex flex-col space-y-8 relative z-10">
                         {/* Top Segment */}
@@ -291,7 +291,7 @@ export default function StandardsPage() {
                           <Button
                             variant="outline"
                             onClick={() => openDetails(standard)}
-                            className="h-14 border-2 font-black rounded-2xl flex items-center justify-center gap-2 transition-all hover:bg-muted/50 border-border text-foreground bg-transparent"
+                            className="h-14 border-2 font-black rounded-2xl flex items-center justify-center gap-2 transition-all glass-button text-foreground"
                           >
                             <Eye className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
                             <span>View Details</span>
@@ -308,8 +308,8 @@ export default function StandardsPage() {
                     </GlassCard>
                   ))
                 ) : (
-                  <GlassPanel className="col-span-full py-32 text-center border-2 border-dashed border-border" hoverEffect>
-                    <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6 border border-border bg-background/50">
+                  <GlassPanel className="col-span-full py-32 text-center border-2 border-dashed glass-border" hoverEffect>
+                    <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6 glass-input">
                       <Search className="w-10 h-10 text-muted-foreground" />
                     </div>
                     <h4 className="text-2xl font-black text-foreground">No frameworks found</h4>
@@ -333,7 +333,7 @@ export default function StandardsPage() {
               <GlassCard
                 variant={3}
                 className={cn(
-                  "w-full max-w-lg p-10 border-border rounded-[40px] relative overflow-hidden shadow-2xl transition-all duration-300",
+                  "w-full max-w-lg p-10 glass-border rounded-[40px] relative overflow-hidden shadow-2xl transition-all duration-300",
                   isDragOver && "scale-[1.02] border-primary/50 shadow-primary/20 ring-4 ring-primary/20"
                 )}
               >
@@ -354,7 +354,7 @@ export default function StandardsPage() {
                     onDrop={handleDrop}
                     className={cn(
                       "relative w-full p-8 border-2 border-dashed rounded-[32px] transition-all duration-300 group cursor-pointer flex flex-col items-center",
-                      isDragOver ? "bg-primary/5 border-primary/50" : "border-border hover:bg-muted/50"
+                      isDragOver ? "bg-primary/5 border-primary/50" : "glass-border glass-button"
                     )}
                   >
                     <input
@@ -386,7 +386,7 @@ export default function StandardsPage() {
 
                   <div className="flex gap-4 w-full pt-4">
                     <Button variant="outline" onClick={() => { setIsPDFModalOpen(false); setSelectedFile(null); }}
-                      className="flex-1 h-14 border-2 font-black rounded-2xl border-border text-foreground bg-transparent">
+                      className="flex-1 h-14 border-2 font-black rounded-2xl glass-button text-foreground">
                       Cancel
                     </Button>
                     <Button
@@ -413,7 +413,7 @@ export default function StandardsPage() {
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
               <div className="glass-card relative w-full max-w-[1000px] h-[92vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden rounded-[28px] sm:rounded-[40px] shadow-2xl">
                 {/* ── HEADER ── fixed, never scrolls */}
-                <div className="shrink-0 px-4 sm:px-10 pt-4 sm:pt-10 pb-4 sm:pb-10 border-b border-[var(--border)] bg-background/30 backdrop-blur-xl flex items-start justify-between gap-4">
+                <div className="shrink-0 px-4 sm:px-10 pt-4 sm:pt-10 pb-4 sm:pb-10 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 backdrop-blur-xl flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                     <div className={cn(
                       "w-12 h-12 sm:w-16 sm:h-16 rounded-[16px] sm:rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3 shrink-0",
@@ -430,7 +430,7 @@ export default function StandardsPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 min-h-[44px] min-w-[44px] hover:bg-muted/50 rounded-2xl transition-all">
+                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 min-h-[44px] min-w-[44px] glass-button rounded-2xl transition-all">
                     <X className="w-6 h-6 text-muted-foreground" />
                   </button>
                 </div>
@@ -444,13 +444,13 @@ export default function StandardsPage() {
 
                   <div className="space-y-4">
                     {mappingStatus === "analyzing" ? (
-                      <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border flex flex-col items-center justify-center">
+                      <div className="p-10 text-center glass-panel rounded-[24px] border border-dashed glass-border flex flex-col items-center justify-center">
                         <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
                         <p className="text-muted-foreground font-bold">Analysis in progress...</p>
                       </div>
                     ) : mappingsData?.mappings?.length > 0 ? (
                       mappingsData.mappings.map((m: any) => (
-                        <div key={m.criterion_id} className="flex flex-col gap-2 p-5 rounded-2xl border border-border bg-card/50 hover:bg-card/80 transition-colors">
+                        <div key={m.criterion_id} className="flex flex-col gap-2 p-5 rounded-2xl glass-panel glass-border transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
                               {m.status === "met" && <CheckCircle className="text-green-500 shrink-0" size={18} />}
@@ -469,7 +469,7 @@ export default function StandardsPage() {
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={cn(
                                 "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
-                                m.status === 'not_analyzed' ? 'bg-muted text-muted-foreground' :
+                                m.status === 'not_analyzed' ? 'glass-button text-muted-foreground' :
                                   m.status === 'met' ? 'bg-green-500/10 text-green-500' :
                                     m.status === 'partial' ? 'bg-yellow-500/10 text-yellow-500' :
                                       'bg-red-500/10 text-red-500'
@@ -484,7 +484,7 @@ export default function StandardsPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="p-10 text-center bg-muted/10 rounded-[24px] border border-dashed border-border flex flex-col items-center justify-center">
+                      <div className="p-10 text-center glass-panel rounded-[24px] border border-dashed glass-border flex flex-col items-center justify-center">
                         <Loader2 className="w-6 h-6 text-primary animate-spin mb-3 opacity-50" />
                         <p className="text-muted-foreground font-bold">Loading criteria...</p>
                       </div>
@@ -493,7 +493,7 @@ export default function StandardsPage() {
                 </div>
 
                 {/* ── BOTTOM CONTROLS ── fixed, never scrolls */}
-                <div className="shrink-0 border-t border-[var(--border)] px-4 sm:px-10 py-5 sm:py-8 grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-8 z-10 bg-white dark:bg-transparent shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                <div className="shrink-0 border-t border-[var(--border-subtle)] px-4 sm:px-10 py-5 sm:py-8 grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-8 z-10 bg-[var(--surface-modal)]/60 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
                   <div className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
                     <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
                       <Sparkles className="w-4 h-4" />
@@ -551,7 +551,7 @@ export default function StandardsPage() {
                                 {ev.title || ev.originalFilename}
                               </span>
                               {ev.documentType && (
-                                <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[9px] font-bold border border-border">
+                                <span className="ml-1 px-1.5 py-0.5 rounded glass-pill text-[9px] font-bold">
                                   {ev.documentType}
                                 </span>
                               )}
@@ -562,7 +562,7 @@ export default function StandardsPage() {
                     </div>
 
                     {mappingStatus === "analyzing" ? (
-                      <Button disabled className="w-full h-14 rounded-2xl bg-background/50 text-primary-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                      <Button disabled className="w-full h-14 rounded-2xl glass-button text-muted-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Analyzing...
                       </Button>
@@ -570,7 +570,7 @@ export default function StandardsPage() {
                       <div className="space-y-3">
                         <Button
                           onClick={() => handleAnalyzeNow(false)}
-                          className="w-full h-14 rounded-2xl bg-background text-primary hover:bg-muted font-black text-sm uppercase tracking-wider transition-all active:scale-95"
+                          className="w-full h-14 rounded-2xl glass-button text-primary font-black text-sm uppercase tracking-wider transition-all active:scale-95"
                         >
                           Analyze Now
                         </Button>
@@ -580,13 +580,13 @@ export default function StandardsPage() {
                             <Button
                               onClick={() => handleAnalyzeNow(true)}
                               variant="outline"
-                              className="w-full h-12 min-h-[44px] rounded-2xl border-border text-foreground hover:bg-muted font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
+                              className="w-full h-12 min-h-[44px] rounded-2xl glass-button text-foreground font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
                               <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
                             </Button>
                             <Button
                               onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                              className="w-full h-14 rounded-2xl bg-muted text-foreground hover:bg-muted/80 font-black text-sm uppercase tracking-wider transition-all active:scale-95 border border-border"
+                              className="w-full h-14 rounded-2xl glass-button text-foreground font-black text-sm uppercase tracking-wider transition-all active:scale-95"
                             >
                               View Full Report
                             </Button>
@@ -596,7 +596,7 @@ export default function StandardsPage() {
                     )}
                   </div>
 
-                  <GlassPanel className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] space-y-4 shadow-sm border-border" hoverEffect>
+                  <GlassPanel className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] space-y-4 shadow-sm glass-border" hoverEffect>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
@@ -619,7 +619,7 @@ export default function StandardsPage() {
                             <span className="text-xs font-black text-red-500">{mappingsData.gap}</span>
                           </div>
 
-                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-[var(--surface)] mt-3">
                             <div
                               className="h-full bg-green-500 transition-all duration-700"
                               style={{ width: `${(mappingsData.met / mappingsData.total_criteria) * 100}%` }}
@@ -628,7 +628,7 @@ export default function StandardsPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-muted mt-3">
+                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-[var(--surface)] mt-3">
                             <div
                               className="h-full bg-primary transition-all duration-700"
                               style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}

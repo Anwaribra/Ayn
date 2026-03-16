@@ -233,7 +233,7 @@ function DashboardContent() {
           </div>
 
           {publicStandards.length > 6 && (
-            <div className="mt-6 pt-4 border-t border-border">
+            <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
               <Link
                 href="/platform/standards"
                 className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
@@ -258,7 +258,7 @@ function DashboardContent() {
             </div>
             <div className="space-y-3">
               {(safeMetrics?.recentEvidence?.length ?? 0) === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-border rounded-3xl bg-muted/20">
+                <div className="text-center py-10 border-2 border-dashed glass-border rounded-3xl glass-panel">
                   <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                   <p className="text-muted-foreground text-sm font-medium">No recent evidence</p>
                   <Link href="/platform/evidence" className="inline-block mt-4 px-5 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-bold rounded-xl uppercase tracking-widest">
@@ -267,7 +267,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 safeMetrics?.recentEvidence?.map((ev: any) => (
-                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted/50 transition-all group cursor-pointer border border-transparent hover:border-border">
+                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--surface)] transition-all group cursor-pointer border border-transparent hover:border-[var(--border-subtle)]">
                     <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                       <FileText className="w-5 h-5" />
                     </div>

@@ -410,7 +410,7 @@ function EvidenceContent() {
       {selectedEvidence && (
         <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-background/95 backdrop-blur-xl" style={{ margin: 0 }}>
           {/* Top Bar Navigation for the Split View */}
-          <div className="absolute top-0 left-0 right-0 h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-6 z-20">
+          <div className="absolute top-0 left-0 right-0 h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 backdrop-blur-md flex items-center justify-between px-6 z-20">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0">
                 <FileText className="w-5 h-5 text-foreground" />
@@ -420,7 +420,7 @@ function EvidenceContent() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className={cn(
                     "px-2 py-px rounded text-[10px] font-bold uppercase tracking-wider border",
-                    ['linked', 'analyzed'].includes(selectedEvidence.status) ? "status-success" : "bg-muted text-muted-foreground border-border"
+                    ['linked', 'analyzed'].includes(selectedEvidence.status) ? "status-success" : "glass-button text-muted-foreground"
                   )}>
                     {selectedEvidence.status}
                   </span>
@@ -438,7 +438,7 @@ function EvidenceContent() {
               </button>
               <button
                 onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null); }}
-                className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="p-2 rounded-full glass-button text-muted-foreground transition-colors"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -447,18 +447,18 @@ function EvidenceContent() {
           </div>
 
           {/* LEFT PANE: Document Viewer */}
-          <div className="w-1/2 h-full pt-16 border-r border-border flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
+          <div className="w-1/2 h-full pt-16 border-r border-[var(--border-subtle)] flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
             {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && selectedEvidence.originalFilename?.toLowerCase().endsWith(".pdf") ? (
               <iframe src={selectedEvidence.fileUrl} className="w-full h-full" title={selectedEvidence.title || "Document preview"} />
             ) : (
               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
-                <div className="max-w-3xl mx-auto rounded-xl bg-background border border-border shadow-2xl p-8 lg:p-12 min-h-full">
-                  <div className="mb-10 pb-6 border-b border-border text-center">
+                <div className="max-w-3xl mx-auto rounded-xl glass-panel glass-border shadow-2xl p-8 lg:p-12 min-h-full">
+                  <div className="mb-10 pb-6 border-b border-[var(--border-subtle)] text-center">
                     <h1 className="text-3xl font-serif font-black text-foreground mb-4">{selectedEvidence.title || "Untitled Document"}</h1>
                     <div className="flex items-center justify-center gap-3 flex-wrap">
                       <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">ID: {selectedEvidence.id.slice(0, 8)}</span>
                       {selectedEvidence.documentType && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-muted border border-border text-muted-foreground">{selectedEvidence.documentType}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider glass-pill text-muted-foreground">{selectedEvidence.documentType}</span>
                       )}
                       {selectedEvidence.confidenceScore != null && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider status-success border">{selectedEvidence.confidenceScore}% confidence</span>
@@ -518,7 +518,7 @@ function EvidenceContent() {
               </div>
 
               {/* Confidence Score Card */}
-              <div className="p-6 rounded-3xl glass-layer-2 border border-border mb-8 flex items-center gap-6">
+              <div className="p-6 rounded-3xl glass-panel glass-border mb-8 flex items-center gap-6">
                 <div className="w-16 h-16 shrink-0">
                   {/* Mock Circular Progress */}
                   <svg viewBox="0 0 36 36" className="w-full h-full text-primary -rotate-90">
@@ -546,8 +546,8 @@ function EvidenceContent() {
                     <div
                       key={criterion.id || idx}
                       className={cn(
-                        "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-muted/50",
-                        activeHighlightId === criterion.id ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border glass-panel"
+                        "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-[var(--surface)]",
+                        activeHighlightId === criterion.id ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "glass-panel glass-border"
                       )}
                       onClick={() => setActiveHighlightId(criterion.id)}
                     >
@@ -571,14 +571,14 @@ function EvidenceContent() {
                         <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                           View criterion →
                         </span>
-                        <button className="px-3 py-1.5 rounded-lg bg-background border border-border text-[10px] font-bold uppercase hover:bg-muted transition-colors text-foreground">
+                        <button className="px-3 py-1.5 rounded-lg glass-button text-[10px] font-bold uppercase transition-colors text-foreground">
                           Draft AI Fix
                         </button>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 rounded-2xl border border-dashed border-border text-center">
+                  <div className="p-6 rounded-2xl border border-dashed glass-border text-center glass-panel">
                     <AlertCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-sm font-medium text-muted-foreground">No criteria linked yet.</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">Run a Horus Scan to map this evidence against standards.</p>
@@ -600,7 +600,7 @@ function EvidenceContent() {
             aria-hidden="true"
           />
           <div 
-            className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50"
+            className="relative w-full max-w-sm glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
             role="dialog"
             aria-modal="true"
             aria-labelledby="analyze-modal-title"
@@ -609,7 +609,7 @@ function EvidenceContent() {
             <p className="text-sm font-medium text-muted-foreground mb-6">Select framework to map against.</p>
 
             <div className="space-y-3 mb-8">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/50">
+              <label className="flex items-center gap-3 p-3 rounded-xl glass-button cursor-pointer transition-colors">
                 <input
                   type="radio"
                   name="standard"
@@ -622,7 +622,7 @@ function EvidenceContent() {
               </label>
 
               {standards?.map((s: any) => (
-                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/50">
+                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl glass-button cursor-pointer transition-colors">
                   <input
                     type="radio"
                     name="standard"
@@ -644,7 +644,7 @@ function EvidenceContent() {
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(false)}
                 disabled={isAnalyzing}
-                className="flex-1 px-4 py-3 text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground rounded-2xl transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -674,7 +674,7 @@ function EvidenceContent() {
             aria-hidden="true"
           />
           <div 
-            className="relative w-full max-w-sm glass-layer-3 rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border/50"
+            className="relative w-full max-w-sm glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-modal-title"
@@ -685,7 +685,7 @@ function EvidenceContent() {
               <button
                 type="button"
                 onClick={() => setEvidenceToDelete(null)}
-                className="flex-1 px-4 py-3 text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground rounded-2xl transition-colors"
+                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
               >
                 Cancel
               </button>

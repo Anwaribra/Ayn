@@ -449,6 +449,23 @@
     0 0 20px -4px rgba(59, 130, 246, 0.4);
 }
 
+/* Microsoft button + Coming Soon badge — higher contrast */
+.auth-microsoft-btn {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+.auth-coming-soon {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
 /* Signup-specific card — gradient border glow */
 .auth-glass-card-signup {
   box-shadow:

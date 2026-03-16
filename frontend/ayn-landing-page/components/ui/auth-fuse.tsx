@@ -107,7 +107,7 @@ function SignInForm(props: {
             transition={{ duration: 0.4 }}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground auth-back-link">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm text-foreground/80 hover:text-foreground auth-back-link">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
             </Link>
@@ -120,7 +120,7 @@ function SignInForm(props: {
 
             <div className="flex flex-col gap-2 text-center">
                 <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
-                <p className="text-sm text-muted-foreground">Sign in to continue to your dashboard</p>
+                <p className="text-sm text-foreground/80">Sign in to continue to your dashboard</p>
             </div>
 
             {props.err && (
@@ -136,10 +136,10 @@ function SignInForm(props: {
                     Continue with Google
                 </Button>
                 {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button w-full h-11 rounded-xl text-foreground/60 cursor-not-allowed justify-center font-medium opacity-70">
-                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-50" />
+                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-foreground/70 cursor-not-allowed justify-center font-medium opacity-80">
+                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
                     Continue with Microsoft
-                    <span className="ml-2 text-[9px] uppercase tracking-widest bg-black/5 px-1.5 py-0.5 rounded">Coming Soon</span>
+                    <span className="ml-2 auth-coming-soon">Coming Soon</span>
                 </Button>
             </div>
 
@@ -147,18 +147,18 @@ function SignInForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground auth-divider-pill uppercase tracking-widest text-[10px] rounded-full">Or sign in with email</span>
+                <span className="relative z-10 px-3 text-foreground/75 auth-divider-pill uppercase tracking-widest text-xs rounded-full">Or sign in with email</span>
             </div>
 
             {/* Email / Password fields */}
             <div className="grid gap-4 mt-2">
                 <div className="relative group">
                     <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
+                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/75 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/75 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
                 </div>
                 <div className="relative group">
                     <PasswordInput name="password" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
+                    <Label className="absolute left-4 top-4 text-sm text-foreground/75 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/75 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                 </div>
                 <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
                     {props.loading ? (
@@ -170,9 +170,9 @@ function SignInForm(props: {
                 </Button>
             </div>
 
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-foreground/80">
                 Don&apos;t have an account?{" "}
-                <button type="button" className="text-foreground hover:underline font-medium" onClick={props.toggle}>
+                <button type="button" className="text-foreground font-medium hover:underline" onClick={props.toggle}>
                     Create account
                 </button>
             </div>
@@ -223,7 +223,7 @@ function SignUpForm(props: {
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
             <motion.div variants={itemVariants}>
-                <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground auth-back-link">
+                <Link href="/" className="inline-flex items-center gap-2 text-sm text-foreground/80 hover:text-foreground auth-back-link">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Home
                 </Link>
@@ -237,7 +237,7 @@ function SignUpForm(props: {
 
             <motion.div variants={itemVariants} className="flex flex-col gap-2 text-center">
                 <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
-                <p className="text-sm text-muted-foreground">Get started with your quality journey</p>
+                <p className="text-sm text-foreground/80">Get started with your quality journey</p>
             </motion.div>
 
             {props.err && (
@@ -253,10 +253,10 @@ function SignUpForm(props: {
                     Continue with Google
                 </Button>
                 {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button w-full h-11 rounded-xl text-foreground/60 cursor-not-allowed justify-center font-medium opacity-70">
-                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-50" />
+                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-foreground/70 cursor-not-allowed justify-center font-medium opacity-80">
+                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
                     Continue with Microsoft
-                    <span className="ml-2 text-[9px] uppercase tracking-widest bg-black/5 px-1.5 py-0.5 rounded">Coming Soon</span>
+                    <span className="ml-2 auth-coming-soon">Coming Soon</span>
                 </Button>
             </motion.div>
 
@@ -264,17 +264,17 @@ function SignUpForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
-                <span className="relative z-10 px-3 text-muted-foreground auth-divider-pill uppercase tracking-widest text-[10px] rounded-full">Or create with email</span>
+                <span className="relative z-10 px-3 text-foreground/75 auth-divider-pill uppercase tracking-widest text-xs rounded-full">Or create with email</span>
             </motion.div>
 
             <motion.div variants={itemVariants} className="grid gap-4 mt-2">
                 <div className="relative group">
                     <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={nameId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Full Name</Label>
+                    <Label htmlFor={nameId} className="absolute left-4 top-4 text-sm text-foreground/75 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/75 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Full Name</Label>
                 </div>
                 <div className="relative group">
                     <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
+                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/75 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/75 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
                 </div>
                 <div className="relative group">
                     <PasswordInput
@@ -288,32 +288,32 @@ function SignUpForm(props: {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <Label className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
+                    <Label className="absolute left-4 top-4 text-sm text-foreground/75 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/75 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                     {password.length > 0 && (
                         <div className="flex flex-col gap-1 mt-1">
                             <div className="flex items-center gap-2 text-xs">
                                 <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
                                     {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={password.length >= 8 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>At least 8 characters</span>
+                                <span className={password.length >= 8 ? "text-emerald-600 font-medium" : "text-foreground/70"}>At least 8 characters</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs">
                                 <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
                                     {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-medium" : "text-muted-foreground"}>One uppercase letter</span>
+                                <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-medium" : "text-foreground/70"}>One uppercase letter</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs">
                                 <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
                                     {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-600 font-medium" : "text-muted-foreground"}>One special character</span>
+                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-600 font-medium" : "text-foreground/70"}>One special character</span>
                             </div>
                         </div>
                     )}
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-xs text-foreground/80">Account Role <span className="text-muted-foreground/50 font-normal">(Optional)</span></Label>
+                    <Label className="text-sm text-foreground/90">Account Role <span className="text-foreground/60 font-normal">(Optional)</span></Label>
                     <div className="flex flex-wrap gap-2">
                         {[
                             { value: "STUDENT", label: "Student" },
@@ -331,7 +331,7 @@ function SignUpForm(props: {
                                     "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
                                     selectedRole === role.value
                                         ? "auth-chip-selected bg-primary text-primary-foreground border-primary shadow-[0_10px_20px_-14px_rgba(0,0,0,0.6)]"
-                                        : "auth-chip text-muted-foreground hover:border-white/60 hover:bg-white/50"
+                                        : "auth-chip text-foreground/80 hover:border-white/60 hover:bg-white/50"
                                 )}
                             >
                                 {role.label}
@@ -349,7 +349,7 @@ function SignUpForm(props: {
                 </Button>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground">
+            <motion.div variants={itemVariants} className="text-center text-sm text-foreground/80">
                 Already have an account?{" "}
                 <button type="button" className="text-foreground hover:underline font-medium" onClick={props.toggle}>
                     Sign in

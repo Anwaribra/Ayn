@@ -347,16 +347,19 @@
 
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
-  background: #ffffff;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
 }
 
 [data-section="platform"] .glass-card {
-  background: #ffffff;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
-  backdrop-filter: none;
 }
 
 /* Typography remap not needed — platform is now light-first */
@@ -770,7 +773,9 @@
 }
 
 [data-section="platform"] .glass-panel:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow-strong);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

@@ -30,7 +30,9 @@ class Settings(BaseSettings):
 
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
     GOOGLE_ALLOWED_DOMAINS: Optional[str] = None
+    FRONTEND_URL: str = "https://ayn.vercel.app"
     
     # Application
     APP_NAME: str = "Ayn Platform"

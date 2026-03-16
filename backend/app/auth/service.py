@@ -1,5 +1,6 @@
 """Authentication service."""
 from fastapi import HTTPException, status
+import httpx
 from app.core.db import get_db
 from app.core.utils import get_password_hash, verify_password, create_access_token
 from app.auth.models import (
@@ -114,9 +115,63 @@ class AuthService:
     @staticmethod
     async def login_with_google(id_token: str) -> AuthResponse:
         """Login or register a user using a Google ID token."""
-        db = get_db()
+        return await AuthService._auth_from_google_id_token(id_token)
 
-        payload = verify_google_id_token(id_token)
+    @staticmethod
+    async def google_oauth_callback(code: str, redirect_uri: str) -> AuthResponse:
+        """
+        Exchange Google OAuth authorization code for tokens and login/register user.
+        Used when redirect_uri is the frontend (e.g. ayn.vercel.app) so Google shows that domain.
+        """
+        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Google OAuth is not configured (missing client_id or client_secret).",
+            )
+
+        # Validate redirect_uri matches allowed frontend
+        allowed = settings.FRONTEND_URL.rstrip("/")
+        if not redirect_uri.startswith(allowed):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid redirect_uri.",
+            )
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+
+        if resp.status_code != 200:
+            logger.error(f"[Google OAuth] Token exchange failed: {resp.text}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to exchange authorization code.",
+            )
+
+        data = resp.json()
+        id_token_str = data.get("id_token")
+        if not id_token_str:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No ID token in Google response.",
+            )
+
+        return await AuthService._auth_from_google_id_token(id_token_str)
+
+    @staticmethod
+    async def _auth_from_google_id_token(id_token_str: str) -> AuthResponse:
+        """Shared logic: verify ID token and create/find user."""
+        db = get_db()
+        payload = verify_google_id_token(id_token_str)
         email = payload.get("email")
         name = payload.get("name") or email
 
@@ -139,15 +194,12 @@ class AuthService:
                         "role": None,
                     }
                 )
-                
                 default_institution = await db.institution.create(
-                    data={
-                        "name": f"{user.name}'s Institution",
-                    }
+                    data={"name": f"{user.name}'s Institution"}
                 )
                 user = await db.user.update(
                     where={"id": user.id},
-                    data={"institutionId": default_institution.id}
+                    data={"institutionId": default_institution.id},
                 )
             except Exception as e:
                 logger.error(f"Error creating Google user: {e}")
@@ -157,10 +209,9 @@ class AuthService:
                 )
 
         access_token = create_access_token(data={"sub": user.id, "role": user.role})
-
         return AuthResponse(
             user=UserResponse.model_validate(user),
-            access_token=access_token
+            access_token=access_token,
         )
 
     @staticmethod

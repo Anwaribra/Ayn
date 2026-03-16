@@ -358,69 +358,64 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     const prefersReducedMotion = useReducedMotion();
     const [error, setError] = useState<string | null>(null);
 
-    // Listen for Supabase auth state changes (handles OAuth redirects)
+    // Handle token from direct Google OAuth callback (shows ayn.vercel.app in Google)
+    React.useEffect(() => {
+        if (typeof window === "undefined") return;
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        const googleLogin = params.get("google_login");
+        if (token && googleLogin === "1") {
+            log("[Auth] Storing token from Google OAuth callback...");
+            localStorage.setItem("access_token", token);
+            const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+            sessionStorage.removeItem("redirectAfterLogin");
+            window.history.replaceState({}, "", "/login");
+            api.getCurrentUser()
+                .then((user) => {
+                    localStorage.setItem("user", JSON.stringify(user));
+                    window.location.href = redirectPath || "/platform/dashboard";
+                })
+                .catch(() => {
+                    window.location.href = redirectPath || "/platform/dashboard";
+                });
+            return;
+        }
+        const err = params.get("error");
+        if (err) {
+            setError(decodeURIComponent(err));
+            window.history.replaceState({}, "", "/login");
+        }
+    }, []);
+
+    // Listen for Supabase auth state changes (fallback for Supabase OAuth)
     React.useEffect(() => {
         let hasProcessed = false;
-
-        log('[Auth] Setting up auth state listener...');
-
+        log("[Auth] Setting up auth state listener...");
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            log('[Auth] Auth state changed:', event, session?.user?.email);
-
-            if (event === 'SIGNED_IN' && session?.access_token && !hasProcessed) {
+            if (event === "SIGNED_IN" && session?.access_token && !hasProcessed) {
                 hasProcessed = true;
-                log('[Auth] User signed in via OAuth, syncing with backend...');
                 setIsLoading(true);
                 setError(null);
-
                 try {
                     await api.syncWithSupabase(session.access_token);
-                    log('[Auth] Sync successful, clearing Supabase session...');
                     await supabase.auth.signOut();
                     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                     sessionStorage.removeItem("redirectAfterLogin");
-                    log('[Auth] Redirecting to:', redirectPath || "/platform/dashboard");
                     window.location.href = redirectPath || "/platform/dashboard";
                 } catch (err) {
-                    console.error('[Auth] Sync failed:', err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
                     setIsLoading(false);
                     hasProcessed = false;
                 }
             }
         });
-
-        return () => {
-            log('[Auth] Cleaning up auth state listener');
-            subscription.unsubscribe();
-        };
+        return () => subscription.unsubscribe();
     }, []);
 
-
-    const handleGoogleSignIn = async () => {
+    const handleGoogleSignIn = () => {
         setError(null);
-        setIsLoading(true);
-        log('[Auth] Starting Supabase Google OAuth...');
-
-        try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: `${window.location.origin}/login`,
-                }
-            });
-
-            if (error) {
-                console.error('[Auth] Supabase OAuth error:', error);
-                throw error;
-            }
-
-            log('[Auth] Redirecting to Google...');
-        } catch (err) {
-            console.error('[Auth] Google Sign-In failed:', err);
-            setError(err instanceof Error ? err.message : "Google sign-in failed");
-            setIsLoading(false);
-        }
+        log("[Auth] Redirecting to direct Google OAuth (ayn.vercel.app)...");
+        window.location.href = "/auth/google";
     };
 
     const onEmailSignIn = async (email: string, password: string) => {

@@ -49,6 +49,12 @@ class SupabaseLoginRequest(BaseModel):
     access_token: str = Field(..., description="Supabase access token (JWT)")
 
 
+class GoogleOAuthCallbackRequest(BaseModel):
+    """Google OAuth authorization code exchange request."""
+    code: str = Field(..., description="Authorization code from Google")
+    redirect_uri: str = Field(..., description="Exact redirect_uri used in the OAuth request")
+
+
 class UpdateUserRequest(BaseModel):
     """Update user profile request."""
     name: Optional[str] = Field(None, min_length=2, max_length=100, description="User full name")

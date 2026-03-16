@@ -5,6 +5,7 @@ from app.auth.models import (
     LoginRequest,
     GoogleLoginRequest,
     SupabaseLoginRequest,
+    GoogleOAuthCallbackRequest,
     UpdateUserRequest,
     AuthResponse,
     UserResponse,
@@ -45,6 +46,16 @@ async def login_with_google(request: Request, body: GoogleLoginRequest):
     Login or register a user using a Google ID token.
     """
     return await AuthService.login_with_google(body.id_token)
+
+
+@router.post("/google/callback", response_model=AuthResponse)
+@limiter.limit("10/minute")
+async def google_oauth_callback(request: Request, body: GoogleOAuthCallbackRequest):
+    """
+    Exchange Google OAuth authorization code for tokens.
+    Used when redirect_uri is the frontend (ayn.vercel.app) so Google shows that domain.
+    """
+    return await AuthService.google_oauth_callback(body.code, body.redirect_uri)
 
 
 @router.post("/supabase-sync", response_model=AuthResponse)

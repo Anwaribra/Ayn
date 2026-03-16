@@ -26,6 +26,13 @@
   --glass-shadow-soft:
     0 4px 20px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.04);
   --glass-shadow-strong: 0 12px 40px -4px rgba(15, 23, 42, 0.08);
+  --glass-soft-bg: rgba(255, 255, 255, 0.6);
+  --glass-strong-bg: rgba(255, 255, 255, 0.85);
+  --glass-input-bg: rgba(255, 255, 255, 0.78);
+  --glass-input-border: rgba(15, 23, 42, 0.14);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
+  --glass-ring: rgba(59, 111, 217, 0.35);
 
   /* Core surfaces */
   --bg-deep: var(--layer-0);
@@ -41,6 +48,8 @@
   --accent-amber: #b45309;
   --accent-red: #b91c1c;
   --accent-red-soft: #a83b42;
+  --horus-user-gradient: linear-gradient(135deg, #2563eb, #38bdf8);
+  --horus-user-foreground: #ffffff;
 
   /* Status semantics */
   --status-info: var(--accent-blue);
@@ -130,6 +139,13 @@
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
   --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --glass-soft-bg: rgba(16, 16, 22, 0.45);
+  --glass-strong-bg: rgba(22, 22, 30, 0.7);
+  --glass-input-bg: rgba(10, 10, 14, 0.55);
+  --glass-input-border: rgba(255, 255, 255, 0.12);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-outer: 0 12px 32px -18px rgba(0, 0, 0, 0.6);
+  --glass-ring: rgba(59, 111, 217, 0.5);
 
   --bg-deep: var(--layer-0);
   --sidebar-bg: var(--layer-1);
@@ -139,6 +155,8 @@
 
   --accent-blue: #3B6FD9;
   --accent-emerald: #0EA47A;
+  --horus-user-gradient: linear-gradient(135deg, #3B6FD9, #0EA5E9);
+  --horus-user-foreground: #ffffff;
 
   --status-info: var(--accent-blue);
   --status-info-bg: rgba(59, 111, 217, 0.12);
@@ -299,6 +317,124 @@
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 12px;
+}
+
+/* 3️⃣A Unified Glass Primitives */
+[data-section="platform"] .glass-surface {
+  background: var(--glass-soft-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+[data-section="platform"] .glass-surface-strong {
+  background: var(--glass-strong-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) + 10px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 10px));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+[data-section="platform"] .glass-input {
+  background: var(--glass-input-bg);
+  border: 1px solid var(--glass-input-border);
+  box-shadow: var(--glass-inset);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+}
+
+[data-section="platform"] .glass-pill {
+  background: var(--glass-soft-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+}
+
+[data-section="platform"] .glass-focus-ring:focus-within {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-outer);
+}
+
+/* Horus chat elements */
+[data-section="platform"] .horus-input-shell {
+  border-radius: 999px;
+  padding: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-section="platform"] .horus-input-shell:focus-within,
+[data-section="platform"] .horus-input-shell.is-active {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-outer);
+}
+
+[data-section="platform"] .horus-input-field {
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+[data-section="platform"] .horus-icon-button {
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+[data-section="platform"] .horus-icon-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--glass-border);
+}
+
+[data-section="platform"] .horus-send-button {
+  background: var(--horus-user-gradient);
+  color: var(--horus-user-foreground);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 24px -14px rgba(15, 23, 42, 0.5);
+}
+
+[data-section="platform"] .horus-stop-button {
+  background: color-mix(in oklab, var(--destructive) 18%, transparent);
+  color: var(--destructive);
+  border: 1px solid color-mix(in oklab, var(--destructive) 35%, transparent);
+}
+
+[data-section="platform"] .horus-quick-action {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+[data-section="platform"] .horus-user-bubble {
+  background: var(--horus-user-gradient);
+  color: var(--horus-user-foreground);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.5);
+}
+
+[data-section="platform"] .horus-assistant-bubble {
+  background: var(--glass-soft-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+}
+
+[data-section="platform"] .horus-file-chip {
+  background: var(--glass-input-bg);
+  border: 1px solid var(--glass-input-border);
+  box-shadow: var(--glass-inset);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+}
+
+[data-section="platform"] .horus-history-card {
+  background: var(--glass-soft-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
 }
 
 /* ─── Status utility classes (token-based) ───────────────────────────────────── */

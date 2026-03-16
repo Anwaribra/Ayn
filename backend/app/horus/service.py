@@ -57,6 +57,28 @@ class HorusService:
     
     def __init__(self, state_manager):
         self.state_manager = state_manager
+
+    @staticmethod
+    def _needs_compliance_analysis(message: str | None) -> bool:
+        if not message:
+            return False
+        compliance_keywords = [
+            "gap", "compliance", "standard", "criteria", "criterion", "ncaaa", "iso",
+            "accreditation", "analysis", "audit", "score", "evaluate",
+            "فجوة", "امتثال", "معيار", "معايير", "تقييم", "تدقيق", "اعتماد", "تحليل", "درجة", "نتيجة",
+        ]
+        msg = message.lower()
+        return any(kw.lower() in msg for kw in compliance_keywords)
+
+    @staticmethod
+    def _is_visual_only(files: List[Any] | None) -> bool:
+        if not files:
+            return False
+        for f in files:
+            ct = getattr(f, "content_type", "") or ""
+            if not ct.startswith("image/"):
+                return False
+        return True
     
     async def chat(
         self, 
@@ -75,6 +97,7 @@ class HorusService:
         if not chat_id:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
             chat_id = chat.id
+        active_goal = await self._get_active_goal(user_id, chat_id)
         
         # 2. Save User Message
         if message:
@@ -87,14 +110,35 @@ class HorusService:
         # 4. Handle Files
         file_references = []
         if files:
+            visual_only = self._is_visual_only(files)
+            needs_analysis = self._needs_compliance_analysis(message)
+            store_as_evidence = not (visual_only and not needs_analysis)
             for file in files:
-                upload_result = await EvidenceService.upload_evidence(
-                    file=file,
-                    current_user=current_user,
-                    background_tasks=background_tasks
-                )
-                if upload_result.success:
-                    await file.seek(0)
+                if store_as_evidence:
+                    upload_result = await EvidenceService.upload_evidence(
+                        file=file,
+                        current_user=current_user,
+                        background_tasks=background_tasks
+                    )
+                    if upload_result.success:
+                        await file.seek(0)
+                        content = await file.read()
+                        ct = file.content_type or ""
+                        file_references.append({
+                            "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                            "mime_type": ct,
+                            "data": base64.b64encode(content).decode("utf-8"),
+                            "filename": file.filename
+                        })
+                        
+                        await ActivityService.log_activity(
+                            user_id=user_id,
+                            type="evidence_uploaded",
+                            title=f"File uploaded: {file.filename}",
+                            entity_id=upload_result.evidenceId,
+                            entity_type="evidence"
+                        )
+                else:
                     content = await file.read()
                     ct = file.content_type or ""
                     file_references.append({
@@ -103,23 +147,23 @@ class HorusService:
                         "data": base64.b64encode(content).decode("utf-8"),
                         "filename": file.filename
                     })
-                    
-                    await ActivityService.log_activity(
-                        user_id=user_id,
-                        type="evidence_uploaded",
-                        title=f"File uploaded: {file.filename}",
-                        entity_id=upload_result.evidenceId,
-                        entity_type="evidence"
-                    )
 
         # 5. AI Interaction
         client = get_gemini_client()
         chat_user_identity = await self._resolve_user_identity(user_id, current_user)
-        context = await self._prepare_context(user_id, summary, message, user_identity=chat_user_identity)
+        context = await self._prepare_context(user_id, summary, message, user_identity=chat_user_identity, goal=active_goal)
         
         if file_references:
+            visual_only = self._is_visual_only(files)
+            needs_analysis = self._needs_compliance_analysis(message)
+            if visual_only and not needs_analysis:
+                ai_message = message or "Please analyze the attached image(s) and respond in plain language. If it's a UI screenshot, summarize the key elements and any obvious issues. Do not return JSON or code."
+            elif visual_only and needs_analysis:
+                ai_message = (message or "").strip() + "\n\nAnalyze the attached image(s) with a brief compliance-focused summary. Respond in plain language. Do not return JSON or code."
+            else:
+                ai_message = message or "Analyze these files."
             ai_response = await client.chat_with_files(
-                message=message or "Analyze these files.",
+                message=ai_message,
                 files=file_references,
                 context=context
             )
@@ -261,6 +305,10 @@ class HorusService:
 
         client = get_gemini_client()
         user_identity = await self._resolve_user_identity(user_id, current_user)
+        active_goal = await self._get_active_goal(user_id, chat_id)
+        visual_only_request = self._is_visual_only(files)
+        needs_analysis = self._needs_compliance_analysis(message)
+        store_as_evidence = not (visual_only_request and not needs_analysis)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if self._should_use_fast_path(message=message, files=files):
@@ -290,12 +338,13 @@ class HorusService:
                 institution_line = f" They belong to institution '{user_identity['institution']}'." if user_identity.get("institution") else ""
                 memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
                 memory_line = f"\n\n{memory}" if memory else ""
+                goal_line = f" Active goal: {active_goal}." if active_goal else ""
 
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
                         f"You are Horus (حورس), the AI assistant for the Ayn platform. "
-                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}).{institution_line} "
+                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}).{institution_line}{goal_line} "
                         f"Address them by name when appropriate. "
                         f"Answer conversational and general questions clearly. "
                         f"Do not claim you accessed platform state unless explicitly requested."
@@ -448,6 +497,7 @@ class HorusService:
                     client=client,
                     message=message,
                     platform_snapshot=snapshot,
+                    goal=active_goal,
                 )
 
                 if plan and plan.get("mode") == "tool":
@@ -613,23 +663,34 @@ class HorusService:
         
         # 2. Parallelize ALL initial operations for speed
         async def process_file(f):
-            upload_result = await EvidenceService.upload_evidence(
-                file=f,
-                current_user=current_user,
-                background_tasks=background_tasks
-            )
-            if upload_result.success:
-                await f.seek(0)
-                content = await f.read()
-                ct = f.content_type or ""
-                return {
-                    "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
-                    "mime_type": ct,
-                    "data": base64.b64encode(content).decode("utf-8"),
-                    "filename": f.filename,
-                    "evidenceId": upload_result.evidenceId
-                }
-            return None
+            if store_as_evidence:
+                upload_result = await EvidenceService.upload_evidence(
+                    file=f,
+                    current_user=current_user,
+                    background_tasks=background_tasks
+                )
+                if upload_result.success:
+                    await f.seek(0)
+                    content = await f.read()
+                    ct = f.content_type or ""
+                    return {
+                        "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                        "mime_type": ct,
+                        "data": base64.b64encode(content).decode("utf-8"),
+                        "filename": f.filename,
+                        "evidenceId": upload_result.evidenceId
+                    }
+                return None
+
+            content = await f.read()
+            ct = f.content_type or ""
+            return {
+                "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                "mime_type": ct,
+                "data": base64.b64encode(content).decode("utf-8"),
+                "filename": f.filename,
+                "evidenceId": None
+            }
 
         async def fetch_mappings_context(uid: str):
             try:
@@ -690,8 +751,9 @@ class HorusService:
         # Log file uploads in background
         for res in file_results:
             evidence_id = res.get("evidenceId")
-            if background_tasks:
-                background_tasks.add_task(ActivityService.log_activity,
+            if evidence_id and background_tasks:
+                background_tasks.add_task(
+                    ActivityService.log_activity,
                     user_id=user_id,
                     type="evidence_uploaded",
                     title=f"File uploaded: {res['filename']}",
@@ -701,7 +763,14 @@ class HorusService:
 
         # 3. AI Interaction (Streaming)
         memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
-        context = await self._prepare_context_sync(summary, recent_activities, message=message, mapping_context=mapping_context, user_identity=user_identity)
+        context = await self._prepare_context_sync(
+            summary,
+            recent_activities,
+            message=message,
+            mapping_context=mapping_context,
+            user_identity=user_identity,
+            goal=active_goal
+        )
         if memory:
             context = memory + "\n\n" + context
         
@@ -711,23 +780,22 @@ class HorusService:
         history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=20))
 
         if file_results:
-            compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis", "audit", "score", "evaluate"]
-            needs_analysis = any(kw.lower() in (message or "").lower() for kw in compliance_keywords)
             visual_only = all((f.get("type") == "image") for f in file_results)
             
-            if background_tasks:
-                background_tasks.add_task(
-                    self._execute_brain_pipeline,
-                    user_id,
-                    current_user,
-                    file_results,
-                    db,
-                    needs_analysis
-                )
-            else:
-                asyncio.create_task(
-                    self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
-                )
+            if store_as_evidence:
+                if background_tasks:
+                    background_tasks.add_task(
+                        self._execute_brain_pipeline,
+                        user_id,
+                        current_user,
+                        file_results,
+                        db,
+                        needs_analysis
+                    )
+                else:
+                    asyncio.create_task(
+                        self._execute_brain_pipeline(user_id, current_user, file_results, db, needs_analysis)
+                    )
             
             if visual_only:
                 yield "__THINKING__:Phase 1: Reading visual content...\n"
@@ -746,14 +814,16 @@ class HorusService:
                 yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
                 await asyncio.sleep(0.4)
             
-            context = await self._prepare_context_sync(summary, recent_activities, None, message=message, mapping_context=mapping_context, user_identity=user_identity)
             if visual_only:
                 yield "__THINKING__:Phase 4: Finalizing response...\n"
             else:
                 yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
             
             if visual_only:
-                ai_message = message or "Please analyze the attached image(s) and respond in plain language. If it's a UI screenshot, summarize the key elements and any obvious issues. Do not return JSON or code."
+                if needs_analysis:
+                    ai_message = (message or "").strip() + "\n\nAnalyze the attached image(s) with a brief compliance-focused summary. Respond in plain language. Do not return JSON or code."
+                else:
+                    ai_message = message or "Please analyze the attached image(s) and respond in plain language. If it's a UI screenshot, summarize the key elements and any obvious issues. Do not return JSON or code."
             else:
                 ai_message = message or "Analyze these files."
                 ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
@@ -925,7 +995,7 @@ class HorusService:
 
         return results
 
-    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None) -> str:
+    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None) -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:
@@ -996,6 +1066,7 @@ class HorusService:
             inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
             user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
 
+        goal_line = f"- Active goal: {goal}" if goal else ""
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
@@ -1003,6 +1074,7 @@ class HorusService:
         Instructions for Horus Brain:
         - You are Horus (حورس), the central intelligence of the Ayn Platform.
         {user_line}
+        {goal_line}
         - You process compliance data, analyze evidence, and manage gaps.
         - When files are uploaded, ALWAYS use the brain results provided above.
         - Be concise, professional, and data-driven.
@@ -1010,7 +1082,7 @@ class HorusService:
         """)
         return "\n".join(context_parts)
 
-    async def _prepare_context(self, user_id: str, summary, message: str = "", user_identity: Dict[str, str] | None = None) -> str:
+    async def _prepare_context(self, user_id: str, summary, message: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None) -> str:
         """Prepare deep platform state context for AI."""
         # Fetch extra context
         recent_activities = await ActivityService.get_recent_activities(user_id, limit=5)
@@ -1076,6 +1148,7 @@ class HorusService:
             inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
             user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
 
+        goal_line = f"- Active goal: {goal}" if goal else ""
         context_parts.append(f"""
         Recent Platform Activities:
         {self._format_activities(recent_activities)}
@@ -1083,6 +1156,7 @@ class HorusService:
         Instructions for Horus Brain:
         - You are Horus (حورس), the central intelligence of the Ayn Platform.
         {user_line}
+        {goal_line}
         - You have access to all platform modules (Evidence, Standards, Gap Analysis, Dashboard).
         - You should help the user navigate, analyze their compliance status, and suggest actions.
         - Be proactive. If a file was just analyzed (see Recent Activities), mention it.
@@ -1164,6 +1238,15 @@ class HorusService:
         word_count = len(lowered.split())
         return word_count <= 12
 
+    async def _get_active_goal(self, user_id: str, chat_id: str | None) -> str | None:
+        try:
+            chat = await ChatService.get_goal(user_id, chat_id)
+            if chat and getattr(chat, "goal", None):
+                return chat.goal
+        except Exception as e:
+            logger.error(f"Failed to fetch active goal: {e}")
+        return None
+
     def _cleanup_stale_pending_confirmations(self) -> None:
         now = datetime.now(timezone.utc)
         expired_ids: list[str] = []
@@ -1211,14 +1294,17 @@ class HorusService:
         client: Any,
         message: str,
         platform_snapshot: Dict[str, Any],
+        goal: str | None = None,
     ) -> Dict[str, Any] | None:
         tool_manifest = build_tool_manifest()
 
+        goal_block = f"\nActive session goal:\n{goal}\n" if goal else ""
         planner_prompt = f"""
 You are Horus planner. Decide whether to call exactly one tool or answer as chat.
 
 User message:
 {message}
+{goal_block}
 
 Platform snapshot JSON:
 {json.dumps(platform_snapshot)[:8000]}

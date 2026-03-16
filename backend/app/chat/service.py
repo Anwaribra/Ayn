@@ -31,6 +31,16 @@ class ChatService:
         )
 
     @staticmethod
+    async def get_chat_no_messages(chat_id: str, user_id: str) -> Optional[Chat]:
+        db = get_db()
+        return await db.chat.find_first(
+            where={
+                "id": chat_id,
+                "userId": user_id
+            }
+        )
+
+    @staticmethod
     async def list_chats(user_id: str) -> List[Chat]:
         db = get_db()
         return await db.chat.find_many(
@@ -53,6 +63,14 @@ class ChatService:
         )
 
     @staticmethod
+    async def get_last_chat_no_messages(user_id: str) -> Optional[Chat]:
+        db = get_db()
+        return await db.chat.find_first(
+            where={"userId": user_id},
+            order={"updatedAt": "desc"},
+        )
+
+    @staticmethod
     async def save_message(chat_id: str, user_id: str, role: str, content: str, metadata: dict | None = None) -> Message:
         db = get_db()
         data: dict = {
@@ -69,6 +87,32 @@ class ChatService:
             data={"updatedAt": datetime.now(timezone.utc)}
         )
         return message
+
+    @staticmethod
+    async def set_goal(user_id: str, goal: str, chat_id: Optional[str] = None) -> Chat:
+        db = get_db()
+        target_chat = None
+        if chat_id:
+            target_chat = await ChatService.get_chat_no_messages(chat_id, user_id)
+        if not target_chat:
+            target_chat = await ChatService.get_last_chat_no_messages(user_id)
+        if not target_chat:
+            target_chat = await ChatService.create_chat(user_id, title="New Chat")
+
+        return await db.chat.update(
+            where={"id": target_chat.id},
+            data={
+                "goal": goal,
+                "goalUpdatedAt": datetime.now(timezone.utc),
+                "updatedAt": datetime.now(timezone.utc),
+            },
+        )
+
+    @staticmethod
+    async def get_goal(user_id: str, chat_id: Optional[str] = None) -> Optional[Chat]:
+        if chat_id:
+            return await ChatService.get_chat_no_messages(chat_id, user_id)
+        return await ChatService.get_last_chat_no_messages(user_id)
 
     @staticmethod
     async def add_system_message(user_id: str, content: str, chat_id: Optional[str] = None) -> Optional[Message]:

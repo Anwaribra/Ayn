@@ -37,6 +37,17 @@ class Observation(BaseModel):
     suggested_actions: List[dict] = []
 
 
+class GoalUpdateRequest(BaseModel):
+    goal: str
+    chat_id: Optional[str] = None
+
+
+class GoalResponse(BaseModel):
+    chat_id: str
+    goal: Optional[str] = None
+    goal_updated_at: Optional[datetime] = None
+
+
 def get_user_id(current_user):
     """Safely extract user_id from current_user."""
     if current_user is None:
@@ -65,20 +76,11 @@ async def horus_chat_post(
         state_service = StateService(db)
         horus_service = HorusService(state_service)
         
-        in_memory_files = []
-        if files:
-            from starlette.datastructures import Headers
-            for f in files:
-                content = await f.read()
-                headers = Headers({"content-type": f.content_type}) if f.content_type else Headers()
-                new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content), headers=headers)
-                in_memory_files.append(new_f)
-                
         return await horus_service.chat(
             user_id=user_id,
             message=message,
             chat_id=chat_id,
-            files=in_memory_files,
+            files=files,
             background_tasks=background_tasks,
             db=db,
             current_user=current_user
@@ -104,21 +106,12 @@ async def horus_chat_stream(
     state_service = StateService(db)
     horus_service = HorusService(state_service)
     
-    in_memory_files = []
-    if files:
-        from starlette.datastructures import Headers
-        for f in files:
-            content = await f.read()
-            headers = Headers({"content-type": f.content_type}) if f.content_type else Headers()
-            new_f = UploadFile(file=io.BytesIO(content), filename=f.filename, size=len(content), headers=headers)
-            in_memory_files.append(new_f)
-            
     async def event_generator():
         async for chunk in horus_service.stream_chat(
             user_id=user_id,
             message=message,
             chat_id=chat_id,
-            files=in_memory_files,
+            files=files,
             background_tasks=background_tasks,
             db=db,
             current_user=current_user
@@ -236,6 +229,38 @@ async def get_chat_history(
     """Get user's chat history/archives."""
     user_id = get_user_id(current_user)
     return await ChatService.list_chats(user_id)
+
+
+@router.get("/goal", response_model=GoalResponse)
+async def get_goal(
+    chat_id: Optional[str] = Query(None),
+    current_user = Depends(get_current_user),
+):
+    user_id = get_user_id(current_user)
+    chat = await ChatService.get_goal(user_id, chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    return GoalResponse(
+        chat_id=chat.id,
+        goal=getattr(chat, "goal", None),
+        goal_updated_at=getattr(chat, "goalUpdatedAt", None),
+    )
+
+
+@router.post("/goal", response_model=GoalResponse)
+async def set_goal(
+    body: GoalUpdateRequest,
+    current_user = Depends(get_current_user),
+):
+    user_id = get_user_id(current_user)
+    if not body.goal or not body.goal.strip():
+        raise HTTPException(status_code=400, detail="Goal is required")
+    chat = await ChatService.set_goal(user_id, body.goal.strip(), body.chat_id)
+    return GoalResponse(
+        chat_id=chat.id,
+        goal=getattr(chat, "goal", None),
+        goal_updated_at=getattr(chat, "goalUpdatedAt", None),
+    )
 
 
 @router.get("/history/{chat_id}")

@@ -132,8 +132,8 @@ function getReasoningSteps(text: string, hasFiles: boolean) {
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
   return (
-    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl bg-[var(--layer-0)] border border-[var(--border-subtle)] shadow-sm transition-all hover:border-[var(--brand-primary)]/50 hover:shadow-md">
-      <div className="w-8 h-8 rounded-lg bg-[var(--brand-primary)]/10 flex items-center justify-center text-[var(--brand-primary)] shrink-0">
+    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl horus-file-chip transition-all hover:border-primary/40 hover:shadow-md">
+      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
         {file.type === 'image' && file.preview ? (
           <img src={file.preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
         ) : (
@@ -581,7 +581,7 @@ export default function HorusAIChat() {
                         "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
                         currentChatId === session.id
                           ? "bg-primary/10 border-primary/20 text-primary"
-                          : "glass-layer-2 hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                          : "horus-history-card hover:border-primary/30 text-muted-foreground hover:text-foreground"
                       )}
                     >
                       <div className="flex justify-between items-start gap-2">
@@ -676,14 +676,14 @@ export default function HorusAIChat() {
                       { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
                       { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
                     ].map((item) => (
-                      <button
-                        key={item.prompt}
-                        onClick={() => handleSendMessage(item.prompt)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-full text-[12px] md:text-[13px] font-medium text-muted-foreground border border-[var(--border-subtle)]/80 bg-[var(--surface)]/35 hover:bg-[var(--surface-modal)] hover:text-foreground hover:border-primary/35 transition-all duration-200"
-                      >
-                        <span>{item.label}</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
-                      </button>
+                        <button
+                          key={item.prompt}
+                          onClick={() => handleSendMessage(item.prompt)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] text-[12px] md:text-[13px] text-muted-foreground border transition-all duration-200 glass-pill horus-quick-action hover:text-foreground hover:border-primary/35"
+                        >
+                          <span>{item.label}</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
+                        </button>
                     ))}
                   </motion.div>
                 </div>
@@ -717,7 +717,7 @@ export default function HorusAIChat() {
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
                         <div className="w-full py-4 flex flex-col items-end">
-                           <div className="text-[14px] text-foreground bg-[var(--surface-modal)] border border-[var(--border-subtle)] px-4 py-3 rounded-2xl rounded-tr-sm max-w-[88%] whitespace-pre-wrap font-medium shadow-sm">
+                           <div className="text-[14px] px-4 py-3 rounded-2xl rounded-tr-sm max-w-[88%] whitespace-pre-wrap font-semibold horus-user-bubble">
                              {msg.content}
                            </div>
                         </div>
@@ -741,7 +741,7 @@ export default function HorusAIChat() {
 
                           {/* Pending action confirmation */}
                           {msg.role === "assistant" && msg.pendingConfirmation && (
-                            <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                            <div className="mb-3 rounded-2xl p-4 animate-in fade-in zoom-in-95 duration-200 glass-surface">
                               <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
@@ -766,7 +766,7 @@ export default function HorusAIChat() {
                           {msg.content && (
                             <div
                               className={cn(
-                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent",
+                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent px-5 py-4 horus-assistant-bubble",
                                 isStreamingThis && "horus-streaming-active"
                               )}
                             >
@@ -935,7 +935,7 @@ export default function HorusAIChat() {
               />
             </div>
             
-            <p className="text-zinc-500 dark:text-white/30 font-medium text-[11px] pb-2 pt-1 text-center w-full tracking-wide">
+            <p className="text-muted-foreground font-medium text-[11px] pb-2 pt-1 text-center w-full tracking-wide">
                 Horus can make mistakes. Verify important data.
             </p>
           </div>

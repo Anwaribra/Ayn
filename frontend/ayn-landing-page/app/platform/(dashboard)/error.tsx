@@ -20,7 +20,7 @@ export default function DashboardError({
   }, [error])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[var(--surface)]">
       <Header title="Something went wrong" />
       <div className="p-4 md:p-[var(--spacing-content)] flex flex-col items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center text-center max-w-md">

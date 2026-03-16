@@ -122,7 +122,7 @@ export default function UploadEvidencePage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 space-y-6"
+            className="glass-panel glass-border rounded-xl p-6 space-y-6"
           >
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg whitespace-pre-line">
@@ -187,7 +187,7 @@ export default function UploadEvidencePage() {
 
             {/* Selected Files List (if not using the upload component's internal list) */}
             {files.length > 0 && (
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)]">
                 <span className="text-sm text-muted-foreground">
                   {files.length} file{files.length !== 1 ? "s" : ""} ready to upload
                 </span>
@@ -213,7 +213,7 @@ export default function UploadEvidencePage() {
                     {uploadedCount} / {files.length}
                   </span>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-[var(--surface)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full transition-all duration-300"
                     style={{

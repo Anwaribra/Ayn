@@ -214,7 +214,7 @@ function AnalyticsContent() {
       <header className="mb-8 pt-6 flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="px-2 py-0.5 rounded bg-muted border border-[var(--border-subtle)]">
+            <div className="px-2 py-0.5 rounded glass-pill">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Analytics Engine</span>
             </div>
             <div className="h-px w-6 bg-border" />
@@ -246,9 +246,9 @@ function AnalyticsContent() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="glass-panel rounded-2xl p-5 glass-border animate-pulse">
-                <div className="h-9 w-9 bg-muted rounded-xl mb-3" />
-                <div className="h-8 w-16 bg-muted rounded mb-2" />
-                <div className="h-3 w-24 bg-muted rounded" />
+                <div className="h-9 w-9 bg-[var(--surface)]/60 rounded-xl mb-3" />
+                <div className="h-8 w-16 bg-[var(--surface)]/60 rounded mb-2" />
+                <div className="h-3 w-24 bg-[var(--surface)]/50 rounded" />
               </div>
             ))}
           </div>
@@ -307,7 +307,7 @@ function AnalyticsContent() {
               </div>
               <div className="space-y-3">
                 {analytics.anomalies.map((anomaly: any) => (
-                  <div key={anomaly.reportId} className="flex items-center gap-4 p-4 rounded-2xl glass-border hover:bg-muted/30 transition-all">
+                  <div key={anomaly.reportId} className="flex items-center gap-4 p-4 rounded-2xl glass-border hover:bg-[var(--surface)]/60 transition-all">
                     <div className="w-10 h-10 rounded-xl status-warning border flex items-center justify-center shrink-0">
                       <span className="mono text-[10px] font-bold">{Math.round(anomaly.score)}</span>
                     </div>
@@ -333,7 +333,7 @@ function AnalyticsContent() {
                   const colors: Record<string, string> = { "0-20": "#c9424a", "21-40": "#b45309", "41-60": "#2563eb", "61-80": "#7c5ce0", "81-100": "#0d9668" }
                   return (
                     <div key={bucket.range} className="flex flex-col items-center gap-2">
-                      <div className="w-full h-32 flex items-end justify-center rounded-xl bg-muted/30 p-1">
+                      <div className="w-full h-32 flex items-end justify-center rounded-xl bg-[var(--surface)]/60 p-1">
                         <div className="w-full rounded-lg transition-all duration-700" style={{ height: `${heightPct}%`, backgroundColor: colors[bucket.range] || "#2563eb" }} />
                       </div>
                       <span className="text-[10px] font-bold text-muted-foreground">{bucket.range}%</span>

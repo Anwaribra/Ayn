@@ -61,10 +61,10 @@ export function StandardDetailPageClient() {
         </Link>
 
         {/* Standard Info Card */}
-        <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
+        <div className="glass-panel glass-border rounded-xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-muted rounded-lg">
+              <div className="p-3 glass-panel glass-border rounded-lg">
                 <BookOpen className="w-8 h-8 text-foreground" />
               </div>
               <div>
@@ -82,7 +82,7 @@ export function StandardDetailPageClient() {
         </div>
 
         {/* Criteria List */}
-        <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
+        <div className="glass-panel glass-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-foreground">Criteria ({criteria?.length ?? 0})</h3>
             <Link href={`/platform/standards/${id}/criteria/new`}>
@@ -103,10 +103,10 @@ export function StandardDetailPageClient() {
               {criteria.map((criterion: Criterion, index: number) => (
                 <div
                   key={criterion.id}
-                  className="p-4 bg-muted/30 rounded-lg border border-border hover:border-foreground/20 transition-colors"
+                  className="p-4 glass-panel glass-border rounded-lg hover:border-foreground/20 transition-colors"
                 >
                   <div className="flex items-start gap-4">
-                    <span className="flex-shrink-0 w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-medium text-foreground">
+                    <span className="flex-shrink-0 w-8 h-8 glass-panel glass-border rounded-full flex items-center justify-center text-sm font-medium text-foreground">
                       {index + 1}
                     </span>
                     <div className="flex-1">

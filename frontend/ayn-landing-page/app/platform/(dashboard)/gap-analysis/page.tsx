@@ -391,7 +391,7 @@ function GapAnalysisContent() {
             )}
             <button
               onClick={() => setActiveReport(null)}
-              className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-[var(--surface)]/60 transition-colors"
               aria-label="Close report"
             >
               <X className="w-3.5 h-3.5" />

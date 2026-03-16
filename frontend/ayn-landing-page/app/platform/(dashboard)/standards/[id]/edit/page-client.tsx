@@ -76,7 +76,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
             Back to standard
           </Link>
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
+          <div className="glass-panel glass-border rounded-xl p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div id="form-error" className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg" role="alert">
@@ -92,7 +92,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="ISO 21001"
                   required
-                  className="bg-background/50"
+                  className="glass-input"
                   aria-invalid={!!error}
                   aria-describedby={error ? "form-error" : undefined}
                 />
@@ -106,7 +106,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Educational Organizations Management System..."
                   rows={4}
-                  className="bg-background/50"
+                  className="glass-input"
                 />
               </div>
 

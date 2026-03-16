@@ -104,17 +104,17 @@ function MockAuditChat() {
         </button>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl w-full">
-          <div className="glass-panel p-6 rounded-2xl text-left border-[var(--border-subtle)]">
+          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
             <Target className="w-6 h-6 text-[var(--text-tertiary)] mb-4" />
             <h3 className="font-bold text-[var(--text-primary)] mb-2">Targeted Scrutiny</h3>
             <p className="text-xs text-[var(--text-secondary)]">Questions dynamically adapt to your actual uploaded policies and procedures.</p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl text-left border-[var(--border-subtle)]">
+          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
             <Sparkles className="w-6 h-6 text-primary mb-4" />
             <h3 className="font-bold text-[var(--text-primary)] mb-2">Real Scenarios</h3>
             <p className="text-xs text-[var(--text-secondary)]">Simulates the stress and detail required during a physical NAQAAE or ISO visit.</p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl text-left border-[var(--border-subtle)]">
+          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
             <Scale className="w-6 h-6 text-green-500 mb-4" />
             <h3 className="font-bold text-[var(--text-primary)] mb-2">Gap Discovery</h3>
             <p className="text-xs text-[var(--text-secondary)]">Uncovers logical flaws in your arguments before the real auditors arrive.</p>
@@ -125,7 +125,7 @@ function MockAuditChat() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--surface-modal)] border border-[var(--border-light)] rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+    <div className="flex-1 flex flex-col glass-panel glass-border rounded-[2.5rem] overflow-hidden shadow-2xl relative">
       {/* Header */}
       <div className="h-16 border-b border-[var(--border-subtle)] bg-[var(--surface)]/50 backdrop-blur-md flex items-center px-6 gap-4 z-10 relative">
         <div className="flex items-center gap-3">

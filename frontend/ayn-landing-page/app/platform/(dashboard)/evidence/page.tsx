@@ -296,7 +296,7 @@ function EvidenceContent() {
         </div>
 
         <label className={cn(
-          "group relative overflow-hidden rounded-2xl bg-primary text-primary-foreground px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-95 border border-border",
+          "group relative overflow-hidden rounded-2xl bg-primary text-primary-foreground px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-95 glass-border",
           isUploading && "opacity-70 cursor-not-allowed"
         )}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -330,7 +330,7 @@ function EvidenceContent() {
       />
 
       {error ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-border bg-muted/30">
+        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl glass-panel glass-border">
           <p className="text-muted-foreground text-center mb-4">Failed to load evidence.</p>
           <button
             type="button"
@@ -343,22 +343,22 @@ function EvidenceContent() {
       ) : isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="flex flex-col justify-between p-5 rounded-3xl glass-layer-2 animate-pulse h-[220px] border border-border/50">
+            <div key={i} className="flex flex-col justify-between p-5 rounded-3xl glass-layer-2 animate-pulse h-[220px] border border-[var(--border-subtle)]/60">
               <div className="flex justify-between items-start mb-4">
-                <div className="h-6 w-24 bg-muted/60 rounded-full" />
-                <div className="h-6 w-6 rounded-full bg-muted/40" />
+                <div className="h-6 w-24 bg-[var(--surface)]/60 rounded-full" />
+                <div className="h-6 w-6 rounded-full bg-[var(--surface)]/50" />
               </div>
               <div className="space-y-3 mb-4 flex-1 mt-2">
-                <div className="h-5 bg-muted/60 rounded-lg w-3/4" />
-                <div className="h-5 bg-muted/60 rounded-lg w-1/2" />
-                <div className="h-3 bg-muted/40 rounded-lg w-full mt-4" />
+                <div className="h-5 bg-[var(--surface)]/60 rounded-lg w-3/4" />
+                <div className="h-5 bg-[var(--surface)]/60 rounded-lg w-1/2" />
+                <div className="h-3 bg-[var(--surface)]/50 rounded-lg w-full mt-4" />
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-auto">
                 <div className="flex -space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-muted/60 border-2 border-[var(--surface-modal)]" />
-                  <div className="w-6 h-6 rounded-full bg-muted/40 border-2 border-[var(--surface-modal)]" />
+                  <div className="w-6 h-6 rounded-full bg-[var(--surface)]/60 border-2 border-[var(--surface-modal)]" />
+                  <div className="w-6 h-6 rounded-full bg-[var(--surface)]/50 border-2 border-[var(--surface-modal)]" />
                 </div>
-                <div className="h-3 w-16 bg-muted/40 rounded-lg" />
+                <div className="h-3 w-16 bg-[var(--surface)]/50 rounded-lg" />
               </div>
             </div>
           ))}
@@ -408,7 +408,7 @@ function EvidenceContent() {
 
       {/* Full-Screen Split-View Evidence Analysis Overlay */}
       {selectedEvidence && (
-        <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-background/95 backdrop-blur-xl" style={{ margin: 0 }}>
+        <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-[var(--surface-modal)]/95 backdrop-blur-xl" style={{ margin: 0 }}>
           {/* Top Bar Navigation for the Split View */}
           <div className="absolute top-0 left-0 right-0 h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 backdrop-blur-md flex items-center justify-between px-6 z-20">
             <div className="flex items-center gap-4">
@@ -505,7 +505,7 @@ function EvidenceContent() {
           </div>
 
           {/* RIGHT PANE: Horus AI Analysis */}
-          <div className="w-1/2 h-full pt-16 flex flex-col bg-background/50 relative">
+          <div className="w-1/2 h-full pt-16 flex flex-col bg-[var(--surface-modal)]/70 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
               

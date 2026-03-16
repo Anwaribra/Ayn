@@ -45,7 +45,7 @@ function SettingsContent() {
       <header className="mb-12 pt-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="px-2 py-0.5 rounded bg-muted border border-[var(--border-subtle)]">
+            <div className="px-2 py-0.5 rounded glass-pill">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Admin Control</span>
             </div>
             <div className="h-px w-6 bg-border" />
@@ -61,7 +61,7 @@ function SettingsContent() {
         {sections.map((item, i) => (
           <Link key={i} href={item.href}>
             <div className="glass-layer-2 p-6 rounded-[32px] group cursor-pointer hover:bg-layer-2/80 transition-all flex items-center gap-6 border-glass-border">
-              <div className={cn("w-12 h-12 rounded-2xl bg-muted/50 border border-glass-border flex items-center justify-center group-hover:scale-105 transition-transform", item.color)}>
+              <div className={cn("w-12 h-12 rounded-2xl glass-input flex items-center justify-center group-hover:scale-105 transition-transform", item.color)}>
                 <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex-1">
@@ -146,7 +146,7 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-border text-muted-foreground text-xs font-medium uppercase tracking-widest hover:bg-muted hover:text-foreground transition-all"
+            className="flex-1 py-2.5 rounded-lg glass-button text-muted-foreground text-xs font-medium uppercase tracking-widest transition-all"
           >
             Cancel
           </button>
@@ -161,4 +161,3 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
     </div>
   )
 }
-

@@ -163,18 +163,12 @@ export default function CalendarPage() {
           {isLoading && <MilestoneSkeleton />}
 
           {isEmpty && (
-            <div
-              className="flex flex-col items-center justify-center rounded-xl border py-20"
-              style={{
-                background: "var(--surface)",
-                borderColor: "var(--border-subtle)",
-              }}
-            >
-              <Calendar className="h-12 w-12 mb-4 opacity-30" style={{ color: "var(--text-primary)" }} />
-              <p className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>
+            <div className="flex flex-col items-center justify-center rounded-xl py-20 glass-panel glass-border">
+              <Calendar className="h-12 w-12 mb-4 opacity-30 text-foreground" />
+              <p className="text-lg font-medium text-foreground">
                 No milestones yet
               </p>
-              <p className="text-sm mt-1 opacity-60" style={{ color: "var(--text-primary)" }}>
+              <p className="text-sm mt-1 text-muted-foreground">
                 Create your first milestone to get started
               </p>
               <Button
@@ -192,22 +186,15 @@ export default function CalendarPage() {
             <div className="space-y-8">
               {Object.entries(grouped).map(([month, items]) => (
                 <div key={month}>
-                  <h2
-                    className="text-sm font-semibold uppercase tracking-wider mb-3 px-1"
-                    style={{ color: "var(--text-primary)", opacity: 0.5 }}
-                  >
+                  <h2 className="text-sm font-semibold uppercase tracking-wider mb-3 px-1 text-muted-foreground">
                     {month}
                   </h2>
                   <div className="space-y-2">
                     {items.map((m) => (
                       <div
                         key={m.id}
-                        className="group flex items-start gap-3 rounded-lg border p-4 transition-colors hover:border-white/10"
-                        style={{
-                          background: "var(--surface)",
-                          borderColor: "var(--border-subtle)",
-                          opacity: m.completed ? 0.6 : 1,
-                        }}
+                        className="group flex items-start gap-3 rounded-lg p-4 transition-colors glass-panel glass-border"
+                        style={{ opacity: m.completed ? 0.6 : 1 }}
                       >
                         <button
                           onClick={() => handleToggleComplete(m)}
@@ -223,22 +210,13 @@ export default function CalendarPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
-                              className="font-medium"
-                              style={{
-                                color: "var(--text-primary)",
-                                textDecoration: m.completed ? "line-through" : "none",
-                              }}
+                              className="font-medium text-foreground"
+                              style={{ textDecoration: m.completed ? "line-through" : "none" }}
                             >
                               {m.title}
                             </span>
                             {m.category && (
-                              <span
-                                className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                style={{
-                                  background: "var(--border-subtle)",
-                                  color: "var(--text-primary)",
-                                }}
-                              >
+                              <span className="rounded-full px-2 py-0.5 text-[11px] font-medium glass-pill text-foreground">
                                 {m.category}
                               </span>
                             )}
@@ -250,16 +228,12 @@ export default function CalendarPage() {
                             )}
                           </div>
                           {m.description && (
-                            <p
-                              className="mt-1 text-sm leading-relaxed"
-                              style={{ color: "var(--text-primary)", opacity: 0.6 }}
-                            >
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                               {m.description}
                             </p>
                           )}
                           <div
-                            className="mt-2 flex items-center gap-1.5 text-xs"
-                            style={{ color: "var(--text-primary)", opacity: 0.4 }}
+                            className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"
                           >
                             <Clock className="h-3 w-3" />
                             {formatDate(m.dueDate)}
@@ -283,27 +257,15 @@ export default function CalendarPage() {
 
         {/* Create Milestone Dialog */}
         {dialogOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-          >
-            <div
-              className="w-full max-w-md rounded-xl border p-6 shadow-2xl"
-              style={{
-                background: "var(--surface)",
-                borderColor: "var(--border-subtle)",
-              }}
-            >
-              <h2
-                className="text-lg font-semibold mb-4"
-                style={{ color: "var(--text-primary)" }}
-              >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-xl p-6 shadow-2xl glass-panel glass-border">
+              <h2 className="text-lg font-semibold mb-4 text-foreground">
                 New Milestone
               </h2>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="ms-title" style={{ color: "var(--text-primary)" }}>
+                  <Label htmlFor="ms-title" className="text-foreground">
                     Title
                   </Label>
                   <Input
@@ -311,11 +273,12 @@ export default function CalendarPage() {
                     placeholder="e.g. Submit evidence package"
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="glass-input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="ms-desc" style={{ color: "var(--text-primary)" }}>
+                  <Label htmlFor="ms-desc" className="text-foreground">
                     Description
                   </Label>
                   <Input
@@ -323,11 +286,12 @@ export default function CalendarPage() {
                     placeholder="Optional details..."
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="glass-input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="ms-date" style={{ color: "var(--text-primary)" }}>
+                  <Label htmlFor="ms-date" className="text-foreground">
                     Due Date
                   </Label>
                   <Input
@@ -335,21 +299,17 @@ export default function CalendarPage() {
                     type="date"
                     value={form.dueDate}
                     onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                    className="glass-input"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label style={{ color: "var(--text-primary)" }}>Category</Label>
+                    <Label className="text-foreground">Category</Label>
                     <select
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      className="w-full rounded-md border px-3 py-2 text-sm"
-                      style={{
-                        background: "var(--surface)",
-                        borderColor: "var(--border-subtle)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="w-full rounded-md glass-input px-3 py-2 text-sm text-foreground"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c} value={c}>
@@ -360,16 +320,11 @@ export default function CalendarPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label style={{ color: "var(--text-primary)" }}>Priority</Label>
+                    <Label className="text-foreground">Priority</Label>
                     <select
                       value={form.priority}
                       onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                      className="w-full rounded-md border px-3 py-2 text-sm"
-                      style={{
-                        background: "var(--surface)",
-                        borderColor: "var(--border-subtle)",
-                        color: "var(--text-primary)",
-                      }}
+                      className="w-full rounded-md glass-input px-3 py-2 text-sm text-foreground"
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p} value={p}>

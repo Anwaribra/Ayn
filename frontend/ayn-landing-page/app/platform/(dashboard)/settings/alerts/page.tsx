@@ -71,7 +71,7 @@ function NeuralAlertsContent() {
         </p>
       </header>
 
-      <div className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] space-y-6">
+      <div className="glass-panel p-6 rounded-2xl glass-border space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-[var(--text-secondary)] font-medium">Compliance Notifications</Label>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Brain, FileCheck, Shield, BarChart3, Upload, Loader2, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 function EvidenceAnalyzerCard() {
   const [dragging, setDragging] = useState(false)
@@ -39,29 +40,22 @@ function EvidenceAnalyzerCard() {
   }
 
   return (
-    <div
-      className="group relative flex flex-col rounded-xl border p-6 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
-      style={{
-        background: "var(--surface)",
-        borderColor: "var(--border-subtle)",
-      }}
-    >
+    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
         <FileCheck className="h-5 w-5 text-blue-400" />
       </div>
-      <h3 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+      <h3 className="text-base font-semibold text-foreground">
         Evidence Analyzer
       </h3>
-      <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--text-primary)", opacity: 0.6 }}>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">
         Drag & drop a file for quick AI-powered evidence analysis and compliance mapping.
       </p>
 
       <div
-        className="mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors"
-        style={{
-          borderColor: dragging ? "#3b82f6" : "var(--border-subtle)",
-          background: dragging ? "rgba(59,130,246,0.05)" : "transparent",
-        }}
+        className={cn(
+          "mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
+          dragging ? "border-primary/50 bg-primary/5" : "glass-border"
+        )}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -70,8 +64,8 @@ function EvidenceAnalyzerCard() {
           <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
         ) : (
           <>
-            <Upload className="h-6 w-6 mb-2 opacity-40" style={{ color: "var(--text-primary)" }} />
-            <p className="text-xs" style={{ color: "var(--text-primary)", opacity: 0.5 }}>
+            <Upload className="h-6 w-6 mb-2 opacity-40 text-foreground" />
+            <p className="text-xs text-muted-foreground">
               Drop file here or
             </p>
             <label className="mt-1 cursor-pointer text-xs font-medium text-blue-400 hover:text-blue-300">
@@ -109,44 +103,38 @@ function RemediationDrafterCard() {
   }
 
   return (
-    <div
-      className="group relative flex flex-col rounded-xl border p-6 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
-      style={{
-        background: "var(--surface)",
-        borderColor: "var(--border-subtle)",
-      }}
-    >
+    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
         <Brain className="h-5 w-5 text-emerald-400" />
       </div>
-      <h3 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+      <h3 className="text-base font-semibold text-foreground">
         Remediation Drafter
       </h3>
-      <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--text-primary)", opacity: 0.6 }}>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">
         Generate remediation documents to address identified compliance gaps.
       </p>
 
       <div className="mt-4 space-y-3">
         <div className="space-y-1">
-          <Label className="text-xs" style={{ color: "var(--text-primary)", opacity: 0.6 }}>
+          <Label className="text-xs text-muted-foreground">
             Gap ID
           </Label>
           <Input
             placeholder="Enter gap identifier"
             value={gapId}
             onChange={(e) => setGapId(e.target.value)}
-            className="h-8 text-sm"
+            className="h-8 text-sm glass-input"
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs" style={{ color: "var(--text-primary)", opacity: 0.6 }}>
+          <Label className="text-xs text-muted-foreground">
             Institution ID
           </Label>
           <Input
             placeholder="Enter institution identifier"
             value={institutionId}
             onChange={(e) => setInstitutionId(e.target.value)}
-            className="h-8 text-sm"
+            className="h-8 text-sm glass-input"
           />
         </div>
         <Button
@@ -185,25 +173,19 @@ function LinkCard({
   cta: string
 }) {
   return (
-    <div
-      className="group relative flex flex-col rounded-xl border p-6 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
-      style={{
-        background: "var(--surface)",
-        borderColor: "var(--border-subtle)",
-      }}
-    >
+    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
       <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
         <Icon className={`h-5 w-5 ${iconColor}`} />
       </div>
-      <h3 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+      <h3 className="text-base font-semibold text-foreground">
         {title}
       </h3>
-      <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--text-primary)", opacity: 0.6 }}>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
       <div className="mt-4">
         <Link href={href}>
-          <Button size="sm" variant="outline" className="w-full gap-2 group-hover:border-white/20">
+          <Button size="sm" variant="outline" className="w-full gap-2 glass-button">
             {cta}
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </Button>
@@ -222,10 +204,10 @@ export default function AIToolsPage() {
             <Brain className="h-5 w-5 text-purple-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
+            <h1 className="text-2xl font-semibold text-foreground">
               AI Tools
             </h1>
-            <p className="text-sm" style={{ color: "var(--text-primary)", opacity: 0.5 }}>
+            <p className="text-sm text-muted-foreground">
               Leverage Horus AI for compliance automation
             </p>
           </div>

@@ -339,16 +339,16 @@ function GapAnalysisContent() {
           >
             <Download className="w-4 h-4" /> Export Report (PDF)
           </button>
-          <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 border-[var(--border-subtle)]">
+          <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 glass-border">
             <button
               onClick={() => setActiveTab("all")}
-              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
             >
               All Gaps
             </button>
             <button
               onClick={() => setActiveTab("urgent")}
-              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
             >
               High Severity
             </button>
@@ -357,7 +357,7 @@ function GapAnalysisContent() {
       </header>
 
       <div className="px-4 mb-6">
-        <div className="glass-panel p-4 rounded-2xl border-[var(--border-subtle)]">
+        <div className="glass-panel p-4 rounded-2xl glass-border">
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             <span>Detect</span>
             <ArrowRight className="w-3 h-3" />
@@ -403,7 +403,7 @@ function GapAnalysisContent() {
       {/* Onboarding / Contextual Help */}
       {(!reports || reports.length === 0) && !generating && !pendingJobId && !activeReport && (
         <div className="px-4 mb-8">
-          <div className="p-6 rounded-3xl glass-layer-2 border-[var(--border-subtle)] bg-primary/5 flex flex-col md:flex-row gap-6 items-start">
+          <div className="p-6 rounded-3xl glass-panel glass-border bg-primary/5 flex flex-col md:flex-row gap-6 items-start">
             <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
               <Lightbulb className="w-6 h-6 text-primary" />
             </div>
@@ -424,11 +424,11 @@ function GapAnalysisContent() {
 
       {/* Generate Controls */}
       <div className="px-4 mb-10">
-        <div className="glass-panel p-6 rounded-3xl border-[var(--border-subtle)] flex flex-col md:flex-row items-center gap-4">
+        <div className="glass-panel p-6 rounded-3xl glass-border flex flex-col md:flex-row items-center gap-4">
           <select
             value={selectedStandard}
             onChange={(e) => setSelectedStandard(e.target.value)}
-            className="flex-1 h-11 bg-muted/50 border border-[var(--border-light)] text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="flex-1 h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="" className="bg-[var(--surface-modal)]">Choose a standard to analyze...</option>
             {standards?.map((s: Standard) => (
@@ -458,7 +458,7 @@ function GapAnalysisContent() {
       {/* Summary Matrix */}
       {/* Summary Matrix & Results */}
       {reportsError ? (
-        <div className="mt-10 flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-border bg-muted/30">
+        <div className="mt-10 flex flex-col items-center justify-center py-16 px-4 rounded-2xl glass-panel glass-border">
           <p className="text-muted-foreground text-center mb-4">Failed to load gap analyses.</p>
           <button
             type="button"
@@ -496,13 +496,13 @@ function GapAnalysisContent() {
                   </div>
                 </div>
                 {Array(3).fill(0).map((_, i) => (
-                  <div key={i} className="glass-panel p-8 rounded-[36px] animate-pulse border-[var(--border-subtle)]">
+                  <div key={i} className="glass-panel p-8 rounded-[36px] animate-pulse glass-border">
                     <div className="flex gap-8">
-                      <div className="w-14 h-14 rounded-2xl bg-muted" />
+                      <div className="w-14 h-14 rounded-2xl glass-input" />
                       <div className="flex-1 space-y-3">
-                        <div className="h-5 bg-muted rounded-lg w-1/2" />
-                        <div className="h-4 bg-muted rounded-lg w-3/4" />
-                        <div className="h-4 bg-muted rounded-lg w-2/3" />
+                        <div className="h-5 bg-[var(--surface)] rounded-lg w-1/2" />
+                        <div className="h-4 bg-[var(--surface)] rounded-lg w-3/4" />
+                        <div className="h-4 bg-[var(--surface)] rounded-lg w-2/3" />
                       </div>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ function GapAnalysisContent() {
               </div>
             ) : (
               filteredGaps.map((gap, i) => (
-                <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-start md:items-center gap-8 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)] relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
+                <div key={i} className="glass-panel p-8 rounded-[36px] flex flex-col md:flex-row items-start md:items-center gap-8 group hover:bg-[var(--surface)] transition-all glass-border relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
                   <div className={cn("w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center border border-[var(--border-subtle)]", gap.statusClass)}>
                     {gap.severity === "High" ? <AlertTriangle className="w-5 h-5" /> :
                       gap.severity === "Medium" ? <Info className="w-5 h-5" /> :
@@ -542,12 +542,12 @@ function GapAnalysisContent() {
                       <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Risk Impact</div>
                       <div className="mono text-xl font-bold text-muted-foreground">{gap.riskScore}%</div>
                     </div>
-                    <div className="h-10 w-px bg-border hidden md:block" />
+                    <div className="h-10 w-px bg-[var(--border-subtle)] hidden md:block" />
                     <div className="flex flex-col gap-2">
                        <button
                         onClick={() => handleDraftRemediationClick(gap.original)}
                         disabled={isDrafting}
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] bg-secondary text-secondary-foreground rounded-xl font-bold text-xs border hover:bg-muted transition-all disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] glass-button text-foreground rounded-xl font-bold text-xs transition-all disabled:opacity-50"
                       >
                         {isDrafting && targetGap?.gap.gap === gap.original.gap ? (
                            <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -560,7 +560,7 @@ function GapAnalysisContent() {
                         {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
                           <Link
                             href={`/platform/evidence?highlight=${gap.original.criterionId}`}
-                            className="flex-1 flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-muted/50 text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-muted transition-all border justify-center"
+                            className="flex-1 flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-button text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all justify-center"
                           >
                             <ExternalLink className="w-3 h-3" />
                             Evidence
@@ -610,7 +610,7 @@ function GapAnalysisContent() {
                         onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}
                       >
                         <div className="flex items-center gap-5">
-                          <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
                             {isQueued ? (
                               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                             ) : isFailed ? (
@@ -660,7 +660,7 @@ function GapAnalysisContent() {
             role="dialog"
             aria-modal="true"
             aria-label="Confirm deletion"
-            className="bg-[var(--surface-modal)] rounded-2xl p-8 max-w-sm w-full border border-[var(--border-light)] shadow-2xl"
+            className="glass-panel rounded-2xl p-8 max-w-sm w-full glass-border shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Delete Report?</h3>
@@ -668,7 +668,7 @@ function GapAnalysisContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--surface)] transition-all"
+                className="flex-1 py-2.5 rounded-lg glass-button text-[var(--text-secondary)] text-sm font-medium transition-all"
               >
                 Cancel
               </button>

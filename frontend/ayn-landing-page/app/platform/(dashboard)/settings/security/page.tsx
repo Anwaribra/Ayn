@@ -59,7 +59,7 @@ function SecurityContent() {
         </p>
       </header>
 
-      <div className="glass-panel p-6 rounded-2xl border-[var(--border-subtle)] space-y-6">
+      <div className="glass-panel p-6 rounded-2xl glass-border space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-[var(--text-secondary)] font-medium">Multi-Factor Authentication</Label>
@@ -76,7 +76,7 @@ function SecurityContent() {
               max={168}
               value={sessionTimeout}
               onChange={(e) => setSessionTimeout(Number(e.target.value))}
-              className="w-20 h-9 rounded-lg bg-[var(--surface-subtle)] border border-[var(--border-subtle)] px-3 text-[var(--text-primary)] text-sm"
+              className="w-20 h-9 rounded-lg glass-input px-3 text-[var(--text-primary)] text-sm"
             />
             <Button size="sm" variant="outline" onClick={handleSaveTimeout}>
               Save

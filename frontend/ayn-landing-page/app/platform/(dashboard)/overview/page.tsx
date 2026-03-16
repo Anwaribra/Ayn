@@ -49,7 +49,7 @@ export default function OverviewPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all">
+        <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl glass-panel glass-border hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -60,7 +60,7 @@ export default function OverviewPage() {
           <p className="text-xs text-[var(--text-secondary)] mt-1">Compliance Score</p>
         </Link>
 
-        <Link href="/platform/evidence" className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-emerald-500/30 transition-all">
+        <Link href="/platform/evidence" className="group p-5 rounded-2xl glass-panel glass-border hover:border-emerald-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <FileText className="w-5 h-5 text-emerald-500" />
@@ -71,7 +71,7 @@ export default function OverviewPage() {
           <p className="text-xs text-[var(--text-secondary)] mt-1">Evidence Documents</p>
         </Link>
 
-        <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-amber-500/30 transition-all">
+        <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl glass-panel glass-border hover:border-amber-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -82,7 +82,7 @@ export default function OverviewPage() {
           <p className="text-xs text-[var(--text-secondary)] mt-1">Active Gaps</p>
         </Link>
 
-        <Link href="/platform/analytics" className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-purple-500/30 transition-all">
+        <Link href="/platform/analytics" className="group p-5 rounded-2xl glass-panel glass-border hover:border-purple-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-purple-500" />
@@ -96,7 +96,7 @@ export default function OverviewPage() {
 
       {/* Quick Actions + Horus */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="p-6 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)]">
+        <div className="p-6 rounded-2xl glass-panel glass-border">
           <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-blue-500" /> Quick Actions
           </h2>

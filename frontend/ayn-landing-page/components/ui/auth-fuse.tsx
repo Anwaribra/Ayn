@@ -107,13 +107,13 @@ function SignInForm(props: {
             transition={{ duration: 0.4 }}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground auth-back-link">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-bold tracking-tight text-foreground select-none">
+                <span className="text-2xl font-bold tracking-tight text-foreground select-none auth-logo-gradient">
                     Ayn
                 </span>
             </div>
@@ -160,7 +160,7 @@ function SignInForm(props: {
                     <PasswordInput name="password" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                     <Label className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                 </div>
-                <Button type="submit" className="h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
+                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -203,39 +203,50 @@ function SignUpForm(props: {
         }
     };
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+        },
+    };
+    const itemVariants = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } };
+
     return (
         <motion.form
             onSubmit={onSubmit}
             autoComplete="on"
             className="flex flex-col gap-6 w-full max-w-[360px]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-            </Link>
+            <motion.div variants={itemVariants}>
+                <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground auth-back-link">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Home
+                </Link>
+            </motion.div>
 
-            <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-bold tracking-tight text-foreground select-none">
+            <motion.div variants={itemVariants} className="flex items-center justify-center gap-3">
+                <span className="text-2xl font-bold tracking-tight text-foreground select-none auth-logo-gradient">
                     Ayn
                 </span>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col gap-2 text-center">
+            <motion.div variants={itemVariants} className="flex flex-col gap-2 text-center">
                 <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
                 <p className="text-sm text-muted-foreground">Get started with your quality journey</p>
-            </div>
+            </motion.div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <motion.div variants={itemVariants} id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                     {props.err}
-                </div>
+                </motion.div>
             )}
 
-            <div className="flex flex-col gap-3">
+            <motion.div variants={itemVariants} className="flex flex-col gap-3">
                 {/* Google OAuth */}
                 <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl text-foreground transition-colors justify-center font-medium">
                     <GoogleIcon className="mr-2 h-4 w-4" />
@@ -247,16 +258,16 @@ function SignUpForm(props: {
                     Continue with Microsoft
                     <span className="ml-2 text-[9px] uppercase tracking-widest bg-black/5 px-1.5 py-0.5 rounded">Coming Soon</span>
                 </Button>
-            </div>
+            </motion.div>
 
-            <div className="relative text-center text-xs">
+            <motion.div variants={itemVariants} className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
                 <span className="relative z-10 px-3 text-muted-foreground auth-divider-pill uppercase tracking-widest text-[10px] rounded-full">Or create with email</span>
-            </div>
+            </motion.div>
 
-            <div className="grid gap-4 mt-2">
+            <motion.div variants={itemVariants} className="grid gap-4 mt-2">
                 <div className="relative group">
                     <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                     <Label htmlFor={nameId} className="absolute left-4 top-4 text-sm text-foreground/60 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/60 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Full Name</Label>
@@ -317,10 +328,10 @@ function SignUpForm(props: {
                                 disabled={props.loading}
                                 onClick={() => setSelectedRole(role.value === selectedRole ? "" : role.value)}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
                                     selectedRole === role.value
-                                        ? "bg-primary text-primary-foreground border-primary shadow-[0_10px_20px_-14px_rgba(0,0,0,0.6)]"
-                                        : "auth-chip text-muted-foreground hover:border-white/60"
+                                        ? "auth-chip-selected bg-primary text-primary-foreground border-primary shadow-[0_10px_20px_-14px_rgba(0,0,0,0.6)]"
+                                        : "auth-chip text-muted-foreground hover:border-white/60 hover:bg-white/50"
                                 )}
                             >
                                 {role.label}
@@ -328,7 +339,7 @@ function SignUpForm(props: {
                         ))}
                     </div>
                 </div>
-                <Button type="submit" className="h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
+                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -336,20 +347,21 @@ function SignUpForm(props: {
                         </div>
                     ) : "Create Account"}
                 </Button>
-            </div>
+            </motion.div>
 
-            <div className="text-center text-sm text-muted-foreground">
+            <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <button type="button" className="text-foreground hover:underline font-medium" onClick={props.toggle}>
                     Sign in
                 </button>
-            </div>
+            </motion.div>
         </motion.form>
     );
 }
 
 export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "signup" }) {
     const [isSignIn, setIsSignIn] = useState(defaultMode === "signin");
+    const isSignUp = !isSignIn;
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -481,7 +493,10 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     initial={{ opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="auth-glass-card w-full max-w-[460px] rounded-[28px] p-8 sm:p-10"
+                    className={cn(
+                        "auth-glass-card w-full rounded-[28px] p-8 sm:p-10 relative",
+                        isSignUp ? "max-w-[500px] auth-glass-card-signup" : "max-w-[460px]"
+                    )}
                 >
                     <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
                     {isSignIn ? (

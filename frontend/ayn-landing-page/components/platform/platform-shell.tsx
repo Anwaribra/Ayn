@@ -18,6 +18,9 @@ import {
   Bell,
   X,
   PanelLeft,
+  CalendarDays,
+  LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
 import FloatingAIBar from "@/components/platform/floating-ai-bar";
@@ -33,6 +36,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Start closed so mobile never shows sidebar taking space on first paint
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showQuickPages, setShowQuickPages] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -65,7 +69,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close notification dropdown when clicking outside or pressing ESC
+  // Close dropdowns when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -75,11 +79,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       ) {
         setShowNotifications(false);
       }
+      if (showQuickPages && !target.closest(".quick-pages-container")) {
+        setShowQuickPages(false);
+      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showNotifications) {
-        setShowNotifications(false);
-      }
+      if (e.key !== "Escape") return;
+      if (showNotifications) setShowNotifications(false);
+      if (showQuickPages) setShowQuickPages(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
@@ -259,6 +266,78 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
+            <div className="relative quick-pages-container">
+              <button
+                onClick={() => setShowQuickPages(!showQuickPages)}
+                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
+                aria-label="Quick pages"
+                aria-haspopup="true"
+                aria-expanded={showQuickPages}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+
+              {showQuickPages && (
+                <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                      Quick Pages
+                    </h3>
+                    <button
+                      onClick={() => setShowQuickPages(false)}
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      {
+                        label: "Overview",
+                        href: "/platform/overview",
+                        icon: LayoutGrid,
+                        note: "Executive snapshot",
+                      },
+                      {
+                        label: "Calendar",
+                        href: "/platform/calendar",
+                        icon: CalendarDays,
+                        note: "Upcoming audits",
+                      },
+                      {
+                        label: "AI Tools",
+                        href: "/platform/ai-tools",
+                        icon: Sparkles,
+                        note: "Automation lab",
+                      },
+                    ].map((item) => (
+                      <button
+                        key={item.href}
+                        onClick={() => {
+                          setShowQuickPages(false);
+                          router.push(item.href);
+                        }}
+                        className="w-full flex items-center gap-3 rounded-2xl border border-border bg-layer-1 hover:bg-layer-3 px-3 py-2.5 transition-all"
+                      >
+                        <span className="h-9 w-9 rounded-xl glass-input flex items-center justify-center">
+                          <item.icon className="h-4 w-4 text-primary" />
+                        </span>
+                        <span className="flex-1 text-left">
+                          <span className="text-sm font-semibold text-foreground block">
+                            {item.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                            {item.note}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Notifications */}
             <div className="relative notification-dropdown-container">
               <button

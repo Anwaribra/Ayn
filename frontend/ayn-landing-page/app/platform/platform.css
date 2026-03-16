@@ -483,19 +483,25 @@
 
 /* ─── Glass Panel (Cards) ─────────────────────────────────────────────────── */
 [data-section="platform"] .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--glass-soft-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
 }
 
 [data-section="platform"] .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--glass-soft-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-section="platform"] .glass-card:hover {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-shadow-strong);
 }
 
 /* Typography remap not needed — platform is now light-first */

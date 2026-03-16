@@ -16,8 +16,6 @@ import {
   ArrowRight,
   Search,
   Bell,
-  Sun,
-  Moon,
   X,
   PanelLeft,
 } from "lucide-react";
@@ -29,7 +27,6 @@ import { api } from "@/lib/api";
 import { useCommandPaletteContext } from "@/components/platform/command-palette-provider";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import type { Notification } from "@/types";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
@@ -45,13 +42,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette();
 
-  const { setTheme, theme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const resolvedTheme = "dark";
 
   // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
@@ -208,7 +199,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       className={cn(
         "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300",
       )}
-      data-platform-theme={mounted ? (resolvedTheme ?? "dark") : undefined}
+      data-platform-theme={resolvedTheme}
       data-platform-page={platformVisualMode}
     >
       {/* 🌌 Shared Platform Background Layer */}
@@ -389,34 +380,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 </div>
               )}
             </div>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={() =>
-                setTheme(resolvedTheme === "dark" ? "light" : "dark")
-              }
-              className={cn(
-                "transition-all duration-300 p-2 rounded-lg hover:scale-110 active:scale-95 min-h-[44px] min-w-[44px]",
-                "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-              )}
-              title={
-                resolvedTheme === "dark"
-                  ? "Switch to light mode"
-                  : "Switch to dark mode"
-              }
-              aria-label={
-                resolvedTheme === "dark"
-                  ? "Switch to light mode"
-                  : "Switch to dark mode"
-              }
-            >
-              {mounted &&
-                (resolvedTheme === "dark" ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                ))}
-            </button>
 
             <div className="w-px h-4 bg-border" />
           </div>

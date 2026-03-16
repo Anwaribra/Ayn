@@ -33,7 +33,8 @@ import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
-import { AgentOrb, MiniOrb } from "./agent-orb"
+import { MiniOrb } from "./agent-orb"
+import { AiLoader } from "@/components/ui/ai-loader"
 
 export type ReasoningState = {
   steps: { text: string; status: "pending" | "active" | "done" }[]
@@ -653,15 +654,25 @@ export default function HorusAIChat() {
             {isEmpty ? (
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
                 <div className="flex flex-col items-center justify-center gap-8 md:gap-10 w-full min-h-0 max-h-full py-2">
-                  {/* The Agent Orb — hero visualization */}
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold glass-pill text-foreground">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    Horus AI
+                  </div>
+                  {/* Classic Orb Loader */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center justify-center"
                   >
-                    <AgentOrb state="idle" size="hero" />
+                    <AiLoader size={220} text="Horus AI" />
                   </motion.div>
+                  <div className="text-center max-w-[620px]">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Ask anything about your compliance</h1>
+                    <p className="text-sm md:text-base text-muted-foreground mt-2">
+                      Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.
+                    </p>
+                  </div>
 
                   {/* Quick prompts */}
                   <motion.div

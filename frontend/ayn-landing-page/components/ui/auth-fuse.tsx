@@ -481,7 +481,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     initial={{ opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="auth-glass-card w-full max-w-[460px] rounded-3xl p-8 sm:p-10"
+                    className="auth-glass-card w-full max-w-[460px] rounded-[28px] p-8 sm:p-10"
                 >
                     <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
                     {isSignIn ? (

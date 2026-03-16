@@ -171,14 +171,14 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       className={cn(
         "will-change-transform",
         "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
-        "bg-[#050810] text-[#f5f5f3] border-r border-white/5", // FORCED DARK STYLE
-        "rounded-r-2xl",
-        "h-[100dvh]",
+        "bg-[#050810] text-[#f5f5f3] border border-white/5", // FORCED DARK STYLE
+        "rounded-[28px]",
+        "m-3 h-[calc(100dvh-1.5rem)]",
         // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
         open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
         open ? "translate-x-0 shadow-lg shadow-black/30" : "max-lg:pointer-events-none",
         // Desktop (lg+ only): static + collapse width so main sits beside sidebar
-        "lg:translate-x-0 lg:rounded-none lg:shadow-none lg:visible",
+        "lg:translate-x-0 lg:shadow-none lg:visible",
         open ? "lg:w-64" : "lg:w-[72px]",
         "lg:static"
       )}

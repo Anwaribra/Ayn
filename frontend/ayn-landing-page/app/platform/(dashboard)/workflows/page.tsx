@@ -74,11 +74,13 @@ export default function WorkflowsPage() {
   const [tab, setTab] = useState<"workflows" | "templates" | "runs">("workflows")
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "draft">("all")
+  const [triggerFilter, setTriggerFilter] = useState<string>("all")
   const [templateFilter, setTemplateFilter] = useState<"all" | "Evidence" | "Reporting" | "Gaps">("all")
   const [builderOpen, setBuilderOpen] = useState(false)
   const [builderTemplate, setBuilderTemplate] = useState<string | null>(null)
   const [templatePreview, setTemplatePreview] = useState<WorkflowTemplate | null>(null)
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
   const [selectedRun, setSelectedRun] = useState<WorkflowRunItem | null>(null)
   const [localWorkflows, setLocalWorkflows] = useState<WorkflowData[] | null>(null)
   const [runBusyId, setRunBusyId] = useState<string | null>(null)
@@ -180,14 +182,20 @@ export default function WorkflowsPage() {
         w.name.toLowerCase().includes(query.toLowerCase()) ||
         w.description.toLowerCase().includes(query.toLowerCase())
       const matchesStatus = statusFilter === "all" ? true : w.status === statusFilter
-      return matchesQuery && matchesStatus
+      const matchesTrigger = triggerFilter === "all" ? true : w.trigger === triggerFilter
+      return matchesQuery && matchesStatus && matchesTrigger
     })
-  }, [workflowsList, query, statusFilter])
+  }, [workflowsList, query, statusFilter, triggerFilter])
 
   const filteredTemplates = useMemo(() => {
     if (templateFilter === "all") return templates
     return templates.filter((tpl) => tpl.category === templateFilter)
   }, [templates, templateFilter])
+
+  const availableTriggers = useMemo(() => {
+    const triggers = Array.from(new Set(workflowsList.map((w) => w.trigger))).filter(Boolean)
+    return triggers.length ? triggers : ["On Upload", "On Evidence Update", "On Analysis Request"]
+  }, [workflowsList])
 
   const closeBuilder = () => {
     setBuilderOpen(false)
@@ -315,8 +323,18 @@ export default function WorkflowsPage() {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2">
-              <button disabled className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[11px] font-bold uppercase tracking-widest opacity-60">
+              <button
+                className={cn(
+                  "px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
+                  showFilters ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"
+                )}
+                onClick={() => {
+                  if (tab !== "workflows") setTab("workflows")
+                  setShowFilters((prev) => !prev)
+                }}
+              >
                 <SlidersHorizontal className="w-4 h-4" />
+                Filters
               </button>
             </div>
           </div>
@@ -347,6 +365,49 @@ export default function WorkflowsPage() {
                   ))}
                 </div>
               </div>
+
+              {showFilters && (
+                <div className="glass-panel rounded-2xl p-4 glass-border">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger</div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className={cn(
+                          "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                          triggerFilter === "all" ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                        )}
+                        onClick={() => setTriggerFilter("all")}
+                      >
+                        All
+                      </button>
+                      {availableTriggers.map((trigger) => (
+                        <button
+                          key={trigger}
+                          className={cn(
+                            "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                            triggerFilter === trigger ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                          )}
+                          onClick={() => setTriggerFilter(trigger)}
+                        >
+                          {trigger}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
+                        onClick={() => {
+                          setTriggerFilter("all")
+                          setStatusFilter("all")
+                          setQuery("")
+                        }}
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid gap-4 lg:grid-cols-3">
                 {[

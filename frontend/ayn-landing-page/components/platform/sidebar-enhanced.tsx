@@ -76,7 +76,7 @@ export const SidebarItem = memo(function SidebarItem({
     pathname.includes(item.id) || (item.id === "reports" && pathname.includes("analytics"))
 
   const content = (
-    <Link
+      <Link
       href={item.href}
       onClick={onNavClick}
       className={cn(
@@ -84,21 +84,24 @@ export const SidebarItem = memo(function SidebarItem({
         isCollapsed && "justify-center px-0 mx-auto w-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
-          ? "bg-white/10 text-white shadow-md shadow-black/20"
-          : "text-zinc-400 hover:text-white hover:bg-white/5"
+          ? "text-white shadow-[0_8px_18px_rgba(0,0,0,0.25)]"
+          : "text-zinc-400 hover:text-white"
       )}
     >
       {active && (
         <>
           <motion.div
             layoutId="active-indicator"
-            className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.75)]"
+            className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand)] shadow-[0_0_14px_rgba(56,189,248,0.8)]"
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
             layoutDependency={false}
           />
-          {/* Subtle glow effect */}
-          <div className="absolute inset-0 rounded-2xl bg-white/5 pointer-events-none" />
+          {/* Glass highlight */}
+          <div className="absolute inset-0 rounded-2xl bg-white/6 border border-white/10 pointer-events-none backdrop-blur-sm" />
         </>
+      )}
+      {!active && (
+        <div className="absolute inset-0 rounded-2xl bg-white/0 group-hover:bg-white/5 group-hover:border group-hover:border-white/10 pointer-events-none transition-all" />
       )}
 
       <item.icon
@@ -106,7 +109,7 @@ export const SidebarItem = memo(function SidebarItem({
           "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
           active ? "text-white" : "group-hover:text-white"
         )}
-        strokeWidth={2.1}
+        strokeWidth={2.25}
       />
 
       {!isCollapsed && (
@@ -221,7 +224,33 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
 
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
-            <p className="px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
+            <div className="px-2">
+              <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+                Compliance Core
+              </p>
+              <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+            </div>
+          )}
+          {COMPLIANCE_WORKFLOW.map((item) => (
+            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
+          ))}
+        </div>
+
+        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
+          {!isCollapsed && (
+            <div className="px-2">
+              <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+                Reporting & Automation
+              </p>
+              <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+            </div>
+          )}
+          {INSIGHTS_TOOLS.map((item) => (
+            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
+          ))}
+        </div>
+
+      </nav>
               Compliance Core
             </p>
           )}
@@ -271,7 +300,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         {/* User Row */}
         <div
           className={cn(
-            "group flex items-center rounded-2xl p-2 hover:bg-white/5 transition border border-transparent hover:border-white/5",
+            "group flex items-center rounded-2xl p-2 transition border border-white/5 bg-white/5 shadow-[0_10px_18px_rgba(0,0,0,0.25)]",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
@@ -284,7 +313,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             )}
             title="Go to profile"
           >
-            <UserCircle2 className="h-6 w-6 text-zinc-400 group-hover:text-white shrink-0 transition-colors" />
+            <UserCircle2 className="h-6 w-6 text-zinc-300 shrink-0 transition-colors" />
 
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">
@@ -294,6 +323,9 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 <p className="text-xs text-zinc-500 truncate">
                   {user?.email ?? "System User"}
                 </p>
+                <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-emerald-200">
+                  Secure
+                </div>
               </div>
             )}
           </Link>

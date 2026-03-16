@@ -3,17 +3,10 @@
 import * as React from "react"
 import { useState, useEffect, useRef } from "react";
 import { Paperclip, Send, StopCircle } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const PLACEHOLDERS = [
-    "Ask about your compliance gaps...",
-    "Upload a document for analysis...",
-    "What are my ISO 21001 requirements?",
-    "Summarize my evidence status...",
-    "How do I improve my compliance score?",
-    "Check my NAQAAE readiness...",
-];
+const DEFAULT_PLACEHOLDER = "Ask Horus about your compliance…";
 
 interface AIChatInputProps {
     onSend: (message: string) => void;
@@ -34,27 +27,10 @@ export const AIChatInput = ({
     disabled = false,
     hasFiles = false,
 }: AIChatInputProps) => {
-    const [placeholderIndex, setPlaceholderIndex] = useState(0);
-    const [showPlaceholder, setShowPlaceholder] = useState(true);
     const [isActive, setIsActive] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const wrapperRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Cycle placeholder text when input is inactive
-    useEffect(() => {
-        if (isActive || inputValue) return;
-
-        const interval = setInterval(() => {
-            setShowPlaceholder(false);
-            setTimeout(() => {
-                setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
-                setShowPlaceholder(true);
-            }, 400);
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [isActive, inputValue]);
 
     // Close input when clicking outside
     useEffect(() => {
@@ -98,40 +74,6 @@ export const AIChatInput = ({
         },
     };
 
-    const placeholderContainerVariants = {
-        initial: {},
-        animate: { transition: { staggerChildren: 0.025 } },
-        exit: { transition: { staggerChildren: 0.015, staggerDirection: -1 } },
-    };
-
-    const letterVariants = {
-        initial: {
-            opacity: 0,
-            filter: "blur(12px)",
-            y: 10,
-        },
-        animate: {
-            opacity: 1,
-            filter: "blur(0px)",
-            y: 0,
-            transition: {
-                opacity: { duration: 0.25 },
-                filter: { duration: 0.4 },
-                y: { type: "spring", stiffness: 80, damping: 20 },
-            },
-        },
-        exit: {
-            opacity: 0,
-            filter: "blur(12px)",
-            y: -10,
-            transition: {
-                opacity: { duration: 0.2 },
-                filter: { duration: 0.3 },
-                y: { type: "spring", stiffness: 80, damping: 20 },
-            },
-        },
-    };
-
     return (
         <div className="w-full flex-col flex justify-center items-center pb-8 pt-4">
             <motion.div
@@ -141,10 +83,9 @@ export const AIChatInput = ({
                 initial="collapsed"
                 style={{ overflow: "hidden", borderRadius: 36 }}
                 className={cn(
-                    "w-full max-w-[900px] backdrop-blur-3xl transition-all duration-300",
-                    "bg-white/95 border border-black/10 text-black shadow-[0_8px_26px_rgba(2,6,23,0.08)]",
-                    "dark:bg-[rgba(255,255,255,0.07)] dark:border-white/10 dark:text-white dark:shadow-[0_8px_30px_rgba(2,6,23,0.45)]",
-                    (isActive || inputValue) && "ring-[1.5px] ring-primary/40 border-primary/40 shadow-[0_0_24px_rgba(59,130,246,0.12),0_0_8px_rgba(59,130,246,0.08)]"
+                    "w-full max-w-[900px] backdrop-blur-2xl transition-all duration-300",
+                    "bg-[var(--surface)]/80 border border-[var(--border-subtle)] text-foreground shadow-[0_10px_30px_rgba(2,6,23,0.25)]",
+                    (isActive || inputValue) && "ring-[1.5px] ring-primary/35 border-primary/35 shadow-[0_0_24px_rgba(59,130,246,0.12),0_0_8px_rgba(59,130,246,0.08)]"
                 )}
                 onClick={handleActivate}
             >
@@ -153,7 +94,7 @@ export const AIChatInput = ({
                     <div className="flex items-center gap-2.5 p-2 rounded-full w-full">
                         <motion.button
                             whileTap={{ scale: 0.94 }}
-                            className="p-3 ml-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white transition-colors min-h-[44px] min-w-[44px]"
+                            className="p-3 ml-1 rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors min-h-[44px] min-w-[44px]"
                             title="Attach file"
                             type="button"
                             tabIndex={-1}
@@ -172,20 +113,21 @@ export const AIChatInput = ({
                             }}
                         />
 
-                        {/* Text Input & Placeholder */}
+                        {/* Text Input */}
                         <div className="relative flex-1">
                             <input
                                 type="text"
                                 value={inputValue}
                                 onKeyDown={handleKeyDown}
                                 disabled={disabled}
+                                placeholder={DEFAULT_PLACEHOLDER}
                                 onChange={(e) => {
                                     setInputValue(e.target.value);
                                     if (onChange) onChange(e.target.value);
                                 }}
                                 className={cn(
                                     "flex-1 w-full font-medium text-[15px] md:text-[16px] py-4 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none tracking-[0.01em]",
-                                    "text-[var(--foreground)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-white/45"
+                                    "text-foreground placeholder:text-muted-foreground/70"
                                 )}
                                 style={{
                                     position: "relative",
@@ -196,41 +138,6 @@ export const AIChatInput = ({
                                 }}
                                 onFocus={handleActivate}
                             />
-                            <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-2">
-                                <AnimatePresence mode="wait">
-                                    {showPlaceholder && !isActive && !inputValue && (
-                                        <motion.span
-                                            key={placeholderIndex}
-                                            className={cn(
-                                                "absolute left-2 top-1/2 -translate-y-1/2 text-[16px] font-medium select-none pointer-events-none",
-                                                "text-zinc-500 dark:text-white/40"
-                                            )}
-                                            style={{
-                                                whiteSpace: "nowrap",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                zIndex: 0,
-                                            }}
-                                            variants={placeholderContainerVariants}
-                                            initial="initial"
-                                            animate="animate"
-                                            exit="exit"
-                                        >
-                                            {PLACEHOLDERS[placeholderIndex]
-                                                .split("")
-                                                .map((char, i) => (
-                                                    <motion.span
-                                                        key={i}
-                                                        variants={letterVariants}
-                                                        style={{ display: "inline-block" }}
-                                                    >
-                                                        {char === " " ? "\u00A0" : char}
-                                                    </motion.span>
-                                                ))}
-                                        </motion.span>
-                                    )}
-                                </AnimatePresence>
-                            </div>
                         </div>
 
 

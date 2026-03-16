@@ -730,10 +730,7 @@ export default function HorusAIChat() {
                             <span className="text-sm font-bold text-foreground">Horus</span>
                           </div>
 
-                          {/* Inline thinking — appears above the response */}
-                          {msg.id === lastAssistantMsgId && reasoning && reasoning.steps.length > 0 && (
-                            <InlineThinking reasoning={reasoning} />
-                          )}
+                          {/* Inline thinking disabled for cleaner UI */}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { log } from "@/lib/logger";
@@ -313,31 +314,22 @@ function SignUpForm(props: {
                     )}
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-sm text-foreground/90">Account Role <span className="text-foreground/60 font-normal">(Optional)</span></Label>
-                    <div className="flex flex-wrap gap-2">
-                        {[
-                            { value: "STUDENT", label: "Student" },
-                            { value: "UNIVERSITY", label: "University" },
-                            { value: "INSTITUTION", label: "Institution" },
-                            { value: "TEACHER", label: "Teacher" },
-                            { value: "OTHER", label: "Other" },
-                        ].map((role) => (
-                            <button
-                                key={role.value}
-                                type="button"
-                                disabled={props.loading}
-                                onClick={() => setSelectedRole(role.value === selectedRole ? "" : role.value)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
-                                    selectedRole === role.value
-                                        ? "auth-chip-selected bg-primary text-primary-foreground border-primary shadow-[0_10px_20px_-14px_rgba(0,0,0,0.6)]"
-                                        : "auth-chip text-foreground/90 hover:border-white/60 hover:bg-white/50"
-                                )}
-                            >
-                                {role.label}
-                            </button>
-                        ))}
-                    </div>
+                    <Label className="text-sm text-foreground/90">Account Role <span className="text-foreground/70 font-normal">(Optional)</span></Label>
+                    <Select value={selectedRole || "__skip__"} onValueChange={(v) => setSelectedRole(v === "__skip__" ? "" : v)} disabled={props.loading}>
+                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-2xl border-white/40 text-foreground/90 focus:ring-2 focus:ring-primary/20 [&>span]:line-clamp-1">
+                            <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                        <SelectContent className="auth-select-dropdown border-white/30 bg-white/95 backdrop-blur-xl">
+                            <SelectItem value="__skip__" className="text-foreground/80 focus:bg-primary/10 focus:text-foreground">
+                                Select your role
+                            </SelectItem>
+                            <SelectItem value="STUDENT" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Student</SelectItem>
+                            <SelectItem value="UNIVERSITY" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">University</SelectItem>
+                            <SelectItem value="INSTITUTION" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Institution</SelectItem>
+                            <SelectItem value="TEACHER" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Teacher</SelectItem>
+                            <SelectItem value="OTHER" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Other</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
                     {props.loading ? (

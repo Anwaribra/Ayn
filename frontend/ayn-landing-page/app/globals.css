@@ -455,6 +455,15 @@
     0 0 20px -4px rgba(59, 130, 246, 0.4);
 }
 
+/* Auth role dropdown — glass style */
+.auth-select-dropdown {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
+}
+
 /* Microsoft button + Coming Soon badge — higher contrast */
 .auth-microsoft-btn {
   background: rgba(0, 0, 0, 0.06) !important;

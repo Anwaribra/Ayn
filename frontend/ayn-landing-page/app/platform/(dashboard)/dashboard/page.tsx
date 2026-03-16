@@ -71,8 +71,14 @@ function DashboardContent() {
     )
   }
 
-  const alignmentScore = metrics?.alignmentPercentage ?? 0
-  const evidenceCount = metrics?.evidenceCount ?? 0
+  const safeMetrics =
+    metrics && typeof metrics === "object" && !Array.isArray(metrics)
+      ? metrics
+      : null
+  const safeStandards = Array.isArray(standards) ? standards : []
+
+  const alignmentScore = safeMetrics?.alignmentPercentage ?? 0
+  const evidenceCount = safeMetrics?.evidenceCount ?? 0
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -82,22 +88,25 @@ function DashboardContent() {
   })()
 
   const publicStandards = useMemo(
-    () => standards?.filter((s: Standard) => s.isPublic) ?? [],
-    [standards]
+    () =>
+      safeStandards.filter(
+        (s: Standard | null | undefined) => !!s && (s as Standard).isPublic && !!(s as Standard).id
+      ) as Standard[],
+    [safeStandards]
   )
 
   const dashboardStats = useMemo(() => [
     {
       label: "Total Evidence",
-      value: metrics?.evidenceCount?.toString() || "0",
+      value: safeMetrics?.evidenceCount?.toString() || "0",
       icon: FileText,
       status: "warning" as const
     },
     {
       label: "Active Alerts",
-      value: metrics?.unreadNotificationsCount?.toString() || "0",
+      value: safeMetrics?.unreadNotificationsCount?.toString() || "0",
       icon: AlertTriangle,
-      status: ((metrics?.unreadNotificationsCount ?? 0) > 0 ? "critical" : "success") as "critical" | "success"
+      status: ((safeMetrics?.unreadNotificationsCount ?? 0) > 0 ? "critical" : "success") as "critical" | "success"
     },
     {
       label: "Compliance Score",
@@ -107,7 +116,7 @@ function DashboardContent() {
     },
     {
       label: "Total Analyses",
-      value: metrics?.totalGapAnalyses?.toString() || "0",
+      value: safeMetrics?.totalGapAnalyses?.toString() || "0",
       icon: Cpu,
       status: "neutral" as const
     }
@@ -163,7 +172,7 @@ function DashboardContent() {
           </div>
           <div className="glass-card rounded-3xl p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <CircularGauge
-              value={metrics?.totalGapAnalyses ?? 0}
+              value={safeMetrics?.totalGapAnalyses ?? 0}
               max={20}
               label="Gap Analyses"
               icon={<Zap className="w-5 h-5" />}
@@ -171,7 +180,7 @@ function DashboardContent() {
             />
             <div className="flex flex-col justify-center">
               <span className="text-2xl font-bold tracking-tight text-foreground">
-                {metrics?.totalGapAnalyses ?? 0}
+                {safeMetrics?.totalGapAnalyses ?? 0}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Reports</span>
             </div>
@@ -239,7 +248,7 @@ function DashboardContent() {
       {/* Activity Graph & Logs */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <ActivityChart data={metrics?.recentScores ?? []} />
+          <ActivityChart data={safeMetrics?.recentScores ?? []} />
 
           {/* Recent Evidence List */}
           <div className="glass-card p-8 rounded-3xl">
@@ -248,7 +257,7 @@ function DashboardContent() {
               <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
             </div>
             <div className="space-y-3">
-              {(metrics?.recentEvidence?.length ?? 0) === 0 ? (
+              {(safeMetrics?.recentEvidence?.length ?? 0) === 0 ? (
                 <div className="text-center py-10 border-2 border-dashed border-border rounded-3xl bg-muted/20">
                   <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                   <p className="text-muted-foreground text-sm font-medium">No recent evidence</p>
@@ -257,7 +266,7 @@ function DashboardContent() {
                   </Link>
                 </div>
               ) : (
-                metrics?.recentEvidence?.map((ev: any) => (
+                safeMetrics?.recentEvidence?.map((ev: any) => (
                   <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted/50 transition-all group cursor-pointer border border-transparent hover:border-border">
                     <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                       <FileText className="w-5 h-5" />

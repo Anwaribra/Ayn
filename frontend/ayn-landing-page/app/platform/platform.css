@@ -125,6 +125,11 @@
   color-scheme: light;
 }
 
+/* Workflows: reduce blur intensity for crisper cards */
+[data-section="platform"][data-platform-page="workflows"] {
+  --glass-blur: 10px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    DARK MODE OVERRIDE — activates when user toggles to dark
    ═══════════════════════════════════════════════════════════════════════════ */

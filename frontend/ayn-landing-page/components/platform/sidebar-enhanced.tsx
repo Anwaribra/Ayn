@@ -298,10 +298,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">
                 <p className="text-sm font-semibold truncate text-white">
-                  {user?.name ?? "System User"}
-                </p>
-                <p className="text-xs text-zinc-500 truncate">
-                  {user?.email ?? "System User"}
+                  {user?.name ?? "User"}
                 </p>
                 <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-emerald-200">
                   Secure

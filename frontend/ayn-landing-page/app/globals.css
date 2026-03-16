@@ -302,9 +302,9 @@
 
 /* ─── Auth Glass System ─── */
 .auth-backdrop {
-  background: rgba(6, 10, 20, 0.4);
-  backdrop-filter: blur(18px) saturate(115%);
-  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  background: rgba(6, 10, 20, 0.5);
+  backdrop-filter: blur(28px) saturate(120%);
+  -webkit-backdrop-filter: blur(28px) saturate(120%);
 }
 
 .auth-tint {

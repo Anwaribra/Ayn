@@ -236,240 +236,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         id="main-content"
         className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0"
       >
-        <header
-          className={cn(
-            "h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-30 transition-all duration-300 platform-header",
-            headerScrolled && "platform-header-scrolled"
-          )}
-        >
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            {/* Open sidebar when it's overlay (below lg) */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
-              aria-label="Open sidebar"
-            >
-              <PanelLeft className="w-5 h-5" />
-            </button>
-
-            {/* Navigation / Command Palette */}
-            <button
-              onClick={() => setCommandPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
-            >
-              <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
-              <span className="hidden md:inline font-medium">Search...</span>
-              <kbd className="hidden md:flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-muted border border-border text-sm font-mono text-muted-foreground font-bold">
-                <span className="text-base">⌘</span>K
-              </kbd>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
-            <div className="relative quick-pages-container">
-              <button
-                onClick={() => setShowQuickPages(!showQuickPages)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
-                aria-label="Quick pages"
-                aria-haspopup="true"
-                aria-expanded={showQuickPages}
-              >
-                <LayoutGrid className="w-5 h-5" />
-              </button>
-
-              {showQuickPages && (
-                <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                      Quick Pages
-                    </h3>
-                    <button
-                      onClick={() => setShowQuickPages(false)}
-                      className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {[
-                      {
-                        label: "Overview",
-                        href: "/platform/overview",
-                        icon: LayoutGrid,
-                        note: "Executive snapshot",
-                      },
-                      {
-                        label: "Calendar",
-                        href: "/platform/calendar",
-                        icon: CalendarDays,
-                        note: "Upcoming audits",
-                      },
-                      {
-                        label: "AI Tools",
-                        href: "/platform/ai-tools",
-                        icon: Sparkles,
-                        note: "Automation lab",
-                      },
-                    ].map((item) => (
-                      <button
-                        key={item.href}
-                        onClick={() => {
-                          setShowQuickPages(false);
-                          router.push(item.href);
-                        }}
-                        className="w-full flex items-center gap-3 rounded-2xl border border-border bg-layer-1 hover:bg-layer-3 px-3 py-2.5 transition-all"
-                      >
-                        <span className="h-9 w-9 rounded-xl glass-input flex items-center justify-center">
-                          <item.icon className="h-4 w-4 text-primary" />
-                        </span>
-                        <span className="flex-1 text-left">
-                          <span className="text-sm font-semibold text-foreground block">
-                            {item.label}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                            {item.note}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Notifications */}
-            <div className="relative notification-dropdown-container">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
-                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
-                aria-haspopup="true"
-                aria-expanded={showNotifications}
-              >
-                <Bell className="w-5 h-5" />
-                {notificationCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary ring-2 ring-[var(--layer-0)]" />
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                      Activity
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleClearNotifications}
-                        className="text-[10px] text-primary font-bold hover:underline min-h-[32px] px-1"
-                      >
-                        Mark all read
-                      </button>
-                      <button
-                        onClick={() => setShowNotifications(false)}
-                        className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    {!notifications || notifications.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-10 opacity-60">
-                        <Bell className="w-8 h-8 text-muted-foreground mb-3" />
-                        <p className="text-center text-muted-foreground italic text-sm">
-                          Quiet for now.
-                        </p>
-                      </div>
-                    ) : (
-                      notifications.slice(0, 8).map((n: Notification) => (
-                        <div
-                          key={n.id}
-                          className={cn(
-                            "flex gap-3 group cursor-pointer hover:bg-layer-3 p-3 rounded-xl transition-all",
-                            !n.isRead
-                              ? "bg-layer-1 border border-border"
-                              : "opacity-70",
-                          )}
-                          onClick={() => handleDismissNotification(n.id)}
-                        >
-                          <div
-                            className={cn(
-                              "w-1 h-full min-h-[2rem] rounded-full flex-shrink-0",
-                              !n.isRead
-                                ? n.type === "error"
-                                  ? "bg-destructive"
-                                  : n.type === "success"
-                                    ? "bg-emerald-500"
-                                    : "bg-primary"
-                                : "bg-muted-foreground/30",
-                            )}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4
-                              className={cn(
-                                "text-xs font-bold",
-                                !n.isRead
-                                  ? "text-foreground"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              {n.title}
-                            </h4>
-                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                              {n.message}
-                            </p>
-                            <span className="text-[9px] text-muted-foreground/70 mt-1.5 block font-bold uppercase tracking-wider">
-                              {new Date(n.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-                          {!n.isRead && (
-                            <div
-                              className={cn(
-                                "w-2 h-2 rounded-full mt-1.5",
-                                n.type === "error"
-                                  ? "bg-destructive"
-                                  : n.type === "success"
-                                    ? "bg-emerald-500"
-                                    : "bg-primary",
-                              )}
-                            />
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {notifications && notifications.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setShowNotifications(false);
-                        router.push("/platform/notifications");
-                      }}
-                      className="w-full mt-4 py-3 rounded-2xl bg-layer-3 hover:bg-layer-1 transition-colors text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground text-center border border-border"
-                    >
-                      View All Activity
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="w-px h-4 bg-border" />
-          </div>
-        </header>
-
         <div
           className={cn(
             "flex-1 overflow-y-auto scroll-smooth transition-colors duration-300",
             pathname?.includes("/horus-ai")
               ? "content-scroll-area min-h-0"
-              : "px-6 md:px-10 pt-5 pb-24 content-scroll-area",
+              : "px-6 md:px-10 pt-4 pb-24 content-scroll-area",
           )}
         >
           <div
@@ -479,6 +251,226 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 : "max-w-[1280px] w-full mx-auto"
             }
           >
+            {!pathname?.includes("/horus-ai") && (
+              <div
+                className={cn(
+                  "sticky top-0 z-20 mb-4 flex items-center gap-3 rounded-2xl border border-border bg-layer-2/70 backdrop-blur-md px-3 py-2",
+                  headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+                )}
+              >
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[36px] min-w-[36px]"
+                  aria-label="Open sidebar"
+                >
+                  <PanelLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setCommandPaletteOpen(true)}
+                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[36px] min-w-0 shadow-sm"
+                >
+                  <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
+                  <span className="hidden sm:inline font-medium">Search…</span>
+                  <kbd className="hidden sm:flex items-center gap-1 ml-auto px-2 py-0.5 rounded bg-muted border border-border text-[10px] font-mono text-muted-foreground font-bold">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </button>
+
+                <div className="relative quick-pages-container">
+                  <button
+                    onClick={() => setShowQuickPages(!showQuickPages)}
+                    className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[36px] min-w-[36px]"
+                    aria-label="Quick pages"
+                    aria-haspopup="true"
+                    aria-expanded={showQuickPages}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+
+                  {showQuickPages && (
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                          Quick Pages
+                        </h3>
+                        <button
+                          onClick={() => setShowQuickPages(false)}
+                          className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {[
+                          {
+                            label: "Overview",
+                            href: "/platform/overview",
+                            icon: LayoutGrid,
+                            note: "Executive snapshot",
+                          },
+                          {
+                            label: "Calendar",
+                            href: "/platform/calendar",
+                            icon: CalendarDays,
+                            note: "Upcoming audits",
+                          },
+                          {
+                            label: "AI Tools",
+                            href: "/platform/ai-tools",
+                            icon: Sparkles,
+                            note: "Automation lab",
+                          },
+                        ].map((item) => (
+                          <button
+                            key={item.href}
+                            onClick={() => {
+                              setShowQuickPages(false);
+                              router.push(item.href);
+                            }}
+                            className="w-full flex items-center gap-3 rounded-2xl border border-border bg-layer-1 hover:bg-layer-3 px-3 py-2.5 transition-all"
+                          >
+                            <span className="h-9 w-9 rounded-xl glass-input flex items-center justify-center">
+                              <item.icon className="h-4 w-4 text-primary" />
+                            </span>
+                            <span className="flex-1 text-left">
+                              <span className="text-sm font-semibold text-foreground block">
+                                {item.label}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                                {item.note}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative notification-dropdown-container">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[36px] min-w-[36px]"
+                    aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
+                    aria-haspopup="true"
+                    aria-expanded={showNotifications}
+                  >
+                    <Bell className="w-4 h-4" />
+                    {notificationCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-[var(--layer-0)]" />
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                          Activity
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleClearNotifications}
+                            className="text-[10px] text-primary font-bold hover:underline min-h-[32px] px-1"
+                          >
+                            Mark all read
+                          </button>
+                          <button
+                            onClick={() => setShowNotifications(false)}
+                            className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        {!notifications || notifications.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-10 opacity-60">
+                            <Bell className="w-8 h-8 text-muted-foreground mb-3" />
+                            <p className="text-center text-muted-foreground italic text-sm">
+                              Quiet for now.
+                            </p>
+                          </div>
+                        ) : (
+                          notifications.slice(0, 8).map((n: Notification) => (
+                            <div
+                              key={n.id}
+                              className={cn(
+                                "flex gap-3 group cursor-pointer hover:bg-layer-3 p-3 rounded-xl transition-all",
+                                !n.isRead
+                                  ? "bg-layer-1 border border-border"
+                                  : "opacity-70",
+                              )}
+                              onClick={() => handleDismissNotification(n.id)}
+                            >
+                              <div
+                                className={cn(
+                                  "w-1 h-full min-h-[2rem] rounded-full flex-shrink-0",
+                                  !n.isRead
+                                    ? n.type === "error"
+                                      ? "bg-destructive"
+                                      : n.type === "success"
+                                        ? "bg-emerald-500"
+                                        : "bg-primary"
+                                    : "bg-muted-foreground/30",
+                                )}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className={cn(
+                                    "text-xs font-bold",
+                                    !n.isRead
+                                      ? "text-foreground"
+                                      : "text-muted-foreground",
+                                  )}
+                                >
+                                  {n.title}
+                                </h4>
+                                <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
+                                  {n.message}
+                                </p>
+                                <span className="text-[9px] text-muted-foreground/70 mt-1.5 block font-bold uppercase tracking-wider">
+                                  {new Date(n.createdAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                              {!n.isRead && (
+                                <div
+                                  className={cn(
+                                    "w-2 h-2 rounded-full mt-1.5",
+                                    n.type === "error"
+                                      ? "bg-destructive"
+                                      : n.type === "success"
+                                        ? "bg-emerald-500"
+                                        : "bg-primary",
+                                  )}
+                                />
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {notifications && notifications.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setShowNotifications(false);
+                            router.push("/platform/notifications");
+                          }}
+                          className="w-full mt-4 py-3 rounded-2xl bg-layer-3 hover:bg-layer-1 transition-colors text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground text-center border border-border"
+                        >
+                          View All Activity
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {children}
           </div>
         </div>

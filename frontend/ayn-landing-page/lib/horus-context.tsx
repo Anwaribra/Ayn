@@ -129,14 +129,37 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+    const buildModelMessage = (text: string, files?: File[]) => {
+        const normalizedText = text?.trim() || ""
+        const hasFiles = !!files && files.length > 0
+        const hasImages = !!files?.some((f) => f.type?.startsWith("image/"))
+
+        if (hasImages) {
+            if (normalizedText) {
+                return `${normalizedText}\n\nAnalyze the attached image(s) and respond in plain language. Do not return JSON or code.`
+            }
+            return "Please analyze the attached image(s). Describe what you see in plain language. If it's a screenshot, summarize the key UI/content. Do not return JSON or code."
+        }
+
+        if (hasFiles && !normalizedText) {
+            return "Please analyze the attached file(s) and summarize the key points in plain language."
+        }
+
+        if (hasFiles && normalizedText) {
+            return `${normalizedText}\n\nUse the attached file(s) as context. Respond in plain language.`
+        }
+
+        return normalizedText || " "
+    }
+
     const streamRequest = async (
-        text: string,
+        modelText: string,
         files?: File[],
         opts?: { appendUser?: boolean; visibleUserText?: string }
     ) => {
         const appendUser = opts?.appendUser ?? true
-        const visibleUserText = opts?.visibleUserText ?? text
-        if ((!text && (!files || files.length === 0)) || status !== "idle") return
+        const visibleUserText = opts?.visibleUserText ?? modelText
+        if ((!modelText && (!files || files.length === 0)) || status !== "idle") return
 
         setThinkingSteps([])
         setStreamError(null)
@@ -166,7 +189,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
 
         try {
             await api.horusChatStream(
-                text || "Analyze these files.",
+                modelText || "Analyze these files.",
                 files,
                 currentChatId || undefined,
                 (chunk) => {
@@ -246,7 +269,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 : `📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached for analysis`)
             : (normalizedText || "📎 Attached files for analysis")
 
-        await streamRequest(text, files, { appendUser: true, visibleUserText })
+        const modelText = buildModelMessage(text, files)
+        await streamRequest(modelText, files, { appendUser: true, visibleUserText })
     }
 
     const retryLastMessage = async () => {
@@ -262,7 +286,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             }
             return filtered
         })
-        await streamRequest(last.text, last.files, { appendUser: false })
+        const modelText = buildModelMessage(last.text, last.files)
+        await streamRequest(modelText, last.files, { appendUser: false })
     }
 
     const resolveActionConfirmation = async (id: string, decision: "confirm" | "cancel") => {

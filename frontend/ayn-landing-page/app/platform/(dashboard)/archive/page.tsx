@@ -136,7 +136,7 @@ function ArchiveContent() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="px-2 py-0.5 rounded bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+              <div className="px-2 py-0.5 rounded glass-pill">
                 <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Vault Layer</span>
               </div>
               <div className="h-px w-6 bg-[var(--border-subtle)]" />
@@ -155,7 +155,7 @@ function ArchiveContent() {
                 placeholder="Search vault..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-all w-64"
+                className="glass-input rounded-xl pl-9 pr-4 py-2 text-xs transition-all w-64"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ function ArchiveContent() {
           { label: "Retention Policy", value: "7 Years", icon: Clock },
           { label: "Last Purge", value: "Never", icon: Trash2 },
         ].map((stat, i) => (
-          <div key={i} className="glass-panel p-5 rounded-2xl border-[var(--border-subtle)]">
+          <div key={i} className="glass-panel p-5 rounded-2xl glass-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">{stat.label}</span>
               <stat.icon className="w-3.5 h-3.5 text-muted-foreground" />
@@ -190,7 +190,7 @@ function ArchiveContent() {
               "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border",
               filterType === type
                 ? "bg-primary text-primary-foreground border-primary shadow-lg"
-                : "bg-[var(--surface)] text-muted-foreground border-[var(--border-subtle)] hover:bg-[var(--surface)]"
+                : "glass-button text-muted-foreground"
             )}
           >
             {type === "all" ? "All Content" : type.replace("_", " ")}
@@ -200,7 +200,7 @@ function ArchiveContent() {
 
       {/* Archive Table/List */}
       <div className="px-4">
-        <div className="glass-panel rounded-[32px] overflow-hidden border-[var(--border-subtle)]">
+        <div className="glass-panel rounded-[32px] overflow-hidden glass-border">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -227,7 +227,7 @@ function ArchiveContent() {
                     <tr key={item.id} className="group hover:bg-[var(--surface-subtle)] transition-colors">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center shrink-0">
                             {getTypeIcon(item.type)}
                           </div>
                           <div>
@@ -250,7 +250,7 @@ function ArchiveContent() {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center border border-border">
+                          <div className="w-5 h-5 rounded-full glass-input flex items-center justify-center">
                             <User className="w-2.5 h-2.5 text-muted-foreground" />
                           </div>
                           <span className="text-xs font-medium text-[var(--text-secondary)]">{item.deletedBy}</span>
@@ -260,21 +260,21 @@ function ArchiveContent() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setSelectedItem(item)}
-                            className="p-2 rounded-lg bg-[var(--surface)] border border-[var(--border-subtle)] text-muted-foreground hover:text-foreground hover:border-border transition-all opacity-0 group-hover:opacity-100"
+                            className="p-2 rounded-lg glass-button text-muted-foreground transition-all opacity-0 group-hover:opacity-100"
                             title="View Details"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRestore(item.id)}
-                            className="p-2 rounded-lg bg-[var(--surface)] border border-[var(--border-subtle)] text-primary hover:bg-primary/10 hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100"
+                            className="p-2 rounded-lg glass-button text-primary transition-all opacity-0 group-hover:opacity-100"
                             title="Restore Item"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handlePurge(item.id)}
-                            className="p-2 rounded-lg bg-[var(--surface)] border border-[var(--border-subtle)] text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-all opacity-0 group-hover:opacity-100"
+                            className="p-2 rounded-lg glass-button text-destructive transition-all opacity-0 group-hover:opacity-100"
                             title="Purge Permanently"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -296,12 +296,12 @@ function ArchiveContent() {
           <div
             role="dialog"
             aria-modal="true"
-            className="bg-[var(--surface-modal)] rounded-3xl p-8 max-w-2xl w-full border border-[var(--border-subtle)] shadow-2xl relative animate-in zoom-in-95 duration-200"
+            className="glass-panel rounded-3xl p-8 max-w-2xl w-full glass-border shadow-2xl relative animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center">
                   {getTypeIcon(selectedItem.type)}
                 </div>
                 <div>
@@ -311,7 +311,7 @@ function ArchiveContent() {
               </div>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--surface)] text-muted-foreground hover:text-foreground transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center glass-button text-muted-foreground transition-colors"
                 aria-label="Close modal"
               >
                 <ChevronRight className="w-4 h-4 rotate-90" />
@@ -341,7 +341,7 @@ function ArchiveContent() {
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-subtle)] mb-10">
+            <div className="p-6 rounded-2xl glass-surface mb-10">
               <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-2">Vault Integrity Note</p>
               <p className="text-sm text-[var(--text-secondary)] italic">
                 This item is stored in high-encryption cold storage. All associations to active standards have been severed. Restoring this item will re-establish compliance graph links if the target standards are still active.
@@ -357,7 +357,7 @@ function ArchiveContent() {
               </button>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="flex-1 py-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--surface)] transition-all"
+                className="flex-1 py-3 rounded-xl glass-button text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all"
               >
                 Dismiss
               </button>
@@ -372,7 +372,7 @@ function ArchiveContent() {
           <div
             role="dialog"
             aria-modal="true"
-            className="bg-[var(--layer-0)] rounded-3xl p-8 max-w-md w-full border border-destructive/20 shadow-2xl relative"
+            className="glass-panel rounded-3xl p-8 max-w-md w-full border border-destructive/20 shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6 border border-destructive/20">
@@ -385,7 +385,7 @@ function ArchiveContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => setIsPurging(false)}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-all"
+                className="flex-1 py-3 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all"
               >
                 Abort
               </button>

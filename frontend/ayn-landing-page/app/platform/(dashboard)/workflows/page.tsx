@@ -49,7 +49,7 @@ export default function WorkflowsPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="px-2 py-0.5 rounded bg-muted border border-[var(--border-subtle)]">
+                <div className="px-2 py-0.5 rounded glass-pill">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Automation Layer</span>
                 </div>
               </div>
@@ -60,7 +60,7 @@ export default function WorkflowsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 disabled
-                className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-muted text-muted-foreground rounded-xl font-bold text-xs border border-border cursor-not-allowed opacity-60"
+                className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-button text-muted-foreground rounded-xl font-bold text-xs cursor-not-allowed opacity-60"
                 title="Workflow builder coming soon"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -79,8 +79,8 @@ export default function WorkflowsPage() {
               { label: "Paused Workflows", value: isLoading ? "..." : String(pausedCount), icon: Pause, color: "text-[var(--status-warning)]" },
               { label: "Total Defined", value: isLoading ? "..." : String(totalCount), icon: Workflow, color: "text-primary" }
             ].map((stat, i) => (
-              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 border-[var(--border-subtle)]">
-                <div className="w-10 h-10 rounded-xl bg-muted border border-[var(--border-subtle)] flex items-center justify-center">
+              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 glass-border">
+                <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 <div>
@@ -102,13 +102,13 @@ export default function WorkflowsPage() {
               {isLoading ? (
                 // Skeleton
                 [1, 2, 3].map((i) => (
-                  <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse border-[var(--border-subtle)]" />
+                  <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse glass-border" />
                 ))
               ) : (
                 workflows?.map((workflow: WorkflowData) => {
                   const Icon = ICON_MAP[workflow.icon] || Workflow
                   return (
-                    <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all border-[var(--border-subtle)]">
+                    <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all glass-border">
                       <div className="flex items-start gap-5">
                         <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
                           <Icon className={`h-5 w-5 ${workflow.color}`} />
@@ -118,7 +118,7 @@ export default function WorkflowsPage() {
                             <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === 'active' ? 'status-success' :
                               workflow.status === 'paused' ? 'status-warning' :
-                                'bg-muted text-muted-foreground border-border'
+                                'glass-button text-muted-foreground'
                               }`}>
                               {workflow.status}
                             </span>

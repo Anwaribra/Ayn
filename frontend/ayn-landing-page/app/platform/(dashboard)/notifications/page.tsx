@@ -95,19 +95,19 @@ export default function NotificationsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter("unread")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "unread" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "unread" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
               Unread
             </button>
             <button
               onClick={handleMarkAllRead}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors ml-2 flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-primary glass-button transition-colors ml-2 flex items-center gap-1"
             >
               <Check className="w-4 h-4" />
               Mark all read
@@ -122,8 +122,8 @@ export default function NotificationsPage() {
             <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
           </div>
         ) : !filteredNotifications || filteredNotifications.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-12 text-center border-border">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 border border-border">
+          <div className="glass-panel rounded-3xl p-12 text-center glass-border">
+            <div className="w-16 h-16 rounded-full glass-input flex items-center justify-center mx-auto mb-4">
               <Bell className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">No notifications</h3>
@@ -135,10 +135,10 @@ export default function NotificationsPage() {
           filteredNotifications.map((n: Notification) => (
             <div
               key={n.id}
-              className={`glass-panel rounded-2xl p-5 flex gap-4 transition-all hover:bg-muted/30 cursor-pointer group relative overflow-hidden border ${!n.isRead ? 'border-primary/30 bg-primary/5' : 'border-border'}`}
+              className={`glass-panel rounded-2xl p-5 flex gap-4 transition-all cursor-pointer group relative overflow-hidden ${!n.isRead ? 'border-primary/30 bg-primary/5' : 'glass-border'}`}
               onClick={() => navigateToRelated(n)}
             >
-              <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border border-border ${!n.isRead ? 'bg-muted' : 'bg-muted/50'}`}>
+              <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 glass-input ${!n.isRead ? '' : 'opacity-80'}`}>
                 {getIcon(n.type)}
               </div>
               <div className="flex-1">

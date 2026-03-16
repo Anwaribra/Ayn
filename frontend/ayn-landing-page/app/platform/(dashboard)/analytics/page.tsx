@@ -227,15 +227,15 @@ function AnalyticsContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="p-1 glass-panel rounded-xl border-[var(--border-subtle)] flex items-center gap-1">
+          <div className="p-1 glass-panel rounded-xl glass-border flex items-center gap-1">
             <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5"><Filter className="w-3 h-3" /> Period</span>
             {PERIOD_OPTIONS.map((option) => (
-              <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/60")}>
+              <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
                 {option.label}
               </button>
             ))}
           </div>
-          <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-muted transition-all border-[var(--border-subtle)] text-muted-foreground"><RefreshCw className="w-3 h-3" /> Refresh</button>
+          <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground"><RefreshCw className="w-3 h-3" /> Refresh</button>
           <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"><Download className="w-3 h-3" /> Export CSV</button>
         </div>
       </header>
@@ -245,7 +245,7 @@ function AnalyticsContent() {
         <div className="px-4 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="glass-panel rounded-2xl p-5 border-[var(--border-subtle)] animate-pulse">
+              <div key={i} className="glass-panel rounded-2xl p-5 glass-border animate-pulse">
                 <div className="h-9 w-9 bg-muted rounded-xl mb-3" />
                 <div className="h-8 w-16 bg-muted rounded mb-2" />
                 <div className="h-3 w-24 bg-muted rounded" />
@@ -254,13 +254,13 @@ function AnalyticsContent() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="glass-panel rounded-[32px] p-8 border-[var(--border-subtle)] animate-pulse h-80" />
+              <div key={i} className="glass-panel rounded-[32px] p-8 glass-border animate-pulse h-80" />
             ))}
           </div>
         </div>
       ) : error ? (
         <div className="mt-10 px-4">
-          <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-border bg-muted/30">
+          <div className="flex flex-col items-center justify-center py-16 rounded-2xl glass-panel glass-border">
             <AlertTriangle className="w-10 h-10 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-center mb-4">Failed to load analytics data.</p>
             <button type="button" onClick={() => mutate()} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">Retry</button>
@@ -295,7 +295,7 @@ function AnalyticsContent() {
 
           {/* ─── Anomalies Section ─── */}
           {analytics.anomalies && analytics.anomalies.length > 0 && (
-            <section className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
+            <section className="glass-panel p-8 rounded-[32px] glass-border">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-9 h-9 rounded-xl status-warning border flex items-center justify-center">
                   <AlertTriangle className="w-4 h-4" />
@@ -307,7 +307,7 @@ function AnalyticsContent() {
               </div>
               <div className="space-y-3">
                 {analytics.anomalies.map((anomaly: any) => (
-                  <div key={anomaly.reportId} className="flex items-center gap-4 p-4 rounded-2xl border border-[var(--border-subtle)] hover:bg-muted/30 transition-all">
+                  <div key={anomaly.reportId} className="flex items-center gap-4 p-4 rounded-2xl glass-border hover:bg-muted/30 transition-all">
                     <div className="w-10 h-10 rounded-xl status-warning border flex items-center justify-center shrink-0">
                       <span className="mono text-[10px] font-bold">{Math.round(anomaly.score)}</span>
                     </div>
@@ -323,7 +323,7 @@ function AnalyticsContent() {
 
           {/* ─── Score Distribution (histogram) ─── */}
           {analytics.scoreDistribution && (
-            <section className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)]">
+            <section className="glass-panel p-8 rounded-[32px] glass-border">
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-6">Histogram of all report scores</p>
               <div className="grid grid-cols-5 gap-3">

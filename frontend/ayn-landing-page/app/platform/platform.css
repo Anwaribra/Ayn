@@ -352,6 +352,30 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
 }
 
+[data-section="platform"] .glass-input:focus {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-outer);
+  outline: none;
+}
+
+[data-section="platform"] .glass-button {
+  background: var(--glass-soft-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-section="platform"] .glass-button:hover {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+[data-section="platform"] .glass-border {
+  border-color: var(--glass-border);
+}
+
 [data-section="platform"] .glass-focus-ring:focus-within {
   border-color: var(--glass-ring);
   box-shadow: var(--glass-outer);

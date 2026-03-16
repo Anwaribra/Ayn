@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=no_code", BASE_URL))
   }
 
-  const redirectUri = `${BASE_URL.replace(/\/$/, "")}/auth/google/callback`
+  // Use exact URL we were called with (without query) — must match what we sent to Google
+  const reqUrl = new URL(request.url)
+  const redirectUri = `${reqUrl.origin}${reqUrl.pathname.replace(/\/$/, "")}`
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/google/callback`, {

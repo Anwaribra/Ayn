@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import {
   Zap,
@@ -49,23 +49,43 @@ interface WorkflowData {
   bg: string
 }
 
+interface WorkflowTemplate {
+  id: string
+  title: string
+  description: string
+  category: "Evidence" | "Reporting" | "Gaps"
+  icon: typeof Shield
+  glow: string
+}
+
 export default function WorkflowsPage() {
   const [tab, setTab] = useState<"workflows" | "templates" | "runs">("workflows")
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "draft">("all")
   const [templateFilter, setTemplateFilter] = useState<"all" | "Evidence" | "Reporting" | "Gaps">("all")
   const [builderOpen, setBuilderOpen] = useState(false)
+  const [builderTemplate, setBuilderTemplate] = useState<string | null>(null)
+  const [templatePreview, setTemplatePreview] = useState<WorkflowTemplate | null>(null)
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
-  const { data: workflows, isLoading, error } = useSWR<WorkflowData[]>(
+  const [localWorkflows, setLocalWorkflows] = useState<WorkflowData[] | null>(null)
+  const { data: workflows, isLoading, error, mutate } = useSWR<WorkflowData[]>(
     "workflows",
     () => api.getWorkflows()
   )
 
-  const activeCount = workflows?.filter((w: WorkflowData) => w.status === "active").length ?? 0
-  const pausedCount = workflows?.filter((w: WorkflowData) => w.status === "paused").length ?? 0
-  const totalCount = workflows?.length ?? 0
+  useEffect(() => {
+    if (workflows) {
+      setLocalWorkflows(workflows)
+    }
+  }, [workflows])
 
-  const templates = useMemo(
+  const workflowsList = localWorkflows ?? workflows ?? []
+
+  const activeCount = workflowsList.filter((w: WorkflowData) => w.status === "active").length ?? 0
+  const pausedCount = workflowsList.filter((w: WorkflowData) => w.status === "paused").length ?? 0
+  const totalCount = workflowsList.length ?? 0
+
+  const templates = useMemo<WorkflowTemplate[]>(
     () => [
       {
         id: "auto-tag",
@@ -106,7 +126,7 @@ export default function WorkflowsPage() {
   )
 
   const filteredWorkflows = useMemo(() => {
-    const list = workflows ?? []
+    const list = workflowsList
     return list.filter((w) => {
       const matchesQuery =
         !query.trim() ||
@@ -115,12 +135,27 @@ export default function WorkflowsPage() {
       const matchesStatus = statusFilter === "all" ? true : w.status === statusFilter
       return matchesQuery && matchesStatus
     })
-  }, [workflows, query, statusFilter])
+  }, [workflowsList, query, statusFilter])
 
   const filteredTemplates = useMemo(() => {
     if (templateFilter === "all") return templates
     return templates.filter((tpl) => tpl.category === templateFilter)
   }, [templates, templateFilter])
+
+  const closeBuilder = () => {
+    setBuilderOpen(false)
+    setBuilderTemplate(null)
+  }
+
+  const handleStatusUpdate = (id: string, status: WorkflowData["status"]) => {
+    setLocalWorkflows((prev) => {
+      const base = prev ?? workflows ?? []
+      return base.map((workflow) =>
+        workflow.id === id ? { ...workflow, status, lastRun: status === "active" ? "Just now" : workflow.lastRun } : workflow
+      )
+    })
+    setSelectedWorkflow((prev) => (prev?.id === id ? { ...prev, status } : prev))
+  }
 
   return (
     <ProtectedRoute>
@@ -149,16 +184,16 @@ export default function WorkflowsPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary/10 text-primary rounded-xl font-bold text-xs cursor-not-allowed opacity-60 border border-primary/20"
+                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary/10 text-primary rounded-xl font-bold text-xs border border-primary/20 hover:bg-primary/15 transition-colors"
                   title="Workflow builder (beta)"
-                  onClick={() => setBuilderOpen(true)}
+                  onClick={() => { setBuilderTemplate(null); setBuilderOpen(true) }}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Create Workflow
                 </button>
                 <button
-                  disabled
-                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-button text-muted-foreground rounded-xl font-bold text-xs cursor-not-allowed opacity-60"
+                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-button text-muted-foreground rounded-xl font-bold text-xs hover:text-foreground transition-colors"
+                  onClick={() => setTab("templates")}
                 >
                   <Layers className="w-3.5 h-3.5" />
                   Browse Templates
@@ -275,6 +310,12 @@ export default function WorkflowsPage() {
                       <p className="text-xs text-muted-foreground mt-2">
                         Try refreshing the page or check back in a moment.
                       </p>
+                      <button
+                        className="mt-4 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
+                        onClick={() => mutate()}
+                      >
+                        Retry
+                      </button>
                     </div>
                   ) : filteredWorkflows.length === 0 ? (
                     <div className="glass-panel rounded-2xl p-10 glass-border text-center">
@@ -325,18 +366,21 @@ export default function WorkflowsPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                                onClick={() => handleStatusUpdate(workflow.id, "active")}
                               >
                                 <Play className="w-3.5 h-3.5" />
                                 Run
                               </button>
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                                onClick={() => handleStatusUpdate(workflow.id, "paused")}
                               >
                                 <Pause className="w-3.5 h-3.5" />
                                 Pause
                               </button>
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                                onClick={() => { setBuilderTemplate(workflow.name); setBuilderOpen(true) }}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                                 Edit
@@ -427,10 +471,16 @@ export default function WorkflowsPage() {
                         <h3 className="text-lg font-bold text-foreground">{tpl.title}</h3>
                         <p className="text-sm text-muted-foreground mt-2">{tpl.description}</p>
                         <div className="mt-5 flex items-center gap-2">
-                          <button disabled className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                          <button
+                            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                            onClick={() => { setBuilderTemplate(tpl.title); setBuilderOpen(true) }}
+                          >
                             Use Template
                           </button>
-                          <button disabled className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                          <button
+                            className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
+                            onClick={() => setTemplatePreview(tpl)}
+                          >
                             Preview
                           </button>
                         </div>
@@ -540,8 +590,13 @@ export default function WorkflowsPage() {
 
       {/* Workflow Details Drawer */}
       {selectedWorkflow && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-end bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-[520px] h-full glass-panel glass-border p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[70] flex items-center justify-end">
+          <button
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setSelectedWorkflow(null)}
+            aria-label="Close workflow details"
+          />
+          <div className="relative w-full max-w-[520px] h-full glass-panel glass-border p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-foreground">{selectedWorkflow.name}</h3>
@@ -582,13 +637,22 @@ export default function WorkflowsPage() {
               <div className="glass-panel p-4 rounded-2xl glass-border">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                  <button
+                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
+                    onClick={() => handleStatusUpdate(selectedWorkflow.id, "active")}
+                  >
                     Run Now
                   </button>
-                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                  <button
+                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
+                    onClick={() => handleStatusUpdate(selectedWorkflow.id, "paused")}
+                  >
                     Pause
                   </button>
-                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                  <button
+                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
+                    onClick={() => { setBuilderTemplate(selectedWorkflow.name); setBuilderOpen(true) }}
+                  >
                     Edit
                   </button>
                 </div>
@@ -598,10 +662,62 @@ export default function WorkflowsPage() {
         </div>
       )}
 
+      {/* Template Preview Modal */}
+      {templatePreview && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center p-6">
+          <button
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setTemplatePreview(null)}
+            aria-label="Close template preview"
+          />
+          <div className="relative w-full max-w-xl glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-br ${templatePreview.glow} opacity-40`} />
+            <div className="relative z-10">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {templatePreview.category}
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mt-1">{templatePreview.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-2">{templatePreview.description}</p>
+                </div>
+                <button className="p-2 rounded-lg glass-button" onClick={() => setTemplatePreview(null)}>
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {["Trigger", "Action", "Gate"].map((step) => (
+                  <div key={step} className="glass-panel glass-border rounded-xl p-3 text-center">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{step}</div>
+                    <div className="text-sm font-semibold text-foreground mt-1">Configured</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex items-center gap-3">
+                <button
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                  onClick={() => { setBuilderTemplate(templatePreview.title); setBuilderOpen(true); setTemplatePreview(null) }}
+                >
+                  Use Template
+                </button>
+                <button className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest" onClick={() => setTemplatePreview(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Builder Modal */}
       {builderOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
-          <div className="glass-panel glass-border w-full max-w-5xl h-[80vh] rounded-[32px] overflow-hidden flex">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
+          <button
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeBuilder}
+            aria-label="Close workflow builder"
+          />
+          <div className="relative glass-panel glass-border w-full max-w-5xl h-[80vh] rounded-[32px] overflow-hidden flex">
             <div className="w-64 border-r border-[var(--border-subtle)] p-5 space-y-4">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Blocks</div>
               {["Trigger", "Action", "Gate", "Notify"].map((b) => (
@@ -612,21 +728,23 @@ export default function WorkflowsPage() {
             </div>
             <div className="flex-1 p-6 relative">
               <div className="absolute top-4 right-4">
-                <button className="p-2 rounded-lg glass-button" onClick={() => setBuilderOpen(false)}>
+                <button className="p-2 rounded-lg glass-button" onClick={closeBuilder}>
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
               <div className="h-full rounded-2xl glass-panel glass-border flex items-center justify-center">
                 <div className="text-center">
                   <h3 className="text-lg font-bold text-foreground">Workflow Builder</h3>
-                  <p className="text-sm text-muted-foreground mt-2">Drag blocks to create a pipeline.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {builderTemplate ? `Based on “${builderTemplate}”.` : "Drag blocks to create a pipeline."}
+                  </p>
                 </div>
               </div>
             </div>
             <div className="w-64 border-l border-[var(--border-subtle)] p-5 space-y-4">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Config</div>
               <div className="glass-panel glass-border rounded-xl p-3 text-sm text-muted-foreground">
-                Select a block to edit settings.
+                {builderTemplate ? "Template settings loaded. Select a block to edit." : "Select a block to edit settings."}
               </div>
             </div>
           </div>

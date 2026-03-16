@@ -251,26 +251,6 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         </div>
 
       </nav>
-              Compliance Core
-            </p>
-          )}
-          {COMPLIANCE_WORKFLOW.map((item) => (
-            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
-          ))}
-        </div>
-
-        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
-          {!isCollapsed && (
-            <p className="px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
-              Reporting & Automation
-            </p>
-          )}
-          {INSIGHTS_TOOLS.map((item) => (
-            <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
-          ))}
-        </div>
-
-      </nav>
 
       {/* Bottom Section */}
       <div className="p-3 space-y-3">

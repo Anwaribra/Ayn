@@ -6,6 +6,7 @@ import {
   Zap,
   Play,
   Pause,
+  Pencil,
   Plus,
   Workflow,
   Clock,
@@ -20,6 +21,9 @@ import {
   BadgeCheck,
   ArrowUpRight,
   SlidersHorizontal,
+  X,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import useSWR from "swr"
@@ -47,7 +51,12 @@ interface WorkflowData {
 
 export default function WorkflowsPage() {
   const [tab, setTab] = useState<"workflows" | "templates" | "runs">("workflows")
-  const { data: workflows, isLoading } = useSWR<WorkflowData[]>(
+  const [query, setQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "draft">("all")
+  const [templateFilter, setTemplateFilter] = useState<"all" | "Evidence" | "Reporting" | "Gaps">("all")
+  const [builderOpen, setBuilderOpen] = useState(false)
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
+  const { data: workflows, isLoading, error } = useSWR<WorkflowData[]>(
     "workflows",
     () => api.getWorkflows()
   )
@@ -96,6 +105,23 @@ export default function WorkflowsPage() {
     []
   )
 
+  const filteredWorkflows = useMemo(() => {
+    const list = workflows ?? []
+    return list.filter((w) => {
+      const matchesQuery =
+        !query.trim() ||
+        w.name.toLowerCase().includes(query.toLowerCase()) ||
+        w.description.toLowerCase().includes(query.toLowerCase())
+      const matchesStatus = statusFilter === "all" ? true : w.status === statusFilter
+      return matchesQuery && matchesStatus
+    })
+  }, [workflows, query, statusFilter])
+
+  const filteredTemplates = useMemo(() => {
+    if (templateFilter === "all") return templates
+    return templates.filter((tpl) => tpl.category === templateFilter)
+  }, [templates, templateFilter])
+
   return (
     <ProtectedRoute>
       <div className="animate-fade-in-up pb-24">
@@ -123,9 +149,9 @@ export default function WorkflowsPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  disabled
                   className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary/10 text-primary rounded-xl font-bold text-xs cursor-not-allowed opacity-60 border border-primary/20"
-                  title="Workflow builder coming soon"
+                  title="Workflow builder (beta)"
+                  onClick={() => setBuilderOpen(true)}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Create Workflow
@@ -188,6 +214,31 @@ export default function WorkflowsPage() {
 
           {tab === "workflows" && (
             <div className="space-y-6">
+              <div className="glass-panel rounded-2xl p-4 glass-border flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+                <div className="flex-1">
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search workflows..."
+                    className="w-full h-11 glass-input rounded-xl px-4 text-sm text-foreground"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {(["all", "active", "paused", "draft"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={cn(
+                        "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                        statusFilter === status ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                      )}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid gap-4 lg:grid-cols-3">
                 {[
                   { title: "Automation Builder", body: "Design workflows with drag-and-drop blocks and AI-assisted recommendations.", icon: Layers },
@@ -215,11 +266,34 @@ export default function WorkflowsPage() {
                     [1, 2, 3].map((i) => (
                       <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse glass-border" />
                     ))
+                  ) : error ? (
+                    <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                      <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="w-6 h-6 text-destructive" />
+                      </div>
+                      <h4 className="text-sm font-bold text-foreground">Failed to load workflows</h4>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Try refreshing the page or check back in a moment.
+                      </p>
+                    </div>
+                  ) : filteredWorkflows.length === 0 ? (
+                    <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                      <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                        <Workflow className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <h4 className="text-sm font-bold text-foreground">No workflows yet</h4>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Create your first automation to start orchestrating compliance tasks.
+                      </p>
+                    </div>
                   ) : (
-                    workflows?.map((workflow: WorkflowData) => {
+                    filteredWorkflows.map((workflow: WorkflowData) => {
                       const Icon = ICON_MAP[workflow.icon] || Workflow
                       return (
-                        <div key={workflow.id} className="glass-panel p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all glass-border">
+                        <div
+                          key={workflow.id}
+                          className="glass-panel p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all glass-border"
+                        >
                           <div className="flex items-start gap-5">
                             <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
                               <Icon className={`h-5 w-5 ${workflow.color}`} />
@@ -248,10 +322,33 @@ export default function WorkflowsPage() {
                               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Last Run</div>
                               <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
                             </div>
-                            <button className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2">
-                              View Details
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                              >
+                                <Play className="w-3.5 h-3.5" />
+                                Run
+                              </button>
+                              <button
+                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                              >
+                                <Pause className="w-3.5 h-3.5" />
+                                Pause
+                              </button>
+                              <button
+                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => setSelectedWorkflow(workflow)}
+                                className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2"
+                              >
+                                View Details
+                                <ArrowUpRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )
@@ -259,33 +356,88 @@ export default function WorkflowsPage() {
                   )}
                 </div>
               </div>
+
+              <div className="glass-panel rounded-3xl p-6 glass-border">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
+                    <Layers className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Workflow Builder Preview</h3>
+                    <p className="text-sm text-muted-foreground">Visualize the pipeline before activation.</p>
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-5">
+                  {[
+                    { label: "Trigger", sub: "Evidence Intake" },
+                    { label: "Analyze", sub: "Horus Match" },
+                    { label: "Gate", sub: "Approval" },
+                    { label: "Notify", sub: "Owner Alert" },
+                    { label: "Publish", sub: "Compliance Log" },
+                  ].map((node, idx) => (
+                    <div key={node.label} className="relative">
+                      <div className="glass-panel rounded-2xl p-4 glass-border text-center">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{node.label}</div>
+                        <div className="text-sm font-semibold text-foreground mt-1">{node.sub}</div>
+                      </div>
+                      {idx < 4 && (
+                        <div className="hidden md:block absolute right-[-14px] top-1/2 h-px w-7 bg-[var(--border-subtle)]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {tab === "templates" && (
             <div className="space-y-6">
+              <div className="glass-panel rounded-2xl p-3 glass-border flex flex-wrap gap-2">
+                {(["all", "Evidence", "Reporting", "Gaps"] as const).map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setTemplateFilter(category)}
+                    className={cn(
+                      "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+                      templateFilter === category ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                    )}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
               <div className="grid gap-4 md:grid-cols-3">
-                {templates.map((tpl) => (
-                  <div key={tpl.id} className="glass-panel rounded-3xl p-6 glass-border relative overflow-hidden">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${tpl.glow} opacity-60`} />
-                    <div className="relative z-10">
-                      <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mb-4">
-                        <tpl.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{tpl.category}</div>
-                      <h3 className="text-lg font-bold text-foreground">{tpl.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-2">{tpl.description}</p>
-                      <div className="mt-5 flex items-center gap-2">
-                        <button disabled className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-                          Use Template
-                        </button>
-                        <button disabled className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-                          Preview
-                        </button>
+                {filteredTemplates.length === 0 ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center md:col-span-3">
+                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                      <Layers className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">No templates found</h4>
+                    <p className="text-xs text-muted-foreground mt-2">Try another category.</p>
+                  </div>
+                ) : (
+                  filteredTemplates.map((tpl) => (
+                    <div key={tpl.id} className="glass-panel rounded-3xl p-6 glass-border relative overflow-hidden">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${tpl.glow} opacity-60`} />
+                      <div className="relative z-10">
+                        <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mb-4">
+                          <tpl.icon className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{tpl.category}</div>
+                        <h3 className="text-lg font-bold text-foreground">{tpl.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-2">{tpl.description}</p>
+                        <div className="mt-5 flex items-center gap-2">
+                          <button disabled className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Use Template
+                          </button>
+                          <button disabled className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Preview
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="glass-panel rounded-3xl p-6 glass-border">
@@ -311,6 +463,23 @@ export default function WorkflowsPage() {
 
           {tab === "runs" && (
             <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                {[
+                  { label: "Success Rate", value: "94%", icon: BadgeCheck, color: "text-[var(--status-success)]" },
+                  { label: "Avg Duration", value: "52s", icon: Timer, color: "text-primary" },
+                  { label: "Failed Runs", value: "2", icon: Shield, color: "text-[var(--status-critical)]" },
+                ].map((stat) => (
+                  <div key={stat.label} className="glass-panel rounded-2xl p-5 glass-border flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
               <div className="glass-panel rounded-2xl p-5 glass-border flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Run History</h3>
@@ -323,41 +492,146 @@ export default function WorkflowsPage() {
               </div>
 
               <div className="grid gap-3">
-                {runs.map((run) => (
-                  <div key={run.id} className="glass-panel rounded-2xl p-5 glass-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
-                        <Activity className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-foreground">{run.name}</h4>
-                        <p className="text-[11px] text-muted-foreground">{run.time}</p>
-                      </div>
+                {runs.length === 0 ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-6 h-6 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span
-                        className={cn(
-                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                          run.status === "success" && "status-success border",
-                          run.status === "failed" && "status-critical border",
-                          run.status === "queued" && "status-warning border"
-                        )}
-                      >
-                        {run.status}
-                      </span>
-                      <div className="text-[11px] font-bold text-muted-foreground">Duration</div>
-                      <div className="text-[11px] font-bold text-foreground">{run.duration}</div>
-                      <button disabled className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-                        View Logs
-                      </button>
-                    </div>
+                    <h4 className="text-sm font-bold text-foreground">No runs yet</h4>
+                    <p className="text-xs text-muted-foreground mt-2">Runs will appear once workflows start executing.</p>
                   </div>
-                ))}
+                ) : (
+                  runs.map((run) => (
+                    <div key={run.id} className="glass-panel rounded-2xl p-5 glass-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-foreground">{run.name}</h4>
+                          <p className="text-[11px] text-muted-foreground">{run.time}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                            run.status === "success" && "status-success border",
+                            run.status === "failed" && "status-critical border",
+                            run.status === "queued" && "status-warning border"
+                          )}
+                        >
+                          {run.status}
+                        </span>
+                        <div className="text-[11px] font-bold text-muted-foreground">Duration</div>
+                        <div className="text-[11px] font-bold text-foreground">{run.duration}</div>
+                        <button disabled className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                          View Logs
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Workflow Details Drawer */}
+      {selectedWorkflow && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-end bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-[520px] h-full glass-panel glass-border p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{selectedWorkflow.name}</h3>
+                <p className="text-sm text-muted-foreground">{selectedWorkflow.description}</p>
+              </div>
+              <button className="p-2 rounded-lg glass-button" onClick={() => setSelectedWorkflow(null)}>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="glass-panel p-4 rounded-2xl glass-border">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</div>
+                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full status-success border text-[10px] font-bold uppercase tracking-widest">
+                  {selectedWorkflow.status}
+                </div>
+              </div>
+
+              <div className="glass-panel p-4 rounded-2xl glass-border">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Recent Activity</div>
+                <div className="mt-4 space-y-3">
+                  {[
+                    { label: "Run completed", time: "2 min ago", icon: CheckCircle2, color: "text-[var(--status-success)]" },
+                    { label: "Evidence linked", time: "Yesterday 19:44", icon: Activity, color: "text-primary" },
+                    { label: "Approval pending", time: "Yesterday 09:12", icon: AlertTriangle, color: "text-[var(--status-warning)]" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <item.icon className={`w-4 h-4 ${item.color}`} />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-foreground">{item.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="glass-panel p-4 rounded-2xl glass-border">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                    Run Now
+                  </button>
+                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                    Pause
+                  </button>
+                  <button className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest">
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Builder Modal */}
+      {builderOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+          <div className="glass-panel glass-border w-full max-w-5xl h-[80vh] rounded-[32px] overflow-hidden flex">
+            <div className="w-64 border-r border-[var(--border-subtle)] p-5 space-y-4">
+              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Blocks</div>
+              {["Trigger", "Action", "Gate", "Notify"].map((b) => (
+                <div key={b} className="glass-panel glass-border rounded-xl p-3 text-sm font-semibold text-foreground">
+                  {b}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 p-6 relative">
+              <div className="absolute top-4 right-4">
+                <button className="p-2 rounded-lg glass-button" onClick={() => setBuilderOpen(false)}>
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="h-full rounded-2xl glass-panel glass-border flex items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-foreground">Workflow Builder</h3>
+                  <p className="text-sm text-muted-foreground mt-2">Drag blocks to create a pipeline.</p>
+                </div>
+              </div>
+            </div>
+            <div className="w-64 border-l border-[var(--border-subtle)] p-5 space-y-4">
+              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Config</div>
+              <div className="glass-panel glass-border rounded-xl p-3 text-sm text-muted-foreground">
+                Select a block to edit settings.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   )
 }

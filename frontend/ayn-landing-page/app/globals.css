@@ -301,10 +301,16 @@
 }
 
 /* ─── Auth Glass System ─── */
+.auth-bg-image {
+  filter: blur(56px);
+  transform: scale(1.08);
+}
+
 .auth-backdrop {
-  background: rgba(6, 10, 20, 0.55);
-  backdrop-filter: blur(48px) saturate(120%);
-  -webkit-backdrop-filter: blur(48px) saturate(120%);
+  background: rgba(6, 10, 20, 0.72);
+  backdrop-filter: blur(64px) saturate(100%);
+  -webkit-backdrop-filter: blur(64px) saturate(100%);
+  isolation: isolate;
 }
 
 .auth-tint {

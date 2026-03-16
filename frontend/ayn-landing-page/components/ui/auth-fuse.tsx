@@ -461,7 +461,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 <img
                     src="/dashboard-preview.png"
                     alt=""
-                    className="w-full h-full object-cover object-top"
+                    className="auth-bg-image w-full h-full object-cover object-top"
                     draggable={false}
                     aria-hidden="true"
                 />

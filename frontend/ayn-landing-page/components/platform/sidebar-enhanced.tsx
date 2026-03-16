@@ -97,7 +97,7 @@ export const SidebarItem = memo(function SidebarItem({
             layoutDependency={false}
           />
           {/* Glass highlight */}
-          <div className="absolute inset-0 rounded-2xl bg-white/6 border border-white/10 pointer-events-none backdrop-blur-sm" />
+          <div className="absolute inset-0 rounded-2xl bg-white/6 border border-white/10 pointer-events-none" />
         </>
       )}
       {!active && (
@@ -300,9 +300,6 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 <p className="text-sm font-semibold truncate text-white">
                   {user?.name ?? "User"}
                 </p>
-                <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-emerald-200">
-                  Secure
-                </div>
               </div>
             )}
           </Link>

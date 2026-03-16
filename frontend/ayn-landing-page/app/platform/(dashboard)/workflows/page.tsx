@@ -58,6 +58,18 @@ interface WorkflowTemplate {
   glow: string
 }
 
+interface WorkflowRunItem {
+  id: string
+  workflowName: string
+  status: "queued" | "running" | "success" | "failed" | "canceled"
+  trigger: string
+  startedAt: string
+  endedAt?: string
+  startedBy: string
+  message?: string
+  metadata: Record<string, unknown>
+}
+
 export default function WorkflowsPage() {
   const [tab, setTab] = useState<"workflows" | "templates" | "runs">("workflows")
   const [query, setQuery] = useState("")
@@ -67,10 +79,16 @@ export default function WorkflowsPage() {
   const [builderTemplate, setBuilderTemplate] = useState<string | null>(null)
   const [templatePreview, setTemplatePreview] = useState<WorkflowTemplate | null>(null)
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
+  const [selectedRun, setSelectedRun] = useState<WorkflowRunItem | null>(null)
   const [localWorkflows, setLocalWorkflows] = useState<WorkflowData[] | null>(null)
+  const [runBusyId, setRunBusyId] = useState<string | null>(null)
   const { data: workflows, isLoading, error, mutate } = useSWR<WorkflowData[]>(
     "workflows",
     () => api.getWorkflows()
+  )
+  const { data: workflowRuns, isLoading: runsLoading, error: runsError, mutate: mutateRuns } = useSWR<WorkflowRunItem[]>(
+    "workflow-runs",
+    () => api.getWorkflowRuns()
   )
 
   useEffect(() => {
@@ -115,15 +133,44 @@ export default function WorkflowsPage() {
     []
   )
 
-  const runs = useMemo(
-    () => [
-      { id: "r1", name: "Evidence Auto-Tagging", status: "success", duration: "42s", time: "2 min ago" },
-      { id: "r2", name: "Weekly Compliance Summary", status: "success", duration: "1m 12s", time: "Today 09:18" },
-      { id: "r3", name: "Gap Watchdog", status: "queued", duration: "—", time: "Scheduled 18:00" },
-      { id: "r4", name: "Remediation Auto-Notify", status: "failed", duration: "18s", time: "Yesterday 17:42" },
-    ],
-    []
-  )
+  const formatDuration = (run: WorkflowRunItem) => {
+    if (!run.endedAt) return "—"
+    const start = new Date(run.startedAt).getTime()
+    const end = new Date(run.endedAt).getTime()
+    if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return "—"
+    const seconds = Math.max(1, Math.round((end - start) / 1000))
+    if (seconds < 60) return `${seconds}s`
+    const mins = Math.floor(seconds / 60)
+    const remaining = seconds % 60
+    return remaining ? `${mins}m ${remaining}s` : `${mins}m`
+  }
+
+  const formatTime = (iso: string) => {
+    const date = new Date(iso)
+    if (Number.isNaN(date.getTime())) return "—"
+    return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  }
+
+  const runsList = workflowRuns ?? []
+  const successCount = runsList.filter((run) => run.status === "success").length
+  const failedCount = runsList.filter((run) => run.status === "failed").length
+  const successRate = runsList.length ? `${Math.round((successCount / runsList.length) * 100)}%` : "—"
+  const avgDuration = (() => {
+    const completed = runsList.filter((run) => run.endedAt)
+    if (completed.length === 0) return "—"
+    const avgSeconds = Math.round(
+      completed.reduce((sum, run) => {
+        const start = new Date(run.startedAt).getTime()
+        const end = new Date(run.endedAt as string).getTime()
+        if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return sum
+        return sum + Math.round((end - start) / 1000)
+      }, 0) / completed.length
+    )
+    if (!avgSeconds || avgSeconds < 60) return `${avgSeconds || 1}s`
+    const mins = Math.floor(avgSeconds / 60)
+    const remaining = avgSeconds % 60
+    return remaining ? `${mins}m ${remaining}s` : `${mins}m`
+  })()
 
   const filteredWorkflows = useMemo(() => {
     const list = workflowsList
@@ -145,6 +192,33 @@ export default function WorkflowsPage() {
   const closeBuilder = () => {
     setBuilderOpen(false)
     setBuilderTemplate(null)
+  }
+
+  const handleExportLogs = () => {
+    const payload = workflowRuns ?? []
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "workflow-runs.json"
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleStartRun = async (workflow: WorkflowData) => {
+    setRunBusyId(workflow.id)
+    try {
+      const run = await api.startWorkflowRun({
+        workflowName: workflow.name,
+        trigger: workflow.trigger,
+        message: "Manual run",
+        metadata: { source: "ui" },
+      })
+      mutateRuns((prev) => [run, ...(prev ?? [])], { revalidate: false })
+      handleStatusUpdate(workflow.id, "active")
+    } finally {
+      setRunBusyId(null)
+    }
   }
 
   const handleStatusUpdate = (id: string, status: WorkflowData["status"]) => {
@@ -366,10 +440,10 @@ export default function WorkflowsPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
-                                onClick={() => handleStatusUpdate(workflow.id, "active")}
+                                onClick={() => handleStartRun(workflow)}
                               >
                                 <Play className="w-3.5 h-3.5" />
-                                Run
+                                {runBusyId === workflow.id ? "Running..." : "Run"}
                               </button>
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
@@ -515,9 +589,9 @@ export default function WorkflowsPage() {
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 {[
-                  { label: "Success Rate", value: "94%", icon: BadgeCheck, color: "text-[var(--status-success)]" },
-                  { label: "Avg Duration", value: "52s", icon: Timer, color: "text-primary" },
-                  { label: "Failed Runs", value: "2", icon: Shield, color: "text-[var(--status-critical)]" },
+                  { label: "Success Rate", value: successRate, icon: BadgeCheck, color: "text-[var(--status-success)]" },
+                  { label: "Avg Duration", value: avgDuration, icon: Timer, color: "text-primary" },
+                  { label: "Failed Runs", value: runsList.length ? String(failedCount) : "—", icon: Shield, color: "text-[var(--status-critical)]" },
                 ].map((stat) => (
                   <div key={stat.label} className="glass-panel rounded-2xl p-5 glass-border flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
@@ -535,14 +609,33 @@ export default function WorkflowsPage() {
                   <h3 className="text-lg font-bold text-foreground">Run History</h3>
                   <p className="text-sm text-muted-foreground">Audit every pipeline execution with searchable logs.</p>
                 </div>
-                <button disabled className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[11px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-2">
+                <button
+                  className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
+                  onClick={handleExportLogs}
+                >
                   Export Logs
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="grid gap-3">
-                {runs.length === 0 ? (
+                {runsLoading ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-6 h-6 text-muted-foreground animate-pulse" />
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">Loading runs</h4>
+                    <p className="text-xs text-muted-foreground mt-2">Pulling the latest workflow activity.</p>
+                  </div>
+                ) : runsError ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
+                      <AlertTriangle className="w-6 h-6 text-destructive" />
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">Failed to load runs</h4>
+                    <p className="text-xs text-muted-foreground mt-2">Try refreshing in a moment.</p>
+                  </div>
+                ) : !workflowRuns || workflowRuns.length === 0 ? (
                   <div className="glass-panel rounded-2xl p-10 glass-border text-center">
                     <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
                       <Activity className="w-6 h-6 text-muted-foreground" />
@@ -551,15 +644,15 @@ export default function WorkflowsPage() {
                     <p className="text-xs text-muted-foreground mt-2">Runs will appear once workflows start executing.</p>
                   </div>
                 ) : (
-                  runs.map((run) => (
+                  workflowRuns.map((run) => (
                     <div key={run.id} className="glass-panel rounded-2xl p-5 glass-border flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
                           <Activity className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-foreground">{run.name}</h4>
-                          <p className="text-[11px] text-muted-foreground">{run.time}</p>
+                          <h4 className="text-sm font-bold text-foreground">{run.workflowName}</h4>
+                          <p className="text-[11px] text-muted-foreground">{formatTime(run.startedAt)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -568,14 +661,19 @@ export default function WorkflowsPage() {
                             "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
                             run.status === "success" && "status-success border",
                             run.status === "failed" && "status-critical border",
-                            run.status === "queued" && "status-warning border"
+                            run.status === "queued" && "status-warning border",
+                            run.status === "running" && "status-info border",
+                            run.status === "canceled" && "glass-button text-muted-foreground"
                           )}
                         >
                           {run.status}
                         </span>
                         <div className="text-[11px] font-bold text-muted-foreground">Duration</div>
-                        <div className="text-[11px] font-bold text-foreground">{run.duration}</div>
-                        <button disabled className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
+                        <div className="text-[11px] font-bold text-foreground">{formatDuration(run)}</div>
+                        <button
+                          className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
+                          onClick={() => setSelectedRun(run)}
+                        >
                           View Logs
                         </button>
                       </div>
@@ -639,7 +737,7 @@ export default function WorkflowsPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
-                    onClick={() => handleStatusUpdate(selectedWorkflow.id, "active")}
+                    onClick={() => handleStartRun(selectedWorkflow)}
                   >
                     Run Now
                   </button>
@@ -704,6 +802,54 @@ export default function WorkflowsPage() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Run Details Modal */}
+      {selectedRun && (
+        <div className="fixed inset-0 z-[78] flex items-center justify-center p-6">
+          <button
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedRun(null)}
+            aria-label="Close run details"
+          />
+          <div className="relative w-full max-w-2xl glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{selectedRun.workflowName}</h3>
+                <p className="text-sm text-muted-foreground mt-1">Trigger: {selectedRun.trigger}</p>
+              </div>
+              <button className="p-2 rounded-lg glass-button" onClick={() => setSelectedRun(null)}>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3 mb-4">
+              <div className="glass-panel glass-border rounded-xl p-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</div>
+                <div className="text-sm font-semibold text-foreground mt-1">{selectedRun.status}</div>
+              </div>
+              <div className="glass-panel glass-border rounded-xl p-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Started</div>
+                <div className="text-sm font-semibold text-foreground mt-1">{formatTime(selectedRun.startedAt)}</div>
+              </div>
+              <div className="glass-panel glass-border rounded-xl p-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Duration</div>
+                <div className="text-sm font-semibold text-foreground mt-1">{formatDuration(selectedRun)}</div>
+              </div>
+            </div>
+            <div className="glass-panel glass-border rounded-xl p-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Message</div>
+              <p className="text-sm text-foreground">
+                {selectedRun.message || "No message provided."}
+              </p>
+            </div>
+            <div className="glass-panel glass-border rounded-xl p-4 mt-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Metadata</div>
+              <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                {JSON.stringify(selectedRun.metadata ?? {}, null, 2)}
+              </pre>
             </div>
           </div>
         </div>

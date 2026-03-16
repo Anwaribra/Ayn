@@ -441,7 +441,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#060a14]">
+        <div className="fixed inset-0 min-h-screen w-full overflow-hidden bg-[#060a14]">
             {/* Full-screen dashboard background */}
             <div className="absolute inset-0">
                 <img
@@ -462,35 +462,37 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             </div>
 
             {/* Liquid glass form card — centered */}
-            <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
-                <motion.div
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className={cn(
-                        "auth-glass-card w-full rounded-[28px] p-8 sm:p-10 relative",
-                        isSignUp ? "max-w-[500px] auth-glass-card-signup" : "max-w-[460px]"
-                    )}
-                >
-                    <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
-                    {isSignIn ? (
-                        <SignInForm
-                            handleGoogle={handleGoogleSignIn}
-                            handleEmail={onEmailSignIn}
-                            loading={isLoading}
-                            err={error}
-                            toggle={() => setIsSignIn(false)}
-                        />
-                    ) : (
-                        <SignUpForm
-                            handleGoogle={handleGoogleSignIn}
-                            handleEmail={onEmailSignUp}
-                            loading={isLoading}
-                            err={error}
-                            toggle={() => setIsSignIn(true)}
-                        />
-                    )}
-                </motion.div>
+            <div className="fixed inset-0 z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 pointer-events-none">
+                <div className="pointer-events-auto">
+                    <motion.div
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        className={cn(
+                            "auth-glass-card w-full rounded-[28px] p-8 sm:p-10 relative",
+                            isSignUp ? "max-w-[500px] auth-glass-card-signup" : "max-w-[460px]"
+                        )}
+                    >
+                        <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
+                        {isSignIn ? (
+                            <SignInForm
+                                handleGoogle={handleGoogleSignIn}
+                                handleEmail={onEmailSignIn}
+                                loading={isLoading}
+                                err={error}
+                                toggle={() => setIsSignIn(false)}
+                            />
+                        ) : (
+                            <SignUpForm
+                                handleGoogle={handleGoogleSignIn}
+                                handleEmail={onEmailSignUp}
+                                loading={isLoading}
+                                err={error}
+                                toggle={() => setIsSignIn(true)}
+                            />
+                        )}
+                    </motion.div>
+                </div>
             </div>
         </div>
     );

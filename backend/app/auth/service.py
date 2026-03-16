@@ -151,7 +151,20 @@ class AuthService:
             )
 
         if resp.status_code != 200:
-            logger.error(f"[Google OAuth] Token exchange failed: {resp.text}")
+            err_body = resp.text
+            logger.error(f"[Google OAuth] Token exchange failed ({resp.status_code}): {err_body}")
+            try:
+                err_json = resp.json()
+                hint = err_json.get("error_description") or err_json.get("error", "")
+                if hint:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail=f"Google OAuth: {hint}",
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Failed to exchange authorization code.",

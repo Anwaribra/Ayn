@@ -254,7 +254,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {!pathname?.includes("/horus-ai") && (
               <div
                 className={cn(
-                  "sticky top-0 z-20 mb-4 flex items-center gap-3 rounded-2xl border border-border bg-layer-2/70 backdrop-blur-md px-3 py-2",
+                  "sticky top-0 z-20 mb-4 flex items-center gap-3 rounded-3xl border border-border bg-layer-2/70 backdrop-blur-md px-3 py-2",
                   headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
                 )}
               >

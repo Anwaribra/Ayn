@@ -33,6 +33,9 @@
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
   --glass-ring: rgba(59, 111, 217, 0.35);
+  --glass-radius: 18px;
+  --glass-radius-lg: 24px;
+  --glass-radius-pill: 999px;
 
   /* Core surfaces */
   --bg-deep: var(--layer-0);
@@ -331,6 +334,7 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
+  border-radius: var(--glass-radius-lg);
 }
 
 [data-section="platform"] .glass-surface-strong {
@@ -339,6 +343,7 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 10px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-strong);
+  border-radius: var(--glass-radius-lg);
 }
 
 [data-section="platform"] .glass-input {
@@ -347,6 +352,7 @@
   box-shadow: var(--glass-inset);
   backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  border-radius: var(--glass-radius);
 }
 
 [data-section="platform"] .glass-pill {
@@ -355,6 +361,7 @@
   box-shadow: var(--glass-shadow-soft);
   backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  border-radius: var(--glass-radius-pill);
 }
 
 [data-section="platform"] .glass-input:focus {
@@ -370,6 +377,7 @@
   backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  border-radius: var(--glass-radius);
 }
 
 [data-section="platform"] .glass-button:hover {
@@ -517,6 +525,7 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
+  border-radius: var(--glass-radius-lg);
 }
 
 [data-section="platform"] .glass-card {
@@ -526,6 +535,7 @@
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  border-radius: var(--glass-radius-lg);
 }
 
 [data-section="platform"] .glass-card:hover {

@@ -469,10 +469,11 @@ export default function HorusAIChat() {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
     setAttachedFiles([])
     const attachments = (files ?? attachedFiles).map((file, idx) => {
+      const isFile = file instanceof File
       const fallback = attachedFiles[idx]
       return {
-        name: file.name,
-        type: file.type.startsWith("image/") ? "image" : "document",
+        name: isFile ? file.name : file.file.name,
+        type: (isFile ? file.type : file.file.type).startsWith("image/") ? "image" : "document",
         preview: fallback?.preview,
       }
     })

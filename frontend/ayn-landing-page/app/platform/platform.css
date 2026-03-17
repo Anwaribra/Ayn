@@ -132,6 +132,24 @@
   color-scheme: light;
 }
 
+/* Mobile optimization: reduce blur + increase touch size */
+@media (max-width: 768px) {
+  [data-section="platform"] {
+    --glass-blur: 10px;
+  }
+
+  [data-section="platform"] .glass-button,
+  [data-section="platform"] .glass-input,
+  [data-section="platform"] .glass-panel {
+    border-radius: calc(var(--glass-radius-lg) + 2px);
+  }
+
+  [data-section="platform"] .glass-button,
+  [data-section="platform"] .glass-input {
+    min-height: 44px;
+  }
+}
+
 /* Workflows: reduce blur intensity for crisper cards */
 [data-section="platform"][data-platform-page="workflows"] {
   --glass-blur: 10px;

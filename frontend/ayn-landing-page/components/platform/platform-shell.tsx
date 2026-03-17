@@ -241,7 +241,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             "flex-1 overflow-y-auto scroll-smooth transition-colors duration-300",
             pathname?.includes("/horus-ai")
               ? "content-scroll-area min-h-0"
-              : "px-6 md:px-10 pt-4 pb-24 content-scroll-area",
+              : "px-4 sm:px-6 md:px-10 pt-3 sm:pt-4 pb-24 content-scroll-area",
           )}
         >
           <div
@@ -254,13 +254,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {!pathname?.includes("/horus-ai") ? (
               <div
                 className={cn(
-                  "sticky top-0 z-20 mb-4 flex items-center gap-3 rounded-3xl border border-border bg-layer-2/70 backdrop-blur-md px-3 py-2",
+                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 rounded-3xl border border-border bg-layer-2/70 backdrop-blur-md px-2.5 sm:px-3 py-2",
                   headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
                 )}
               >
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[36px] min-w-[36px]"
+                  className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
                   aria-label="Open sidebar"
                 >
                   <PanelLeft className="w-4 h-4" />
@@ -268,7 +268,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                 <button
                   onClick={() => setCommandPaletteOpen(true)}
-                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[36px] min-w-0 shadow-sm"
+                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
                 >
                   <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
                   <span className="hidden sm:inline font-medium">Search…</span>
@@ -280,7 +280,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative quick-pages-container">
                   <button
                     onClick={() => setShowQuickPages(!showQuickPages)}
-                    className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[36px] min-w-[36px]"
+                    className="relative p-2 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
                     aria-label="Quick pages"
                     aria-haspopup="true"
                     aria-expanded={showQuickPages}
@@ -352,7 +352,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative notification-dropdown-container">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[36px] min-w-[36px]"
+                    className="relative p-2 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
                     aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                     aria-haspopup="true"
                     aria-expanded={showNotifications}

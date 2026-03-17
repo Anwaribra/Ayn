@@ -471,9 +471,10 @@ export default function HorusAIChat() {
     const attachments = (files ?? attachedFiles).map((file, idx) => {
       const isFile = file instanceof File
       const fallback = attachedFiles[idx]
+      const fileType = (isFile ? file.type : file.file.type).startsWith("image/") ? "image" : "document"
       return {
         name: isFile ? file.name : file.file.name,
-        type: (isFile ? file.type : file.file.type).startsWith("image/") ? "image" : "document",
+        type: fileType as "image" | "document",
         preview: fallback?.preview,
       }
     })

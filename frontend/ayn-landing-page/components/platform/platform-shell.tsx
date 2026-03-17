@@ -251,7 +251,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 : "max-w-[1280px] w-full mx-auto"
             }
           >
-            {!pathname?.includes("/horus-ai") && (
+            {!pathname?.includes("/horus-ai") ? (
               <div
                 className={cn(
                   "sticky top-0 z-20 mb-4 flex items-center gap-3 rounded-3xl border border-border bg-layer-2/70 backdrop-blur-md px-3 py-2",
@@ -470,6 +470,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   )}
                 </div>
               </div>
+            ) : (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden fixed bottom-6 left-6 z-30 h-11 w-11 rounded-2xl glass-panel glass-border text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                aria-label="Open sidebar"
+              >
+                <PanelLeft className="w-5 h-5" />
+              </button>
             )}
             {children}
           </div>

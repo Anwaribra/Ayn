@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Paperclip, Send, StopCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_PLACEHOLDER = "Ask Horus about your compliance…";
@@ -76,29 +75,28 @@ export const AIChatInput = ({
     }, [inputValue, resizeTextarea]);
 
     return (
-        <div className="w-full flex-col flex justify-center items-center pb-8 pt-4">
-            <motion.div
+        <div className="w-full flex-col flex justify-center items-center pb-6 pt-2">
+            <div
                 ref={wrapperRef}
                 style={{ overflow: "hidden" }}
                 className={cn(
-                    "w-full max-w-[900px] glass-surface horus-input-shell glass-focus-ring",
+                    "w-full max-w-[900px] glass-panel glass-border rounded-3xl horus-input-shell glass-focus-ring",
                     (isActive || inputValue) && "is-active"
                 )}
                 onClick={handleActivate}
             >
                 <div className="flex flex-col items-stretch w-full h-full">
                     {/* Input Row */}
-                    <div className="flex items-end gap-2.5 p-2 w-full">
-                        <motion.button
-                            whileTap={{ scale: 0.94 }}
-                            className="p-3 ml-1 rounded-full text-muted-foreground horus-icon-button min-h-[44px] min-w-[44px]"
+                    <div className="flex items-end gap-2.5 p-2.5 w-full">
+                        <button
+                            className="p-3 ml-1 rounded-2xl text-muted-foreground glass-button min-h-[44px] min-w-[44px] flex items-center justify-center"
                             title="Attach file"
                             type="button"
                             tabIndex={-1}
                             onClick={() => fileInputRef.current?.click()}
                         >
                             <Paperclip size={24} />
-                        </motion.button>
+                        </button>
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -141,20 +139,17 @@ export const AIChatInput = ({
 
 
                         {isLoading ? (
-                            <motion.button
-                                whileTap={{ scale: 0.94 }}
-                                className="flex w-[50px] h-[50px] items-center rounded-full font-bold justify-center flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px] horus-stop-button"
+                            <button
+                                className="flex w-[50px] h-[50px] items-center rounded-2xl font-bold justify-center flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px] horus-stop-button"
                                 onClick={onStop}
                                 type="button"
                             >
                                 <StopCircle size={22} />
-                            </motion.button>
+                            </button>
                         ) : (
-                            <motion.button
-                                whileTap={{ scale: 0.94 }}
-                                whileHover={{ scale: !inputValue.trim() && !hasFiles ? 1 : 1.05 }}
+                            <button
                                 className={cn(
-                                    "flex w-[50px] h-[50px] items-center disabled:opacity-30 disabled:cursor-not-allowed justify-center rounded-full font-bold flex-shrink-0 transition-all shadow-md min-h-[44px] min-w-[44px] horus-send-button",
+                                    "flex w-[50px] h-[50px] items-center disabled:opacity-30 disabled:cursor-not-allowed justify-center rounded-2xl font-bold flex-shrink-0 transition-all shadow-md min-h-[44px] min-w-[44px] horus-send-button",
                                     (inputValue.trim() || hasFiles) && "shadow-[0_0_16px_rgba(59,130,246,0.4)]"
                                 )}
                                 title="Send"
@@ -164,13 +159,13 @@ export const AIChatInput = ({
                                 tabIndex={-1}
                             >
                                 <Send size={22} className="ml-[-2px] text-white" />
-                            </motion.button>
+                            </button>
                         )}
 
                     </div>
 
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };

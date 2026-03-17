@@ -441,6 +441,36 @@ class ApiClient {
     return this.request<any[]>("/state/workflows")
   }
 
+  async createWorkflowDefinition(data: {
+    name: string
+    description?: string
+    status?: string
+    trigger?: string
+    icon?: string
+    color?: string
+    bg?: string
+  }) {
+    return this.request<any>("/state/workflows", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateWorkflowDefinition(workflowId: string, data: {
+    name?: string
+    description?: string
+    status?: string
+    trigger?: string
+    icon?: string
+    color?: string
+    bg?: string
+  }) {
+    return this.request<any>(`/state/workflows/${workflowId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // COMPLIANCE APIs
   // ═══════════════════════════════════════════════════════════════════════════

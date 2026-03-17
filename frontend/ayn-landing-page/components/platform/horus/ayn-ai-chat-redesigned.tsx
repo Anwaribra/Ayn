@@ -536,8 +536,8 @@ export default function HorusAIChat() {
   // Derive the id of the last assistant message for M1 contextual actions
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
 
-  const isEmpty = messages.length === 0 && !reasoning
-  const isProcessing = status !== "idle" || (reasoning !== null && !reasoning.isComplete)
+  const isEmpty = messages.length === 0
+  const isProcessing = status !== "idle"
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
@@ -890,22 +890,7 @@ export default function HorusAIChat() {
                   </div>
                 )}
 
-                {/* Searching indicator */}
-                {status === "searching" && (!reasoning || reasoning.isComplete) && (
-                  <div className="w-full py-4 animate-in fade-in">
-                    <div className="flex items-center gap-2 mb-3">
-                      <MiniOrb state="searching" />
-                      <span className="text-sm font-bold text-foreground">Horus</span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/8 border border-primary/15 text-primary/80 text-[10px] font-semibold">
-                        <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                        Searching
-                      </span>
-                    </div>
-                    <div className="text-muted-foreground text-[14px] flex items-center gap-2 font-medium">
-                      <Search className="w-4 h-4" /> Reading knowledge base…
-                    </div>
-                  </div>
-                )}
+                {/* Searching indicator removed for cleaner UI */}
               </>
             )}
             <div ref={messagesEndRef} className="h-4" />

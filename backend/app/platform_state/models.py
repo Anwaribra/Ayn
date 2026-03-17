@@ -75,6 +75,41 @@ class PlatformEvent(BaseModel):
     timestamp: datetime
 
 
+class WorkflowDefinition(BaseModel):
+    id: str
+    name: str
+    description: str
+    status: str = "draft"
+    trigger: str = "manual"
+    icon: str = "Workflow"
+    color: str = "text-primary"
+    bg: str = "bg-primary/10"
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    last_run: str = "Never"
+
+
+class WorkflowCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    status: Optional[str] = "draft"
+    trigger: Optional[str] = "manual"
+    icon: Optional[str] = "Workflow"
+    color: Optional[str] = "text-primary"
+    bg: Optional[str] = "bg-primary/10"
+
+
+class WorkflowUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    trigger: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    bg: Optional[str] = None
+
+
 class StateSummary(BaseModel):
     total_files: int = 0
     analyzed_files: int = 0

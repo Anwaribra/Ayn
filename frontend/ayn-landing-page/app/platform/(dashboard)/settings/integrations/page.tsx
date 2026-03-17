@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { ArrowLeft, Plus } from "lucide-react"
+import { toast } from "sonner"
 
 const INTEGRATIONS = [
   { name: "LMS", desc: "Learning Management System", status: "disconnected", icon: "📚" },
@@ -19,6 +21,30 @@ export default function IntegrationsPage() {
 }
 
 function IntegrationsContent() {
+  const [statuses, setStatuses] = useState<Record<string, string>>(() =>
+    INTEGRATIONS.reduce((acc, item) => {
+      acc[item.name] = item.status
+      return acc
+    }, {} as Record<string, string>)
+  )
+
+  const orderedIntegrations = useMemo(
+    () =>
+      INTEGRATIONS.map((item) => ({
+        ...item,
+        status: statuses[item.name] ?? item.status,
+      })),
+    [statuses]
+  )
+
+  const handleToggle = (name: string) => {
+    setStatuses((prev) => {
+      const nextStatus = prev[name] === "connected" ? "disconnected" : "connected"
+      toast.success(`${name} ${nextStatus}`)
+      return { ...prev, [name]: nextStatus }
+    })
+  }
+
   return (
     <div className="animate-fade-in-up pb-20 max-w-2xl px-4">
       <Link
@@ -39,7 +65,7 @@ function IntegrationsContent() {
       </header>
 
       <div className="space-y-4">
-        {INTEGRATIONS.map((item) => (
+        {orderedIntegrations.map((item) => (
           <div
             key={item.name}
             className="glass-panel p-6 rounded-2xl glass-border flex items-center justify-between"
@@ -54,12 +80,18 @@ function IntegrationsContent() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <span className={item.status === "connected"
+                ? "text-[10px] font-bold text-emerald-300 uppercase tracking-wider"
+                : "text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider"
+              }>
                 {item.status}
               </span>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl glass-button text-[var(--text-secondary)] text-xs font-medium transition-colors">
+              <button
+                onClick={() => handleToggle(item.name)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl glass-button text-[var(--text-secondary)] text-xs font-medium transition-colors"
+              >
                 <Plus className="w-3 h-3" />
-                Connect
+                {item.status === "connected" ? "Disconnect" : "Connect"}
               </button>
             </div>
           </div>

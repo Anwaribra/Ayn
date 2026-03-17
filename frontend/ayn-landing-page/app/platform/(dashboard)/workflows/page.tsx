@@ -28,6 +28,7 @@ import {
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 const ICON_MAP: Record<string, any> = {
   Zap,
@@ -78,6 +79,10 @@ export default function WorkflowsPage() {
   const [templateFilter, setTemplateFilter] = useState<"all" | "Evidence" | "Reporting" | "Gaps">("all")
   const [builderOpen, setBuilderOpen] = useState(false)
   const [builderTemplate, setBuilderTemplate] = useState<string | null>(null)
+  const [builderWorkflowId, setBuilderWorkflowId] = useState<string | null>(null)
+  const [builderName, setBuilderName] = useState("")
+  const [builderDescription, setBuilderDescription] = useState("")
+  const [builderTrigger, setBuilderTrigger] = useState("On Upload")
   const [templatePreview, setTemplatePreview] = useState<WorkflowTemplate | null>(null)
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -200,6 +205,42 @@ export default function WorkflowsPage() {
   const closeBuilder = () => {
     setBuilderOpen(false)
     setBuilderTemplate(null)
+    setBuilderWorkflowId(null)
+    setBuilderName("")
+    setBuilderDescription("")
+    setBuilderTrigger("On Upload")
+  }
+
+  const openBuilder = (template?: WorkflowTemplate | null) => {
+    if (template) {
+      setBuilderWorkflowId(null)
+      setBuilderTemplate(template.title)
+      setBuilderName(template.title)
+      setBuilderDescription(template.description)
+      setBuilderTrigger(
+        template.category === "Evidence"
+          ? "On Upload"
+          : template.category === "Reporting"
+            ? "On Analysis Request"
+            : "On Evidence Update"
+      )
+    } else {
+      setBuilderTemplate(null)
+      setBuilderWorkflowId(null)
+      setBuilderName("")
+      setBuilderDescription("")
+      setBuilderTrigger("On Upload")
+    }
+    setBuilderOpen(true)
+  }
+
+  const openBuilderForWorkflow = (workflow: WorkflowData) => {
+    setBuilderWorkflowId(workflow.id)
+    setBuilderTemplate(workflow.name)
+    setBuilderName(workflow.name)
+    setBuilderDescription(workflow.description)
+    setBuilderTrigger(workflow.trigger)
+    setBuilderOpen(true)
   }
 
   const handleExportLogs = () => {
@@ -239,6 +280,38 @@ export default function WorkflowsPage() {
     setSelectedWorkflow((prev) => (prev?.id === id ? { ...prev, status } : prev))
   }
 
+  const handleSaveWorkflow = async () => {
+    if (!builderName.trim()) {
+      toast.error("Workflow name is required")
+      return
+    }
+    try:
+      if (builderWorkflowId) {
+        const updated = await api.updateWorkflowDefinition(builderWorkflowId, {
+          name: builderName.trim(),
+          description: builderDescription.trim() || "Custom workflow",
+          trigger: builderTrigger,
+        })
+        setLocalWorkflows((prev) => {
+          const base = prev ?? workflows ?? []
+          return base.map((w) => (w.id === builderWorkflowId ? { ...w, ...updated } : w))
+        })
+        toast.success("Workflow updated")
+      } else {
+        const created = await api.createWorkflowDefinition({
+          name: builderName.trim(),
+          description: builderDescription.trim() || "Custom workflow",
+          trigger: builderTrigger,
+        })
+        setLocalWorkflows((prev) => [created, ...(prev ?? workflows ?? [])])
+        toast.success("Workflow saved as draft")
+      }
+      closeBuilder()
+    } catch {
+      toast.error("Failed to save workflow")
+    }
+  }
+
   return (
     <ProtectedRoute>
       <div className="animate-fade-in-up pb-24">
@@ -268,7 +341,7 @@ export default function WorkflowsPage() {
                 <button
                   className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary/10 text-primary rounded-xl font-bold text-xs border border-primary/20 hover:bg-primary/15 transition-colors"
                   title="Workflow builder (beta)"
-                  onClick={() => { setBuilderTemplate(null); setBuilderOpen(true) }}
+                  onClick={() => openBuilder()}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Create Workflow
@@ -515,7 +588,7 @@ export default function WorkflowsPage() {
                               </button>
                               <button
                                 className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
-                                onClick={() => { setBuilderTemplate(workflow.name); setBuilderOpen(true) }}
+                                onClick={() => openBuilderForWorkflow(workflow)}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                                 Edit
@@ -608,7 +681,7 @@ export default function WorkflowsPage() {
                         <div className="mt-5 flex items-center gap-2">
                           <button
                             className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
-                            onClick={() => { setBuilderTemplate(tpl.title); setBuilderOpen(true) }}
+                            onClick={() => openBuilder(tpl)}
                           >
                             Use Template
                           </button>
@@ -810,7 +883,7 @@ export default function WorkflowsPage() {
                   </button>
                   <button
                     className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
-                    onClick={() => { setBuilderTemplate(selectedWorkflow.name); setBuilderOpen(true) }}
+                    onClick={() => openBuilderForWorkflow(selectedWorkflow)}
                   >
                     Edit
                   </button>
@@ -855,7 +928,7 @@ export default function WorkflowsPage() {
               <div className="mt-6 flex items-center gap-3">
                 <button
                   className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
-                  onClick={() => { setBuilderTemplate(templatePreview.title); setBuilderOpen(true); setTemplatePreview(null) }}
+                  onClick={() => { openBuilder(templatePreview); setTemplatePreview(null) }}
                 >
                   Use Template
                 </button>
@@ -950,9 +1023,47 @@ export default function WorkflowsPage() {
             </div>
             <div className="w-64 border-l border-[var(--border-subtle)] p-5 space-y-4">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Config</div>
-              <div className="glass-panel glass-border rounded-xl p-3 text-sm text-muted-foreground">
-                {builderTemplate ? "Template settings loaded. Select a block to edit." : "Select a block to edit settings."}
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name</label>
+                <input
+                  value={builderName}
+                  onChange={(e) => setBuilderName(e.target.value)}
+                  placeholder="Workflow name"
+                  className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
+                />
               </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</label>
+                <textarea
+                  value={builderDescription}
+                  onChange={(e) => setBuilderDescription(e.target.value)}
+                  placeholder="Describe this workflow"
+                  className="w-full min-h-[88px] glass-input rounded-xl px-3 py-2 text-sm text-foreground resize-none"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger</label>
+                <select
+                  value={builderTrigger}
+                  onChange={(e) => setBuilderTrigger(e.target.value)}
+                  className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
+                >
+                  {availableTriggers.map((trigger) => (
+                    <option key={trigger} value={trigger}>
+                      {trigger}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="glass-panel glass-border rounded-xl p-3 text-sm text-muted-foreground">
+                {builderTemplate ? "Template settings loaded. Adjust and save." : "Configure and save your workflow."}
+              </div>
+              <button
+                className="w-full px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                onClick={handleSaveWorkflow}
+              >
+                Save Workflow
+              </button>
             </div>
           </div>
         </div>

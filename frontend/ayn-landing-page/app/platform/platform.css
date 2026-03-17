@@ -33,6 +33,10 @@
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
   --glass-ring: rgba(59, 111, 217, 0.35);
+  --glass-glow: 0 0 0 1px rgba(56, 189, 248, 0.1), 0 16px 40px -18px rgba(56, 189, 248, 0.25);
+  --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -10px 30px rgba(0, 0, 0, 0.18);
+  --glass-edge-highlight: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  --glass-noise: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgdmlld0JveD0nMCAwIDEwMCAxMDAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PGZpbHRlciBpZD0nbiAga2VlcHM9JzInPjxmZVR1cmJ1bGVuY2UgdHlwZT0nZnJhY3RhbE5vaXNlJyBiYXNlRnJlcXVlbmN5PScwLjgnIG51bU9jdGF2ZXM9JzInIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=");
   --glass-radius: 18px;
   --glass-radius-lg: 24px;
   --glass-radius-pill: 999px;
@@ -524,8 +528,11 @@
   backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow-soft);
+  box-shadow: var(--glass-shadow-soft), var(--glass-inner-shadow);
   border-radius: var(--glass-radius-lg);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 }
 
 [data-section="platform"] .glass-card {
@@ -533,14 +540,45 @@
   backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow-soft);
+  box-shadow: var(--glass-shadow-soft), var(--glass-inner-shadow);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   border-radius: var(--glass-radius-lg);
+  position: relative;
+  overflow: hidden;
 }
 
 [data-section="platform"] .glass-card:hover {
   border-color: var(--glass-ring);
-  box-shadow: var(--glass-shadow-strong);
+  box-shadow: var(--glass-shadow-strong), var(--glass-glow);
+  transform: translateY(-2px);
+}
+
+[data-section="platform"] .glass-panel:hover {
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-shadow-strong), var(--glass-glow);
+  transform: translateY(-2px);
+}
+
+[data-section="platform"] .glass-panel::before,
+[data-section="platform"] .glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: var(--glass-edge-highlight);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+[data-section="platform"] .glass-panel::after,
+[data-section="platform"] .glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--glass-noise);
+  opacity: 0.18;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
 }
 
 /* Typography remap not needed — platform is now light-first */

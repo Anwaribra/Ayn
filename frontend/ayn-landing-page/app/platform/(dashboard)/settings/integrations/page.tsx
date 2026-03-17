@@ -57,7 +57,7 @@ function IntegrationsContent() {
               <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                 {item.status}
               </span>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg glass-button text-[var(--text-secondary)] text-xs font-medium transition-colors">
+              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl glass-button text-[var(--text-secondary)] text-xs font-medium transition-colors">
                 <Plus className="w-3 h-3" />
                 Connect
               </button>

@@ -76,7 +76,7 @@ function SecurityContent() {
               max={168}
               value={sessionTimeout}
               onChange={(e) => setSessionTimeout(Number(e.target.value))}
-              className="w-20 h-9 rounded-lg glass-input px-3 text-[var(--text-primary)] text-sm"
+              className="w-20 h-9 rounded-xl glass-input px-3 text-[var(--text-primary)] text-sm"
             />
             <Button size="sm" variant="outline" onClick={handleSaveTimeout}>
               Save

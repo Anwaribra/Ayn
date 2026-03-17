@@ -40,8 +40,8 @@ function EvidenceAnalyzerCard() {
   }
 
   return (
-    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+    <div className="group relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
         <FileCheck className="h-5 w-5 text-blue-400" />
       </div>
       <h3 className="text-base font-semibold text-foreground">
@@ -53,7 +53,7 @@ function EvidenceAnalyzerCard() {
 
       <div
         className={cn(
-          "mt-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
+          "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors",
           dragging ? "border-primary/50 bg-primary/5" : "glass-border"
         )}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
@@ -103,8 +103,8 @@ function RemediationDrafterCard() {
   }
 
   return (
-    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+    <div className="group relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
         <Brain className="h-5 w-5 text-emerald-400" />
       </div>
       <h3 className="text-base font-semibold text-foreground">
@@ -173,8 +173,8 @@ function LinkCard({
   cta: string
 }) {
   return (
-    <div className="group relative flex flex-col rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
-      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
+    <div className="group relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg glass-panel glass-border">
+      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
         <Icon className={`h-5 w-5 ${iconColor}`} />
       </div>
       <h3 className="text-base font-semibold text-foreground">
@@ -200,7 +200,7 @@ export default function AIToolsPage() {
     <div className="min-h-screen">
       <div className="px-4 pb-2 pt-6 md:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10">
             <Brain className="h-5 w-5 text-purple-400" />
           </div>
           <div>

@@ -95,19 +95,19 @@ export default function NotificationsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
+              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter("unread")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === "unread" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
+              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${filter === "unread" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
               Unread
             </button>
             <button
               onClick={handleMarkAllRead}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-primary glass-button transition-colors ml-2 flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl text-sm font-medium text-primary glass-button transition-colors ml-2 flex items-center gap-1"
             >
               <Check className="w-4 h-4" />
               Mark all read

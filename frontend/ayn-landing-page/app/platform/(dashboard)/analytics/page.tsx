@@ -230,7 +230,7 @@ function AnalyticsContent() {
           <div className="p-1 glass-panel rounded-xl glass-border flex items-center gap-1">
             <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5"><Filter className="w-3 h-3" /> Period</span>
             {PERIOD_OPTIONS.map((option) => (
-              <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
+              <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
                 {option.label}
               </button>
             ))}

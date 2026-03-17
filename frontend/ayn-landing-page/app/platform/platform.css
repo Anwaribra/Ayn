@@ -496,6 +496,27 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
 }
 
+[data-section="platform"] .horus-loading-orb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(99, 179, 255, 0.9), rgba(37, 99, 235, 0.6) 40%, rgba(15, 23, 42, 0.2) 70%);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+[data-section="platform"] .horus-loading-line {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.2));
+  background-size: 200% 100%;
+  animation: horusShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes horusShimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ─── Status utility classes (token-based) ───────────────────────────────────── */
 [data-section="platform"] .status-info {
   color: var(--status-info);

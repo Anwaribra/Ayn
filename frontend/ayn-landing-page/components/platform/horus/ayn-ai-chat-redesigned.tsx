@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -175,6 +175,7 @@ export default function HorusAIChat() {
   } = useHorus()
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
+  const [responseMode, setResponseMode] = useState<"quick" | "report" | "json">("quick")
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
   // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
@@ -466,42 +467,20 @@ export default function HorusAIChat() {
 
   const handleSendMessage = async (text: string, files?: File[]) => {
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
-    const hasFilesInCurrentMessage = filesToUpload.length > 0
     setAttachedFiles([])
-    const fallbackSteps = getReasoningSteps(text || "", hasFilesInCurrentMessage)
-    if (fallbackSteps.length > 0) {
-      if (fallbackTimerRef.current) {
-        clearInterval(fallbackTimerRef.current)
-        fallbackTimerRef.current = null
+    const attachments = (files ?? attachedFiles).map((file, idx) => {
+      const fallback = attachedFiles[idx]
+      return {
+        name: file.name,
+        type: file.type.startsWith("image/") ? "image" : "document",
+        preview: fallback?.preview,
       }
-      fallbackQueueRef.current = [...fallbackSteps.slice(1), "Generating response..."].filter(
-        (step) => hasFilesInCurrentMessage || step !== "Processing attached files..."
-      )
-      setReasoning({
-        steps: [{ text: fallbackSteps[0], status: "active" }],
-        startTime: Date.now(),
-        duration: null,
-        isExpanded: true,
-        isComplete: false,
-        tempUserMessage: null,
-      })
-    } else {
-      if (fallbackTimerRef.current) {
-        clearInterval(fallbackTimerRef.current)
-        fallbackTimerRef.current = null
-      }
-      fallbackQueueRef.current = ["Generating response..."]
-      setReasoning({
-        steps: [{ text: "Understanding your request...", status: "active" }],
-        startTime: Date.now(),
-        duration: null,
-        isExpanded: true,
-        isComplete: false,
-        tempUserMessage: null,
-      })
-    }
-
-    await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined)
+    })
+    await sendMessage(text || " ", filesToUpload.length ? filesToUpload : undefined, {
+      responseMode,
+      attachments,
+      visibleText: text,
+    })
     mutateHistory()
   }
 
@@ -535,9 +514,29 @@ export default function HorusAIChat() {
 
   // Derive the id of the last assistant message for M1 contextual actions
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
+  const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
+  const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
 
   const isEmpty = messages.length === 0
   const isProcessing = status !== "idle"
+
+  const visibleMessages = useMemo(() => {
+    const sliced = messages.slice(-30).filter((msg) => {
+      if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false
+      return true
+    })
+    return sliced.filter((msg, idx, arr) => {
+      if (msg.role !== "assistant") return true
+      const current = (msg.content || "").trim()
+      if (!current || current.length < 180) return true
+      const prev = arr.slice(0, idx).reverse().find((m) => m.role === "assistant")
+      if (!prev) return true
+      return current !== (prev.content || "").trim()
+    })
+  }, [messages])
+
+  const formatTimestamp = (ts: number) =>
+    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
@@ -623,34 +622,13 @@ export default function HorusAIChat() {
 
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
-        {/* Ambient Agent Glow — morphing radial behind content */}
-        <AnimatePresence>
-          {status === "generating" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.6 }}
-              className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center"
-            >
-              <div
-                className="w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full"
-                style={{
-                  background: "radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(56,189,248,0.05) 40%, transparent 65%)",
-                  animation: "orbMorph 8s ease-in-out infinite, orbBreathe 3s ease-in-out infinite",
-                  filter: "blur(60px)",
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
         <div
           className={cn(
             "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
             isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-36 md:pb-28"
           )}
         >
-          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-10 pb-4")}>
+          <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
                 <div className="flex flex-col items-center justify-center gap-8 md:gap-10 w-full min-h-0 max-h-full py-2">
@@ -708,10 +686,7 @@ export default function HorusAIChat() {
                     </span>
                   </div>
                 )}
-                {messages.slice(-30).filter(msg => {
-                  if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false;
-                  return true;
-                }).map((msg, i) => {
+                {visibleMessages.map((msg) => {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
@@ -728,9 +703,26 @@ export default function HorusAIChat() {
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
                         <div className="w-full py-4 flex flex-col items-end">
-                           <div className="text-[14px] px-4 py-3 rounded-2xl rounded-tr-sm max-w-[88%] whitespace-pre-wrap font-semibold horus-user-bubble">
+                           <div className="text-[14px] px-4 py-3 rounded-3xl rounded-tr-lg max-w-[88%] whitespace-pre-wrap font-semibold horus-user-bubble">
                              {msg.content}
                            </div>
+                           {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2 justify-end max-w-[88%]">
+                              {msg.attachments.map((file, idx) => (
+                                <div key={`${msg.id}-att-${idx}`} className="flex items-center gap-2 rounded-xl glass-panel glass-border px-2 py-1.5">
+                                  {file.type === "image" && file.preview ? (
+                                    <img src={file.preview} alt={file.name} className="h-10 w-10 rounded-lg object-cover" />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                      <FileText className="w-4 h-4 text-primary" />
+                                    </div>
+                                  )}
+                                  <div className="text-[11px] text-muted-foreground truncate max-w-[120px]">{file.name}</div>
+                                </div>
+                              ))}
+                            </div>
+                           )}
+                           <span className="mt-2 text-[10px] text-muted-foreground/70">{formatTimestamp(msg.timestamp)}</span>
                         </div>
                       ) : (
                         <div className="w-full py-4 space-y-3">
@@ -739,6 +731,7 @@ export default function HorusAIChat() {
                               state={status === "generating" && msg.id === lastAssistantMsgId ? status : "idle"}
                             />
                             <span className="text-sm font-bold text-foreground">Horus</span>
+                            <span className="text-[10px] text-muted-foreground/60">{formatTimestamp(msg.timestamp)}</span>
                           </div>
 
                           {/* Inline thinking disabled for cleaner UI */}
@@ -777,7 +770,7 @@ export default function HorusAIChat() {
                           {msg.content && (
                             <div
                               className={cn(
-                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-2xl border border-transparent px-5 py-4 horus-assistant-bubble",
+                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-3xl rounded-tl-lg border border-transparent px-5 py-4 horus-assistant-bubble",
                                 isStreamingThis && "horus-streaming-active"
                               )}
                             >
@@ -874,6 +867,18 @@ export default function HorusAIChat() {
                   )
                 })}
 
+                {showLoadingBubble && (
+                  <div className="w-full py-4 animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <div className="horus-loading-orb" />
+                      <div className="flex-1 space-y-2">
+                        <div className="horus-loading-line w-40" />
+                        <div className="horus-loading-line w-64" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Stream error with retry */}
                 {streamError && status === "idle" && (
                   <div className="w-full py-4 animate-in fade-in">
@@ -911,6 +916,25 @@ export default function HorusAIChat() {
                 ))}
               </div>
             )}
+
+            <div className="flex items-center justify-center gap-2">
+              {[
+                { key: "quick", label: "Quick answer" },
+                { key: "report", label: "Report" },
+                { key: "json", label: "JSON" },
+              ].map((mode) => (
+                <button
+                  key={mode.key}
+                  onClick={() => setResponseMode(mode.key as typeof responseMode)}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-full transition-colors glass-pill",
+                    responseMode === mode.key ? "bg-primary text-primary-foreground border-primary/40" : "text-muted-foreground"
+                  )}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
             
             <div>
               <AIChatInput

@@ -5,11 +5,18 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 
+interface AttachmentPreview {
+    name: string
+    type: "image" | "document"
+    preview?: string
+}
+
 interface Message {
     id: string
     role: "user" | "assistant" | "system"
     content: string
     timestamp: number
+    attachments?: AttachmentPreview[]
     structuredResult?: { type: string; payload: any } | null
     pendingConfirmation?: {
         id: string
@@ -27,7 +34,15 @@ interface HorusContextValue {
     status: HorusStatus
     thinkingSteps: string[]
     streamError: string | null
-    sendMessage: (text: string, files?: File[]) => Promise<void>
+    sendMessage: (
+        text?: string,
+        files?: File[],
+        opts?: {
+            visibleText?: string
+            responseMode?: "quick" | "report" | "json"
+            attachments?: AttachmentPreview[]
+        }
+    ) => Promise<void>
     resolveActionConfirmation: (id: string, decision: "confirm" | "cancel") => Promise<void>
     retryLastMessage: () => Promise<void>
     stopGeneration: () => void
@@ -155,7 +170,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const streamRequest = async (
         modelText: string,
         files?: File[],
-        opts?: { appendUser?: boolean; visibleUserText?: string }
+        opts?: { appendUser?: boolean; visibleUserText?: string; attachments?: AttachmentPreview[] }
     ) => {
         const appendUser = opts?.appendUser ?? true
         const visibleUserText = opts?.visibleUserText ?? modelText
@@ -170,6 +185,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 role: "user",
                 content: visibleUserText || "📎 Attached files for analysis",
                 timestamp: Date.now(),
+                attachments: opts?.attachments,
             }
             setMessages(prev => [...prev, userMsg])
         }
@@ -259,18 +275,40 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
-    const sendMessage = async (text: string, files?: File[]) => {
+    const sendMessage = async (
+        text = "",
+        files?: File[],
+        opts?: {
+            visibleText?: string
+            responseMode?: "quick" | "report" | "json"
+            attachments?: AttachmentPreview[]
+        }
+    ) => {
         lastUserMessageRef.current = { text, files }
         const hasFiles = !!files && files.length > 0
         const normalizedText = text?.trim() || ""
-        const visibleUserText = hasFiles
-            ? (normalizedText
-                ? `${normalizedText}\n📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached`
-                : `📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached for analysis`)
-            : (normalizedText || "📎 Attached files for analysis")
+        const visibleUserText = opts?.visibleText ?? (
+            hasFiles
+                ? (normalizedText
+                    ? `${normalizedText}\n📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached`
+                    : `📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached for analysis`)
+                : (normalizedText || "📎 Attached files for analysis")
+        )
 
-        const modelText = buildModelMessage(text, files)
-        await streamRequest(modelText, files, { appendUser: true, visibleUserText })
+        let base = buildModelMessage(text, files)
+        if (opts?.responseMode === "json") {
+            base = base.replace(/Do not return JSON or code\.?/gi, "Return valid JSON only.")
+        }
+        const modeHint =
+            opts?.responseMode === "report"
+                ? "Respond with a structured report using headings and bullet points."
+                : opts?.responseMode === "json"
+                    ? "Return valid JSON only. Do not include code fences or extra text."
+                    : opts?.responseMode === "quick"
+                        ? "Keep the response concise and to the point."
+                        : ""
+        const modelText = modeHint ? `${base}\n\n${modeHint}` : base
+        await streamRequest(modelText, files, { appendUser: true, visibleUserText, attachments: opts?.attachments })
     }
 
     const retryLastMessage = async () => {

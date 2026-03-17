@@ -285,7 +285,7 @@ export default function WorkflowsPage() {
       toast.error("Workflow name is required")
       return
     }
-    try:
+    try {
       if (builderWorkflowId) {
         const updated = await api.updateWorkflowDefinition(builderWorkflowId, {
           name: builderName.trim(),

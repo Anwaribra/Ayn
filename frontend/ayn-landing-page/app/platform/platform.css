@@ -10,8 +10,8 @@
      ═══════════════════════════════════════════════════════════════════════════ */
   --layer-0: #f5f5f3; /* Main App Background (Light) */
   --layer-1: #050810; /* Sidebar Background (Pitch Dark) */
-  --layer-2: #ffffff; /* Cards / Panels (Pure White) */
-  --layer-3: rgba(255, 255, 255, 0.98); /* Modals / Popovers */
+  --layer-2: rgba(255, 255, 255, 0.88); /* Cards / Panels */
+  --layer-3: rgba(255, 255, 255, 0.94); /* Modals / Popovers */
   --layer-4: #0f172a; /* Tooltips (Inverse Dark) */
 
   /* 2️⃣ GLASS SYSTEM TOKENS */
@@ -26,9 +26,9 @@
   --glass-shadow-soft:
     0 4px 20px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.04);
   --glass-shadow-strong: 0 12px 40px -4px rgba(15, 23, 42, 0.08);
-  --glass-soft-bg: rgba(255, 255, 255, 0.6);
-  --glass-strong-bg: rgba(255, 255, 255, 0.85);
-  --glass-input-bg: rgba(255, 255, 255, 0.78);
+  --glass-soft-bg: rgba(255, 255, 255, 0.72);
+  --glass-strong-bg: rgba(255, 255, 255, 0.88);
+  --glass-input-bg: rgba(255, 255, 255, 0.84);
   --glass-input-border: rgba(15, 23, 42, 0.14);
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
@@ -37,8 +37,8 @@
   --glass-inner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -10px 30px rgba(0, 0, 0, 0.18);
   --glass-edge-highlight: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
   --glass-noise: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgdmlld0JveD0nMCAwIDEwMCAxMDAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PGZpbHRlciBpZD0nbiAga2VlcHM9JzInPjxmZVR1cmJ1bGVuY2UgdHlwZT0nZnJhY3RhbE5vaXNlJyBiYXNlRnJlcXVlbmN5PScwLjgnIG51bU9jdGF2ZXM9JzInIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=");
-  --glass-radius: 18px;
-  --glass-radius-lg: 24px;
+  --glass-radius: var(--radius-md);
+  --glass-radius-lg: var(--radius-xl);
   --glass-radius-pill: 999px;
 
   /* Core surfaces */
@@ -84,8 +84,8 @@
 
   /* Text hierarchy - Light mode main area */
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
 
   /* Borders and depth */
   --border-subtle: var(--glass-border);
@@ -110,7 +110,7 @@
   --secondary: #f1f5f9;
   --secondary-foreground: #475569;
   --muted: #e2e8f0;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
   --accent: #f8fafc;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
@@ -161,17 +161,17 @@
 [data-section="platform"] [data-platform-theme="dark"] {
   --layer-0: #060608;
   --layer-1: #0a0a0c;
-  --layer-2: rgba(18, 18, 22, 0.65);
-  --layer-3: rgba(22, 22, 28, 0.90);
+  --layer-2: rgba(18, 18, 22, 0.72);
+  --layer-3: rgba(22, 22, 28, 0.9);
   --layer-4: #1c1c24;
 
-  --glass-bg: rgba(20, 20, 26, 0.3);
+  --glass-bg: rgba(20, 20, 26, 0.38);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
   --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
-  --glass-soft-bg: rgba(16, 16, 22, 0.45);
-  --glass-strong-bg: rgba(22, 22, 30, 0.7);
-  --glass-input-bg: rgba(10, 10, 14, 0.55);
+  --glass-soft-bg: rgba(16, 16, 22, 0.56);
+  --glass-strong-bg: rgba(22, 22, 30, 0.74);
+  --glass-input-bg: rgba(10, 10, 14, 0.64);
   --glass-input-border: rgba(255, 255, 255, 0.12);
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-outer: 0 12px 32px -18px rgba(0, 0, 0, 0.6);
@@ -202,8 +202,8 @@
   --status-critical-border: rgba(201, 66, 74, 0.25);
 
   --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-tertiary: #64748B;
+  --text-secondary: #dbe4ef;
+  --text-tertiary: #94a3b8;
 
   --border-subtle: var(--glass-border);
   --border-light: rgba(255, 255, 255, 0.12);
@@ -222,7 +222,7 @@
   --secondary: rgba(255, 255, 255, 0.06);
   --secondary-foreground: #9CA3AF;
   --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: #6B7280;
+  --muted-foreground: #cbd5e1;
   --accent: rgba(255, 255, 255, 0.08);
   --accent-foreground: #F1F5F9;
   --destructive: #C9424A;
@@ -323,21 +323,23 @@
 }
 
 [data-section="platform"] .glass-layer-2 {
-  background: var(--layer-2);
+  background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   will-change: backdrop-filter;
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft);
+  border-radius: var(--radius-xl);
 }
 
 [data-section="platform"] .glass-layer-3 {
-  background: var(--layer-3);
+  background: var(--glass-strong-bg);
   backdrop-filter: blur(calc(var(--glass-blur) + 10px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 10px));
   will-change: backdrop-filter;
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-strong);
+  border-radius: var(--radius-xl);
 }
 
 [data-section="platform"] .glass-layer-4 {
@@ -374,7 +376,7 @@
   box-shadow: var(--glass-inset);
   backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
-  border-radius: var(--glass-radius);
+  border-radius: var(--radius-md);
 }
 
 [data-section="platform"] .glass-pill {
@@ -399,7 +401,7 @@
   backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  border-radius: var(--glass-radius);
+  border-radius: var(--radius-md);
 }
 
 [data-section="platform"] .glass-button:hover {
@@ -568,7 +570,7 @@
   -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft), var(--glass-inner-shadow);
-  border-radius: var(--glass-radius-lg);
+  border-radius: var(--radius-xl);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
@@ -581,7 +583,7 @@
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow-soft), var(--glass-inner-shadow);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  border-radius: var(--glass-radius-lg);
+  border-radius: var(--radius-xl);
   position: relative;
   overflow: hidden;
 }
@@ -609,31 +611,74 @@
   pointer-events: none;
 }
 
+/* ─── Radius Enforcement ───────────────────────────────────────────────────── */
+[data-section="platform"] .rounded-xl {
+  border-radius: var(--radius-md);
+}
+
+[data-section="platform"] .rounded-2xl {
+  border-radius: var(--radius-lg);
+}
+
+[data-section="platform"] .rounded-3xl,
+[data-section="platform"] .rounded-\[24px\],
+[data-section="platform"] .rounded-\[32px\],
+[data-section="platform"] .rounded-\[36px\],
+[data-section="platform"] .rounded-\[40px\],
+[data-section="platform"] .sm\:rounded-\[32px\] {
+  border-radius: var(--radius-xl);
+}
+
+/* ─── Surface Remaps ──────────────────────────────────────────────────────── */
+[data-section="platform"] .bg-layer-2,
+[data-section="platform"] .bg-layer-2\/80,
+[data-section="platform"] .bg-card\/50,
+[data-section="platform"] .bg-card\/75,
+[data-section="platform"] .bg-card\/80,
+[data-section="platform"] .bg-card\/95,
+[data-section="platform"] .bg-\[var\(--surface\)\],
+[data-section="platform"] .bg-\[var\(--surface\)\]\/60,
+[data-section="platform"] .bg-\[var\(--surface\)\]\/80,
+[data-section="platform"] .bg-\[var\(--surface-modal\)\]\/95 {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+}
+
+[data-section="platform"] .bg-card\/20,
+[data-section="platform"] .bg-primary\/5 {
+  background: color-mix(in srgb, var(--glass-soft-bg) 82%, transparent) !important;
+}
+
 /* Typography remap not needed — platform is now light-first */
 
 /* ─── Elevation Levels (Light-first) ────────────────────────────────────── */
 [data-section="platform"] .elevation-1 {
-  background: #ffffff;
+  background: var(--glass-soft-bg);
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
 }
 
 [data-section="platform"] .elevation-2 {
-  background: #ffffff;
+  background: var(--glass-bg);
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
 }
 
 [data-section="platform"] .elevation-3 {
-  background: #ffffff;
+  background: var(--glass-bg);
   border: 1px solid rgba(15, 23, 42, 0.10);
   box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xl);
 }
 
 [data-section="platform"] .elevation-modal {
-  background: #ffffff;
+  background: var(--glass-strong-bg);
   border: 1px solid rgba(15, 23, 42, 0.10);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  border-radius: var(--radius-xl);
 }
 
 /* ─── Sidebar Active Pill ─────────────────────────────────────────────────── */

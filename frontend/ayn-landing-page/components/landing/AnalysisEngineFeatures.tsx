@@ -161,7 +161,7 @@ export function AnalysisEngineFeatures() {
         {/* Right Side: Terminal Window */}
         <FadeUp delay={0.2} className="lg:col-span-8 flex flex-col h-[400px] shadow-2xl relative z-20" width="100%">
           {/* Mac-style Window header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#0c121e]/80 backdrop-blur-md border border-white/10 border-b-0 rounded-t-xl z-10">
+          <div className="flex items-center justify-between px-4 py-3 glass-surface-strong border border-white/10 border-b-0 rounded-t-xl z-10">
             <div className="flex gap-2">
               <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
               <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -175,7 +175,7 @@ export function AnalysisEngineFeatures() {
           </div>
 
           {/* Terminal Body */}
-          <div className="flex-1 bg-[#050810]/90 backdrop-blur-xl border border-white/10 border-t-0 rounded-b-xl p-6 font-mono text-[13px] md:text-sm overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div className="flex-1 glass-surface-strong border border-white/10 border-t-0 rounded-b-xl p-6 font-mono text-[13px] md:text-sm overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
             {/* Subtle grid bg inside terminal */}
             <div 
               className="absolute inset-0 pointer-events-none opacity-[0.02]"

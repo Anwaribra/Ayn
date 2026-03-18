@@ -32,9 +32,17 @@
   --spacing-section: 5rem;
   --spacing-section-lg: 6rem;
   --spacing-content: 1.5rem;
+  --radius-scale-sm: 12px;
+  --radius-scale-md: 16px;
+  --radius-scale-lg: 20px;
+  --radius-scale-xl: 24px;
+  --radius-scale-2xl: var(--radius-scale-lg);
+  --radius-scale-3xl: var(--radius-scale-xl);
 
   /* Glassmorphism System - Light Mode (Default) */
   --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-soft-bg: rgba(255, 255, 255, 0.78);
+  --glass-strong-bg: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(255, 255, 255, 0.6);
   --glass-border-subtle: rgba(255, 255, 255, 0.3);
   --glass-blur: 16px;
@@ -58,7 +66,8 @@
   --bg-secondary: var(--layer-1);
   --card-bg: var(--layer-2);
   --text-primary: oklch(0.12 0.02 240);
-  --text-secondary: oklch(0.42 0.02 240);
+  --text-secondary: oklch(0.32 0.02 240);
+  --text-tertiary: oklch(0.42 0.018 240);
   --border-color: oklch(0.88 0.006 240);
   --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -80,7 +89,7 @@
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 240);
   --muted: oklch(0.94 0.03 240);
-  --muted-foreground: oklch(0.42 0.02 240);
+  --muted-foreground: oklch(0.34 0.02 240);
   --accent: oklch(0.96 0.01 255);
   --accent-foreground: oklch(0.2 0.05 255);
   --destructive: oklch(0.55 0.22 25);
@@ -96,12 +105,14 @@
   --chart-4: oklch(0.55 0.22 25);
   --chart-5: oklch(0.5 0.1 280);
 
-  --radius: 0.75rem;
+  --radius: var(--radius-scale-md);
 }
 
 .dark {
   /* Glassmorphism System - Dark Mode */
   --glass-bg: rgba(22, 22, 26, 0.45);
+  --glass-soft-bg: rgba(22, 22, 26, 0.58);
+  --glass-strong-bg: rgba(22, 22, 28, 0.72);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-border-subtle: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
@@ -121,7 +132,8 @@
   --bg-secondary: var(--layer-1);
   --card-bg: var(--layer-2);
   --text-primary: oklch(0.98 0.005 260);
-  --text-secondary: oklch(0.65 0.02 260);
+  --text-secondary: oklch(0.78 0.015 260);
+  --text-tertiary: oklch(0.68 0.015 260);
   --border-color: oklch(0.18 0.012 260);
   --shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
   --shadow-card: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -142,7 +154,7 @@
   --secondary: oklch(0.18 0.012 260);
   --secondary-foreground: oklch(0.98 0.005 260);
   --muted: oklch(0.18 0.012 260);
-  --muted-foreground: oklch(0.65 0.02 260);
+  --muted-foreground: oklch(0.8 0.015 260);
   --accent: oklch(0.18 0.012 260);
   --accent-foreground: oklch(0.98 0.005 260);
   --destructive: oklch(0.3 0.15 25);
@@ -196,10 +208,12 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: var(--radius-scale-sm);
+  --radius-md: var(--radius-scale-md);
+  --radius-lg: var(--radius-scale-lg);
+  --radius-xl: var(--radius-scale-xl);
+  --radius-2xl: var(--radius-scale-2xl);
+  --radius-3xl: var(--radius-scale-3xl);
 }
 
 @layer base {
@@ -250,21 +264,33 @@
 }
 
 /* ─── Glassmorphism Utilities ─── */
-.glass {
-  background: var(--glass-bg);
+.glass,
+.glass-surface,
+.glass-surface-strong {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-xl);
+}
+
+.glass,
+.glass-surface {
+  background: var(--glass-soft-bg);
+}
+
+.glass-surface-strong {
+  background: var(--glass-strong-bg);
 }
 
 .glass-card {
-  @apply rounded-3xl transition-all duration-300;
-  background: var(--glass-bg);
+  @apply transition-all duration-300;
+  background: var(--glass-soft-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-xl);
 }
 
 .glass-card:hover {
@@ -286,18 +312,45 @@
 
 /* Glass Panels (Legacy - uses semantic glass tokens) */
 .glass-panel {
-  background: var(--glass-bg);
+  background: var(--glass-soft-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   transition: all 0.3s ease;
+  border-radius: var(--radius-xl);
 }
 
 .glass-panel:hover {
   background: var(--glass-bg);
   box-shadow: var(--glass-shadow-hover);
   border-color: var(--glass-border-subtle);
+}
+
+.glass-readable {
+  background: var(--glass-bg);
+}
+
+.glass-text-primary {
+  color: var(--foreground);
+}
+
+.glass-text-secondary {
+  color: var(--muted-foreground);
+}
+
+.glass-card .text-muted-foreground,
+.glass-panel .text-muted-foreground,
+.glass-surface .text-muted-foreground,
+.glass-surface-strong .text-muted-foreground,
+.glass-readable .text-muted-foreground {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.rounded-\[32px\],
+.rounded-\[36px\] {
+  border-radius: var(--radius-xl) !important;
 }
 
 /* ─── Auth Glass System ─── */

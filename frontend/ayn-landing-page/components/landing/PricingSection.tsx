@@ -129,7 +129,7 @@ export function PricingSection() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center px-8 py-10 rounded-3xl bg-[#050810]/80 backdrop-blur-md border border-white/[0.08] shadow-2xl max-w-md"
+              className="text-center px-8 py-10 rounded-3xl glass-surface-strong border border-white/[0.08] shadow-2xl max-w-md"
             >
               <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-5 border border-primary/30 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
                 <Clock className="w-7 h-7 text-primary" />

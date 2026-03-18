@@ -126,7 +126,7 @@ export function LandingNavbar() {
         <nav
           className={cn(
             "hidden md:flex items-center gap-1 rounded-full transition-all duration-300 backdrop-blur-md px-6 py-2 shadow-sm border",
-            isOverDark ? "bg-black/50 border-white/10" : "bg-white/50 border-black/10"
+            isOverDark ? "glass-surface border-white/10" : "glass-surface-strong border-black/10"
           )}
         >
           {navItems.map(({ label, href }) => (
@@ -252,7 +252,7 @@ export function LandingNavbar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: 0.18 }}
-              className="fixed left-4 right-4 top-[68px] z-50 md:hidden rounded-2xl border border-black/8 bg-white/98 backdrop-blur-2xl shadow-2xl p-3"
+              className="fixed left-4 right-4 top-[68px] z-50 md:hidden rounded-2xl glass-surface-strong border-black/8 shadow-2xl p-3"
             >
               <div className="flex flex-col gap-0.5">
                 {navItems.map(({ label, href }) => (

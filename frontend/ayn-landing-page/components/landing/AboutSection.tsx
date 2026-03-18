@@ -92,8 +92,8 @@ export function AboutSection() {
                     className={cn(
                       "w-full h-full relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
                       isActive 
-                        ? "bg-white border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
-                        : "bg-white/40 border-black/5 hover:bg-white/60 hover:scale-[1.01]"
+                        ? "glass-surface-strong border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
+                        : "glass-surface border-black/5 hover:bg-white/60 hover:scale-[1.01]"
                     )}
                   >
                     {/* Indicator Line */}
@@ -126,7 +126,7 @@ export function AboutSection() {
           </StaggerContainer>
 
           {/* Right: Dynamic Display View */}
-          <FadeUp delay={0.4} className="lg:w-2/3 h-full relative rounded-3xl border border-black/10 bg-white shadow-xl overflow-hidden z-20" width="100%">
+          <FadeUp delay={0.4} className="lg:w-2/3 h-full relative rounded-3xl glass-surface-strong border border-black/10 shadow-xl overflow-hidden z-20" width="100%">
             
             {/* Dynamic Background Pattern */}
             <AnimatePresence mode="popLayout">

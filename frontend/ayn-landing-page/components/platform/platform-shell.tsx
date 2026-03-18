@@ -254,7 +254,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {!pathname?.includes("/horus-ai") ? (
               <div
                 className={cn(
-                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 rounded-3xl border border-border bg-layer-2/70 backdrop-blur-md px-2.5 sm:px-3 py-2",
+                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 glass-surface rounded-3xl px-2.5 sm:px-3 py-2",
                   headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
                 )}
               >
@@ -268,7 +268,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                 <button
                   onClick={() => setCommandPaletteOpen(true)}
-                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl bg-muted/30 hover:bg-muted/50 border border-border text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
+                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl glass-button text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
                 >
                   <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
                   <span className="hidden sm:inline font-medium">Search…</span>
@@ -289,7 +289,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </button>
 
                   {showQuickPages && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-surface-strong rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                           Quick Pages
@@ -329,7 +329,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                               setShowQuickPages(false);
                               router.push(item.href);
                             }}
-                            className="w-full flex items-center gap-3 rounded-2xl border border-border bg-layer-1 hover:bg-layer-3 px-3 py-2.5 transition-all"
+                            className="w-full flex items-center gap-3 rounded-2xl glass-button px-3 py-2.5 transition-all"
                           >
                             <span className="h-9 w-9 rounded-xl glass-input flex items-center justify-center">
                               <item.icon className="h-4 w-4 text-primary" />
@@ -364,7 +364,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-panel rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl border border-border bg-layer-2">
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-surface-strong rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                           Activity

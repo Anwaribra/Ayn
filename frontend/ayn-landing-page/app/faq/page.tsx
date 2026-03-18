@@ -366,7 +366,7 @@ export default function FAQPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: idx * 0.1 }}
-                      className="bg-white/50 backdrop-blur-sm rounded-3xl p-6 md:p-10 shadow-sm border border-black/5"
+                      className="glass-surface rounded-3xl p-6 md:p-10 shadow-sm border border-black/5"
                     >
                       <h2 className={cn(
                         "text-xl font-bold text-foreground mb-6",

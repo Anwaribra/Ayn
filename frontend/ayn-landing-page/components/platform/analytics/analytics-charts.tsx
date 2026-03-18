@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 const tooltipStyle = {
   backgroundColor: "var(--surface-modal)",
   borderColor: "var(--border-subtle)",
-  borderRadius: "12px",
+  borderRadius: "var(--radius-sm)",
   boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
   fontSize: "12px",
 }
@@ -35,7 +35,7 @@ export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden"
+      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
     >
       <div className="flex justify-between items-start mb-6">
         <div>
@@ -78,7 +78,7 @@ export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15 }}
-      className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden"
+      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
     >
       <div className="mb-6">
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
@@ -114,7 +114,7 @@ export function DonutChart({ data, title, subtitle }: DonutProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
+      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
     >
       <div className="mb-6">
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
@@ -157,7 +157,7 @@ export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.25 }}
-      className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
+      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
     >
       <div className="mb-6">
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
@@ -203,7 +203,7 @@ export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden"
+      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
     >
       <div className="mb-8">
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>

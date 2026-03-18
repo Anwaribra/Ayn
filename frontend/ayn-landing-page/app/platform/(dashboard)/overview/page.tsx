@@ -124,7 +124,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <Link href="/platform/horus-ai" className="group p-6 rounded-2xl bg-gradient-to-br from-blue-600/10 via-[var(--surface)] to-purple-600/10 border border-blue-500/20 hover:border-blue-500/40 transition-all flex flex-col justify-between">
+        <Link href="/platform/horus-ai" className="group p-6 rounded-2xl glass-readable border border-blue-500/20 hover:border-blue-500/40 transition-all flex flex-col justify-between">
           <div>
             <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
               <Brain className="w-6 h-6 text-blue-400" />

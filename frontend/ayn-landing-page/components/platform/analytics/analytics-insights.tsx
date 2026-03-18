@@ -30,7 +30,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
   if (insights.length === 0) return null
 
   return (
-    <div className="glass-panel p-8 rounded-[32px] border-[var(--border-subtle)] relative overflow-hidden">
+    <div className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden">
       <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-3xl pointer-events-none" />
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-8">
@@ -53,11 +53,10 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
                 className={cn(
-                  "flex items-start gap-4 p-4 rounded-2xl border transition-all group",
+                  "flex items-start gap-4 p-4 rounded-2xl glass-readable border transition-all group",
                   "hover:shadow-sm cursor-default",
                   config.className
                 )}
-                style={{ backgroundColor: "var(--surface-card)" }}
               >
                 <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border", config.className)}>
                   <config.icon className="w-4 h-4" />

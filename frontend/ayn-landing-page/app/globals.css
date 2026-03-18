@@ -199,6 +199,42 @@
   --chart-5: oklch(0.55 0.1 280);
 }
 
+[data-section-theme="dark"] {
+  --glass-bg: rgba(22, 22, 26, 0.45);
+  --glass-soft-bg: rgba(22, 22, 26, 0.58);
+  --glass-strong-bg: rgba(22, 22, 28, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-subtle: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --glass-shadow-soft: var(--glass-shadow);
+  --glass-shadow-strong: var(--glass-shadow-hover);
+  --glass-input-bg: rgba(18, 18, 24, 0.68);
+  --glass-input-border: rgba(255, 255, 255, 0.12);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-outer: 0 12px 32px -18px rgba(0, 0, 0, 0.6);
+  --glass-ring: rgba(59, 111, 217, 0.5);
+  --glass-inner-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.28);
+  --background: #050810;
+  --foreground: oklch(0.98 0.005 260);
+  --card: rgba(18, 18, 24, 0.72);
+  --card-foreground: oklch(0.98 0.005 260);
+  --popover: rgba(22, 22, 28, 0.86);
+  --popover-foreground: oklch(0.98 0.005 260);
+  --secondary: oklch(0.18 0.012 260);
+  --secondary-foreground: oklch(0.98 0.005 260);
+  --muted: oklch(0.18 0.012 260);
+  --muted-foreground: oklch(0.8 0.015 260);
+  --accent: oklch(0.18 0.012 260);
+  --accent-foreground: oklch(0.98 0.005 260);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: oklch(0.18 0.012 260);
+  --ring: oklch(0.4 0.18 255);
+  color-scheme: dark;
+}
+
 @theme inline {
   --font-sans:
     var(--font-inter), var(--font-geist), "Inter", "Segoe UI", sans-serif;

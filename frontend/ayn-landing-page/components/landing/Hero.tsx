@@ -138,8 +138,12 @@ function DemoModal({
           <Sparkles className="w-8 h-8 text-primary" />
         </div>
         <h3 id="demo-title" className="text-xl font-bold mb-2 text-white">Demo Coming Soon</h3>
-        <p className="text-white/60 mb-6 text-sm">Experience the full Ayn platform</p>
-        <Link href="/signup"><Button className="gap-2">Try Now <ArrowRight className="w-4 h-4" /></Button></Link>
+        <p className="glass-text-secondary mb-6 text-sm">Experience the full Ayn platform</p>
+        <Link href="/signup">
+          <Button className="gap-2 rounded-full bg-primary px-6 text-white shadow-[0_18px_36px_-18px_rgba(37,99,235,0.55)] hover:bg-primary/90">
+            Try Now <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
       </motion.div>
     </motion.div>
   )
@@ -162,7 +166,6 @@ export function Hero() {
   return (
     <>
       <section
-        id="main-content"
         className="relative flex min-h-screen overflow-hidden"
         style={{ backgroundColor: BG }}
       >
@@ -230,7 +233,7 @@ export function Hero() {
 
           {/* Subtitle */}
           <motion.p
-            className="text-lg text-white/60 mb-8 leading-relaxed max-w-md"
+            className="glass-text-secondary mb-8 max-w-md text-lg leading-relaxed"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.18 }}
           >
             Map evidence to ISO, NCAAA, and global frameworks, then run guided compliance actions from the same AI workflow.
@@ -243,14 +246,14 @@ export function Hero() {
           >
             <ShinyButton
               href="/signup"
-              className="bg-primary text-white px-8 py-5 text-base font-bold shadow-[0_0_24px_rgba(59,111,217,0.4)] hover:shadow-[0_0_36px_rgba(59,111,217,0.6)] hover:bg-primary/90 transition-all w-full sm:w-auto"
+              className="w-full rounded-full bg-primary px-8 py-5 text-base font-bold text-white transition-all hover:bg-primary/90 sm:w-auto"
             >
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </ShinyButton>
             <Button
               size="lg" variant="outline" onClick={scrollToFeatures}
-              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/30 px-8 py-5 text-base font-medium bg-transparent w-full sm:w-auto transition-all"
+              className="glass-button w-full rounded-full px-8 py-5 text-base font-medium text-white/84 transition-all hover:text-white sm:w-auto"
             >
               Explore Platform
             </Button>
@@ -262,7 +265,7 @@ export function Hero() {
           >
             <button
               onClick={scrollToFeatures}
-              className="flex items-center gap-2 text-white/35 hover:text-white/60 transition-colors text-xs uppercase tracking-widest"
+              className="glass-text-secondary flex items-center gap-2 text-xs uppercase tracking-[0.24em] transition-colors hover:text-white/80"
               aria-label="Scroll to features"
             >
               Discover <ChevronDown className="w-4 h-4 animate-bounce" />

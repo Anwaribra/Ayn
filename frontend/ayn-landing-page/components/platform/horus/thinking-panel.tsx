@@ -35,7 +35,7 @@ function renderLinkedText(text: string) {
               {part}
             </a>
           </HoverCardTrigger>
-          <HoverCardContent side="top" align="start" className="w-64 z-[60] bg-[var(--surface-modal)]/95 backdrop-blur-md border-[var(--border-subtle)] shadow-xl p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
+          <HoverCardContent side="top" align="start" className="glass-flyout glass-text-primary z-50 w-64 p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
              <div className="flex items-start gap-3">
                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                  <FileText className="w-4 h-4 text-primary" />
@@ -45,7 +45,7 @@ function renderLinkedText(text: string) {
                   <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1 tracking-wider">Known Evidence</p>
                </div>
              </div>
-             <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
+             <div className="glass-border mt-3 border-t pt-3">
                 <p className="text-xs text-muted-foreground">Click to open this file natively inside the platform Evidence Vault Split-View.</p>
              </div>
           </HoverCardContent>
@@ -114,7 +114,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             "relative mt-0.5 shrink-0 w-5 h-5 flex items-center justify-center rounded-full border-2 transition-all duration-300",
             step.status === "done" ? "border-emerald-500 bg-emerald-500/10" :
             step.status === "active" ? "border-primary bg-primary/10 shadow-[0_0_8px_rgba(59,130,246,0.4)]" :
-            "border-[var(--border-subtle)] bg-[var(--surface)]/80"
+            "border-[var(--glass-border)] bg-[var(--glass-input-bg)]"
           )}>
             {step.status === "done" ? (
               <Check className="w-3 h-3 text-emerald-500 font-bold" />
@@ -148,11 +148,11 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="hidden lg:flex fixed right-0 top-0 h-full w-80 z-50 backdrop-blur-xl bg-white/5 border-l border-[var(--border-subtle)] shadow-[0_0_40px_rgba(0,0,0,0.1)] flex-col"
+            className="glass-flyout hidden fixed right-0 top-0 z-50 h-full w-80 flex-col border-l lg:flex"
           >
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[var(--surface)]/30 pointer-events-none" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
 
-            <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)]/30 bg-[var(--surface-modal)]/60 pt-20">
+            <div className="glass-border relative z-10 flex items-center justify-between border-b px-6 pb-5 pt-20">
               <div className="flex items-center gap-3">
                 <ThinkingOrb isComplete={reasoning?.isComplete ?? false} />
                 <div>
@@ -164,7 +164,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
               </div>
               <button
                 onClick={onClose}
-                className="p-2 mr-[-8px] text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/10"
+                className="horus-tool-button mr-[-8px] p-2"
                 aria-label="Close thinking panel"
               >
                 <X className="w-4 h-4" />
@@ -190,7 +190,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
             className={cn(
-              "lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-[var(--surface-modal)]/95 border-t border-[var(--border-subtle)] shadow-[0_-4px_40px_rgba(0,0,0,0.15)] rounded-t-2xl flex flex-col",
+              "glass-flyout fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[var(--radius-xl)] border-t lg:hidden",
               mobileCollapsed ? "max-h-[72px]" : "max-h-[55vh]"
             )}
           >
@@ -216,14 +216,14 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setMobileCollapsed(!mobileCollapsed)}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/10"
+                  className="horus-tool-button p-2"
                   aria-label={mobileCollapsed ? "Expand" : "Collapse"}
                 >
                   <ChevronUp className={cn("w-4 h-4 transition-transform", mobileCollapsed && "rotate-180")} />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/10"
+                  className="horus-tool-button p-2"
                   aria-label="Close thinking panel"
                 >
                   <X className="w-4 h-4" />

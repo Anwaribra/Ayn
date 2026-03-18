@@ -35,12 +35,12 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="glass-panel rounded-2xl p-5 border-[var(--border-subtle)] group hover:shadow-md transition-all relative overflow-hidden"
+            className="glass-panel group relative overflow-hidden rounded-2xl border-[var(--border-subtle)] p-5 transition-all hover:shadow-md"
           >
             <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: card.color }} />
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center border" style={{ backgroundColor: `${card.color}15`, borderColor: `${card.color}30`, color: card.color }}>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: `${card.color}15`, borderColor: `${card.color}30`, color: card.color }}>
                   <card.icon className="w-4 h-4" />
                 </div>
                 {card.trend && (
@@ -53,7 +53,7 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
               <p className="text-3xl font-black text-foreground tracking-tight">
                 {card.value}{card.suffix && <span className="text-lg font-medium text-muted-foreground">{card.suffix}</span>}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">{card.label}</p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{card.label}</p>
               {card.description && (
                 <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">{card.description}</p>
               )}

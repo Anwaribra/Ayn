@@ -24,51 +24,64 @@ async def build_agent_context(
     Build a compact platform snapshot for one user/institution.
     """
     state_service = StateService(db)
-    summary = await state_service.get_state_summary(user_id)
-
-    recent_activity = await ActivityService.get_recent_activities(user_id, limit=10)
-    unread_notifications = await NotificationService.get_unread_count(user_id)
-
-    evidence_count = await db.evidence.count(
-        where={
-            "OR": [
-                {"uploadedById": user_id},
-                {"ownerId": institution_id} if institution_id else {"uploadedById": user_id},
-            ]
-        }
-    )
-    analyzed_evidence = await db.evidence.count(
-        where={
-            "status": {"in": ["analyzed", "linked"]},
-            "OR": [
-                {"uploadedById": user_id},
-                {"ownerId": institution_id} if institution_id else {"uploadedById": user_id},
-            ],
-        }
-    )
-
-    gap_reports = await db.gapanalysis.find_many(
-        where={"institutionId": institution_id} if institution_id else {"institutionId": "__none__"},
-        include={"standard": True},
-        order={"createdAt": "desc"},
-        take=5,
-    )
-
-    open_platform_gaps = await db.platformgap.count(
-        where={"userId": user_id, "status": {"not": "closed"}}
-    )
-
-    standards = await db.standard.find_many(
-        where={"institutionStandards": {"some": {"institutionId": institution_id}}}
+    owner_filter = {
+        "OR": [
+            {"uploadedById": user_id},
+            {"ownerId": institution_id} if institution_id else {"uploadedById": user_id},
+        ]
+    }
+    gap_filter = {"institutionId": institution_id} if institution_id else {"institutionId": "__none__"}
+    standards_filter = (
+        {"institutionStandards": {"some": {"institutionId": institution_id}}}
         if institution_id
-        else {},
-        include={"criteria": True},
-        take=10,
+        else {}
     )
 
-    mappings = await db.criteriamapping.find_many(
-        where={"institutionId": institution_id} if institution_id else {"institutionId": "__none__"},
-        include={"criterion": {"include": {"standard": True}}},
+    (
+        summary,
+        recent_activity,
+        unread_notifications,
+        evidence_count,
+        analyzed_evidence,
+        gap_reports,
+        open_platform_gaps,
+        standards,
+        mappings,
+        all_ga,
+    ) = await __import__("asyncio").gather(
+        state_service.get_state_summary(user_id),
+        ActivityService.get_recent_activities(user_id, limit=10),
+        NotificationService.get_unread_count(user_id),
+        db.evidence.count(where=owner_filter),
+        db.evidence.count(
+            where={
+                "status": {"in": ["analyzed", "linked"]},
+                **owner_filter,
+            }
+        ),
+        db.gapanalysis.find_many(
+            where=gap_filter,
+            include={"standard": True},
+            order={"createdAt": "desc"},
+            take=5,
+        ),
+        db.platformgap.count(
+            where={"userId": user_id, "status": {"not": "closed"}}
+        ),
+        db.standard.find_many(
+            where=standards_filter,
+            include={"criteria": True},
+            take=10,
+        ),
+        db.criteriamapping.find_many(
+            where=gap_filter,
+            include={"criterion": {"include": {"standard": True}}},
+        ),
+        db.gapanalysis.find_many(
+            where=gap_filter,
+            include={"standard": True},
+            order={"createdAt": "desc"},
+        ),
     )
 
     standards_summary: list[dict[str, Any]] = []
@@ -99,23 +112,13 @@ async def build_agent_context(
     standards_summary = list(by_standard.values())[:8]
 
     # ── Analytics summary (lightweight — reuses data already fetched) ────
-    all_ga = await db.gapanalysis.find_many(
-        where={"institutionId": institution_id} if institution_id else {"institutionId": "__none__"},
-        include={"standard": True},
-        order={"createdAt": "desc"},
-    )
     ga_scores = [r.overallScore for r in all_ga]
     ga_total = len(ga_scores)
     ga_avg = round(sum(ga_scores) / ga_total, 1) if ga_total > 0 else 0
     ga_latest = round(ga_scores[0], 1) if ga_scores else 0
     ga_unique_stds = len({r.standardId for r in all_ga if r.standardId})
 
-    total_evidence_all = await db.evidence.count(
-        where={"OR": [
-            {"uploadedById": user_id},
-            {"ownerId": institution_id} if institution_id else {"uploadedById": user_id},
-        ]}
-    )
+    total_evidence_all = evidence_count
 
     # Growth (compare first half vs second half)
     mid = ga_total // 2
@@ -207,4 +210,3 @@ async def build_agent_context(
             for a in recent_activity
         ],
     }
-

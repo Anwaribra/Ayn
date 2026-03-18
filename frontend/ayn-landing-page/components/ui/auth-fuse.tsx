@@ -27,22 +27,29 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 
         return (
             <div className="grid w-full items-center gap-2">
-                {label && <Label htmlFor={id} className="text-muted-foreground text-sm">{label}</Label>}
                 <div className="relative">
                     <Input
                         id={id}
                         type={showPassword ? "text" : "password"}
                         className={cn(
-                            "pe-10 h-11 rounded-lg border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary",
+                            "auth-glass-input peer pe-10 h-11 rounded-xl border-white/12 bg-transparent text-foreground placeholder:text-transparent focus:border-primary focus:ring-0",
                             className
                         )}
                         ref={ref}
                         {...props}
                     />
+                    {label && (
+                        <Label
+                            htmlFor={id}
+                            className="auth-floating-label pointer-events-none absolute left-4 top-4 z-10 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-[&:not(:placeholder-shown)]:-top-2.5 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:text-white/80 peer-[&:not(:placeholder-shown)]:px-1.5"
+                        >
+                            {label}
+                        </Label>
+                    )}
                     <button
                         type="button"
                         onClick={togglePasswordVisibility}
-                        className="absolute inset-y-0 end-0 flex h-full w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+                        className="absolute inset-y-0 end-0 flex h-full w-10 items-center justify-center text-white/60 transition-colors hover:text-white focus-visible:outline-none"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                         {showPassword ? (
@@ -108,36 +115,36 @@ function SignInForm(props: {
             transition={{ duration: 0.4 }}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <Link href="/" className="inline-flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground auth-back-link">
+            <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
             </Link>
 
             <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-bold tracking-tight text-foreground select-none auth-logo-gradient">
+                <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
                     Ayn
                 </span>
             </div>
 
             <div className="flex flex-col gap-2 text-center">
-                <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
-                <p className="text-sm text-foreground/90">Sign in to continue to your dashboard</p>
+                <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
+                <p className="text-sm text-white/72">Sign in to continue to your dashboard</p>
             </div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <div id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
                     {props.err}
                 </div>
             )}
 
             <div className="flex flex-col gap-3">
                 {/* Google OAuth */}
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl text-foreground transition-colors justify-center font-medium">
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
                 {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-foreground/70 cursor-not-allowed justify-center font-medium opacity-80">
+                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-white/72 cursor-not-allowed justify-center font-medium opacity-80">
                     <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
                     Continue with Microsoft
                     <span className="ml-2 auth-coming-soon">Coming Soon</span>
@@ -148,20 +155,19 @@ function SignInForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
-                <span className="relative z-10 px-3 text-foreground/85 auth-divider-pill uppercase tracking-widest text-xs font-medium rounded-full">Or sign in with email</span>
+                <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or sign in with email</span>
             </div>
 
             {/* Email / Password fields */}
             <div className="grid gap-4 mt-2">
                 <div className="relative group">
-                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/80 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/80 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Email Address</Label>
                 </div>
                 <div className="relative group">
-                    <PasswordInput name="password" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label className="absolute left-4 top-4 text-sm text-foreground/80 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/80 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
+                    <PasswordInput name="password" label="Password" required placeholder=" " className="h-14 rounded-xl text-white pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
-                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
+                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -171,9 +177,9 @@ function SignInForm(props: {
                 </Button>
             </div>
 
-            <div className="text-center text-sm text-foreground/90">
+            <div className="text-center text-sm text-white/72">
                 Don&apos;t have an account?{" "}
-                <button type="button" className="text-foreground font-medium hover:underline" onClick={props.toggle}>
+                <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
                     Create account
                 </button>
             </div>
@@ -224,37 +230,37 @@ function SignUpForm(props: {
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
             <motion.div variants={itemVariants}>
-                <Link href="/" className="inline-flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground auth-back-link">
+                <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Home
                 </Link>
             </motion.div>
 
             <motion.div variants={itemVariants} className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-bold tracking-tight text-foreground select-none auth-logo-gradient">
+                <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
                     Ayn
                 </span>
             </motion.div>
 
             <motion.div variants={itemVariants} className="flex flex-col gap-2 text-center">
-                <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
-                <p className="text-sm text-foreground/90">Get started with your quality journey</p>
+                <h1 className="text-2xl font-semibold text-white">Create your account</h1>
+                <p className="text-sm text-white/72">Get started with your quality journey</p>
             </motion.div>
 
             {props.err && (
-                <motion.div variants={itemVariants} id="auth-form-error" role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <motion.div variants={itemVariants} id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
                     {props.err}
                 </motion.div>
             )}
 
             <motion.div variants={itemVariants} className="flex flex-col gap-3">
                 {/* Google OAuth */}
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl text-foreground transition-colors justify-center font-medium">
+                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
                 {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-foreground/70 cursor-not-allowed justify-center font-medium opacity-80">
+                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-white/72 cursor-not-allowed justify-center font-medium opacity-80">
                     <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
                     Continue with Microsoft
                     <span className="ml-2 auth-coming-soon">Coming Soon</span>
@@ -265,73 +271,73 @@ function SignUpForm(props: {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
-                <span className="relative z-10 px-3 text-foreground/85 auth-divider-pill uppercase tracking-widest text-xs font-medium rounded-full">Or create with email</span>
+                <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or create with email</span>
             </motion.div>
 
             <motion.div variants={itemVariants} className="grid gap-4 mt-2">
                 <div className="relative group">
-                    <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={nameId} className="absolute left-4 top-4 text-sm text-foreground/80 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/80 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Full Name</Label>
+                    <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={nameId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Full Name</Label>
                 </div>
                 <div className="relative group">
-                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="absolute left-4 top-4 text-sm text-foreground/80 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/80 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm">Email Address</Label>
+                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
+                    <Label htmlFor={emailId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Email Address</Label>
                 </div>
                 <div className="relative group">
                     <PasswordInput
                         name="password"
+                        label="Password"
                         required
                         placeholder=" "
                         minLength={8}
-                        className="auth-glass-input peer h-14 rounded-2xl text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 pt-4 pb-2 px-4 transition-all"
+                        className="h-14 rounded-xl text-white pt-4 pb-2 px-4 transition-all"
                         aria-invalid={!!props.err}
                         disabled={props.loading}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <Label className="absolute left-4 top-4 text-sm text-foreground/80 transition-all peer-focus:-top-1 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-white/80 peer-focus:px-1 peer-valid:-top-1 peer-valid:text-xs peer-valid:text-foreground/80 peer-valid:bg-white/70 peer-valid:px-1 bg-transparent pointer-events-none rounded-sm z-10">Password</Label>
                     {password.length > 0 && (
-                        <div className="flex flex-col gap-1 mt-1">
+                        <div className="auth-password-rules mt-1 flex flex-col gap-1.5">
                             <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
                                     {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={password.length >= 8 ? "text-emerald-600 font-medium" : "text-foreground/80"}>At least 8 characters</span>
+                                <span className={password.length >= 8 ? "text-emerald-400 font-medium" : "text-white/72"}>At least 8 characters</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
                                     {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-medium" : "text-foreground/80"}>One uppercase letter</span>
+                                <span className={/[A-Z]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One uppercase letter</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("w-3 h-3 rounded-full flex items-center justify-center border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "bg-muted border-border")}>
+                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
                                     {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                 </div>
-                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-600 font-medium" : "text-foreground/80"}>One special character</span>
+                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One special character</span>
                             </div>
                         </div>
                     )}
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-sm text-foreground/90">Account Role <span className="text-foreground/70 font-normal">(Optional)</span></Label>
+                    <Label className="text-sm text-white/90">Account Role <span className="text-white/65 font-normal">(Optional)</span></Label>
                     <Select value={selectedRole || "__skip__"} onValueChange={(v) => setSelectedRole(v === "__skip__" ? "" : v)} disabled={props.loading}>
-                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-2xl border-white/40 text-foreground/90 focus:ring-2 focus:ring-primary/20 [&>span]:line-clamp-1">
+                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-xl border-white/12 text-white/90 focus:ring-0 [&>span]:line-clamp-1">
                             <SelectValue placeholder="Select your role" />
                         </SelectTrigger>
-                        <SelectContent className="auth-select-dropdown border-white/30 bg-white/95 backdrop-blur-xl">
-                            <SelectItem value="__skip__" className="text-foreground/80 focus:bg-primary/10 focus:text-foreground">
+                        <SelectContent className="dark auth-select-dropdown">
+                            <SelectItem value="__skip__" className="border-transparent text-white/72 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">
                                 Select your role
                             </SelectItem>
-                            <SelectItem value="STUDENT" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Student</SelectItem>
-                            <SelectItem value="UNIVERSITY" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">University</SelectItem>
-                            <SelectItem value="INSTITUTION" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Institution</SelectItem>
-                            <SelectItem value="TEACHER" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Teacher</SelectItem>
-                            <SelectItem value="OTHER" className="text-foreground/90 focus:bg-primary/10 focus:text-foreground">Other</SelectItem>
+                            <SelectItem value="STUDENT" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Student</SelectItem>
+                            <SelectItem value="UNIVERSITY" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">University</SelectItem>
+                            <SelectItem value="INSTITUTION" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Institution</SelectItem>
+                            <SelectItem value="TEACHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Teacher</SelectItem>
+                            <SelectItem value="OTHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Other</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
-                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 shadow-[0_12px_30px_-16px_rgba(0,0,0,0.6)]" disabled={props.loading}>
+                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -341,9 +347,9 @@ function SignUpForm(props: {
                 </Button>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="text-center text-sm text-foreground/90">
+            <motion.div variants={itemVariants} className="text-center text-sm text-white/72">
                 Already have an account?{" "}
-                <button type="button" className="text-foreground hover:underline font-medium" onClick={props.toggle}>
+                <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
                     Sign in
                 </button>
             </motion.div>
@@ -391,9 +397,10 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setIsLoading(true);
         log("[Auth] Starting Supabase Google OAuth...");
         try {
+            const redirectPath = isSignIn ? "/login" : "/signup";
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
-                options: { redirectTo: `${window.location.origin}/login` },
+                options: { redirectTo: `${window.location.origin}${redirectPath}` },
             });
             if (error) throw error;
             log("[Auth] Redirecting to Google...");
@@ -441,7 +448,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#060a14]">
+        <div className="dark relative min-h-screen w-full overflow-hidden bg-background">
             {/* Full-screen dashboard background */}
             <div className="absolute inset-0">
                 <img
@@ -468,7 +475,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     className={cn(
-                        "auth-glass-card w-full rounded-[28px] p-8 sm:p-10 relative",
+                        "auth-glass-card w-full rounded-3xl p-8 sm:p-10 relative",
                         isSignUp ? "max-w-[500px] auth-glass-card-signup" : "max-w-[460px]"
                     )}
                 >

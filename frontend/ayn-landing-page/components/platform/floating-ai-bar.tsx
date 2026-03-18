@@ -333,9 +333,9 @@ const FloatingAIBarComponent = () => {
           >
             <div className="p-6 pb-3 flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="glass-panel relative flex h-11 w-11 items-center justify-center rounded-2xl">
+                <div className="horus-ai-icon relative flex h-11 w-11 items-center justify-center rounded-2xl">
                   <Brain className="w-5 h-5 text-primary" />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-[var(--glass-bg-strong)] bg-[var(--status-success)]" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-[var(--glass-strong-bg)] bg-[var(--status-success)]" />
                 </div>
                 <div>
                   <h3 className="glass-text-primary text-lg font-bold tracking-tight">Horus Bridge</h3>
@@ -391,7 +391,7 @@ const FloatingAIBarComponent = () => {
                         className={cn(
                           "rounded-2xl px-4 py-3 text-[13px] leading-relaxed",
                           msg.role === "user"
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                            ? "horus-user-bubble"
                             : "glass-bubble glass-text-primary",
                         )}
                       >
@@ -458,7 +458,7 @@ const FloatingAIBarComponent = () => {
                   type="button"
                   onClick={handleSend}
                   disabled={!query.trim() || isLoading}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground transition-colors"
+                  className="glass-button absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl bg-primary/90 text-primary-foreground transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:bg-[var(--glass-input-bg)] disabled:text-muted-foreground"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpIcon className="w-4 h-4" />}
                 </button>
@@ -471,7 +471,7 @@ const FloatingAIBarComponent = () => {
       <button
         type="button"
         onClick={handleToggle}
-        className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground transition-all duration-300 hover:scale-105 active:scale-95"
+        className="glass-surface-strong relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-primary transition-all duration-300 hover:scale-105 active:scale-95"
         aria-label="Toggle Horus assistant"
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-1000" />

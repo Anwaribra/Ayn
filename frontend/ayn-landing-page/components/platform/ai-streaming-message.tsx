@@ -61,8 +61,8 @@ export function AIStreamingMessage({
       onMouseLeave={() => setShowControls(false)}
     >
       {/* Avatar */}
-      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 ring-1 ring-[var(--brand)]/10">
-        <Bot className="h-4 w-4 text-[var(--brand)]" />
+      <div className="horus-ai-icon mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl">
+        <Bot className="h-4 w-4 text-primary" />
       </div>
 
       {/* Content */}
@@ -136,8 +136,8 @@ export function AIMessage({
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn("flex w-full gap-3 py-2", className)}
     >
-      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 ring-1 ring-[var(--brand)]/10">
-        <Bot className="h-4 w-4 text-[var(--brand)]" />
+      <div className="horus-ai-icon mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl">
+        <Bot className="h-4 w-4 text-primary" />
       </div>
       <div className="flex max-w-[80%] flex-col gap-1">
         <div className="glass-bubble glass-text-primary px-4 py-3">

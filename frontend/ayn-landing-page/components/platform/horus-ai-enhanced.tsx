@@ -126,8 +126,7 @@ export function HorusAIWidget() {
       <motion.button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center",
-          "bg-primary text-primary-foreground shadow-xl hover:scale-110 active:scale-95 transition-all border border-border"
+          "glass-surface-strong fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl text-primary transition-all hover:scale-110 active:scale-95"
         )}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -150,8 +149,8 @@ export function HorusAIWidget() {
               {/* Header */}
               <div className="glass-border flex items-center justify-between border-b p-4">
                 <div className="flex items-center gap-3">
-                  <div className="glass-panel flex h-10 w-10 items-center justify-center rounded-xl">
-                    <Brain className="w-5 h-5 text-primary-foreground" />
+                  <div className="horus-ai-icon flex h-10 w-10 items-center justify-center rounded-xl">
+                    <Brain className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-foreground">Horus AI</h4>
@@ -195,7 +194,7 @@ export function HorusAIWidget() {
                       "max-w-[75%] rounded-2xl p-3 text-sm leading-relaxed",
                       msg.role === "assistant"
                         ? "glass-bubble glass-text-primary rounded-tl-sm"
-                        : "bg-primary text-primary-foreground border border-primary/30 rounded-tr-sm"
+                        : "horus-user-bubble rounded-tr-sm"
                     )}>
                       {msg.content}
                     </div>
@@ -224,7 +223,7 @@ export function HorusAIWidget() {
                         <button
                           key={suggestion.id}
                           onClick={() => handleSend(suggestion.prompt)}
-                          className="glass-panel flex items-center gap-3 rounded-xl p-3 text-left transition-all group hover:border-primary/30"
+                          className="horus-quick-action flex items-center gap-3 rounded-xl p-3 text-left transition-all group hover:border-primary/30"
                         >
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <suggestion.icon className="w-4 h-4 text-primary" />
@@ -253,7 +252,7 @@ export function HorusAIWidget() {
                     size="icon"
                     onClick={() => handleSend(input)}
                     disabled={!input.trim() || isTyping}
-                    className="h-10 w-10 rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
+                    className="glass-button h-10 w-10 rounded-xl bg-primary/90 text-primary-foreground transition-colors hover:bg-primary disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -305,12 +304,12 @@ export function SystemStatusWidget() {
     <div className="glass-panel rounded-2xl p-4 border-[var(--border-subtle)]">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <Cpu className="w-5 h-5 text-primary-foreground" />
-          </div>
+            <div className="horus-ai-icon flex h-10 w-10 items-center justify-center rounded-xl">
+              <Cpu className="w-5 h-5 text-primary" />
+            </div>
           <span
             className={cn(
-              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--glass-bg-strong)]",
+              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--glass-strong-bg)]",
               current.pulse && "animate-pulse"
             )}
             style={{ backgroundColor: current.token }}

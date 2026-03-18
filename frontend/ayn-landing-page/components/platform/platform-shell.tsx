@@ -206,6 +206,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       className={cn(
         "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300",
       )}
+      data-section="platform"
       data-platform-theme={resolvedTheme}
       data-platform-page={platformVisualMode}
     >
@@ -254,13 +255,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             {!pathname?.includes("/horus-ai") ? (
               <div
                 className={cn(
-                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 glass-surface rounded-3xl px-2.5 sm:px-3 py-2",
+                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 glass-flyout rounded-[var(--radius-xl)] px-2.5 sm:px-3 py-2",
                   headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
                 )}
               >
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
+                  className="glass-button glass-text-secondary lg:hidden min-h-[44px] min-w-[44px] rounded-xl p-2 transition-colors hover:text-[var(--glass-text-primary)]"
                   aria-label="Open sidebar"
                 >
                   <PanelLeft className="w-4 h-4" />
@@ -272,7 +273,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 >
                   <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
                   <span className="hidden sm:inline font-medium">Search…</span>
-                  <kbd className="hidden sm:flex items-center gap-1 ml-auto px-2 py-0.5 rounded bg-muted border border-border text-[10px] font-mono text-muted-foreground font-bold">
+                  <kbd className="glass-pill glass-text-secondary ml-auto hidden items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold sm:flex">
                     <span className="text-xs">⌘</span>K
                   </kbd>
                 </button>
@@ -280,7 +281,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative quick-pages-container">
                   <button
                     onClick={() => setShowQuickPages(!showQuickPages)}
-                    className="relative p-2 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
+                    className="glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
                     aria-label="Quick pages"
                     aria-haspopup="true"
                     aria-expanded={showQuickPages}
@@ -289,14 +290,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </button>
 
                   {showQuickPages && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-surface-strong rounded-3xl p-4 sm:p-5 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl">
+                    <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-5">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                           Quick Pages
                         </h3>
                         <button
                           onClick={() => setShowQuickPages(false)}
-                          className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
+                          className="glass-button glass-text-secondary min-h-[32px] min-w-[32px] rounded-lg p-1 transition-colors hover:text-[var(--glass-text-primary)]"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -352,7 +353,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative notification-dropdown-container">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px]"
+                    className="glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
                     aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                     aria-haspopup="true"
                     aria-expanded={showNotifications}
@@ -364,7 +365,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1rem)] max-w-[320px] glass-surface-strong rounded-3xl p-4 sm:p-6 z-50 animate-in slide-in-from-top-2 duration-300 shadow-2xl">
+                    <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                           Activity
@@ -378,7 +379,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                           </button>
                           <button
                             onClick={() => setShowNotifications(false)}
-                            className="p-1 text-muted-foreground hover:text-foreground transition-colors min-h-[32px] min-w-[32px]"
+                            className="glass-button glass-text-secondary min-h-[32px] min-w-[32px] rounded-lg p-1 transition-colors hover:text-[var(--glass-text-primary)]"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -473,7 +474,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
             ) : (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden fixed bottom-6 left-6 z-30 h-11 w-11 rounded-2xl glass-panel glass-border text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                className="lg:hidden fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-2xl glass-panel glass-border text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Open sidebar"
               >
                 <PanelLeft className="w-5 h-5" />

@@ -66,13 +66,13 @@ export function AboutSection() {
         
         {/* Header */}
         <FadeUp className="text-center mb-16 md:mb-24">
-          <span className="inline-flex items-center px-3 py-1 rounded-full border border-black/10 text-xs font-bold uppercase tracking-[0.15em] text-primary mb-4">
+          <span className="glass-pill inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-primary mb-4">
             Built for you
           </span>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
             Horus AI Works for Every Institution
           </h2>
-          <p className="text-foreground/50 text-base md:text-lg max-w-2xl mx-auto">
+          <p className="glass-text-secondary text-base md:text-lg max-w-2xl mx-auto">
             One intelligent assistant that adapts to your institution's needs.
           </p>
         </FadeUp>
@@ -92,8 +92,8 @@ export function AboutSection() {
                     className={cn(
                       "w-full h-full relative flex items-center gap-4 p-5 rounded-2xl border text-left transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden",
                       isActive 
-                        ? "glass-surface-strong border-black/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] scale-[1.02]" 
-                        : "glass-surface border-black/5 hover:bg-white/60 hover:scale-[1.01]"
+                        ? "glass-surface-strong border-black/10 shadow-[0_10px_34px_-16px_rgba(0,0,0,0.12)] scale-[1.02]" 
+                        : "glass-surface border-black/5 hover:scale-[1.01]"
                     )}
                   >
                     {/* Indicator Line */}
@@ -108,7 +108,7 @@ export function AboutSection() {
 
                     <div className={cn(
                       "p-3 rounded-xl flex items-center justify-center transition-colors duration-300",
-                      isActive ? "bg-black/5 text-foreground" : "bg-black/5 text-foreground/40 group-hover:text-foreground/70"
+                      isActive ? "glass-button text-foreground" : "glass-button text-foreground/55 group-hover:text-foreground/80"
                     )}>
                       <Icon className="w-5 h-5" />
                     </div>
@@ -161,7 +161,7 @@ export function AboutSection() {
                     </h3>
                   </div>
                   
-                  <p className="text-lg text-foreground/60 leading-relaxed mb-8 max-w-lg">
+                  <p className="glass-text-secondary text-lg leading-relaxed mb-8 max-w-lg">
                     {currentTab.description}
                   </p>
 
@@ -172,10 +172,10 @@ export function AboutSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.1 + i * 0.05 }}
                         key={feature} 
-                        className="flex items-center gap-3 p-3 rounded-xl bg-black/5 border border-black/5"
+                        className="glass-panel flex items-center gap-3 rounded-xl p-3"
                       >
                         <CheckCircle2 className={cn("w-4 h-4", i % 2 === 0 ? "text-primary" : "text-emerald-500")} />
-                        <span className="text-sm font-semibold text-foreground/80">{feature}</span>
+                        <span className="text-sm font-semibold text-foreground/88">{feature}</span>
                       </motion.div>
                     ))}
                   </div>

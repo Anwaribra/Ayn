@@ -236,7 +236,7 @@ function AnalyticsContent() {
             ))}
           </div>
           <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground"><RefreshCw className="w-3 h-3" /> Refresh</button>
-          <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"><Download className="w-3 h-3" /> Export CSV</button>
+          <button onClick={handleExportCsv} className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95"><Download className="w-3 h-3" /> Export CSV</button>
         </div>
       </header>
 
@@ -254,7 +254,7 @@ function AnalyticsContent() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="glass-panel rounded-[32px] p-8 glass-border animate-pulse h-80" />
+              <div key={i} className="glass-panel glass-border h-80 rounded-3xl p-8 animate-pulse" />
             ))}
           </div>
         </div>
@@ -295,7 +295,7 @@ function AnalyticsContent() {
 
           {/* ─── Anomalies Section ─── */}
           {analytics.anomalies && analytics.anomalies.length > 0 && (
-            <section className="glass-panel p-8 rounded-[32px] glass-border">
+            <section className="glass-panel glass-border rounded-3xl p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-9 h-9 rounded-xl status-warning border flex items-center justify-center">
                   <AlertTriangle className="w-4 h-4" />
@@ -307,7 +307,7 @@ function AnalyticsContent() {
               </div>
               <div className="space-y-3">
                 {analytics.anomalies.map((anomaly: any) => (
-                  <div key={anomaly.reportId} className="flex items-center gap-4 p-4 rounded-2xl glass-border hover:bg-[var(--surface)]/60 transition-all">
+                  <div key={anomaly.reportId} className="glass-button flex items-center gap-4 rounded-2xl p-4 transition-all">
                     <div className="w-10 h-10 rounded-xl status-warning border flex items-center justify-center shrink-0">
                       <span className="mono text-[10px] font-bold">{Math.round(anomaly.score)}</span>
                     </div>
@@ -323,7 +323,7 @@ function AnalyticsContent() {
 
           {/* ─── Score Distribution (histogram) ─── */}
           {analytics.scoreDistribution && (
-            <section className="glass-panel p-8 rounded-[32px] glass-border">
+            <section className="glass-panel glass-border rounded-3xl p-8">
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-6">Histogram of all report scores</p>
               <div className="grid grid-cols-5 gap-3">
@@ -333,7 +333,7 @@ function AnalyticsContent() {
                   const colors: Record<string, string> = { "0-20": "#c9424a", "21-40": "#b45309", "41-60": "#2563eb", "61-80": "#7c5ce0", "81-100": "#0d9668" }
                   return (
                     <div key={bucket.range} className="flex flex-col items-center gap-2">
-                      <div className="w-full h-32 flex items-end justify-center rounded-xl bg-[var(--surface)]/60 p-1">
+                      <div className="glass-surface flex h-32 w-full items-end justify-center rounded-xl p-1">
                         <div className="w-full rounded-lg transition-all duration-700" style={{ height: `${heightPct}%`, backgroundColor: colors[bucket.range] || "#2563eb" }} />
                       </div>
                       <span className="text-[10px] font-bold text-muted-foreground">{bucket.range}%</span>

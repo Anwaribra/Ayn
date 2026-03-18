@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { Paperclip, Send, StopCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_PLACEHOLDER = "Ask Horus about your compliance…";
+const DEFAULT_PLACEHOLDER = "Ask Horus…";
 
 interface AIChatInputProps {
     onSend: (message: string) => void;
@@ -14,6 +14,7 @@ interface AIChatInputProps {
     isLoading?: boolean;
     disabled?: boolean;
     hasFiles?: boolean;
+    footer?: ReactNode;
 }
 
 export const AIChatInput = ({
@@ -24,6 +25,7 @@ export const AIChatInput = ({
     isLoading = false,
     disabled = false,
     hasFiles = false,
+    footer,
 }: AIChatInputProps) => {
     const [isActive, setIsActive] = useState(false);
     const [inputValue, setInputValue] = useState("");
@@ -75,27 +77,78 @@ export const AIChatInput = ({
     }, [inputValue, resizeTextarea]);
 
     return (
-        <div className="w-full flex-col flex justify-center items-center pb-6 pt-2">
+        <div className="flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
             <div
                 ref={wrapperRef}
                 style={{ overflow: "hidden" }}
                 className={cn(
-                    "w-full max-w-[900px] glass-panel glass-border rounded-3xl horus-input-shell glass-focus-ring",
+                    "horus-input-shell glass-panel glass-border glass-focus-ring w-full max-w-[900px] rounded-[var(--radius-xl)] sm:rounded-3xl",
                     (isActive || inputValue) && "is-active"
                 )}
                 onClick={handleActivate}
             >
-                <div className="flex flex-col items-stretch w-full h-full">
-                    {/* Input Row */}
-                    <div className="flex items-end gap-2.5 p-2.5 w-full">
+                <div className="flex h-full w-full flex-col items-stretch">
+                    <div className="relative w-full px-4 pb-3 pt-3 sm:px-5 sm:pb-4 sm:pt-4">
+                        <textarea
+                            value={inputValue}
+                            onKeyDown={handleKeyDown}
+                            disabled={disabled}
+                            placeholder={DEFAULT_PLACEHOLDER}
+                            onChange={(e) => {
+                                setInputValue(e.target.value);
+                                resizeTextarea(e.target.value);
+                                if (onChange) onChange(e.target.value);
+                            }}
+                            className={cn(
+                                "horus-input-field w-full bg-transparent border-none pr-11 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:pr-12 sm:text-[15px] md:text-[16px]",
+                                "text-foreground placeholder:text-muted-foreground/70"
+                            )}
+                            style={{
+                                position: "relative",
+                                zIndex: 1,
+                                color: "var(--foreground)",
+                                WebkitTextFillColor: "var(--foreground)",
+                                caretColor: "var(--foreground)",
+                            }}
+                            onFocus={handleActivate}
+                            ref={textareaRef}
+                            rows={1}
+                        />
+
+                        {isLoading ? (
+                            <button
+                                className="horus-stop-button absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full font-bold shadow-md transition-transform sm:right-4 sm:h-9 sm:w-9"
+                                onClick={onStop}
+                                type="button"
+                            >
+                                <StopCircle size={16} className="sm:h-[18px] sm:w-[18px]" />
+                            </button>
+                        ) : (
+                            <button
+                                className={cn(
+                                    "horus-send-button absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full font-bold shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-30 sm:right-4 sm:h-9 sm:w-9",
+                                    (inputValue.trim() || hasFiles) && "shadow-[0_0_16px_rgba(59,130,246,0.4)]"
+                                )}
+                                title="Send"
+                                type="button"
+                                disabled={!inputValue.trim() && !hasFiles}
+                                onClick={handleSend}
+                                tabIndex={-1}
+                            >
+                                <Send size={16} className="ml-[-1px] text-white sm:h-[18px] sm:w-[18px]" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex min-h-[44px] items-center gap-2 border-t border-white/6 px-3 py-2 sm:px-4">
                         <button
-                            className="p-3 ml-1 rounded-2xl text-muted-foreground glass-button min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/80 transition-colors hover:text-foreground sm:h-8 sm:w-8"
                             title="Attach file"
                             type="button"
                             tabIndex={-1}
                             onClick={() => fileInputRef.current?.click()}
                         >
-                            <Paperclip size={24} />
+                            <Paperclip size={16} className="sm:h-[18px] sm:w-[18px]" />
                         </button>
                         <input
                             ref={fileInputRef}
@@ -107,63 +160,10 @@ export const AIChatInput = ({
                                 if (file && onFileAttach) onFileAttach(file);
                             }}
                         />
-
-                        {/* Text Input */}
-                        <div className="relative flex-1">
-                            <textarea
-                                value={inputValue}
-                                onKeyDown={handleKeyDown}
-                                disabled={disabled}
-                                placeholder={DEFAULT_PLACEHOLDER}
-                                onChange={(e) => {
-                                    setInputValue(e.target.value);
-                                    resizeTextarea(e.target.value);
-                                    if (onChange) onChange(e.target.value);
-                                }}
-                                className={cn(
-                                    "flex-1 w-full font-medium text-[15px] md:text-[16px] py-3 px-2 bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:border-none tracking-[0.01em] horus-input-field",
-                                    "text-foreground placeholder:text-muted-foreground/70"
-                                )}
-                                style={{
-                                    position: "relative",
-                                    zIndex: 1,
-                                    color: "var(--foreground)",
-                                    WebkitTextFillColor: "var(--foreground)",
-                                    caretColor: "var(--foreground)",
-                                }}
-                                onFocus={handleActivate}
-                                ref={textareaRef}
-                                rows={1}
-                            />
+                        <div className="min-w-0 flex-1 text-muted-foreground">
+                            {footer}
                         </div>
-
-
-                        {isLoading ? (
-                            <button
-                                className="flex w-[50px] h-[50px] items-center rounded-2xl font-bold justify-center flex-shrink-0 transition-transform shadow-md min-h-[44px] min-w-[44px] horus-stop-button"
-                                onClick={onStop}
-                                type="button"
-                            >
-                                <StopCircle size={22} />
-                            </button>
-                        ) : (
-                            <button
-                                className={cn(
-                                    "flex w-[50px] h-[50px] items-center disabled:opacity-30 disabled:cursor-not-allowed justify-center rounded-2xl font-bold flex-shrink-0 transition-all shadow-md min-h-[44px] min-w-[44px] horus-send-button",
-                                    (inputValue.trim() || hasFiles) && "shadow-[0_0_16px_rgba(59,130,246,0.4)]"
-                                )}
-                                title="Send"
-                                type="button"
-                                disabled={!inputValue.trim() && !hasFiles}
-                                onClick={handleSend}
-                                tabIndex={-1}
-                            >
-                                <Send size={22} className="ml-[-2px] text-white" />
-                            </button>
-                        )}
-
                     </div>
-
                 </div>
             </div>
         </div>

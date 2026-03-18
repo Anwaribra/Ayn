@@ -2,21 +2,21 @@
    Shared glass primitives live in app/globals.css. */
 
 [data-section="platform"] {
-  --layer-0: #060608;
-  --layer-1: rgba(10, 10, 12, 0.96);
-  --layer-2: rgba(18, 18, 22, 0.72);
-  --layer-3: rgba(22, 22, 28, 0.86);
-  --layer-4: rgba(28, 28, 36, 0.94);
+  --layer-0: #050810;
+  --layer-1: rgba(9, 12, 20, 0.96);
+  --layer-2: rgba(16, 19, 30, 0.74);
+  --layer-3: rgba(20, 24, 36, 0.86);
+  --layer-4: rgba(24, 28, 42, 0.94);
 
-  --glass-bg: rgba(20, 20, 26, 0.42);
-  --glass-soft-bg: rgba(16, 16, 22, 0.56);
-  --glass-strong-bg: rgba(22, 22, 30, 0.74);
+  --glass-bg: rgba(18, 22, 34, 0.42);
+  --glass-soft-bg: rgba(14, 18, 30, 0.56);
+  --glass-strong-bg: rgba(20, 24, 38, 0.76);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-border-subtle: rgba(255, 255, 255, 0.08);
   --glass-blur: 16px;
   --glass-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.25);
   --glass-shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.5);
-  --glass-input-bg: rgba(10, 10, 14, 0.64);
+  --glass-input-bg: rgba(9, 12, 20, 0.68);
   --glass-input-border: rgba(255, 255, 255, 0.12);
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-outer: 0 12px 32px -18px rgba(0, 0, 0, 0.6);
@@ -142,7 +142,10 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: var(--bg-deep);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.08), transparent 34%),
+    radial-gradient(circle at 88% 82%, rgba(14, 165, 233, 0.06), transparent 30%),
+    linear-gradient(180deg, rgba(8, 12, 22, 0.98), rgba(5, 8, 16, 1));
 }
 
 [data-section="platform"] .mono {

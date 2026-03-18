@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Noto_Sans_Arabic, Playfair_Display, Inter } from "next/font/google"
+import { Geist, Geist_Mono, Noto_Sans_Arabic, Sora, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
@@ -25,10 +25,10 @@ const notoSansArabic = Noto_Sans_Arabic({
   subsets: ["arabic"],
   variable: "--font-arabic",
 })
-const playfairDisplay = Playfair_Display({
+const sora = Sora({
   subsets: ["latin"],
-  variable: "--font-playfair",
-  style: ["normal", "italic"],
+  variable: "--font-display",
+  weight: ["600", "700", "800"],
 })
 
 const siteDescription =
@@ -80,7 +80,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
+      <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${sora.variable}`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}

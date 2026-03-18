@@ -20,15 +20,15 @@ export default function OverviewPage() {
   if (loading) {
     return (
       <div className="p-8 space-y-6">
-        <div className="h-8 w-48 bg-[var(--surface)] rounded-lg animate-pulse" />
+        <div className="glass-surface h-8 w-48 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-[var(--surface)] rounded-2xl animate-pulse" />
+            <div key={i} className="glass-panel h-32 rounded-2xl animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-48 bg-[var(--surface)] rounded-2xl animate-pulse" />
+            <div key={i} className="glass-panel h-48 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -96,27 +96,27 @@ export default function OverviewPage() {
 
       {/* Quick Actions + Horus */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="p-6 rounded-2xl glass-panel glass-border">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        <div className="glass-panel glass-border rounded-2xl p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
             <Sparkles className="w-4 h-4 text-blue-500" /> Quick Actions
           </h2>
           <div className="space-y-2">
-            <Link href="/platform/evidence/upload" className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-hover)] transition-colors group">
+            <Link href="/platform/evidence/upload" className="glass-button group flex items-center gap-3 rounded-xl p-3 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><Upload className="w-4 h-4 text-emerald-500" /></div>
               <div className="flex-1"><p className="text-sm font-medium text-[var(--text-primary)]">Upload Evidence</p><p className="text-xs text-[var(--text-tertiary)]">Add documents for AI analysis</p></div>
               <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link href="/platform/gap-analysis" className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-hover)] transition-colors group">
+            <Link href="/platform/gap-analysis" className="glass-button group flex items-center gap-3 rounded-xl p-3 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><Target className="w-4 h-4 text-amber-500" /></div>
               <div className="flex-1"><p className="text-sm font-medium text-[var(--text-primary)]">Run Gap Analysis</p><p className="text-xs text-[var(--text-tertiary)]">Assess compliance readiness</p></div>
               <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link href="/platform/horus-ai" className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-hover)] transition-colors group">
+            <Link href="/platform/horus-ai" className="glass-button group flex items-center gap-3 rounded-xl p-3 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Brain className="w-4 h-4 text-blue-500" /></div>
               <div className="flex-1"><p className="text-sm font-medium text-[var(--text-primary)]">Ask Horus AI</p><p className="text-xs text-[var(--text-tertiary)]">Get instant compliance guidance</p></div>
               <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link href="/platform/ai-tools" className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-hover)] transition-colors group">
+            <Link href="/platform/ai-tools" className="glass-button group flex items-center gap-3 rounded-xl p-3 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><Clock className="w-4 h-4 text-purple-500" /></div>
               <div className="flex-1"><p className="text-sm font-medium text-[var(--text-primary)]">AI Tools</p><p className="text-xs text-[var(--text-tertiary)]">Remediation, audit prep & more</p></div>
               <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:translate-x-1 transition-transform" />
@@ -124,7 +124,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <Link href="/platform/horus-ai" className="group p-6 rounded-2xl glass-readable border border-blue-500/20 hover:border-blue-500/40 transition-all flex flex-col justify-between">
+        <Link href="/platform/horus-ai" className="glass-surface-strong group flex flex-col justify-between rounded-2xl border border-blue-500/20 p-6 transition-all hover:border-blue-500/35">
           <div>
             <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
               <Brain className="w-6 h-6 text-blue-400" />

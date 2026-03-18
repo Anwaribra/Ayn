@@ -240,6 +240,8 @@
     var(--font-inter), var(--font-geist), "Inter", "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "Geist Mono", monospace;
   --font-arabic: "Noto Sans Arabic", "Arial", sans-serif;
+  --font-display:
+    var(--font-display), "Sora", var(--font-inter), "Inter", "Segoe UI", sans-serif;
 
   /* Layer System Exposure */
   --color-layer-0: var(--layer-0);
@@ -325,6 +327,8 @@
   h5,
   h6 {
     @apply tracking-tight font-bold text-foreground;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
   }
 }
 
@@ -533,6 +537,116 @@
   opacity: 1;
 }
 
+.horus-file-chip,
+.horus-history-card,
+.horus-quick-action {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-soft-bg);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 2px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 2px));
+}
+
+.horus-file-chip {
+  border-radius: var(--radius-md);
+}
+
+.horus-history-card,
+.horus-quick-action {
+  border-radius: var(--radius-lg);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.horus-history-card:hover,
+.horus-quick-action:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+.horus-user-bubble {
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.94), rgba(29, 78, 216, 0.88));
+  color: rgb(239, 246, 255);
+  box-shadow:
+    0 18px 34px -24px rgba(37, 99, 235, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.horus-assistant-bubble {
+  background: var(--glass-strong-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.horus-assistant-bubble:hover {
+  border-color: var(--glass-border-subtle);
+}
+
+.horus-ai-icon {
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.06));
+  box-shadow: var(--glass-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: rgb(147, 197, 253);
+}
+
+.horus-tool-button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--muted-foreground);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.horus-tool-button:hover {
+  background: var(--glass-soft-bg);
+  border-color: var(--glass-border);
+  color: var(--foreground);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.horus-loading-orb {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background:
+    radial-gradient(circle at 35% 35%, rgba(96, 165, 250, 0.3), transparent 58%),
+    linear-gradient(180deg, rgba(17, 24, 39, 0.88), rgba(12, 18, 30, 0.82));
+  box-shadow:
+    0 16px 30px -20px rgba(37, 99, 235, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.horus-loading-orb::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  border: 2px solid rgba(96, 165, 250, 0.22);
+  border-top-color: rgba(96, 165, 250, 0.9);
+  animation: spin 1s linear infinite;
+}
+
+.horus-loading-line {
+  height: 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(96, 165, 250, 0.18), rgba(255, 255, 255, 0.04));
+  background-size: 180% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
 /* ─── Typography Utils ─── */
 .font-arabic {
   font-family: "Noto Sans Arabic", "Arial", sans-serif;
@@ -608,14 +722,14 @@
 .auth-glass-card {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.48);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  background: rgba(9, 14, 24, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
-    0 32px 80px -28px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 1px 2px rgba(0, 0, 0, 0.04);
+    0 28px 72px -32px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
 .auth-glass-card::before {
@@ -624,12 +738,12 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.12) 35%,
-    rgba(255, 255, 255, 0.02) 60%,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.05) 24%,
+    rgba(59, 130, 246, 0.05) 56%,
     transparent 100%
   );
-  opacity: 0.85;
+  opacity: 1;
   pointer-events: none;
 }
 
@@ -637,51 +751,56 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
   background-size: 4px 4px;
-  opacity: 0.08;
+  opacity: 0.04;
   mix-blend-mode: overlay;
   pointer-events: none;
 }
 
 .auth-glass-input {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  color: var(--foreground);
 }
 
 .auth-glass-button {
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 8px 18px -12px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 32px -24px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .auth-glass-button:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .auth-divider-line {
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .auth-divider-pill {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(11, 16, 26, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(226, 232, 240, 0.82);
 }
 
 .auth-card-highlight {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(59, 130, 246, 0.18);
 }
 
 .auth-chip {
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -695,17 +814,36 @@
 
 /* Auth role dropdown — glass style */
 .auth-select-dropdown {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(18, 24, 38, 0.998), rgba(8, 12, 20, 0.996));
+  color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 28px 56px -28px rgba(0, 0, 0, 0.82),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.auth-select-dropdown [data-slot="select-item"] {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.auth-select-dropdown [data-slot="select-item"]:hover,
+.auth-select-dropdown [data-slot="select-item"][data-highlighted] {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* Microsoft button + Coming Soon badge — higher contrast */
 .auth-microsoft-btn {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .auth-coming-soon {
@@ -714,35 +852,35 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 0.25rem 0.6rem;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.98);
 }
 
 /* Signup-specific card — gradient border glow */
 .auth-glass-card-signup {
   box-shadow:
-    0 32px 80px -28px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(59, 130, 246, 0.15),
-    0 0 40px -12px rgba(59, 130, 246, 0.25);
+    0 28px 72px -32px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 0 0 1px rgba(59, 130, 246, 0.14),
+    0 0 32px -18px rgba(59, 130, 246, 0.22);
 }
 
 .auth-glass-card-signup::before {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(56, 130, 246, 0.06) 30%,
-    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(56, 130, 246, 0.08) 30%,
+    rgba(255, 255, 255, 0.04) 50%,
     rgba(255, 255, 255, 0.02) 70%,
     transparent 100%
   );
 }
 
-/* Logo gradient — dark-to-blue for contrast on light glass */
+/* Logo gradient */
 .auth-logo-gradient {
-  background: linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%);
+  background: linear-gradient(135deg, #e2e8f0 0%, #93c5fd 45%, #3b82f6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -760,24 +898,62 @@
   margin: -0.25rem -0.5rem;
 }
 
+.auth-floating-label {
+  background: rgba(8, 12, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.auth-error {
+  background: rgba(127, 29, 29, 0.2);
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  color: rgb(254, 202, 202);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.auth-glass-button:disabled,
+.auth-cta-button:disabled,
+.auth-glass-input:disabled {
+  opacity: 0.68;
+}
+
+.auth-glass-button:disabled,
+.auth-cta-button:disabled {
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-password-rules {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+}
+
+.auth-rule-dot {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* CTA button glow */
 .auth-cta-button {
+  box-shadow: 0 18px 36px -20px rgba(37, 99, 235, 0.65);
   transition: box-shadow 0.25s ease, transform 0.2s ease;
 }
 
 .auth-cta-button:hover:not(:disabled) {
   box-shadow:
-    0 12px 30px -16px rgba(0, 0, 0, 0.6),
-    0 0 24px -4px rgba(59, 130, 246, 0.5);
+    0 18px 36px -20px rgba(0, 0, 0, 0.72),
+    0 0 20px -10px rgba(59, 130, 246, 0.45);
   transform: translateY(-1px);
 }
 
 /* Input focus glow — stronger for accessibility */
 .auth-glass-input:focus {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 0 2px rgba(59, 130, 246, 0.4),
-    0 0 20px -4px rgba(59, 130, 246, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 2px rgba(59, 130, 246, 0.28),
+    0 0 20px -8px rgba(59, 130, 246, 0.22);
 }
 
 /* Card Elevation System */
@@ -863,6 +1039,26 @@
 
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Focus States */

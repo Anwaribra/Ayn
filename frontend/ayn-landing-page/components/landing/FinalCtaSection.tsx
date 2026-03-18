@@ -26,9 +26,9 @@ export function FinalCtaSection() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 max-w-4xl mx-auto text-center"
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-black/5 backdrop-blur-md mb-8 shadow-sm">
+        <div className="glass-pill mb-8 inline-flex items-center gap-2 px-4 py-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+          <span className="glass-text-primary text-sm font-semibold tracking-wide uppercase">
             Transform your compliance
           </span>
         </div>
@@ -40,18 +40,18 @@ export function FinalCtaSection() {
           </span> Full Agent
         </h2>
         
-        <p className="text-xl md:text-2xl text-foreground/50 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
+        <p className="glass-text-secondary mb-12 max-w-2xl mx-auto text-xl md:text-2xl leading-relaxed font-medium">
           Ask, analyze, and execute. Move from questions to approved compliance actions in one intelligent flow.
         </p>
 
         {/* Magnetic Glow Button Wrapper */}
         <div className="group relative inline-flex items-center justify-center">
           {/* Intense animated background glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full blur-xl opacity-30 group-hover:opacity-70 group-hover:blur-2xl transition-all duration-500" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 blur-xl opacity-24 transition-all duration-500 group-hover:opacity-55 group-hover:blur-2xl" />
           
           <Link
             href="/signup"
-            className="relative inline-flex items-center justify-center gap-3 bg-foreground text-background px-10 py-5 rounded-full text-lg font-semibold hover:scale-[1.02] active:scale-95 transition-transform duration-300 shadow-2xl"
+            className="relative inline-flex items-center justify-center gap-3 rounded-full bg-foreground px-10 py-5 text-lg font-semibold text-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.42)] transition-transform duration-300 hover:scale-[1.02] active:scale-95"
           >
             Get Started Free
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />

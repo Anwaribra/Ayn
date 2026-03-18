@@ -30,7 +30,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
   if (insights.length === 0) return null
 
   return (
-    <div className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden">
+    <div className="glass-panel relative overflow-hidden rounded-3xl border-[var(--border-subtle)] p-8">
       <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-3xl pointer-events-none" />
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-8">
@@ -53,8 +53,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
                 className={cn(
-                  "flex items-start gap-4 p-4 rounded-2xl glass-readable border transition-all group",
-                  "hover:shadow-sm cursor-default",
+                  "glass-surface flex cursor-default items-start gap-4 rounded-2xl border p-4 transition-all hover:shadow-sm",
                   config.className
                 )}
               >
@@ -65,7 +64,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-sm font-bold text-foreground">{insight.title}</h4>
                     {insight.metric && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{insight.metric}</span>
+                      <span className="glass-pill glass-text-secondary px-2 py-0.5 text-[10px] font-bold">{insight.metric}</span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>

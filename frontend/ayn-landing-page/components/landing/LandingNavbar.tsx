@@ -82,6 +82,7 @@ export function LandingNavbar() {
     { label: "Platform", href: "/#main-content"       },
     { label: "Horus",    href: "/#horus-intelligence" },
     { label: "Features", href: "/#how-it-works"       },
+    { label: "Pricing",  href: "/#pricing"            },
     { label: "About",    href: "/#about"              },
     { label: "FAQ",      href: "/faq"                 },
   ]
@@ -204,8 +205,8 @@ export function LandingNavbar() {
             <Link
               href="/platform/dashboard"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm duration-300",
-                isOverDark ? "bg-white text-black hover:bg-white/90" : "bg-[#111] text-white hover:bg-black/90"
+                "hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto shadow-sm",
+                isOverDark ? "bg-white text-black hover:bg-white/90" : "border border-black/90 bg-black text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92"
               )}
             >
               Platform
@@ -214,8 +215,8 @@ export function LandingNavbar() {
              <Link
               href="/signup"
               className={cn(
-                "hidden md:inline-flex items-center text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:scale-[1.02] pointer-events-auto shadow-sm duration-300",
-                isOverDark ? "bg-white text-black hover:bg-white/90" : "bg-[#111] text-white hover:bg-black/90"
+                "hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto shadow-sm",
+                isOverDark ? "bg-white text-black hover:bg-white/90" : "border border-black/90 bg-black text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92"
               )}
             >
               Get Started
@@ -270,8 +271,7 @@ export function LandingNavbar() {
                   <>
                     <div className={cn("px-4 py-1.5 text-xs", isOverDark ? "text-white/45" : "text-muted-foreground")}>{user.name}</div>
                     <Link href="/platform/dashboard" onClick={closeMobile}
-                      className="px-4 py-3 rounded-xl text-sm font-semibold text-center"
-                      style={{ background: "#111", color: "#fff" }}>
+                      className="rounded-xl border border-black/90 bg-black px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92">
                       Go to Platform
                     </Link>
                     <button onClick={async () => { closeMobile(); await handleLogout() }}
@@ -296,8 +296,7 @@ export function LandingNavbar() {
                       Log in
                     </Link>
                     <Link href="/signup" onClick={closeMobile}
-                      className="px-4 py-3 rounded-xl text-sm font-semibold text-center mt-1"
-                      style={{ background: "#111", color: "#fff" }}>
+                      className="mt-1 rounded-xl border border-black/90 bg-black px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92">
                       Get Started
                     </Link>
                   </>

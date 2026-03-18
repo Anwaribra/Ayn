@@ -27,6 +27,7 @@ interface Message {
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
+type HorusResponseMode = "ask" | "think" | "agent"
 
 interface HorusContextValue {
     messages: Message[]
@@ -39,7 +40,7 @@ interface HorusContextValue {
         files?: File[],
         opts?: {
             visibleText?: string
-            responseMode?: "quick" | "report" | "json"
+            responseMode?: HorusResponseMode
             attachments?: AttachmentPreview[]
         }
     ) => Promise<void>
@@ -59,7 +60,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const [status, setStatus] = useState<HorusStatus>("idle")
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([])
     const [streamError, setStreamError] = useState<string | null>(null)
-    const lastUserMessageRef = useRef<{ text: string; files?: File[] } | null>(null)
+    const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
 
     // 1. Auto-Resume Last Session on mount
@@ -275,16 +276,26 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+    const getModeHint = (mode?: HorusResponseMode) => {
+        if (mode === "think") {
+            return "Think step by step before answering. Be thorough, structured, and explicit about reasoning when useful."
+        }
+        if (mode === "agent") {
+            return "Act as an execution agent. Prefer concrete actions, checks, and next steps. If a task can be broken into steps, do so clearly."
+        }
+        return ""
+    }
+
     const sendMessage = async (
         text = "",
         files?: File[],
         opts?: {
             visibleText?: string
-            responseMode?: "quick" | "report" | "json"
+            responseMode?: HorusResponseMode
             attachments?: AttachmentPreview[]
         }
     ) => {
-        lastUserMessageRef.current = { text, files }
+        lastUserMessageRef.current = { text, files, responseMode: opts?.responseMode }
         const hasFiles = !!files && files.length > 0
         const normalizedText = text?.trim() || ""
         const visibleUserText = opts?.visibleText ?? (
@@ -296,18 +307,9 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         )
 
         let base = buildModelMessage(text, files)
-        if (opts?.responseMode === "json") {
-            base = base.replace(/Do not return JSON or code\.?/gi, "Return valid JSON only.")
-        }
-        const modeHint =
-            opts?.responseMode === "report"
-                ? "Respond with a structured report using headings and bullet points."
-                : opts?.responseMode === "json"
-                    ? "Return valid JSON only. Do not include code fences or extra text."
-                    : opts?.responseMode === "quick"
-                        ? "Keep the response concise and to the point."
-                        : ""
-        const modelText = modeHint ? `${base}\n\n${modeHint}` : base
+        const modeHint = getModeHint(opts?.responseMode)
+        const modeDirective = opts?.responseMode ? `__MODE__:${opts.responseMode}\n` : ""
+        const modelText = `${modeDirective}${modeHint ? `${base}\n\n${modeHint}` : base}`
         await streamRequest(modelText, files, { appendUser: true, visibleUserText, attachments: opts?.attachments })
     }
 
@@ -324,7 +326,10 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             }
             return filtered
         })
-        const modelText = buildModelMessage(last.text, last.files)
+        const base = buildModelMessage(last.text, last.files)
+        const modeHint = getModeHint(last.responseMode)
+        const modeDirective = last.responseMode ? `__MODE__:${last.responseMode}\n` : ""
+        const modelText = `${modeDirective}${modeHint ? `${base}\n\n${modeHint}` : base}`
         await streamRequest(modelText, last.files, { appendUser: false })
     }
 

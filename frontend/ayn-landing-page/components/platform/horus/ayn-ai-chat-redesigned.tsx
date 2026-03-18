@@ -5,8 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import {
+  Brain,
   FileText,
   X,
   MessageSquare,
@@ -22,6 +29,7 @@ import {
   Download,
   ListChecks,
   RefreshCw,
+  Sparkles,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { api } from "@/lib/api"
@@ -44,6 +52,27 @@ export type ReasoningState = {
   isComplete: boolean
   tempUserMessage: string | null
 }
+
+const RESPONSE_MODES = [
+  {
+    key: "ask",
+    label: "Ask",
+    description: "Direct answers",
+    icon: MessageSquare,
+  },
+  {
+    key: "think",
+    label: "Think",
+    description: "Deeper reasoning",
+    icon: Brain,
+  },
+  {
+    key: "agent",
+    label: "Agent",
+    description: "Action-oriented",
+    icon: Sparkles,
+  },
+] as const
 
 // ─── Inline Thinking Bubble ──────────────────────────────────────────────────
 function InlineThinking({ reasoning }: { reasoning: ReasoningState | null }) {
@@ -175,7 +204,8 @@ export default function HorusAIChat() {
   } = useHorus()
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
-  const [responseMode, setResponseMode] = useState<"quick" | "report" | "json">("quick")
+  const [responseMode, setResponseMode] = useState<"ask" | "think" | "agent">("ask")
+  const [activeResponseMode, setActiveResponseMode] = useState<"ask" | "think" | "agent">("ask")
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
   // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
@@ -466,6 +496,7 @@ export default function HorusAIChat() {
   }
 
   const handleSendMessage = async (text: string, files?: File[]) => {
+    setActiveResponseMode(responseMode)
     const filesToUpload = files ?? attachedFiles.map((af) => af.file)
     setAttachedFiles([])
     const attachments = (files ?? attachedFiles).map((file, idx) => {
@@ -518,9 +549,11 @@ export default function HorusAIChat() {
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
   const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
   const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
+  const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
 
   const isEmpty = messages.length === 0
   const isProcessing = status !== "idle"
+  const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
 
   const visibleMessages = useMemo(() => {
     const sliced = messages.slice(-30).filter((msg) => {
@@ -541,36 +574,36 @@ export default function HorusAIChat() {
     new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
+      <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
       {/* New + History + Export as floating top-right (no header bar) */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
+      <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
         {/* M8: Export chat — only visible when conversation has messages */}
         {!isEmpty && (
-          <Button variant="ghost" size="sm" onClick={handleExportChat} className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="Export chat (.txt)">
+          <Button variant="ghost" size="sm" onClick={handleExportChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="Export chat (.txt)">
             <Download className="h-4 w-4" />
           </Button>
         )}
-        <Button variant="ghost" size="sm" onClick={newChat} className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="New chat (⌘N)">
+        <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-11 w-11 md:h-8 md:w-8 p-0 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground" title="History">
+            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="History">
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-80 sm:w-96 p-0 border-l border-border bg-[var(--layer-0)]">
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <h2 className="text-lg font-black text-foreground">Session History</h2>
-              <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded-full">
+          <SheetContent side="right" className="glass-flyout glass-text-primary inset-x-3 top-6 bottom-6 h-auto w-auto overflow-hidden rounded-[var(--radius-xl)] border border-[var(--glass-border)] p-0 sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:w-[380px] sm:max-w-[380px]">
+            <div className="glass-border flex items-center justify-between border-b px-5 pb-4 pt-5 pr-14 sm:px-6 sm:pb-5 sm:pt-6">
+              <h2 className="text-lg font-black tracking-tight text-foreground">Session History</h2>
+              <span className="glass-pill glass-text-secondary px-2.5 py-1 text-[10px] font-medium">
                 ⌘N new chat
               </span>
             </div>
-            <ScrollArea className="h-[calc(100vh-80px)]">
-              <div className="p-4 space-y-2">
+            <ScrollArea className="h-[calc(100dvh-8.25rem)] sm:h-[calc(100dvh-7rem)]">
+              <div className="space-y-3 p-3 sm:p-4">
                 {(!history || history.length === 0) ? (
-                  <div className="text-center py-12">
+                  <div className="glass-panel rounded-[var(--radius-lg)] px-5 py-10 text-center sm:py-12">
                     <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="text-xs font-medium text-muted-foreground">No chat history</p>
                   </div>
@@ -580,35 +613,34 @@ export default function HorusAIChat() {
                       key={session.id}
                       onClick={() => loadChat(session.id)}
                       className={cn(
-                        "group relative p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md",
+                        "group relative cursor-pointer rounded-[var(--radius-lg)] border p-3.5 transition-all sm:p-4",
                         currentChatId === session.id
-                          ? "bg-primary/10 border-primary/20 text-primary"
+                          ? "glass-panel border-primary/25 bg-primary/10 text-primary shadow-[0_20px_40px_-28px_rgba(37,99,235,0.55)]"
                           : "horus-history-card hover:border-primary/30 text-muted-foreground hover:text-foreground"
                       )}
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <p className={cn("text-sm font-bold truncate pr-6", currentChatId === session.id ? "text-primary" : "text-foreground")}>
+                        <p className={cn("pr-6 text-sm font-bold leading-snug", currentChatId === session.id ? "text-primary" : "text-foreground")}>
                           {session.title || "Untitled Conversation"}
                         </p>
                         <button
                           onClick={(e) => deleteSession(session.id, e)}
-                          className="text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-2 min-h-[36px] min-w-[36px]"
+                          className="horus-tool-button min-h-[36px] min-w-[36px] p-2 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      {/* L1: Preview — description or date */}
                       {session.description && (
-                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                           {session.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-[10px] text-muted-foreground font-medium">
+                      <div className="mt-3 flex items-center justify-between">
+                        <p className="text-[10px] font-medium text-muted-foreground">
                           {new Date(session.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </p>
                         {session.messageCount > 0 && (
-                          <span className="text-[9px] font-bold text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded-full">
+                          <span className="glass-pill glass-text-secondary px-1.5 py-0.5 text-[9px] font-bold">
                             {session.messageCount} msg{session.messageCount !== 1 ? "s" : ""}
                           </span>
                         )}
@@ -634,10 +666,6 @@ export default function HorusAIChat() {
             {isEmpty ? (
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
                 <div className="flex flex-col items-center justify-center gap-8 md:gap-10 w-full min-h-0 max-h-full py-2">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold glass-pill text-foreground">
-                    <span className="inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    Horus AI
-                  </div>
                   {/* Classic Orb Loader */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
@@ -649,8 +677,9 @@ export default function HorusAIChat() {
                   </motion.div>
                   <div className="text-center max-w-[620px]">
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">Ask anything about your compliance</h1>
-                    <p className="text-sm md:text-base text-muted-foreground mt-2">
-                      Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.
+                    <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                      <span className="sm:hidden">Run analysis or get your next best action.</span>
+                      <span className="hidden sm:inline">Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.</span>
                     </p>
                   </div>
 
@@ -666,16 +695,32 @@ export default function HorusAIChat() {
                       { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
                       { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
                       { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                    ].map((item) => (
+                    ].map((item, index) => (
                         <button
                           key={item.prompt}
+                          onClick={() => handleSendMessage(item.prompt)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] text-[12px] md:text-[13px] text-muted-foreground border transition-all duration-200 glass-pill horus-quick-action hover:text-foreground hover:border-primary/35"
+                          hidden={index > 1}
+                        >
+                          <span>{item.label}</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
+                        </button>
+                    ))}
+                    <div className="hidden sm:contents">
+                      {[
+                        { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
+                        { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
+                      ].map((item) => (
+                        <button
+                          key={`desktop-${item.prompt}`}
                           onClick={() => handleSendMessage(item.prompt)}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] text-[12px] md:text-[13px] text-muted-foreground border transition-all duration-200 glass-pill horus-quick-action hover:text-foreground hover:border-primary/35"
                         >
                           <span>{item.label}</span>
                           <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
                         </button>
-                    ))}
+                      ))}
+                    </div>
                   </motion.div>
                 </div>
               </div>
@@ -683,7 +728,7 @@ export default function HorusAIChat() {
               <>
                 {messages.length > 30 && (
                   <div className="flex justify-center py-3">
-                    <span className="text-[11px] text-muted-foreground/60 bg-muted/50 px-3 py-1 rounded-full">
+                    <span className="glass-pill glass-text-secondary px-3 py-1 text-[11px]">
                       Showing latest 30 of {messages.length} messages
                     </span>
                   </div>
@@ -692,7 +737,7 @@ export default function HorusAIChat() {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
-                        <span className="text-[10px] bg-muted text-muted-foreground px-3 py-1 rounded-full uppercase tracking-wider font-bold border border-border">
+                        <span className="glass-pill glass-text-secondary px-3 py-1 text-[10px] uppercase tracking-wider font-bold">
                           {msg.content}
                         </span>
                       </div>
@@ -700,12 +745,22 @@ export default function HorusAIChat() {
                   }
 
                   const isStreamingThis = status === "generating" && msg.role === "assistant" && msg.id === lastAssistantMsgId
+                  const shouldHideAssistantPlaceholder =
+                    msg.role === "assistant" &&
+                    isStreamingThis &&
+                    !msg.content?.trim() &&
+                    !(msg as any).structuredResult &&
+                    !msg.pendingConfirmation
+
+                  if (shouldHideAssistantPlaceholder) {
+                    return null
+                  }
 
                   return (
                     <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {msg.role === "user" ? (
-                        <div className="w-full py-4 flex flex-col items-end">
-                           <div className="text-[14px] px-4 py-3 rounded-3xl rounded-tr-lg max-w-[88%] whitespace-pre-wrap font-semibold horus-user-bubble">
+                        <div className="flex w-full flex-col items-end py-2 sm:py-4">
+                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-3xl rounded-tr-lg px-4 py-3 text-[14px] font-semibold sm:max-w-[88%]">
                              {msg.content}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
@@ -724,18 +779,10 @@ export default function HorusAIChat() {
                               ))}
                             </div>
                            )}
-                           <span className="mt-2 text-[10px] text-muted-foreground/70">{formatTimestamp(msg.timestamp)}</span>
+                           <span className="mt-1.5 text-[10px] text-muted-foreground/70 sm:mt-2">{formatTimestamp(msg.timestamp)}</span>
                         </div>
                       ) : (
-                        <div className="w-full py-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <MiniOrb
-                              state={status === "generating" && msg.id === lastAssistantMsgId ? status : "idle"}
-                            />
-                            <span className="text-sm font-bold text-foreground">Horus</span>
-                            <span className="text-[10px] text-muted-foreground/60">{formatTimestamp(msg.timestamp)}</span>
-                          </div>
-
+                        <div className="w-full space-y-2 py-2 sm:space-y-3 sm:py-4">
                           {/* Inline thinking disabled for cleaner UI */}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
@@ -747,7 +794,7 @@ export default function HorusAIChat() {
 
                           {/* Pending action confirmation */}
                           {msg.role === "assistant" && msg.pendingConfirmation && (
-                            <div className="mb-3 rounded-2xl p-4 animate-in fade-in zoom-in-95 duration-200 glass-surface">
+                            <div className="mb-3 rounded-2xl p-4 animate-in fade-in zoom-in-95 duration-200 glass-surface-strong">
                               <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
@@ -755,13 +802,13 @@ export default function HorusAIChat() {
                               <div className="mt-3 flex items-center gap-2">
                                 <button
                                   onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "confirm")}
-                                  className="px-3 py-2 min-h-[44px] rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                                  className="glass-button h-11 rounded-xl bg-primary/90 px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary"
                                 >
                                   Confirm
                                 </button>
                                 <button
                                   onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "cancel")}
-                                  className="px-3 py-2 min-h-[44px] rounded-md border border-[var(--border-subtle)] text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-[var(--surface-modal)] transition-colors"
+                                  className="glass-button glass-text-secondary h-11 rounded-xl px-3 py-2 text-xs font-semibold transition-colors hover:text-foreground"
                                 >
                                   Cancel
                                 </button>
@@ -771,8 +818,9 @@ export default function HorusAIChat() {
 
                           {msg.content && (
                             <div
+                              dir="auto"
                               className={cn(
-                                "text-foreground text-[15px] leading-relaxed horus-markdown-wrapper w-full prose dark:prose-invert max-w-none rounded-3xl rounded-tl-lg border border-transparent px-5 py-4 horus-assistant-bubble",
+                                "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-3xl rounded-tl-lg border border-transparent px-4 py-3.5 text-[15px] leading-relaxed text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-4",
                                 isStreamingThis && "horus-streaming-active"
                               )}
                             >
@@ -794,17 +842,17 @@ export default function HorusAIChat() {
 
                           {/* The 'Dual Action' Footer (Spec-Driven Workflow) */}
                           {msg.role === "assistant" && status !== "generating" && msg.id === lastAssistantMsgId && (
-                            <div className="mt-6 flex flex-wrap gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="glass-panel mt-2.5 flex flex-wrap gap-2 rounded-2xl p-2 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:mt-4 sm:gap-3 sm:p-3">
                               <button
                                 onClick={() => handleSendMessage("Generate Export Audit Report for this analysis")}
-                                className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-[var(--surface-modal)] hover:bg-primary/10 border border-[var(--border-subtle)] hover:border-primary/40 text-foreground font-semibold text-[13px] rounded-xl shadow-sm transition-all group"
+                                className="glass-button group flex min-h-[38px] items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold text-foreground transition-all hover:border-primary/40 sm:min-h-[44px] sm:px-4 sm:py-2.5 sm:text-[13px]"
                               >
                                 <FileText className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
                                 Export Audit Report
                               </button>
                               <button
                                 onClick={() => handleSendMessage("Apply Recommendations to optimize this document")}
-                                className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-[var(--surface-modal)] hover:bg-emerald-500/10 border border-[var(--border-subtle)] hover:border-emerald-500/40 text-foreground font-semibold text-[13px] rounded-xl shadow-sm transition-all group"
+                                className="glass-button group flex min-h-[38px] items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold text-foreground transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 sm:min-h-[44px] sm:px-4 sm:py-2.5 sm:text-[13px]"
                               >
                                 <ListChecks className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
                                 Apply Recommendations
@@ -814,48 +862,48 @@ export default function HorusAIChat() {
 
                           {/* M3: Feedback buttons + M1: Copy button — only on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && (
-                            <div className="flex items-center gap-1 mt-3">
+                            <div className="glass-panel mt-2 flex w-fit items-center gap-1 rounded-2xl p-1 sm:mt-3 sm:p-1.5">
                               {/* M1: Copy */}
                               {msg.content && (
                                 <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
                                   className={cn(
-                                    "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
+                                    "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
                                     copiedMsgId === msg.id
                                       ? "text-green-500 bg-green-500/10"
-                                      : "text-muted-foreground/40 hover:text-foreground hover:bg-muted/50"
+                                      : ""
                                   )}
                                   title={copiedMsgId === msg.id ? "Copied!" : "Copy response"}
                                 >
-                                  {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  {copiedMsgId === msg.id ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                                 </button>
                               )}
                               {/* Divider */}
-                              <div className="w-px h-3 bg-border mx-1" />
+                              <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
                               {/* M2: Feedback */}
                               <button
                                 onClick={() => handleFeedback(msg.id, "up")}
                                 className={cn(
-                                  "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
+                                  "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
                                   feedback[msg.id] === "up"
                                     ? "text-green-500 bg-green-500/10"
-                                    : "text-muted-foreground/40 hover:text-green-500 hover:bg-green-500/10"
+                                    : "hover:text-green-500 hover:bg-green-500/10"
                                 )}
                                 title="Helpful"
                               >
-                                <ThumbsUp className="w-3.5 h-3.5" />
+                                <ThumbsUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleFeedback(msg.id, "down")}
                                 className={cn(
-                                  "h-11 w-11 md:h-8 md:w-8 rounded-lg transition-colors inline-flex items-center justify-center",
+                                  "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
                                   feedback[msg.id] === "down"
                                     ? "text-red-500 bg-red-500/10"
-                                    : "text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10"
+                                    : "hover:text-red-500 hover:bg-red-500/10"
                                 )}
                                 title="Not helpful"
                               >
-                                <ThumbsDown className="w-3.5 h-3.5" />
+                                <ThumbsDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
                               {/* Persisted check — shows after feedback is saved to backend */}
                               {feedbackPersisted.has(msg.id) && (
@@ -870,25 +918,32 @@ export default function HorusAIChat() {
                 })}
 
                 {showLoadingBubble && (
-                  <div className="w-full py-4 animate-in fade-in">
-                    <div className="flex items-center gap-2">
-                      <div className="horus-loading-orb" />
-                      <div className="flex-1 space-y-2">
-                        <div className="horus-loading-line w-40" />
-                        <div className="horus-loading-line w-64" />
+                  <div className="w-full py-2 sm:py-4 animate-in fade-in">
+                    {isAskLoading ? (
+                      <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2">
+                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        <span className="text-[11px] font-medium">Answering…</span>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="glass-panel flex max-w-[14rem] items-center gap-2 rounded-2xl p-3 sm:max-w-none">
+                        <div className="horus-loading-orb" />
+                        <div className="flex-1 space-y-2">
+                          <div className="horus-loading-line w-24 sm:w-40" />
+                          <div className="horus-loading-line w-36 sm:w-64" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Stream error with retry */}
                 {streamError && status === "idle" && (
                   <div className="w-full py-4 animate-in fade-in">
-                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-destructive/20 bg-destructive/5">
+                    <div className="glass-panel flex items-center gap-3 rounded-2xl border-destructive/20 bg-destructive/5 p-4">
                       <div className="flex-1 text-sm text-destructive font-medium">{streamError}</div>
                       <button
                         onClick={() => retryLastMessage()}
-                        className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                        className="glass-button flex min-h-[40px] items-center gap-1.5 rounded-xl bg-primary/90 px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         Retry
@@ -905,8 +960,8 @@ export default function HorusAIChat() {
         </div>
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 flex-shrink-0 px-3 sm:px-4 pb-2 pt-1 z-20 flex flex-col items-center w-full bg-gradient-to-t from-background/60 via-background/20 to-transparent">
-          <div className="w-full max-w-[760px] mx-auto space-y-2">
+        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/70 via-background/25 to-transparent px-2.5 pb-1 pt-1 sm:px-4 sm:pb-2">
+          <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map((file) => (
@@ -919,25 +974,6 @@ export default function HorusAIChat() {
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2">
-              {[
-                { key: "quick", label: "Quick answer" },
-                { key: "report", label: "Report" },
-                { key: "json", label: "JSON" },
-              ].map((mode) => (
-                <button
-                  key={mode.key}
-                  onClick={() => setResponseMode(mode.key as typeof responseMode)}
-                  className={cn(
-                    "px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-full transition-colors glass-pill",
-                    responseMode === mode.key ? "bg-primary text-primary-foreground border-primary/40" : "text-muted-foreground"
-                  )}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-            
             <div>
               <AIChatInput
                 onSend={(message) => {
@@ -954,10 +990,43 @@ export default function HorusAIChat() {
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
+                footer={
+                  <div className="flex items-center gap-2">
+                    <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
+                      <SelectTrigger
+                        size="sm"
+                        className="h-8 min-w-0 rounded-full border-transparent bg-transparent px-1.5 py-1 text-[11px] font-medium text-muted-foreground shadow-none hover:text-foreground"
+                        aria-label="Horus response mode"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <currentResponseMode.icon className="h-3.5 w-3.5 text-primary" />
+                          <span>{currentResponseMode.label}</span>
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent className="w-56">
+                        {RESPONSE_MODES.map((mode) => (
+                          <SelectItem key={mode.key} value={mode.key}>
+                            <span className="flex items-center gap-2">
+                              <mode.icon className="h-4 w-4 text-primary" />
+                              <span className="flex flex-col">
+                                <span className="text-sm font-medium text-foreground">{mode.label}</span>
+                                <span className="text-[11px] text-muted-foreground">{mode.description}</span>
+                              </span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="hidden h-4 w-px bg-white/8 sm:block" />
+                    <span className="hidden text-[11px] font-medium text-muted-foreground/80 sm:block">
+                      Fast mode available
+                    </span>
+                  </div>
+                }
               />
             </div>
             
-            <p className="text-muted-foreground font-medium text-[11px] pb-2 pt-1 text-center w-full tracking-wide">
+            <p className="w-full pb-1 pt-0.5 text-center text-[10px] font-medium tracking-wide text-muted-foreground sm:pb-2 sm:pt-1 sm:text-[11px]">
                 Horus can make mistakes. Verify important data.
             </p>
           </div>

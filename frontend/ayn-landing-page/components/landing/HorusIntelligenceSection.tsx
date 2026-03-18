@@ -69,7 +69,7 @@ const NodeCard = ({
             <h4 className="text-base font-bold text-foreground mb-1.5 transition-colors">
               {title}
             </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed group-hover:text-muted-foreground/80 transition-colors">
+            <p className="glass-text-secondary text-xs leading-relaxed transition-colors group-hover:text-[var(--muted-foreground)]">
               {description}
             </p>
           </div>
@@ -297,7 +297,7 @@ export function HorusIntelligenceSection() {
           transition={{ delay: 0.8 }}
           className="mt-12 text-center"
         >
-          <p className="text-sm text-muted-foreground/80">
+          <p className="glass-text-secondary text-sm">
             Every upload, every assessment, every insight flows through Horus
           </p>
         </motion.div>

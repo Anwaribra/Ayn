@@ -84,24 +84,17 @@ export const SidebarItem = memo(function SidebarItem({
         isCollapsed && "justify-center px-0 mx-auto w-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
-          ? "glass-text-primary"
-          : "glass-text-secondary hover:text-[var(--glass-text-primary)]"
+          ? "glass-button glass-text-primary border-white/10 bg-white/7"
+          : "glass-text-secondary hover:bg-white/5 hover:text-[var(--glass-text-primary)]"
       )}
     >
       {active && (
-        <>
-          <motion.div
-            layoutId="active-indicator"
-            className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand)] shadow-[0_0_14px_rgba(56,189,248,0.8)]"
-            transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            layoutDependency={false}
-          />
-          {/* Glass highlight */}
-          <div className="absolute inset-0 rounded-2xl bg-white/6 border border-white/10 pointer-events-none" />
-        </>
-      )}
-      {!active && (
-        <div className="absolute inset-0 rounded-2xl bg-white/0 group-hover:bg-white/5 group-hover:border group-hover:border-white/10 pointer-events-none transition-all" />
+        <motion.div
+          layoutId="active-indicator"
+          className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand)] shadow-[0_0_14px_rgba(56,189,248,0.8)]"
+          transition={{ type: "spring", stiffness: 320, damping: 30 }}
+          layoutDependency={false}
+        />
       )}
 
       <item.icon
@@ -121,7 +114,6 @@ export const SidebarItem = memo(function SidebarItem({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
               </span>
-              <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]"></span>
             </span>
           )}
         </span>
@@ -189,7 +181,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       {/* Header: Logo when expanded, toggle always (centered when collapsed) */}
       <div
         className={cn(
-          "flex items-center py-4",
+          "flex items-center pb-4 pt-6 lg:py-4",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
@@ -215,7 +207,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
 
 
       {/* Navigation */}
-      <nav className={cn("flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
+      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
@@ -280,7 +272,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         {/* User Row */}
         <div
           className={cn(
-            "glass-panel group flex items-center rounded-2xl p-2 transition",
+            "glass-surface group flex items-center rounded-2xl p-2 transition",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
@@ -311,7 +303,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 e.stopPropagation()
                 handleLogout()
               }}
-              className="glass-button glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:text-red-400 lg:h-8 lg:w-8"
+              className="glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/6 hover:text-red-400 lg:h-8 lg:w-8"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />

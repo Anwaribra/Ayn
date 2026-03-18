@@ -303,15 +303,15 @@ class HorusService:
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
 
+        request_mode, message = self._extract_mode_token(message)
         client = get_gemini_client()
-        user_identity = await self._resolve_user_identity(user_id, current_user)
-        active_goal = await self._get_active_goal(user_id, chat_id)
+        fast_path = request_mode == "ask" or (request_mode != "agent" and self._should_use_fast_path(message=message, files=files))
         visual_only_request = self._is_visual_only(files)
         needs_analysis = self._needs_compliance_analysis(message)
         store_as_evidence = not (visual_only_request and not needs_analysis)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
-        if self._should_use_fast_path(message=message, files=files):
+        if fast_path:
             full_response = ""
             try:
                 if message:
@@ -326,7 +326,7 @@ class HorusService:
                 try:
                     history = await asyncio.wait_for(
                         ChatService.get_chat(chat_id, user_id, message_limit=6),
-                        timeout=0.5,
+                        timeout=0.2,
                     )
                     if history and getattr(history, "messages", None):
                         fast_messages = [{"role": m.role, "content": m.content} for m in history.messages[-6:]]
@@ -335,18 +335,29 @@ class HorusService:
                 except Exception:
                     pass
 
-                institution_line = f" They belong to institution '{user_identity['institution']}'." if user_identity.get("institution") else ""
-                memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
-                memory_line = f"\n\n{memory}" if memory else ""
-                goal_line = f" Active goal: {active_goal}." if active_goal else ""
+                direct_identity = current_user if isinstance(current_user, dict) else {
+                    "name": getattr(current_user, "name", None),
+                    "email": getattr(current_user, "email", ""),
+                    "role": getattr(current_user, "role", "USER"),
+                    "institution": getattr(getattr(current_user, "institution", None), "name", "") if current_user else "",
+                }
+                user_name = direct_identity.get("name") or "User"
+                user_email = direct_identity.get("email") or ""
+                user_role = str(direct_identity.get("role") or "USER")
+                institution_name = direct_identity.get("institution") or ""
+                institution_line = ""
+                if institution_name:
+                    institution_line = f" They belong to institution '{institution_name}'."
+                memory_line = ""
 
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
                         f"You are Horus (حورس), the AI assistant for the Ayn platform. "
-                        f"The user's name is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}).{institution_line}{goal_line} "
+                        f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
                         f"Address them by name when appropriate. "
-                        f"Answer conversational and general questions clearly. "
+                        f"Answer conversational and general questions immediately and clearly. "
+                        f"Prefer the shortest complete useful answer. "
                         f"Do not claim you accessed platform state unless explicitly requested."
                         f"{memory_line}"
                     ),
@@ -371,8 +382,11 @@ class HorusService:
                     asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
             return
 
+        user_identity = await self._resolve_user_identity(user_id, current_user)
+        active_goal = await self._get_active_goal(user_id, chat_id)
+
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
-        if message and not files:
+        if message and not files and request_mode != "think":
             try:
                 from app.core.db import db as prisma_client
 
@@ -404,7 +418,7 @@ class HorusService:
                     tool_name = pending["tool_name"]
                     args = pending.get("args", {})
                     yield "__THINKING__:Executing confirmed action...\n"
-                    await asyncio.sleep(0.25)
+                    await asyncio.sleep(0.05)
 
                     if tool_name == "__plan__":
                         plan_steps = pending.get("plan_steps", [])
@@ -450,12 +464,7 @@ class HorusService:
                             phase="confirmed",
                         )
 
-                        narrative_prompt = (
-                            "You are Horus. Summarize this confirmed action execution in 2 concise sentences.\n\n"
-                            f"Tool: {tool_name}\n"
-                            f"Tool result JSON: {json.dumps(tool_result)}\n"
-                        )
-                        narrative_text = (await client.generate_text(prompt=narrative_prompt) or "Action completed.").strip()
+                        narrative_text = self._summarize_tool_result(tool_name, tool_result, message)
                         if narrative_text:
                             yield ("\n" if tool_result.get("type") in STRUCTURED_RESULT_TYPES else "") + narrative_text
 
@@ -498,6 +507,7 @@ class HorusService:
                     message=message,
                     platform_snapshot=snapshot,
                     goal=active_goal,
+                    mode=request_mode,
                 )
 
                 if plan and plan.get("mode") == "tool":
@@ -511,11 +521,11 @@ class HorusService:
 
                         tool_meta = get_tool_ui_meta(tool_name)
                         yield "__THINKING__:Reading your platform data...\n"
-                        await asyncio.sleep(0.25)
+                        await asyncio.sleep(0.05)
                         yield f"__THINKING__:Identified action: {tool_meta['title']}\n"
-                        await asyncio.sleep(0.25)
+                        await asyncio.sleep(0.05)
                         yield f"__THINKING__:Preparing {tool_meta['prepare_text']}...\n"
-                        await asyncio.sleep(0.25)
+                        await asyncio.sleep(0.05)
 
                         if requires_explicit_confirmation(tool_name):
                             confirm_id = str(uuid4())
@@ -573,15 +583,7 @@ class HorusService:
                             phase="auto",
                         )
 
-                        narrative_prompt = (
-                            "You are Horus. Summarize this tool execution in 2 concise sentences. "
-                            "If relevant, include exactly one next step.\n\n"
-                            f"User message: {message}\n"
-                            f"Tool: {tool_name}\n"
-                            f"Tool result JSON: {json.dumps(tool_result)}\n"
-                        )
-                        narrative_text = await client.generate_text(prompt=narrative_prompt)
-                        narrative_text = (narrative_text or "Agent action completed.").strip()
+                        narrative_text = self._summarize_tool_result(tool_name, tool_result, message)
                         if narrative_text:
                             if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
                                 yield "\n" + narrative_text
@@ -762,15 +764,16 @@ class HorusService:
                 )
 
         # 3. AI Interaction (Streaming)
-        memory = await self._get_conversation_memory(user_id, exclude_chat_id=chat_id)
-        context = await self._prepare_context_sync(
+        memory_task = asyncio.create_task(self._get_conversation_memory(user_id, exclude_chat_id=chat_id))
+        context_task = asyncio.create_task(self._prepare_context_sync(
             summary,
             recent_activities,
             message=message,
             mapping_context=mapping_context,
             user_identity=user_identity,
             goal=active_goal
-        )
+        ))
+        memory, context = await asyncio.gather(memory_task, context_task)
         if memory:
             context = memory + "\n\n" + context
         
@@ -799,20 +802,20 @@ class HorusService:
             
             if visual_only:
                 yield "__THINKING__:Phase 1: Reading visual content...\n"
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.05)
                 yield "__THINKING__:Phase 2: Identifying key UI elements...\n"
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.05)
                 yield "__THINKING__:Phase 3: Summarizing observations...\n"
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.05)
             else:
                 yield "__THINKING__:Phase 1 (Identify): Scanning document category...\n"
-                await asyncio.sleep(0.4)
+                await asyncio.sleep(0.05)
                 yield "__THINKING__:Phase 2 (Deconstruct): Splitting PDF into semantic chunks and metadata...\n"
-                await asyncio.sleep(0.4)
+                await asyncio.sleep(0.05)
                 yield "__THINKING__:Phase 3 (Analyze): Cross-referencing against internal Quality Constitution...\n"
-                await asyncio.sleep(0.4)
+                await asyncio.sleep(0.05)
                 yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
-                await asyncio.sleep(0.4)
+                await asyncio.sleep(0.05)
             
             if visual_only:
                 yield "__THINKING__:Phase 4: Finalizing response...\n"
@@ -1194,6 +1197,16 @@ class HorusService:
             return None
         return message[len(prefix):].strip() or None
 
+    def _extract_mode_token(self, message: str | None) -> tuple[str | None, str]:
+        if not message:
+            return None, ""
+        prefix = "__MODE__:"
+        if not message.startswith(prefix):
+            return None, message
+        first_line, _, remainder = message.partition("\n")
+        mode = first_line[len(prefix):].strip().lower() or None
+        return mode, remainder
+
     def _should_use_fast_path(self, message: str | None, files: List[Any] | None) -> bool:
         if files:
             return False
@@ -1295,19 +1308,24 @@ class HorusService:
         message: str,
         platform_snapshot: Dict[str, Any],
         goal: str | None = None,
+        mode: str | None = None,
     ) -> Dict[str, Any] | None:
         tool_manifest = build_tool_manifest()
 
         goal_block = f"\nActive session goal:\n{goal}\n" if goal else ""
+        mode_block = ""
+        if mode == "agent":
+            mode_block = '\nMode bias:\n- The user explicitly selected AGENT mode.\n- Prefer mode "tool" or "plan" whenever a platform action can help.\n- Use mode "chat" only when no tool meaningfully helps.\n'
         planner_prompt = f"""
 You are Horus planner. Decide whether to call exactly one tool or answer as chat.
 
 User message:
 {message}
 {goal_block}
+{mode_block}
 
 Platform snapshot JSON:
-{json.dumps(platform_snapshot)[:8000]}
+{json.dumps(platform_snapshot)[:5000]}
 
 Available tools:
 {json.dumps(tool_manifest)}
@@ -1343,6 +1361,28 @@ Rules:
         if not isinstance(parsed.get("arguments", {}), dict):
             parsed["arguments"] = {}
         return parsed
+
+    def _summarize_tool_result(self, tool_name: str, result: dict, user_message: str | None = None) -> str:
+        result_type = result.get("type", "unknown")
+        if result_type == "job_started":
+            job_id = result.get("jobId") or result.get("job_id")
+            return f"I started `{tool_name}` successfully.{f' Job ID: {job_id}.' if job_id else ''}"
+        if result_type == "action_error":
+            detail = result.get("message") or result.get("error") or "The action did not complete successfully."
+            return str(detail)
+        if result_type == "audit_report":
+            return "I generated the audit report and attached the structured output above."
+        if result_type == "gap_table":
+            return "I prepared the gap analysis table and highlighted the main issues above."
+        if result_type == "remediation_plan":
+            return "I generated a remediation plan with the next recommended steps."
+        if result_type == "analytics_report":
+            return "I prepared the analytics summary and included the structured result above."
+        if isinstance(result.get("message"), str) and result["message"].strip():
+            return result["message"].strip()
+        if user_message:
+            return f"I completed `{tool_name}` for: {user_message.strip()}"
+        return f"I completed `{tool_name}` successfully."
 
     def _normalize_plan_steps(self, raw_steps: Any) -> list[dict]:
         if not isinstance(raw_steps, list):

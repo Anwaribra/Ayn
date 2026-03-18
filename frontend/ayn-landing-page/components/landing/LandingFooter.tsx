@@ -52,7 +52,7 @@ export function LandingFooter() {
             <Link href="/" className="inline-block mb-4">
               <span className="text-3xl font-bold tracking-tight text-white">Ayn</span>
             </Link>
-            <p className="text-sm text-white/45 leading-relaxed max-w-xs mb-6">
+            <p className="glass-text-secondary text-sm leading-relaxed max-w-xs mb-6">
               AI-powered quality assurance and compliance platform for educational institutions.
               Map evidence. Identify gaps. Execute actions.
             </p>
@@ -63,7 +63,7 @@ export function LandingFooter() {
                   key={label} href={href} aria-label={label}
                   whileHover={{ scale: 1.1, y: -2 }}
                   transition={{ type: "spring", stiffness: 400 }}
-                  className="glass-button flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:text-white"
+                  className="glass-button flex h-8 w-8 items-center justify-center rounded-lg text-white/58 transition-colors hover:text-white"
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </motion.a>
@@ -74,21 +74,21 @@ export function LandingFooter() {
           {/* Link columns */}
           {Object.entries(links).map(([category, items]) => (
             <div key={category}>
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">
+              <h4 className="glass-text-secondary text-xs font-semibold uppercase tracking-widest mb-4">
                 {category}
               </h4>
               <ul className="space-y-2.5">
                 {items.map(({ label, href }) => (
                   <li key={label}>
                     {href === "#" ? (
-                      <span className="flex items-center gap-2 text-sm text-white/30 cursor-not-allowed group" title="Coming Soon">
+                      <span className="glass-text-secondary flex items-center gap-2 text-sm cursor-not-allowed group" title="Coming Soon">
                         {label}
                         <span className="glass-pill text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded opacity-50 group-hover:opacity-100 transition-opacity">Soon</span>
                       </span>
                     ) : (
                       <Link
                         href={href}
-                        className="text-sm text-white/45 hover:text-white transition-colors duration-200"
+                        className="glass-text-secondary text-sm transition-colors duration-200 hover:text-white/86"
                       >
                         {label}
                       </Link>
@@ -103,13 +103,13 @@ export function LandingFooter() {
 
         {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-white/8">
-          <p className="text-xs text-white/25">
+          <p className="glass-text-secondary text-xs">
             © {new Date().getFullYear()} Ayn Platform. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-xs text-white/30">
-            <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white/60 transition-colors">Terms of Service</Link>
-            <Link href="/security" className="hover:text-white/60 transition-colors">Security</Link>
+          <div className="glass-text-secondary flex items-center gap-4 text-xs">
+            <Link href="/privacy" className="transition-colors hover:text-white/86">Privacy Policy</Link>
+            <Link href="/terms" className="transition-colors hover:text-white/86">Terms of Service</Link>
+            <Link href="/security" className="transition-colors hover:text-white/86">Security</Link>
           </div>
         </div>
       </div>

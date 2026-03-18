@@ -84,8 +84,8 @@ export const SidebarItem = memo(function SidebarItem({
         isCollapsed && "justify-center px-0 mx-auto w-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
-          ? "text-white shadow-[0_8px_18px_rgba(0,0,0,0.25)]"
-          : "text-zinc-400 hover:text-white"
+          ? "glass-text-primary"
+          : "glass-text-secondary hover:text-[var(--glass-text-primary)]"
       )}
     >
       {active && (
@@ -118,8 +118,8 @@ export const SidebarItem = memo(function SidebarItem({
           {item.id === "horus-ai" && (
             <span className="flex items-center">
               <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
               </span>
               <span className="text-[9px] uppercase tracking-widest font-black text-[var(--brand)]"></span>
             </span>
@@ -137,8 +137,8 @@ export const SidebarItem = memo(function SidebarItem({
           {item.label}
           {item.id === "horus-ai" && (
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--brand)" }}></span>
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--brand)" }}></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
             </span>
           )}
         </TooltipContent>
@@ -174,8 +174,8 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       className={cn(
         "will-change-transform",
         "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
-        "bg-[#050810] text-[#f5f5f3] border border-white/5", // FORCED DARK STYLE
-        "rounded-[28px]",
+        "glass-sidebar glass-text-primary",
+        "rounded-3xl",
         "m-3 h-[calc(100dvh-1.5rem)]",
         // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
         open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
@@ -201,7 +201,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         <button
           onClick={onToggle}
           type="button"
-          className="inline-flex h-11 w-11 lg:h-9 lg:w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 shadow-sm transition-all hover:border-white/20 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#050810]"
+          className="glass-button glass-text-secondary inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all hover:text-[var(--glass-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:h-9 lg:w-9"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -225,7 +225,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
             <div className="px-2">
-              <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+              <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
                 Compliance Core
               </p>
               <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
@@ -239,7 +239,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
           {!isCollapsed && (
             <div className="px-2">
-              <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+              <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
                 Reporting & Automation
               </p>
               <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
@@ -280,7 +280,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         {/* User Row */}
         <div
           className={cn(
-            "group flex items-center rounded-2xl p-2 transition border border-white/5 bg-white/5 shadow-[0_10px_18px_rgba(0,0,0,0.25)]",
+            "glass-panel group flex items-center rounded-2xl p-2 transition",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
@@ -293,11 +293,11 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             )}
             title="Go to profile"
           >
-            <UserCircle2 className="h-6 w-6 text-zinc-300 shrink-0 transition-colors" />
+            <UserCircle2 className="glass-text-secondary h-6 w-6 shrink-0 transition-colors" />
 
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">
-                <p className="text-sm font-semibold truncate text-white">
+                <p className="glass-text-primary truncate text-sm font-semibold">
                   {user?.name ?? "User"}
                 </p>
               </div>
@@ -311,7 +311,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 e.stopPropagation()
                 handleLogout()
               }}
-              className="ml-2 shrink-0 inline-flex h-11 w-11 lg:h-8 lg:w-8 items-center justify-center rounded-lg hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors"
+              className="glass-button glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:text-red-400 lg:h-8 lg:w-8"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />

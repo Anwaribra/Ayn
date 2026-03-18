@@ -215,7 +215,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       {/* Backdrop when sidebar is overlay (below lg) */}
       <div
         className={cn(
-          "fixed inset-0 bg-black/50 z-[45] lg:hidden backdrop-blur-sm transition-opacity duration-300",
+          "glass-overlay-backdrop fixed inset-0 z-40 lg:hidden transition-opacity duration-300",
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={() => setSidebarOpen(false)}
@@ -398,9 +398,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                             <div
                               key={n.id}
                               className={cn(
-                                "flex gap-3 group cursor-pointer hover:bg-layer-3 p-3 rounded-xl transition-all",
+                                "glass-button flex gap-3 group cursor-pointer p-3 rounded-xl transition-all",
                                 !n.isRead
-                                  ? "bg-layer-1 border border-border"
+                                  ? "glass-panel"
                                   : "opacity-70",
                               )}
                               onClick={() => handleDismissNotification(n.id)}
@@ -461,7 +461,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                             setShowNotifications(false);
                             router.push("/platform/notifications");
                           }}
-                          className="w-full mt-4 py-3 rounded-2xl bg-layer-3 hover:bg-layer-1 transition-colors text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground text-center border border-border"
+                          className="glass-button glass-text-secondary mt-4 w-full rounded-2xl py-3 text-center text-[10px] font-bold uppercase tracking-widest transition-colors hover:text-[var(--glass-text-primary)]"
                         >
                           View All Activity
                         </button>

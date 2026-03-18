@@ -80,11 +80,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* ❌ No white flash: force dark bg BEFORE any JS/React paint */}
-        <style dangerouslySetInnerHTML={{ __html: "html,body{background:#050810}" }} />
-        <meta name="theme-color" content="#050810" />
-      </head>
       <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${playfairDisplay.variable}`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

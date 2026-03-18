@@ -5,7 +5,7 @@ import { AynLogo } from "@/components/ayn-logo"
 
 export default function GlobalLoading() {
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-md">
       <motion.div
         animate={{
           scale: [1, 1.05, 1],

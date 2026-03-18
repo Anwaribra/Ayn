@@ -133,7 +133,7 @@ export function HorusAIWidget() {
         whileTap={{ scale: 0.95 }}
       >
         <Brain className="w-6 h-6" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
+        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[var(--status-success)] animate-pulse" />
       </motion.button>
 
       {/* Chat Panel */}
@@ -146,31 +146,31 @@ export function HorusAIWidget() {
             transition={{ duration: 0.2 }}
             className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)]"
           >
-            <div className="glass rounded-3xl overflow-hidden shadow-2xl bg-layer-2">
+            <div className="glass-surface-strong glass-text-primary overflow-hidden rounded-3xl">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border bg-layer-1/50">
+              <div className="glass-border flex items-center justify-between border-b p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+                  <div className="glass-panel flex h-10 w-10 items-center justify-center rounded-xl">
                     <Brain className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-foreground">Horus AI</h4>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
-                      <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--status-success)" }}>Neural Link Active</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-success)] animate-pulse" />
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--status-success)]">Neural Link Active</span>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-layer-3"
+                  className="glass-button glass-text-secondary rounded-lg p-2 transition-colors hover:text-[var(--glass-text-primary)]"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Messages */}
-              <div ref={scrollRef} className="h-[320px] overflow-y-auto p-4 space-y-4 custom-scrollbar bg-layer-0/30">
+              <div ref={scrollRef} className="h-[320px] space-y-4 overflow-y-auto p-4 custom-scrollbar">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -182,8 +182,8 @@ export function HorusAIWidget() {
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm",
                       msg.role === "assistant"
-                        ? "bg-primary"
-                        : "bg-muted"
+                        ? "glass-panel"
+                        : "glass-panel"
                     )}>
                       {msg.role === "assistant" ? (
                         <Brain className="w-4 h-4 text-primary-foreground" />
@@ -192,9 +192,9 @@ export function HorusAIWidget() {
                       )}
                     </div>
                     <div className={cn(
-                      "max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
+                      "max-w-[75%] rounded-2xl p-3 text-sm leading-relaxed",
                       msg.role === "assistant"
-                        ? "bg-layer-2 border border-border text-foreground rounded-tl-sm"
+                        ? "glass-bubble glass-text-primary rounded-tl-sm"
                         : "bg-primary text-primary-foreground border border-primary/30 rounded-tr-sm"
                     )}>
                       {msg.content}
@@ -204,10 +204,10 @@ export function HorusAIWidget() {
 
                 {isTyping && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+                    <div className="glass-panel flex h-8 w-8 items-center justify-center rounded-lg">
                       <Brain className="w-4 h-4 text-primary-foreground" />
                     </div>
-                    <div className="bg-layer-2 border border-border rounded-2xl rounded-tl-sm p-4 flex items-center gap-1 shadow-sm">
+                    <div className="glass-bubble flex items-center gap-1 rounded-2xl rounded-tl-sm p-4">
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -224,7 +224,7 @@ export function HorusAIWidget() {
                         <button
                           key={suggestion.id}
                           onClick={() => handleSend(suggestion.prompt)}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-layer-2 hover:bg-layer-3 border border-border hover:border-primary/30 transition-all text-left group shadow-sm"
+                          className="glass-panel flex items-center gap-3 rounded-xl p-3 text-left transition-all group hover:border-primary/30"
                         >
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <suggestion.icon className="w-4 h-4 text-primary" />
@@ -239,7 +239,7 @@ export function HorusAIWidget() {
               </div>
 
               {/* Input */}
-              <div className="p-4 border-t border-border bg-layer-1/50">
+              <div className="glass-border border-t p-4">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -247,13 +247,13 @@ export function HorusAIWidget() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
                     placeholder="Ask Horus anything..."
-                    className="flex-1 h-10 px-4 rounded-xl bg-layer-2/80 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                    className="glass-input glass-text-primary h-10 flex-1 rounded-xl px-4 text-sm placeholder:text-[var(--glass-text-secondary)] focus:outline-none"
                   />
                   <Button
                     size="icon"
                     onClick={() => handleSend(input)}
                     disabled={!input.trim() || isTyping}
-                    className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-md disabled:opacity-50"
+                    className="h-10 w-10 rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -263,7 +263,7 @@ export function HorusAIWidget() {
                     <button
                       key={reply}
                       onClick={() => handleSend(reply)}
-                      className="px-3 py-1.5 rounded-lg bg-layer-2 hover:bg-layer-3 border border-border text-[10px] text-muted-foreground hover:text-foreground transition-all shadow-sm"
+                      className="glass-button glass-text-secondary rounded-lg px-3 py-1.5 text-[10px] transition-all hover:text-[var(--glass-text-primary)]"
                     >
                       {reply}
                     </button>
@@ -309,7 +309,10 @@ export function SystemStatusWidget() {
             <Cpu className="w-5 h-5 text-primary-foreground" />
           </div>
           <span
-            className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--bg-deep)]", current.pulse && "animate-pulse")}
+            className={cn(
+              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--glass-bg-strong)]",
+              current.pulse && "animate-pulse"
+            )}
             style={{ backgroundColor: current.token }}
           />
         </div>
@@ -327,4 +330,3 @@ export function SystemStatusWidget() {
     </div>
   )
 }
-

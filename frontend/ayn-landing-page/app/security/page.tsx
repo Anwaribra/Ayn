@@ -4,8 +4,6 @@ import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { Shield, Lock, Eye, Server, Key, RefreshCw } from "lucide-react"
 
-const PAGE_BG = "#f5f5f3"
-
 const securityFeatures = [
   {
     icon: Lock,
@@ -41,17 +39,17 @@ const securityFeatures = [
 
 export default function SecurityPage() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: PAGE_BG }}>
+    <div className="min-h-screen flex flex-col bg-background">
       <LandingNavbar />
 
       <main className="flex-1 max-w-4xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+          <div className="glass-pill mb-4 inline-flex items-center gap-2 rounded-full border-emerald-500/20 px-3 py-1">
             <Shield className="w-3.5 h-3.5 text-emerald-600" />
             <span className="text-emerald-700 text-[10px] uppercase tracking-[0.2em] font-bold">Security First</span>
           </div>
-          <h1 className="text-4xl font-bold text-[#050810] mb-4">Security at Ayn</h1>
-          <p className="text-lg text-black/50 max-w-xl mx-auto">
+          <h1 className="glass-text-primary mb-4 text-4xl font-bold">Security at Ayn</h1>
+          <p className="glass-text-secondary mx-auto max-w-xl text-lg">
             Your institutional data deserves the highest level of protection.
             Security is built into every layer of the Ayn platform.
           </p>
@@ -61,26 +59,26 @@ export default function SecurityPage() {
           {securityFeatures.map((feature) => (
             <div
               key={feature.title}
-              className="p-6 rounded-2xl bg-white border border-black/5 shadow-sm hover:shadow-md transition-shadow"
+              className="glass-panel rounded-2xl p-6 transition-shadow"
             >
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center mb-4">
                 <feature.icon className="w-5 h-5 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold text-[#050810] mb-2">{feature.title}</h3>
-              <p className="text-sm text-black/50 leading-relaxed">{feature.description}</p>
+              <h3 className="glass-text-primary mb-2 text-lg font-semibold">{feature.title}</h3>
+              <p className="glass-text-secondary text-sm leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
 
-        <div className="text-center p-8 rounded-2xl bg-[#050810] text-white">
+        <div className="glass-surface-strong glass-text-primary rounded-2xl p-8 text-center">
           <h2 className="text-xl font-bold mb-3">Have Security Questions?</h2>
-          <p className="text-white/60 text-sm mb-5">
+          <p className="glass-text-secondary mb-5 text-sm">
             We take security seriously. If you have questions or want to report a vulnerability,
             please reach out to our team.
           </p>
           <a
             href="mailto:hello@ayn-edu.com"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#050810] font-semibold text-sm hover:bg-white/90 transition-colors"
+            className="glass-button glass-text-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors"
           >
             Contact Security Team
           </a>

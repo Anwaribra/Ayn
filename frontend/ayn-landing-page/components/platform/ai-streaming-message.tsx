@@ -67,7 +67,7 @@ export function AIStreamingMessage({
 
       {/* Content */}
       <div className="flex max-w-[80%] flex-col gap-1">
-        <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
+        <div className="glass-bubble glass-text-primary px-4 py-3">
           <div className="relative">
             <HorusMarkdown content={displayedText} />
             {isStreaming && !isComplete && (
@@ -94,7 +94,7 @@ export function AIStreamingMessage({
             <>
               <button
                 onClick={handlePauseToggle}
-                className="rounded-md p-1 text-muted-foreground/50 hover:bg-accent/50 hover:text-muted-foreground transition-colors"
+                className="glass-button glass-text-secondary p-1 transition-colors"
                 title={isPaused ? "Resume" : "Pause"}
               >
                 {isPaused ? (
@@ -105,14 +105,14 @@ export function AIStreamingMessage({
               </button>
               <button
                 onClick={handleStop}
-                className="rounded-md p-1 text-muted-foreground/50 hover:bg-accent/50 hover:text-muted-foreground transition-colors"
+                className="glass-button glass-text-secondary p-1 transition-colors"
                 title="Stop"
               >
                 <Square className="h-3 w-3" />
               </button>
             </>
           )}
-          <span className="text-[10px] text-muted-foreground/40">
+          <span className="glass-text-secondary text-[10px]">
             {isStreaming ? "Typing..." : isComplete ? "Done" : ""}
           </span>
         </div>
@@ -140,7 +140,7 @@ export function AIMessage({
         <Bot className="h-4 w-4 text-[var(--brand)]" />
       </div>
       <div className="flex max-w-[80%] flex-col gap-1">
-        <div className="rounded-2xl rounded-bl-md border border-white/[0.06] bg-card/80 px-4 py-3 shadow-sm backdrop-blur-sm">
+        <div className="glass-bubble glass-text-primary px-4 py-3">
           <HorusMarkdown content={content} />
         </div>
       </div>

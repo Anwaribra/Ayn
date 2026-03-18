@@ -20,13 +20,13 @@ export function DocumentEditor({ open, onOpenChange, draftContent, onSave, isSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl bg-[var(--surface-modal)] border-[var(--border-light)] p-0 overflow-hidden flex flex-col h-[80vh]">
+      <DialogContent className="glass-surface-strong max-w-4xl p-0 overflow-hidden flex flex-col h-[80vh]">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="flex items-center gap-2 text-xl font-black italic text-[var(--text-primary)]">
+          <DialogTitle className="glass-text-primary flex items-center gap-2 text-xl font-black italic">
             <Sparkles className="w-5 h-5 text-primary" />
             Horus Auto-Draft
           </DialogTitle>
-          <DialogDescription className="text-[var(--text-secondary)]">
+          <DialogDescription className="glass-text-secondary">
             Review the generated remediation document. Edit if necessary, then save it as Evidence.
           </DialogDescription>
         </DialogHeader>
@@ -35,22 +35,22 @@ export function DocumentEditor({ open, onOpenChange, draftContent, onSave, isSav
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="flex-1 w-full bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl p-4 font-mono text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            className="glass-input glass-text-primary flex-1 w-full p-4 font-mono text-sm resize-none focus:outline-none"
             placeholder="Document content goes here..."
           />
         </div>
 
-        <div className="p-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-3 bg-muted/20">
+        <div className="glass-border flex items-center justify-end gap-3 border-t p-4">
           <button
             onClick={() => onOpenChange(false)}
-            className="px-6 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:bg-muted transition-colors"
+            className="glass-button glass-text-secondary px-6 py-2 text-sm font-bold transition-colors"
           >
             Cancel
           </button>
           <button
             disabled={isSaving || !content}
             onClick={() => onSave(content)}
-            className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-50 disabled:scale-100"
+            className="flex items-center gap-2 rounded-[var(--radius-md)] bg-primary px-6 py-2 text-sm font-bold text-primary-foreground transition-all hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50"
           >
             {isSaving ? (
               <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />

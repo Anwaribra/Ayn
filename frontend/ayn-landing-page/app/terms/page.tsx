@@ -3,20 +3,19 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 
-const PAGE_BG = "#f5f5f3"
-
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: PAGE_BG }}>
+    <div className="min-h-screen flex flex-col bg-background">
       <LandingNavbar />
 
       <main className="flex-1 max-w-3xl mx-auto px-6 py-24">
-        <h1 className="text-4xl font-bold text-[#050810] mb-2">Terms of Service</h1>
-        <p className="text-sm text-black/40 mb-10">Last updated: March 12, 2026</p>
+        <div className="glass-surface glass-text-primary rounded-3xl p-8 md:p-10">
+        <h1 className="mb-2 text-4xl font-bold">Terms of Service</h1>
+        <p className="glass-text-secondary mb-10 text-sm">Last updated: March 12, 2026</p>
 
-        <div className="space-y-8 text-[#050810]/80 text-[15px] leading-relaxed">
+        <div className="glass-text-secondary space-y-8 text-[15px] leading-relaxed">
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">1. Acceptance of Terms</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">1. Acceptance of Terms</h2>
             <p>
               By accessing or using the Ayn Platform, you agree to be bound by these Terms of Service.
               If you do not agree to these terms, please do not use our services.
@@ -24,7 +23,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">2. Description of Service</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">2. Description of Service</h2>
             <p>
               Ayn provides an AI-powered quality assurance and compliance platform for educational
               institutions. Our services include evidence management, standards mapping, gap analysis,
@@ -33,7 +32,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">3. User Accounts</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">3. User Accounts</h2>
             <ul className="list-disc pl-6 space-y-1.5">
               <li>You must provide accurate and complete registration information</li>
               <li>You are responsible for maintaining the confidentiality of your account credentials</li>
@@ -43,7 +42,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">4. Acceptable Use</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">4. Acceptable Use</h2>
             <p className="mb-3">You agree not to:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li>Use the platform for any unlawful purpose</li>
@@ -55,7 +54,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">5. Intellectual Property</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">5. Intellectual Property</h2>
             <p>
               The Ayn platform, including Horus AI, all software, designs, and content, is the
               intellectual property of Ayn. You retain ownership of all content and documents
@@ -64,7 +63,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">6. AI-Generated Content</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">6. AI-Generated Content</h2>
             <p>
               Horus AI provides compliance analysis, gap detection, and recommendations as decision-support
               tools. AI-generated outputs should be reviewed by qualified professionals before being used
@@ -74,7 +73,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">7. Limitation of Liability</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">7. Limitation of Liability</h2>
             <p>
               Ayn shall not be liable for any indirect, incidental, special, or consequential damages
               arising from your use of the platform. Our total liability shall not exceed the amount
@@ -83,7 +82,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">8. Termination</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">8. Termination</h2>
             <p>
               We may suspend or terminate your account at any time for violation of these terms.
               Upon termination, you may request export of your data within 30 days.
@@ -91,12 +90,13 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#050810] mb-3">9. Contact</h2>
+            <h2 className="glass-text-primary mb-3 text-xl font-semibold">9. Contact</h2>
             <p>
               For questions about these Terms of Service, contact us at{" "}
               <a href="mailto:hello@ayn-edu.com" className="text-blue-600 hover:underline">hello@ayn-edu.com</a>.
             </p>
           </section>
+        </div>
         </div>
       </main>
 

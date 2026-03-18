@@ -53,6 +53,24 @@
     0 8px 32px -2px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-glow: 0 0 20px rgba(59, 111, 217, 0.3);
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
+  --glass-shadow-soft: var(--glass-shadow);
+  --glass-shadow-strong: var(--glass-shadow-hover);
+  --glass-input-bg: rgba(255, 255, 255, 0.84);
+  --glass-input-border: rgba(15, 23, 42, 0.14);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
+  --glass-ring: rgba(59, 111, 217, 0.35);
+  --glass-inner-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.08);
+  --glass-noise: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgdmlld0JveD0nMCAwIDEwMCAxMDAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PGZpbHRlciBpZD0nbiI+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMicgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNuKScgb3BhY2l0eT0nMC4wNScvPjwvc3ZnPg==");
+  --overlay-backdrop: rgba(6, 10, 20, 0.56);
+  --overlay-blur: 18px;
+  --z-header: 10;
+  --z-dropdown: 20;
+  --z-floating: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
 
   /* Enterprise Light Theme - Layer System */
   --layer-0: oklch(0.985 0.002 240);
@@ -119,6 +137,17 @@
   --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px rgba(59, 111, 217, 0.35);
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
+  --glass-shadow-soft: var(--glass-shadow);
+  --glass-shadow-strong: var(--glass-shadow-hover);
+  --glass-input-bg: rgba(18, 18, 24, 0.68);
+  --glass-input-border: rgba(255, 255, 255, 0.12);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-outer: 0 12px 32px -18px rgba(0, 0, 0, 0.6);
+  --glass-ring: rgba(59, 111, 217, 0.5);
+  --glass-inner-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.28);
+  --overlay-backdrop: rgba(0, 0, 0, 0.6);
 
   /* Enterprise Dark Theme - Layer System */
   --layer-0: oklch(0.1 0.01 260);
@@ -265,70 +294,188 @@
 
 /* ─── Glassmorphism Utilities ─── */
 .glass,
+.glass-panel,
+.glass-card,
 .glass-surface,
-.glass-surface-strong {
+.glass-surface-strong,
+.glass-layer-2,
+.glass-layer-3,
+.glass-flyout,
+.glass-toast,
+.glass-bubble,
+.glass-bubble-strong {
+  border: 1px solid var(--glass-border);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow-soft);
 }
 
 .glass,
-.glass-surface {
+.glass-panel,
+.glass-card,
+.glass-surface,
+.glass-layer-2,
+.glass-flyout,
+.glass-toast,
+.glass-bubble {
   background: var(--glass-soft-bg);
 }
 
-.glass-surface-strong {
+.glass-surface-strong,
+.glass-layer-3,
+.glass-bubble-strong {
   background: var(--glass-strong-bg);
+  box-shadow: var(--glass-shadow-strong);
 }
 
-.glass-card {
-  @apply transition-all duration-300;
-  background: var(--glass-soft-bg);
+.glass {
+  border-radius: var(--radius-xl);
+}
+
+.glass-layer-1,
+.glass-sidebar {
+  background: var(--layer-1);
+  color: var(--sidebar-foreground, var(--primary-foreground));
+  border: 1px solid var(--sidebar-border, var(--glass-border));
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+.glass-layer-1 {
   border-radius: var(--radius-xl);
+}
+
+.glass-panel,
+.glass-card,
+.glass-surface,
+.glass-surface-strong,
+.glass-layer-2,
+.glass-layer-3,
+.glass-flyout,
+.glass-toast {
+  border-radius: var(--radius-xl);
+}
+
+.glass-panel,
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--glass-shadow-soft), var(--glass-inner-shadow);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.glass-panel::after,
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--glass-noise);
+  opacity: 0.16;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.glass-panel:hover,
+.glass-card:hover,
+.glass-flyout:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-subtle);
+  box-shadow: var(--glass-shadow-strong);
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--glass-shadow-hover);
-  border-color: var(--glass-border-subtle);
 }
 
 .glass-card-no-lift:hover {
   transform: none;
 }
 
-/* ─── Typography Utils ─── */
-.font-arabic {
-  font-family: "Noto Sans Arabic", "Arial", sans-serif;
+.glass-flyout {
+  box-shadow: var(--glass-shadow-strong);
 }
 
-/* ─── Component Utilities ─── */
+.glass-input,
+.glass-field,
+.glass-select-trigger {
+  background: var(--glass-input-bg);
+  border: 1px solid var(--glass-input-border);
+  box-shadow: var(--glass-inset);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  border-radius: var(--radius-md);
+}
 
-/* Glass Panels (Legacy - uses semantic glass tokens) */
-.glass-panel {
-  background: var(--glass-soft-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+.glass-input:focus,
+.glass-field:focus,
+.glass-select-trigger:focus,
+.glass-focus-ring:focus-within {
+  outline: none;
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-outer);
+}
+
+.glass-button,
+.glass-menu-item {
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  transition: all 0.3s ease;
-  border-radius: var(--radius-xl);
+  background: var(--glass-soft-bg);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  border-radius: var(--radius-md);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
-.glass-panel:hover {
+.glass-button:hover,
+.glass-menu-item:hover,
+.glass-menu-item[data-highlighted] {
   background: var(--glass-bg);
-  box-shadow: var(--glass-shadow-hover);
-  border-color: var(--glass-border-subtle);
+  border-color: var(--glass-ring);
+  box-shadow: var(--glass-shadow-strong);
+}
+
+.glass-menu-item {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.glass-pill {
+  border: 1px solid var(--glass-border);
+  background: var(--glass-soft-bg);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 4px));
+  border-radius: 999px;
+}
+
+.glass-bubble,
+.glass-bubble-strong {
+  border-radius: var(--radius-lg);
 }
 
 .glass-readable {
   background: var(--glass-bg);
+}
+
+.glass-overlay-backdrop {
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(var(--overlay-blur));
+  -webkit-backdrop-filter: blur(var(--overlay-blur));
+}
+
+.glass-border {
+  border-color: var(--glass-border);
 }
 
 .glass-text-primary {
@@ -343,14 +490,16 @@
 .glass-panel .text-muted-foreground,
 .glass-surface .text-muted-foreground,
 .glass-surface-strong .text-muted-foreground,
-.glass-readable .text-muted-foreground {
+.glass-readable .text-muted-foreground,
+.glass-flyout .text-muted-foreground,
+.glass-toast .text-muted-foreground {
   color: var(--muted-foreground);
   opacity: 1;
 }
 
-.rounded-\[32px\],
-.rounded-\[36px\] {
-  border-radius: var(--radius-xl) !important;
+/* ─── Typography Utils ─── */
+.font-arabic {
+  font-family: "Noto Sans Arabic", "Arial", sans-serif;
 }
 
 /* ─── Auth Glass System ─── */
@@ -510,7 +659,7 @@
 
 /* Auth role dropdown — glass style */
 .auth-select-dropdown {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -519,8 +668,8 @@
 
 /* Microsoft button + Coming Soon badge — higher contrast */
 .auth-microsoft-btn {
-  background: rgba(0, 0, 0, 0.06) !important;
-  border-color: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .auth-coming-soon {

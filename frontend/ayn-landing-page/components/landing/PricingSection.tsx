@@ -4,8 +4,6 @@ import { motion } from "framer-motion"
 import { Check, Sparkles, Building2, Crown, Clock } from "lucide-react"
 import Link from "next/link"
 
-const DARK_BG = "#050810"
-
 const plans = [
   {
     name: "Starter",
@@ -69,7 +67,7 @@ const plans = [
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="relative overflow-hidden rounded-[1.75rem]" style={{ backgroundColor: DARK_BG, boxShadow: "0 10px 60px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.04)" }}>
+    <section id="pricing" className="glass-surface-strong relative overflow-hidden rounded-3xl">
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37,99,235,0.08), transparent 65%)" }} />
 
       <div className="relative z-10 max-w-6xl mx-auto px-8 py-20">
@@ -93,29 +91,29 @@ export function PricingSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`relative p-6 rounded-2xl border ${plan.popular ? "border-primary/40 bg-white/[0.04]" : "border-white/[0.08] bg-white/[0.02]"} flex flex-col`}
+            className={`glass-panel relative flex flex-col rounded-2xl p-6 ${plan.popular ? "border-primary/40" : ""}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-[0.2em] font-bold text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">Most Popular</div>
+                  <div className="glass-pill absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border-primary/30 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-primary">Most Popular</div>
                 )}
                 <div className={`w-10 h-10 rounded-xl ${plan.bg} flex items-center justify-center mb-4`}>
                   <plan.icon className={`w-5 h-5 ${plan.color}`} />
                 </div>
                 <h3 className="text-lg font-bold text-white">{plan.name}</h3>
-                <p className="text-xs text-white/40 mt-1 mb-4">{plan.description}</p>
+                <p className="glass-text-secondary mt-1 mb-4 text-xs">{plan.description}</p>
                 <div className="mb-6">
                   <span className="text-3xl font-bold text-white">{plan.price}</span>
-                  {plan.period && <span className="text-sm text-white/40">{plan.period}</span>}
+                  {plan.period && <span className="glass-text-secondary text-sm">{plan.period}</span>}
                 </div>
                 <ul className="space-y-2.5 mb-8 flex-1">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-white/60">
+                    <li key={f} className="glass-text-secondary flex items-start gap-2 text-sm">
                       <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <div className="block text-center py-3 px-6 rounded-xl text-sm font-semibold bg-white/[0.06] text-white border border-white/10">
+                <div className="glass-button glass-text-primary block rounded-xl px-6 py-3 text-center text-sm font-semibold">
                   Coming Soon
                 </div>
               </motion.div>
@@ -129,13 +127,13 @@ export function PricingSection() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center px-8 py-10 rounded-3xl glass-surface-strong border border-white/[0.08] shadow-2xl max-w-md"
+              className="glass-surface-strong max-w-md rounded-3xl px-8 py-10 text-center"
             >
-              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-5 border border-primary/30 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+              <div className="glass-panel mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border-primary/30">
                 <Clock className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Pricing Coming Soon</h3>
-              <p className="text-sm text-white/50 leading-relaxed mb-6">
+              <p className="glass-text-secondary mb-6 text-sm leading-relaxed">
                 We&apos;re crafting the perfect plans for every institution size. Sign up now to get free early access and be the first to know when pricing launches.
               </p>
               <Link

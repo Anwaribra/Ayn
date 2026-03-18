@@ -116,12 +116,12 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop fixed inset-0 z-40 flex items-center justify-center p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Confirm vault purge"
-        className="modal-container z-[70] glass-layer-3 rounded-3xl p-10 max-w-[520px] w-full border border-glass-border relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
+        className="modal-container glass-surface-strong relative z-50 w-full max-w-[520px] rounded-3xl p-10"
         onClick={(e) => e.stopPropagation()}
       >
         <button

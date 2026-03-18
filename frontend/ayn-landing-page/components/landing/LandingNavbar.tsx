@@ -20,18 +20,6 @@ function getInitials(name: string): string {
   return name.trim().split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
 }
 
-/**
- * Navbar — three-column: Logo | Pill | CTA
- *
- * Since the page background is now always off-white, the pill and logo
- * are always dark-on-light. No adaptive colour switching needed.
- *
- * Behaviour:
- * Behaviour:
- *  • At the very top → transparent
- *  • After scrolls down → full width backdrop-blur-md glassmorphism border
- *  • No floating pill layout anymore.
- */
 export function LandingNavbar() {
   const { user, logout } = useAuth()
   const [scrolled, setScrolled]   = useState(false)
@@ -126,7 +114,9 @@ export function LandingNavbar() {
         <nav
           className={cn(
             "hidden md:flex items-center gap-1 rounded-full transition-all duration-300 backdrop-blur-md px-6 py-2 shadow-sm border",
-            isOverDark ? "glass-surface border-white/10" : "glass-surface-strong border-black/10"
+            isOverDark
+              ? "border-white/10 bg-[rgba(10,12,18,0.58)] shadow-[0_18px_45px_-24px_rgba(0,0,0,0.65)]"
+              : "glass-surface-strong border-black/10"
           )}
         >
           {navItems.map(({ label, href }) => (
@@ -136,7 +126,7 @@ export function LandingNavbar() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
                 isOverDark 
-                  ? "text-white/80 hover:text-white hover:bg-white/10" 
+                  ? "text-white/72 hover:text-white hover:bg-white/8" 
                   : "text-black/75 hover:text-black hover:bg-black/5"
               )}
             >
@@ -154,7 +144,7 @@ export function LandingNavbar() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
                 isOverDark 
-                  ? "text-white/80 hover:text-white hover:bg-white/10" 
+                  ? "text-white/72 hover:text-white hover:bg-white/8" 
                   : "text-black/75 hover:text-black hover:bg-black/5"
               )}
             >
@@ -165,8 +155,8 @@ export function LandingNavbar() {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5 transition-colors duration-300", isOverDark ? "hover:bg-white/10" : "hover:bg-black/5")}>
-                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/15 text-white" : "bg-primary/15 text-primary")}>
+                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5 transition-colors duration-300", isOverDark ? "hover:bg-white/8" : "hover:bg-black/5")}>
+                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/10 text-white" : "bg-primary/15 text-primary")}>
                     {getInitials(user.name)}
                   </span>
                   <ChevronDown className={cn("h-3 w-3 transition-colors duration-300", isOverDark ? "text-white/60" : "text-black/50")} />
@@ -199,10 +189,10 @@ export function LandingNavbar() {
             ref={menuButtonRef}
             variant="ghost"
             size="icon"
-            className={cn(
-              "md:hidden h-9 w-9 rounded-full transition-colors duration-300 pointer-events-auto",
-              isOverDark ? "text-white hover:bg-white/20" : "text-black hover:bg-black/5"
-            )}
+              className={cn(
+                "md:hidden h-9 w-9 rounded-full transition-colors duration-300 pointer-events-auto",
+                isOverDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/5"
+              )}
             onClick={() => setMobileOpen(p => !p)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
@@ -252,7 +242,12 @@ export function LandingNavbar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: 0.18 }}
-              className="fixed left-4 right-4 top-[68px] z-50 md:hidden rounded-2xl glass-surface-strong border-black/8 shadow-2xl p-3"
+              className={cn(
+                "fixed left-4 right-4 top-[68px] z-50 rounded-2xl p-3 shadow-2xl md:hidden",
+                isOverDark
+                  ? "border border-white/10 bg-[rgba(10,12,18,0.82)] text-white backdrop-blur-xl"
+                  : "glass-surface-strong border-black/8"
+              )}
             >
               <div className="flex flex-col gap-0.5">
                 {navItems.map(({ label, href }) => (
@@ -260,29 +255,44 @@ export function LandingNavbar() {
                     key={label}
                     href={href}
                     onClick={closeMobile}
-                    className="px-4 py-3 rounded-xl text-sm font-medium text-foreground/75 hover:text-foreground hover:bg-black/5 transition-all"
+                    className={cn(
+                      "px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                      isOverDark
+                        ? "text-white/75 hover:bg-white/8 hover:text-white"
+                        : "text-foreground/75 hover:text-foreground hover:bg-black/5"
+                    )}
                   >
                     {label}
                   </Link>
                 ))}
-                <div className="my-2 border-t border-black/8" />
+                <div className={cn("my-2 border-t", isOverDark ? "border-white/10" : "border-black/8")} />
                 {user ? (
                   <>
-                    <div className="px-4 py-1.5 text-xs text-muted-foreground">{user.name}</div>
+                    <div className={cn("px-4 py-1.5 text-xs", isOverDark ? "text-white/45" : "text-muted-foreground")}>{user.name}</div>
                     <Link href="/platform/dashboard" onClick={closeMobile}
                       className="px-4 py-3 rounded-xl text-sm font-semibold text-center"
                       style={{ background: "#111", color: "#fff" }}>
                       Go to Platform
                     </Link>
                     <button onClick={async () => { closeMobile(); await handleLogout() }}
-                      className="px-4 py-3 rounded-xl text-sm text-left text-muted-foreground hover:text-destructive hover:bg-destructive/8">
+                      className={cn(
+                        "px-4 py-3 rounded-xl text-left text-sm",
+                        isOverDark
+                          ? "text-white/60 hover:bg-white/8 hover:text-red-300"
+                          : "text-muted-foreground hover:text-destructive hover:bg-destructive/8"
+                      )}>
                       Log out
                     </button>
                   </>
                 ) : (
                   <>
                     <Link href="/login" onClick={closeMobile}
-                      className="px-4 py-3 rounded-xl text-sm text-foreground/70 hover:text-foreground hover:bg-black/5">
+                      className={cn(
+                        "px-4 py-3 rounded-xl text-sm",
+                        isOverDark
+                          ? "text-white/70 hover:bg-white/8 hover:text-white"
+                          : "text-foreground/70 hover:text-foreground hover:bg-black/5"
+                      )}>
                       Log in
                     </Link>
                     <Link href="/signup" onClick={closeMobile}

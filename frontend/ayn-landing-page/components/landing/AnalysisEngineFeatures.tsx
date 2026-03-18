@@ -99,7 +99,7 @@ export function AnalysisEngineFeatures() {
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4">
           Core Engine Features
         </h2>
-        <p className="text-white/50 text-base md:text-lg max-w-2xl mx-auto">
+        <p className="glass-text-secondary text-base md:text-lg max-w-2xl mx-auto">
           Select a module to see how Horus handles complex compliance tasks in real-time.
         </p>
       </FadeUp>
@@ -118,8 +118,8 @@ export function AnalysisEngineFeatures() {
                     className={cn(
                       "w-full h-full relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
                       isActive 
-                        ? "bg-emerald-500/10 border-emerald-500/30" 
-                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                        ? "glass-panel border-emerald-500/30 bg-emerald-500/10" 
+                        : "glass-panel glass-border hover:border-white/12"
                     )}
                   >
                   {/* Active Indicator Line */}
@@ -135,7 +135,7 @@ export function AnalysisEngineFeatures() {
                   <div className="flex items-start gap-4">
                     <div className={cn(
                       "p-2 rounded-lg flex shrink-0 transition-colors",
-                      isActive ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "bg-white/5 text-white/40 group-hover:text-white/60 group-hover:bg-white/10"
+                      isActive ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "glass-button glass-text-secondary group-hover:text-white"
                     )}>
                       <Icon className="w-5 h-5" />
                     </div>
@@ -146,7 +146,7 @@ export function AnalysisEngineFeatures() {
                       )}>
                         {feature.title}
                       </h3>
-                      <p className="text-sm text-white/50 leading-relaxed font-medium mt-1">
+                      <p className="glass-text-secondary text-sm leading-relaxed font-medium mt-1">
                         {feature.description}
                       </p>
                     </div>
@@ -161,13 +161,13 @@ export function AnalysisEngineFeatures() {
         {/* Right Side: Terminal Window */}
         <FadeUp delay={0.2} className="lg:col-span-8 flex flex-col h-[400px] shadow-2xl relative z-20" width="100%">
           {/* Mac-style Window header */}
-          <div className="flex items-center justify-between px-4 py-3 glass-surface-strong border border-white/10 border-b-0 rounded-t-xl z-10">
+          <div className="glass-surface-strong glass-border z-10 flex items-center justify-between rounded-t-xl border border-b-0 px-4 py-3">
             <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-              <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+              <div className="w-3 h-3 rounded-full bg-red-400/90" />
+              <div className="w-3 h-3 rounded-full bg-amber-300/90" />
+              <div className="w-3 h-3 rounded-full bg-emerald-400/90" />
             </div>
-            <div className="flex items-center gap-2 text-white/40 text-[11px] uppercase tracking-wider font-mono">
+            <div className="glass-text-secondary flex items-center gap-2 text-[11px] uppercase tracking-wider font-mono">
               <Terminal className="w-3.5 h-3.5" />
               horus_engine
             </div>
@@ -175,7 +175,7 @@ export function AnalysisEngineFeatures() {
           </div>
 
           {/* Terminal Body */}
-          <div className="flex-1 glass-surface-strong border border-white/10 border-t-0 rounded-b-xl p-6 font-mono text-[13px] md:text-sm overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div className="glass-surface-strong glass-border relative flex-1 overflow-hidden rounded-b-xl border border-t-0 p-6 font-mono text-[13px] md:text-sm">
             {/* Subtle grid bg inside terminal */}
             <div 
               className="absolute inset-0 pointer-events-none opacity-[0.02]"
@@ -200,12 +200,12 @@ export function AnalysisEngineFeatures() {
                   if (!isVisible) return null
 
                   // Color coding for terminal output
-                  let colorClass = "text-white/60"
+                  let colorClass = "glass-text-secondary"
                   if (log.type === "system") colorClass = "text-blue-400"
                   if (log.type === "info") colorClass = "text-white/80"
                   if (log.type === "success") colorClass = "text-emerald-400"
                   if (log.type === "warning") colorClass = "text-amber-400"
-                  if (log.type === "error") colorClass = "text-[#ff5f56]"
+                  if (log.type === "error") colorClass = "text-red-400"
                   if (log.type === "process") colorClass = "text-purple-400"
 
                   return (

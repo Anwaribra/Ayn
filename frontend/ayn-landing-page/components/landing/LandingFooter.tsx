@@ -4,8 +4,6 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Github, Twitter, Linkedin, Mail } from "lucide-react"
 
-const DARK_BG = "#050810"
-
 const links = {
   Product: [
     { label: "Horus AI",      href: "/#horus-intelligence" },
@@ -36,14 +34,7 @@ const social = [
 
 export function LandingFooter() {
   return (
-    /* ── Dark rounded card — mirrors the hero and core-features cards ── */
-    <footer
-      className="relative overflow-hidden rounded-[1.75rem]"
-      style={{
-        backgroundColor: DARK_BG,
-        boxShadow: "0 10px 60px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.04)",
-      }}
-    >
+    <footer className="relative overflow-hidden rounded-3xl bg-transparent">
       {/* Subtle primary radial glow (top-left) */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -72,7 +63,7 @@ export function LandingFooter() {
                   key={label} href={href} aria-label={label}
                   whileHover={{ scale: 1.1, y: -2 }}
                   transition={{ type: "spring", stiffness: 400 }}
-                  className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/35 hover:text-white hover:border-white/25 hover:bg-white/8 transition-colors"
+                  className="glass-button flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:text-white"
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </motion.a>
@@ -92,7 +83,7 @@ export function LandingFooter() {
                     {href === "#" ? (
                       <span className="flex items-center gap-2 text-sm text-white/30 cursor-not-allowed group" title="Coming Soon">
                         {label}
-                        <span className="text-[9px] uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded opacity-50 group-hover:opacity-100 transition-opacity">Soon</span>
+                        <span className="glass-pill text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded opacity-50 group-hover:opacity-100 transition-opacity">Soon</span>
                       </span>
                     ) : (
                       <Link

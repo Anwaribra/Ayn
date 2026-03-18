@@ -36,9 +36,9 @@ export function HowItWorksSection() {
             How it works
           </span>
           <h2 className="text-4xl md:text-5xl lg:text-5xl font-bold tracking-tight text-white mb-6">
-            From evidence to action <span className="text-white/40">in minutes.</span>
+            From evidence to action <span className="glass-text-secondary">in minutes.</span>
           </h2>
-          <p className="text-white/40 text-sm md:text-base">
+          <p className="glass-text-secondary text-sm md:text-base">
             Three steps. Whether it's a single policy or a full institutional audit.
           </p>
         </FadeUp>
@@ -57,7 +57,7 @@ export function HowItWorksSection() {
                   <h3 className="text-lg font-bold text-white mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-white/40 leading-relaxed text-sm md:text-base">
+                  <p className="glass-text-secondary leading-relaxed text-sm md:text-base">
                     {step.description}
                   </p>
                 </div>
@@ -88,9 +88,9 @@ export function HowItWorksSection() {
               
               {/* Top Node */}
               <div className="flex flex-col items-center">
-                <div className="w-full relative px-6 py-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                <div className="glass-panel w-full relative flex flex-col items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-4 text-center">
                   <span className="text-sm font-bold text-white mb-1">Evidence Vault</span>
-                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono">Upload • Auto-Tag</span>
+                  <span className="glass-text-secondary text-[10px] uppercase tracking-widest font-mono">Upload • Auto-Tag</span>
                   <Database className="absolute -right-3 -top-3 w-6 h-6 text-emerald-500/50" />
                 </div>
                 {/* Connecting Line */}
@@ -99,10 +99,10 @@ export function HowItWorksSection() {
 
               {/* Middle Node */}
               <div className="flex flex-col items-center w-full">
-                <div className="w-full relative px-6 py-4 rounded-xl border border-white/15 bg-white/5 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                <div className="glass-panel glass-border w-full relative flex flex-col items-center justify-center rounded-xl px-6 py-4 text-center">
                   <span className="text-sm font-bold text-white mb-1">Horus AI Agent</span>
-                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono">Analyze • Map Gaps</span>
-                  <BrainCircuit className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-white/20" />
+                  <span className="glass-text-secondary text-[10px] uppercase tracking-widest font-mono">Analyze • Map Gaps</span>
+                  <BrainCircuit className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-white/25" />
                 </div>
                 
                 {/* Fork Line */}
@@ -111,19 +111,19 @@ export function HowItWorksSection() {
                   <div className="absolute top-6 w-[70%] h-px bg-white/10" />
                   <div className="absolute top-6 left-[15%] w-px h-6 bg-white/10" />
                   <div className="absolute top-6 right-[15%] w-px h-6 bg-white/10" />
-                  <div className="absolute top-8 left-1/2 -translate-x-1/2 text-[10px] text-white/20 uppercase tracking-widest font-mono bg-transparent px-2">Action Workflows</div>
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-transparent px-2 text-[10px] uppercase tracking-widest font-mono text-white/20">Action Workflows</div>
                 </div>
               </div>
 
               {/* Bottom Nodes */}
               <div className="flex justify-between w-full w-[85%] mt-2">
-                <div className="px-4 py-3 rounded-xl border border-white/10 bg-black/40 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-xl px-4 py-3 text-center">
                    <span className="text-xs font-bold text-white/80 mb-1">ISO 21001</span>
-                   <span className="text-[9px] text-white/30 uppercase tracking-widest font-mono">Policy Update</span>
+                   <span className="glass-text-secondary text-[9px] uppercase tracking-widest font-mono">Policy Update</span>
                 </div>
-                <div className="px-4 py-3 rounded-xl border border-white/10 bg-black/40 flex flex-col items-center justify-center text-center backdrop-blur-sm">
+                <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-xl px-4 py-3 text-center">
                    <span className="text-xs font-bold text-white/80 mb-1">NCAAA</span>
-                   <span className="text-[9px] text-white/30 uppercase tracking-widest font-mono">Course Report</span>
+                   <span className="glass-text-secondary text-[9px] uppercase tracking-widest font-mono">Course Report</span>
                 </div>
               </div>
               

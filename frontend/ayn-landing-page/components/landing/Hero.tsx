@@ -118,19 +118,18 @@ function DemoModal({
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="glass-overlay-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={() => { returnFocusRef?.current?.focus(); onClose() }}
     >
       <motion.div
         ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="demo-title"
         initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-        className="relative w-full max-w-lg rounded-2xl p-10 text-center shadow-2xl border border-white/10"
-        style={{ background: "rgba(5,8,16,0.95)", backdropFilter: "blur(20px)" }}
+        className="glass-surface-strong glass-text-primary relative w-full max-w-lg rounded-2xl p-10 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={() => { returnFocusRef?.current?.focus(); onClose() }}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20"
+          className="glass-button absolute top-4 right-4 rounded-full p-2"
           aria-label="Close"
         >
           <X className="w-4 h-4 text-white" />

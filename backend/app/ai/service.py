@@ -432,16 +432,16 @@ class OpenRouterClient:
 
     async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
         """Multimodal chat with files."""
-        content_parts = []
         text_content = message
         image_urls = []
         
         for file_item in files:
-            if file_item["type"] == "image":
-                data_url = f"data:{file_item['mime_type']};base64,{file_item['data']}"
+            if file_item["type"] == "image" or (file_item.get("mime_type") or "").startswith("image/"):
+                mt = file_item.get("mime_type") or "image/jpeg"
+                data_url = f"data:{mt};base64,{file_item['data']}"
                 image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
-            elif file_item["type"] == "text":
-                text_content += f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"
+            else:
+                text_content = _openrouter_append_file_text(text_content, file_item)
         
         if image_urls:
             user_message = {
@@ -493,11 +493,12 @@ class OpenRouterClient:
         text_content = message
         image_urls = []
         for file_item in files:
-            if file_item["type"] == "image":
-                data_url = f"data:{file_item['mime_type']};base64,{file_item['data']}"
+            if file_item["type"] == "image" or (file_item.get("mime_type") or "").startswith("image/"):
+                mt = file_item.get("mime_type") or "image/jpeg"
+                data_url = f"data:{mt};base64,{file_item['data']}"
                 image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
-            elif file_item["type"] == "text":
-                text_content += f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"
+            else:
+                text_content = _openrouter_append_file_text(text_content, file_item)
         if image_urls:
             user_message = {"role": "user", "content": [{"type": "text", "text": text_content}, *image_urls]}
         else:
@@ -540,6 +541,108 @@ class OpenRouterClient:
                                     yield content
                             except json.JSONDecodeError:
                                 pass
+
+
+def _openrouter_append_file_text(message: str, file_item: Dict) -> str:
+    """Append file contents as text for OpenRouter (images handled separately by caller)."""
+    fname = file_item.get("filename") or "file"
+    fnlow = fname.lower()
+    mime = (file_item.get("mime_type") or "").split(";")[0].strip().lower()
+    ftype = file_item.get("type") or "text"
+    raw_b64 = file_item.get("data") or ""
+    try:
+        data_bytes = __import__("base64").b64decode(raw_b64) if raw_b64 else b""
+    except Exception:
+        data_bytes = b""
+    if not data_bytes:
+        return message
+    # PDF → extract text for providers without native PDF
+    is_pdf = (
+        mime == "application/pdf"
+        or fnlow.endswith(".pdf")
+        or (ftype == "document" and data_bytes[:4] == b"%PDF")
+    )
+    if is_pdf:
+        try:
+            from pypdf import PdfReader
+            import io as _io
+
+            reader = PdfReader(_io.BytesIO(data_bytes))
+            chunks = []
+            for page in reader.pages[:50]:
+                chunks.append(page.extract_text() or "")
+            text = "\n".join(chunks).strip()
+            if text:
+                return f"{message}\n\n--- PDF: {fname} ---\n{text[:120000]}\n"
+        except Exception as e:
+            logger.warning("OpenRouter: PDF text extract failed for %s: %s", fname, e)
+        return f"{message}\n\n[PDF {fname} could not be extracted as text for this model.]\n"
+    if ftype == "text" or mime.startswith("text/"):
+        try:
+            text = data_bytes.decode("utf-8", errors="replace")
+            return f"{message}\n\n--- File: {fname} ---\n{text[:200000]}\n"
+        except Exception:
+            return message
+    try:
+        text = data_bytes.decode("utf-8", errors="replace")
+        if len(text.strip()) > 80:
+            return f"{message}\n\n--- File: {fname} ---\n{text[:200000]}\n"
+    except Exception:
+        pass
+    return f"{message}\n\n[Binary file {fname} omitted — try Gemini as primary provider.]\n"
+
+
+def _gemini_multimodal_parts(message: str, files: List[Dict]):
+    """Build google.genai user Parts; PDFs are included even when mime is octet-stream."""
+    parts = [genai_types.Part.from_text(text=message)]
+    for file_item in files:
+        fname = (file_item.get("filename") or "file").lower()
+        mime = (file_item.get("mime_type") or "").split(";")[0].strip().lower()
+        ftype = file_item.get("type") or "text"
+        raw_b64 = file_item.get("data") or ""
+        try:
+            data_bytes = __import__("base64").b64decode(raw_b64) if raw_b64 else b""
+        except Exception:
+            data_bytes = b""
+        if not data_bytes:
+            logger.warning("Gemini: skipping empty attachment %s", file_item.get("filename"))
+            continue
+
+        is_image = ftype == "image" or mime.startswith("image/")
+        is_pdf = (
+            mime == "application/pdf"
+            or fname.endswith(".pdf")
+            or data_bytes[:4] == b"%PDF"
+        )
+
+        if is_image:
+            parts.append(
+                genai_types.Part.from_bytes(data=data_bytes, mime_type=mime or "image/jpeg")
+            )
+        elif is_pdf:
+            parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type="application/pdf"))
+        elif ftype == "text" or mime.startswith("text/"):
+            text = data_bytes.decode("utf-8", errors="replace")
+            parts.append(
+                genai_types.Part.from_text(
+                    text=f"\n\n--- File: {file_item.get('filename', 'file')} ---\n{text}\n"
+                )
+            )
+        else:
+            try:
+                text = data_bytes.decode("utf-8", errors="replace")
+                if text.strip():
+                    parts.append(
+                        genai_types.Part.from_text(
+                            text=f"\n\n--- File: {file_item.get('filename', 'file')} ---\n{text[:200000]}\n"
+                        )
+                    )
+            except Exception:
+                logger.warning(
+                    "Gemini: unsupported attachment (no PDF magic, not utf-8): %s",
+                    file_item.get("filename"),
+                )
+    return parts
 
 
 # ─── Gemini Client ────────────────────────────────────────────────────────────
@@ -686,15 +789,12 @@ class GeminiClient:
             system_instruction += f"\n\nAdditional context:\n{context}"
         
         if USE_NEW_API:
-            parts = [genai_types.Part.from_text(text=message)]
-            for file_item in files:
-                if file_item["type"] == "image" or (file_item["type"] == "document" and file_item.get("mime_type") == "application/pdf"):
-                    import base64
-                    data_bytes = base64.b64decode(file_item["data"])
-                    parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type=file_item["mime_type"]))
-                elif file_item["type"] == "text":
-                    parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"))
-            
+            parts = _gemini_multimodal_parts(message, files)
+            logger.info(
+                "Gemini chat_with_files: %d parts (incl. message) for %d attachments",
+                len(parts),
+                len(files),
+            )
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
@@ -706,14 +806,13 @@ class GeminiClient:
             )
             return response.text
         else:
-            file_descriptions = []
+            text_body = message
             for file_item in files:
                 if file_item["type"] == "image":
-                    file_descriptions.append(f"[Image: {file_item['filename']}]")
-                elif file_item["type"] == "text":
-                    file_descriptions.append(f"File {file_item['filename']}:\n{file_item['data']}")
-            full_prompt = f"{message}\n\n" + "\n\n".join(file_descriptions)
-            return await self.generate_text(full_prompt)
+                    text_body += f"\n[Image attached: {file_item.get('filename')} — use Gemini API for vision]\n"
+                else:
+                    text_body = _openrouter_append_file_text(text_body, file_item)
+            return await self.generate_text(text_body)
 
     async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
         """Streaming multimodal chat with files."""
@@ -727,21 +826,12 @@ class GeminiClient:
             system_instruction += f"\n\nAdditional context:\n{context}"
         
         if USE_NEW_API:
-            parts = [genai_types.Part.from_text(text=message)]
-            for file_item in files:
-                if file_item["type"] == "image" or (file_item["type"] == "document" and file_item.get("mime_type") == "application/pdf"):
-                    import base64
-                    data_bytes = base64.b64decode(file_item["data"])
-                    logger.info(f"Adding file to Gemini: {file_item.get('filename', '?')} ({len(data_bytes)} bytes, {file_item.get('mime_type', '?')})")
-                    parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type=file_item["mime_type"]))
-                elif file_item["type"] == "text":
-                    import base64
-                    try:
-                        decoded = base64.b64decode(file_item["data"]).decode("utf-8", errors="replace")
-                        parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{decoded}\n"))
-                    except Exception:
-                        parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n[Binary content]\n"))
-            
+            parts = _gemini_multimodal_parts(message, files)
+            logger.info(
+                "Gemini stream_chat_with_files: %d parts for %d attachments",
+                len(parts),
+                len(files),
+            )
             try:
                 stream = await self.client.aio.models.generate_content_stream(
                     model=self.model_name,

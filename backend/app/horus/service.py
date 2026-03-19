@@ -416,12 +416,17 @@ class HorusService:
 
         request_mode, message = self._extract_mode_token(message)
         client = get_gemini_client()
-        # Think mode must never use fast path — it needs full context + __THINKING__ steps for step-by-step reasoning
+        # Text-only fast path must NOT run when files are attached — otherwise Ask mode
+        # would call stream_chat without multimodal parts and the model thinks no file exists.
+        has_attachments = bool(files)
         fast_path = (
-            request_mode == "ask"
-            or (
-                request_mode not in ("agent", "think")
-                and self._should_use_fast_path(message=message, files=files)
+            not has_attachments
+            and (
+                request_mode == "ask"
+                or (
+                    request_mode not in ("agent", "think")
+                    and self._should_use_fast_path(message=message, files=files)
+                )
             )
         )
         visual_only_request = self._is_visual_only(files)
@@ -869,11 +874,15 @@ class HorusService:
         async def process_file(part: dict[str, Any]):
             content = part["body"]
             fname = part.get("filename") or "file"
-            ct = (part.get("content_type") or "").strip()
-            if not ct or ct not in ALLOWED_FILE_TYPES:
-                guessed, _ = mimetypes.guess_type(fname)
-                if guessed:
-                    ct = guessed.strip()
+            # Gemini requires application/pdf; browsers often send octet-stream for PDFs.
+            if fname.lower().endswith(".pdf"):
+                ct = "application/pdf"
+            else:
+                ct = (part.get("content_type") or "").strip()
+                if not ct or ct not in ALLOWED_FILE_TYPES:
+                    guessed, _ = mimetypes.guess_type(fname)
+                    if guessed:
+                        ct = guessed.strip()
             mime_for_upload = ct if ct in ALLOWED_FILE_TYPES else (ct or "application/octet-stream")
             file_payload = {
                 "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
@@ -1048,8 +1057,19 @@ class HorusService:
                 else:
                     ai_message = message or "Please analyze the attached image(s) and respond in plain language. If it's a UI screenshot, summarize the key elements and any obvious issues. Do not return JSON or code."
             else:
-                ai_message = message or "Analyze these files."
-                ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
+                user_line = (message or "").strip()
+                if needs_analysis:
+                    ai_message = user_line or "Analyze these files."
+                    ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
+                else:
+                    ai_message = user_line or "Please look at the attached file(s)."
+                    ai_message += (
+                        "\n\nYou have direct access to the attached file(s) as vision/document input. "
+                        "Use their real content. Answer in the same language as the user (e.g. Arabic if they wrote in Arabic). "
+                        "Explain clearly what the document is, what it contains, and anything useful you notice. "
+                        "Do NOT say you cannot see or access the attachment. "
+                        "Do NOT reply with only JSON unless the user explicitly asked for JSON."
+                    )
 
             try:
                 async for chunk in client.stream_chat_with_files(

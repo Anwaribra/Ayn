@@ -608,7 +608,8 @@ def _gemini_multimodal_parts(message: str, files: List[Dict]):
             logger.warning("Gemini: skipping empty attachment %s", file_item.get("filename"))
             continue
 
-        is_image = ftype == "image" or mime.startswith("image/")
+        looks_image = _bytes_looks_like_raster_image(data_bytes)
+        is_image = ftype == "image" or mime.startswith("image/") or looks_image
         is_pdf = (
             mime == "application/pdf"
             or fname.endswith(".pdf")
@@ -616,9 +617,8 @@ def _gemini_multimodal_parts(message: str, files: List[Dict]):
         )
 
         if is_image:
-            parts.append(
-                genai_types.Part.from_bytes(data=data_bytes, mime_type=mime or "image/jpeg")
-            )
+            img_mime = mime if mime.startswith("image/") else _guess_image_mime_from_bytes(data_bytes)
+            parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type=img_mime))
         elif is_pdf:
             parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type="application/pdf"))
         elif ftype == "text" or mime.startswith("text/"):
@@ -643,6 +643,95 @@ def _gemini_multimodal_parts(message: str, files: List[Dict]):
                     file_item.get("filename"),
                 )
     return parts
+
+
+def _bytes_looks_like_raster_image(data: bytes) -> bool:
+    if not data or len(data) < 12:
+        return False
+    if data[:3] == b"\xff\xd8\xff":
+        return True  # JPEG
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return True
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return True
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return True
+    return False
+
+
+def _guess_image_mime_from_bytes(data: bytes) -> str:
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return "image/jpeg"
+
+
+def _gemini_stream_chunk_text(chunk) -> str:
+    """
+    Extract incremental text from a generate_content_stream event.
+    Accessing .text on some chunks raises ValueError (esp. multimodal); never propagate.
+    """
+    if chunk is None:
+        return ""
+    try:
+        t = chunk.text
+        if t:
+            return str(t)
+    except Exception:
+        pass
+    try:
+        for cand in getattr(chunk, "candidates", None) or []:
+            content = getattr(cand, "content", None)
+            if not content:
+                continue
+            pieces: list[str] = []
+            for part in getattr(content, "parts", None) or []:
+                try:
+                    pt = getattr(part, "text", None)
+                    if pt:
+                        pieces.append(str(pt))
+                except Exception:
+                    continue
+            if pieces:
+                return "".join(pieces)
+    except Exception:
+        pass
+    return ""
+
+
+def _gemini_response_text_safe(response) -> str:
+    """Non-streaming response .text can also throw on some SDK versions."""
+    if response is None:
+        return ""
+    try:
+        t = getattr(response, "text", None)
+        if t:
+            return str(t)
+    except Exception:
+        pass
+    try:
+        cands = getattr(response, "candidates", None) or []
+        if not cands:
+            return ""
+        content = getattr(cands[0], "content", None)
+        if not content:
+            return ""
+        out: list[str] = []
+        for part in getattr(content, "parts", None) or []:
+            try:
+                pt = getattr(part, "text", None)
+                if pt:
+                    out.append(str(pt))
+            except Exception:
+                continue
+        return "".join(out)
+    except Exception:
+        return ""
 
 
 # ─── Gemini Client ────────────────────────────────────────────────────────────
@@ -754,7 +843,9 @@ class GeminiClient:
                 ),
                 contents=contents,
             ):
-                yield chunk.text
+                delta = _gemini_stream_chunk_text(chunk)
+                if delta:
+                    yield delta
         else:
             response = await self.chat(messages, context)
             yield response
@@ -804,7 +895,7 @@ class GeminiClient:
                 ),
                 contents=genai_types.Content(role="user", parts=parts),
             )
-            return response.text
+            return _gemini_response_text_safe(response)
         else:
             text_body = message
             for file_item in files:
@@ -843,12 +934,9 @@ class GeminiClient:
                     contents=genai_types.Content(role="user", parts=parts),
                 )
                 async for chunk in stream:
-                    try:
-                        text = getattr(chunk, "text", None) if chunk else None
-                        if text:
-                            yield text
-                    except (ValueError, AttributeError) as e:
-                        logger.debug(f"Chunk text access skipped: {e}")
+                    delta = _gemini_stream_chunk_text(chunk)
+                    if delta:
+                        yield delta
             except Exception as stream_err:
                 logger.error(f"Gemini stream_chat_with_files failed: {stream_err}", exc_info=True)
                 response = await self.client.aio.models.generate_content(
@@ -860,8 +948,9 @@ class GeminiClient:
                     ),
                     contents=genai_types.Content(role="user", parts=parts),
                 )
-                if response and getattr(response, "text", None):
-                    yield response.text
+                fb = _gemini_response_text_safe(response)
+                if fb:
+                    yield fb
                 else:
                     raise
         else:

@@ -1,21 +1,29 @@
 """Database connection and Prisma client setup."""
-from prisma import Prisma
-from app.core.config import settings
+import asyncio
 import os
 import logging
 
+from prisma import Prisma
+
 logger = logging.getLogger(__name__)
+
+# Retry config for Supabase cold start / intermittent connectivity
+DB_CONNECT_MAX_RETRIES = 5
+DB_CONNECT_RETRY_DELAY = 3  # seconds
+DB_CONNECT_RETRY_BACKOFF = 1.5
 
 
 def _build_database_url() -> str | None:
     """
     Return DATABASE_URL with connection pool params injected.
 
-    Supabase's transaction-mode PgBouncer URL defaults Prisma to
-    connection_limit=1, which causes pool timeouts under parallel load
-    (e.g. dashboard firing 7+ concurrent requests).  We append:
-      connection_limit=10   — allows up to 10 concurrent connections
-      pool_timeout=30       — wait up to 30 s before giving up
+    Supabase's transaction-mode PgBouncer (port 6543) requires:
+      pgbouncer=true       — disables prepared statements (pooler doesn't support them)
+      connect_timeout=30   — allow time for cold starts / network latency
+
+    We also add:
+      connection_limit=10  — allows up to 10 concurrent connections
+      pool_timeout=30      — wait up to 30 s before giving up
 
     Safe to call even when DATABASE_URL already has query params.
     """
@@ -23,7 +31,15 @@ def _build_database_url() -> str | None:
     if not url:
         return None
     separator = "&" if "?" in url else "?"
-    return f"{url}{separator}connection_limit=10&pool_timeout=30"
+    params = ["connection_limit=10", "pool_timeout=30"]
+    # Supabase pooler (port 6543) requires pgbouncer=true for Prisma
+    if "pooler.supabase.com:6543" in url and "pgbouncer=true" not in url:
+        params.insert(0, "pgbouncer=true")
+    if "connect_timeout" not in url:
+        # 60s for Supabase cold start; 30s for local
+        timeout = "60" if "pooler.supabase.com" in url else "30"
+        params.append(f"connect_timeout={timeout}")
+    return f"{url}{separator}{'&'.join(params)}"
 
 
 _db_url = _build_database_url()
@@ -34,17 +50,30 @@ db = prisma
 
 
 async def connect_db() -> None:
-    """Connect to the database."""
-    try:
-        await prisma.connect()
-        logger.info("Database connected successfully")
-    except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
-        logger.error("Please ensure:")
-        logger.error("1. PostgreSQL is running: sudo service postgresql start")
-        logger.error("2. Database exists: Run ./setup_db.sh or create manually")
-        logger.error("3. DATABASE_URL in .env is correct")
-        raise
+    """Connect to the database with retries for Supabase cold start."""
+    last_error = None
+    for attempt in range(1, DB_CONNECT_MAX_RETRIES + 1):
+        try:
+            await prisma.connect()
+            logger.info("Database connected successfully")
+            return
+        except Exception as e:
+            last_error = e
+            if attempt < DB_CONNECT_MAX_RETRIES:
+                delay = DB_CONNECT_RETRY_DELAY * (DB_CONNECT_RETRY_BACKOFF ** (attempt - 1))
+                logger.warning(
+                    "Database connection attempt %d/%d failed: %s. Retrying in %.1fs...",
+                    attempt, DB_CONNECT_MAX_RETRIES, e, delay,
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.error("Failed to connect to database after %d attempts: %s", DB_CONNECT_MAX_RETRIES, e)
+                logger.error("Please ensure:")
+                logger.error("1. PostgreSQL is running: sudo service postgresql start")
+                logger.error("2. Database exists: Run ./setup_db.sh or create manually")
+                logger.error("3. DATABASE_URL in .env is correct")
+                logger.error("4. If using Supabase: project may be paused — Restore from dashboard")
+                raise last_error
 
 
 async def disconnect_db() -> None:

@@ -366,10 +366,18 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             )
         } catch (err: any) {
             if (err.name !== 'AbortError') {
-                toast.error("Horus connection interrupted. Please try again.")
+                const msg = err?.message || ""
+                const isNetwork = /fetch|network|failed to fetch|load failed/i.test(msg)
+                const toastMsg = isNetwork
+                    ? "Backend unreachable. The server may be starting — try again in a few seconds."
+                    : "Horus connection interrupted. Please try again."
+                if (process.env.NODE_ENV === "development") {
+                    console.error("[Horus stream error]", err)
+                }
+                toast.error(toastMsg)
                 setMessages(prev => prev.map(m =>
                     m.id === assistantMsgId
-                        ? { ...m, content: m.content || "Connection was interrupted. Please try sending your message again." }
+                        ? { ...m, content: m.content || (isNetwork ? "Server is starting up. Please try again in a moment." : "Connection was interrupted. Please try sending your message again.") }
                         : m
                 ))
             }

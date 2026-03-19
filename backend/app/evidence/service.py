@@ -4,7 +4,7 @@ import json
 import re
 from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, status, UploadFile, BackgroundTasks
-from typing import List
+from typing import List, Optional
 from app.core.db import get_db
 from app.core.storage import upload_file_to_supabase, delete_file_from_supabase
 from app.core.config import settings
@@ -35,25 +35,38 @@ class EvidenceService:
     """Service for evidence management business logic."""
     
     @staticmethod
-    async def upload_evidence(file: UploadFile, current_user: dict, background_tasks: BackgroundTasks) -> UploadEvidenceResponse:
+    async def upload_evidence(
+        file: UploadFile,
+        current_user: dict,
+        background_tasks: BackgroundTasks,
+        *,
+        file_content: Optional[bytes] = None,
+    ) -> UploadEvidenceResponse:
         """
         Upload evidence file with background AI analysis.
         Fault-tolerant: Upload succeeds even if AI fails.
+
+        If ``file_content`` is provided (already read body), it is used as-is and
+        ``file.read()`` is skipped. Callers that already consumed the stream (e.g.
+        Horus ``process_file``) must pass bytes to avoid a second read / seek, which
+        breaks on Starlette spooled files and causes "I/O operation on closed file".
         """
         # 1. Validation
         if file.content_type not in ALLOWED_FILE_TYPES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File type not allowed")
-        
-        # Read content for validation and analysis
+
+        # Read content for validation and analysis (single read — never seek/rewind UploadFile)
         try:
-            file_content = await file.read()
+            if file_content is None:
+                file_content = await file.read()
             if len(file_content) > MAX_FILE_SIZE:
                 raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=f"File too large (max {MAX_FILE_SIZE//1024//1024}MB)")
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"File read error: {e}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to read file")
 
-        # Reset stream for upload
         db = get_db()
         try:
             # 2. Critical Path: Storage + DB

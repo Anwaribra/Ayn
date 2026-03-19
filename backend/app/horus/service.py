@@ -172,14 +172,14 @@ class HorusService:
             store_as_evidence = not (visual_only and not needs_analysis)
             for file in files:
                 if store_as_evidence:
+                    content = await file.read()
                     upload_result = await EvidenceService.upload_evidence(
                         file=file,
                         current_user=current_user,
-                        background_tasks=background_tasks
+                        background_tasks=background_tasks,
+                        file_content=content,
                     )
                     if upload_result.success:
-                        await file.seek(0)
-                        content = await file.read()
                         ct = file.content_type or ""
                         file_references.append({
                             "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
@@ -842,12 +842,12 @@ class HorusService:
                 "evidenceId": None,
             }
             if store_as_evidence:
-                await f.seek(0)
                 try:
                     upload_result = await EvidenceService.upload_evidence(
                         file=f,
                         current_user=current_user,
-                        background_tasks=background_tasks
+                        background_tasks=background_tasks,
+                        file_content=content,
                     )
                     if upload_result.success:
                         file_payload["evidenceId"] = upload_result.evidenceId

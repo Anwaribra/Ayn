@@ -72,5 +72,11 @@ class RedisClient:
         except Exception as e:
             print(f"Redis DELETE PATTERN error: {e}")
 
-# Global instance
-redis_client = RedisClient()
+    def invalidate_dashboard_cache(self):
+        """Invalidate cached dashboard metrics."""
+        if not self.enabled:
+            return
+        try:
+            self.delete_pattern("dashboard_metrics_counts*")
+        except Exception as e:
+            print(f"Redis invalidate_dashboard_cache error: {e}")

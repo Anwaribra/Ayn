@@ -82,6 +82,23 @@ async def get_current_user(
     }
 
 
+async def request_timing_middleware(request: Request, call_next):
+    start_time = request.state.start_time if hasattr(request.state, 'start_time') else None
+    if start_time is None:
+        from time import perf_counter
+        start_time = perf_counter()
+        request.state.start_time = start_time
+
+    response = await call_next(request)
+
+    from time import perf_counter
+    elapsed_ms = (perf_counter() - start_time) * 1000
+    response.headers["X-Response-Time-ms"] = f"{elapsed_ms:.2f}"
+    logger.info(f"{request.method} {request.url.path} status={response.status_code} {elapsed_ms:.2f}ms")
+
+    return response
+
+
 def require_role(allowed_roles: list[str]):
     """Decorator to require specific roles."""
     def decorator(func):

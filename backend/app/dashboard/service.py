@@ -6,8 +6,10 @@ from app.dashboard.models import DashboardMetricsResponse
 from app.activity.service import ActivityService
 from app.notifications.service import NotificationService
 from app.evidence.models import EvidenceResponse
+from app.core.redis import redis_client
 import logging
 from datetime import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -24,31 +26,61 @@ class DashboardService:
             institution_id = current_user.get("institutionId")
             
             # --- 1. Basic Metrics ---
-            if is_admin:
-                evidence_count = await db.evidence.count()
-                total_gap_analyses = await db.gapanalysis.count()
-                aligned_criteria_count = await db.evidence.count(where={"criteria": {"some": {}}})
-                total_criteria = await db.criterion.count()
+            cache_key = f"dashboard_metrics_counts:{'admin' if is_admin else institution_id or user_id}"
+            counts_cache = None
+            if redis_client.enabled:
+                try:
+                    counts_cache = redis_client.get(cache_key)
+                except Exception:
+                    counts_cache = None
+
+            if counts_cache:
+                counts = json.loads(counts_cache)
+                evidence_count = counts.get("evidence_count", 0)
+                total_gap_analyses = counts.get("total_gap_analyses", 0)
+                aligned_criteria_count = counts.get("aligned_criteria_count", 0)
+                total_criteria = counts.get("total_criteria", 0)
             else:
-                evidence_count = await db.evidence.count(where={"uploadedById": user_id})
-                total_gap_analyses = await db.gapanalysis.count(where={"institutionId": institution_id}) if institution_id else 0
-                
-                # Aligned criteria for this institution
-                if institution_id:
-                    institution_standards = await db.institutionstandard.find_many(where={"institutionId": institution_id})
-                    standard_ids = [s.standardId for s in institution_standards]
-                    if standard_ids:
-                        total_criteria = await db.criterion.count(where={"standardId": {"in": standard_ids}})
+                if is_admin:
+                    evidence_count = await db.evidence.count()
+                    total_gap_analyses = await db.gapanalysis.count()
+                    aligned_criteria_count = await db.evidence.count(where={"criteria": {"some": {}}})
+                    total_criteria = await db.criterion.count()
+                else:
+                    evidence_count = await db.evidence.count(where={"uploadedById": user_id})
+                    total_gap_analyses = await db.gapanalysis.count(where={"institutionId": institution_id}) if institution_id else 0
+
+                    # Aligned criteria for this institution
+                    if institution_id:
+                        institution_standards = await db.institutionstandard.find_many(where={"institutionId": institution_id})
+                        standard_ids = [s.standardId for s in institution_standards]
+                        if standard_ids:
+                            total_criteria = await db.criterion.count(where={"standardId": {"in": standard_ids}})
+                        else:
+                            total_criteria = 0
+
+                        # Criteria that have evidence from this institution
+                        aligned_criteria_count = await db.evidencecriterion.count(
+                            where={"evidence": {"ownerId": institution_id}}
+                        )
                     else:
                         total_criteria = 0
+                        aligned_criteria_count = 0
 
-                    # Criteria that have evidence from this institution
-                    aligned_criteria_count = await db.evidencecriterion.count(
-                        where={"evidence": {"ownerId": institution_id}}
-                    )
-                else:
-                    total_criteria = 0
-                    aligned_criteria_count = 0
+                if redis_client.enabled:
+                    try:
+                        redis_client.set(
+                            cache_key,
+                            json.dumps({
+                                "evidence_count": evidence_count,
+                                "total_gap_analyses": total_gap_analyses,
+                                "aligned_criteria_count": aligned_criteria_count,
+                                "total_criteria": total_criteria,
+                            }),
+                            ex=30,
+                        )
+                    except Exception:
+                        pass
 
             alignment_percentage = round((aligned_criteria_count / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
             

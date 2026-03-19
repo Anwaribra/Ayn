@@ -15,6 +15,7 @@ from app.gap_analysis.models import (
 )
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
+from app.core.redis import redis_client
 from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap_analysis
 from app.standards.mapping_service import analyze_standard_criteria
 
@@ -80,6 +81,11 @@ class GapAnalysisService:
                 "recommendationsJson": "[]",
             }
         )
+        try:
+            redis_client.invalidate_dashboard_cache()
+        except Exception as cache_err:
+            logger.warning(f"Failed to invalidate dashboard cache after gap analysis create: {cache_err}")
+
         logger.info(f"Queued gap analysis job {record.id} for user {current_user.email}")
         return {"jobId": record.id, "status": "queued"}
 
@@ -117,6 +123,10 @@ class GapAnalysisService:
                 where={"id": job_id},
                 data={"status": "running"}
             )
+            try:
+                redis_client.invalidate_dashboard_cache()
+            except Exception as cache_err:
+                logger.warning(f"Failed to invalidate dashboard cache after gap analysis status running: {cache_err}")
 
             criteria = await db.criterion.find_many(where={"standardId": standard_id})
             criterion_ids = [c.id for c in criteria]
@@ -162,6 +172,10 @@ class GapAnalysisService:
                     "recommendationsJson": json.dumps(result["recommendations"]),
                 }
             )
+            try:
+                redis_client.invalidate_dashboard_cache()
+            except Exception as cache_err:
+                logger.warning(f"Failed to invalidate dashboard cache after gap analysis completion: {cache_err}")
 
             # Recalculate standard coverage mapping
             try:
@@ -191,6 +205,10 @@ class GapAnalysisService:
                     where={"id": job_id},
                     data={"summary": "failed", "status": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
                 )
+                try:
+                    redis_client.invalidate_dashboard_cache()
+                except Exception as cache_err:
+                    logger.warning(f"Failed to invalidate dashboard cache after gap analysis failure: {cache_err}")
                 await NotificationService.create_notification(NotificationCreateRequest(
                     userId=user_id,
                     type="error",
@@ -253,6 +271,10 @@ class GapAnalysisService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         await db.gapanalysis.delete(where={"id": gap_analysis_id})
+        try:
+            redis_client.invalidate_dashboard_cache()
+        except Exception as cache_err:
+            logger.warning(f"Failed to invalidate dashboard cache after gap analysis delete: {cache_err}")
         logger.info(f"User {current_user.email} deleted gap analysis {gap_analysis_id}")
 
     @staticmethod
@@ -267,4 +289,8 @@ class GapAnalysisService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         await db.gapanalysis.update(where={"id": gap_analysis_id}, data={"archived": archived})
+        try:
+            redis_client.invalidate_dashboard_cache()
+        except Exception as cache_err:
+            logger.warning(f"Failed to invalidate dashboard cache after gap analysis archive change: {cache_err}")
         logger.info(f"User {current_user.email} archived/unarchived {gap_analysis_id}")

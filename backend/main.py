@@ -68,6 +68,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Perf monitoring middleware
+from app.core.middlewares import request_timing_middleware
+app.middleware("http")(request_timing_middleware)
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

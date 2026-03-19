@@ -17,6 +17,7 @@ from app.evidence.models import (
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.activity.service import ActivityService
+from app.core.redis import redis_client
 import logging
 import asyncio
 
@@ -74,6 +75,11 @@ class EvidenceService:
                     "status": "processing"
                 }
             )
+            try:
+                redis_client.invalidate_dashboard_cache()
+            except Exception as cache_err:
+                logger.warning(f"Failed to invalidate dashboard cache after evidence create: {cache_err}")
+
             try:
                 await ActivityService.log_activity(
                     user_id=current_user["id"],
@@ -528,6 +534,10 @@ class EvidenceService:
                 await delete_file_from_supabase(file_path)
                 
             await db.evidence.delete(where={"id": evidence_id})
+            try:
+                redis_client.invalidate_dashboard_cache()
+            except Exception as cache_err:
+                logger.warning(f"Failed to invalidate dashboard cache after evidence delete: {cache_err}")
             logger.info(f"User {current_user['email']} deleted: {evidence_id}")
             return {"message": "Deleted successfully"}
         except Exception as e:
@@ -558,6 +568,11 @@ class EvidenceService:
                 )
             except Exception as e:
                 logger.debug(f"Duplicate evidence-criterion link skipped on attach: {e}")
+            try:
+                redis_client.invalidate_dashboard_cache()
+            except Exception as cache_err:
+                logger.warning(f"Failed to invalidate dashboard cache after evidence attach: {cache_err}")
+
             try:
                 await ActivityService.log_activity(
                     user_id=current_user["id"],

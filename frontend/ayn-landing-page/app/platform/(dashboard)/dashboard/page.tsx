@@ -25,7 +25,6 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { CircularGauge } from "@/components/ui/circular-gauge"
 import { StatusTiles } from "@/components/platform/status-tiles"
-import { ActivityChart } from "@/components/platform/activity-graph"
 import { CoverageBar } from "@/components/platform/coverage-bar"
 
 export default function DashboardPage() {
@@ -245,11 +244,8 @@ function DashboardContent() {
         </section>
       )}
 
-      {/* Activity Graph & Logs */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <ActivityChart data={safeMetrics?.recentScores ?? []} />
-
           {/* Recent Evidence List */}
           <div className="glass-card p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-8">

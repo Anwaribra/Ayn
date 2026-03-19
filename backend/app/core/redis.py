@@ -80,3 +80,7 @@ class RedisClient:
             self.delete_pattern("dashboard_metrics_counts*")
         except Exception as e:
             print(f"Redis invalidate_dashboard_cache error: {e}")
+
+
+# Global redis client singleton used across services.
+redis_client = RedisClient()

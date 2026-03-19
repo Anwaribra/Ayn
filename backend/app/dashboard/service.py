@@ -37,9 +37,11 @@ class DashboardService:
                 if institution_id:
                     institution_standards = await db.institutionstandard.find_many(where={"institutionId": institution_id})
                     standard_ids = [s.standardId for s in institution_standards]
-                    criteria = await db.criterion.find_many(where={"standardId": {"in": standard_ids}})
-                    total_criteria = len(criteria)
-                    
+                    if standard_ids:
+                        total_criteria = await db.criterion.count(where={"standardId": {"in": standard_ids}})
+                    else:
+                        total_criteria = 0
+
                     # Criteria that have evidence from this institution
                     aligned_criteria_count = await db.evidencecriterion.count(
                         where={"evidence": {"ownerId": institution_id}}

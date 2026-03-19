@@ -10,7 +10,7 @@ import logging
 import asyncio
 from uuid import uuid4
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, AsyncGenerator
+from typing import List, Optional, Dict, Any, AsyncGenerator, Callable
 from pydantic import BaseModel
 
 from app.ai.service import get_gemini_client
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
 _PENDING_ACTION_CONFIRMATIONS_FALLBACK: dict[str, dict[str, Any]] = {}  # Used when Redis disabled
 PENDING_CONFIRM_KEY_PREFIX = "horus:confirm:"
-STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started", "analytics_report"}
+STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started", "analytics_report", "link_result", "report_export", "action_error"}
 
 
 def _pending_set(confirm_id: str, data: dict[str, Any]) -> None:
@@ -358,7 +358,8 @@ class HorusService:
         files: List[Any] = None,
         background_tasks: Any = None,
         db: Any = None,
-        current_user: Any = None
+        current_user: Any = None,
+        correlation_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """
         Hyper-optimized streaming chat interface.
@@ -369,6 +370,9 @@ class HorusService:
         and return a structured __ACTION_RESULT__ prefix that the frontend
         can render as a typed card component.
         """
+        corr_id = correlation_id or str(uuid4())
+        logger.info("Horus stream_chat started", extra={"correlation_id": corr_id, "user_id": user_id, "chat_id": chat_id})
+
         # 1. Start Chat Creation or Fetch in Parallel with State
         if not chat_id:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
@@ -425,6 +429,27 @@ class HorusService:
                     institution_line = f" They belong to institution '{institution_name}'."
                 memory_line = ""
 
+                # RAG in Fast Path: when platform keywords present, inject document context
+                rag_fast = ""
+                compliance_kw = ["gap", "compliance", "standard", "criteria", "ncaaa", "iso", "accreditation", "analysis", "evidence", "فجوة", "امتثال", "معيار"]
+                rag_sources: List[Dict[str, Any]] = []
+                if message and any(kw in (message or "").lower() for kw in compliance_kw):
+                    try:
+                        from app.core.db import db as _prisma
+                        _u = await _prisma.user.find_unique(where={"id": user_id})
+                        _inst = getattr(_u, "institutionId", None) if _u else None
+                        rag = RagService()
+                        rag_fast, rag_sources = await rag.retrieve_context(message, limit=3, user_id=user_id, institution_id=_inst)
+                        if rag_fast:
+                            rag_fast = "\n" + rag_fast
+                    except Exception as e:
+                        logger.debug(f"Fast path RAG skipped: {e}")
+
+                # Emit citations before streaming when RAG sources available
+                if rag_sources:
+                    import json
+                    yield f"__CITATION__:{json.dumps(rag_sources)}\n"
+                    await asyncio.sleep(0)
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
@@ -435,6 +460,7 @@ class HorusService:
                         f"Prefer the shortest complete useful answer. "
                         f"Do not claim you accessed platform state unless explicitly requested."
                         f"{memory_line}"
+                        f"{rag_fast}"
                     ),
                 ):
                     if chunk:
@@ -466,7 +492,12 @@ class HorusService:
         await asyncio.sleep(0)
 
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
-        if message and not files and request_mode != "think":
+        # Allow agent with files when: Agent mode selected, or message has platform keywords (e.g. "حلل", "analyze", "gaps")
+        agent_keywords = ["حلل", "analyze", "gaps", "فجوات", "compliance", "audit", "report", "تحليل"]
+        msg_lower = (message or "").lower()
+        has_agent_keywords = any(kw in msg_lower for kw in agent_keywords)
+        allow_agent_with_files = request_mode == "agent" or has_agent_keywords
+        if message and request_mode != "think" and (not files or allow_agent_with_files):
             try:
                 from app.core.db import db as prisma_client
 
@@ -508,6 +539,7 @@ class HorusService:
                             institution_id=institution_id,
                             current_user=current_user_dict,
                             background_tasks=background_tasks,
+                            correlation_id=corr_id,
                         )
                         _pending_pop(confirm_id)
                         if plan_output["last_structured"]:
@@ -541,6 +573,7 @@ class HorusService:
                             result=tool_result,
                             background_tasks=background_tasks,
                             phase="confirmed",
+                            correlation_id=corr_id,
                         )
 
                         narrative_text = self._summarize_tool_result(tool_name, tool_result, message)
@@ -638,6 +671,7 @@ class HorusService:
                                 )
                             return
 
+                        yield f"__TOOL_STEP__:{json.dumps({'step': 1, 'total': 1, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running'})}\n"
                         tool_result = await execute_tool(
                             tool_name=tool_name,
                             args=args,
@@ -646,8 +680,9 @@ class HorusService:
                             institution_id=institution_id,
                             current_user=current_user_dict,
                         )
+                        yield f"__TOOL_STEP__:{json.dumps({'step': 1, 'total': 1, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'done' if tool_result.get('type') != 'action_error' else 'error', 'result_type': tool_result.get('type', 'unknown')})}\n"
 
-                        if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
+                        if tool_result.get("type") in STRUCTURED_RESULT_TYPES and tool_result.get("type") != "action_error":
                             yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
 
                         await self._log_agent_action(
@@ -657,6 +692,7 @@ class HorusService:
                             result=tool_result,
                             background_tasks=background_tasks,
                             phase="auto",
+                            correlation_id=corr_id,
                         )
 
                         narrative_text = self._summarize_tool_result(tool_name, tool_result, message)
@@ -718,15 +754,71 @@ class HorusService:
                             return
 
                         yield "__THINKING__:Executing multi-step plan...\n"
-                        plan_output = await self._execute_agent_plan(
-                            plan_steps=plan_steps,
-                            db=prisma_client,
-                            user_id=user_id,
-                            institution_id=institution_id,
-                            current_user=current_user_dict,
-                            background_tasks=background_tasks,
-                        )
-                        if plan_output["last_structured"]:
+                        chunk_queue: asyncio.Queue[str | None] = asyncio.Queue()
+
+                        def put_chunk(c: str) -> None:
+                            chunk_queue.put_nowait(c)
+
+                        async def run_plan() -> dict:
+                            return await self._execute_agent_plan(
+                                plan_steps=plan_steps,
+                                db=prisma_client,
+                                user_id=user_id,
+                                institution_id=institution_id,
+                                current_user=current_user_dict,
+                                background_tasks=background_tasks,
+                                yield_chunk=put_chunk,
+                                correlation_id=corr_id,
+                            )
+
+                        plan_task = asyncio.create_task(run_plan())
+                        emitted_action_result = False
+                        while True:
+                            try:
+                                chunk = await asyncio.wait_for(chunk_queue.get(), timeout=0.05)
+                            except asyncio.TimeoutError:
+                                if plan_task.done():
+                                    break
+                                continue
+                            if chunk is None:
+                                break
+                            if "__ACTION_RESULT__" in chunk:
+                                emitted_action_result = True
+                            yield chunk
+                        while not chunk_queue.empty():
+                            try:
+                                chunk = chunk_queue.get_nowait()
+                            except asyncio.QueueEmpty:
+                                break
+                            if chunk and chunk is not None:
+                                if "__ACTION_RESULT__" in chunk:
+                                    emitted_action_result = True
+                                yield chunk
+                        plan_output = await plan_task
+                        tool_results = plan_output.get("tool_results", [])
+                        has_failures = any(tr.get("result", {}).get("type") == "action_error" for tr in tool_results)
+
+                        # Reflection: re-plan on failure (once)
+                        if has_failures and tool_results:
+                            yield "__THINKING__:Reflecting after failure…\n"
+                            re_plan = await self._plan_with_observations(
+                                client=client,
+                                message=message,
+                                platform_snapshot=snapshot,
+                                tool_results=tool_results,
+                                goal=active_goal,
+                            )
+                            if re_plan and re_plan.get("mode") == "chat":
+                                fallback_msg = re_plan.get("response") or re_plan.get("reason") or plan_output["summary_text"]
+                                if fallback_msg:
+                                    yield fallback_msg
+                                if background_tasks:
+                                    background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", fallback_msg)
+                                else:
+                                    await ChatService.save_message(chat_id, user_id, "assistant", fallback_msg)
+                                return
+
+                        if plan_output["last_structured"] and not emitted_action_result:
                             yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
                         if plan_output["summary_text"]:
                             yield ("\n" if plan_output["last_structured"] else "") + plan_output["summary_text"]
@@ -804,6 +896,9 @@ class HorusService:
         # Yield immediately so user sees feedback before any await (avoids 2–5s silence)
         if files:
             yield "__THINKING__:Got it, analyzing your file...\n"
+            for f in files:
+                fn = getattr(f, "filename", None) or "file"
+                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'uploading'})}\n"
             await asyncio.sleep(0)
         else:
             yield "__THINKING__:Reading platform state...\n"
@@ -826,6 +921,7 @@ class HorusService:
             file_results = [r for r in results[offset:offset+len(files)] if r is not None]
             for res in file_results:
                 fn = res.get("filename") or "file"
+                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'done'})}\n"
                 yield f"__FILE__:{fn}\n"
                 await asyncio.sleep(0)
 
@@ -850,7 +946,8 @@ class HorusService:
             message=message,
             mapping_context=mapping_context,
             user_identity=user_identity,
-            goal=active_goal
+            goal=active_goal,
+            user_id=user_id,
         ))
         memory, context = await asyncio.gather(memory_task, context_task)
         if memory:
@@ -863,7 +960,11 @@ class HorusService:
 
         if file_results:
             visual_only = all((f.get("type") == "image") for f in file_results)
-            
+            for res in file_results:
+                fn = res.get("filename") or "file"
+                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'analyzing'})}\n"
+            await asyncio.sleep(0)
+
             if store_as_evidence:
                 if background_tasks:
                     background_tasks.add_task(
@@ -1009,14 +1110,18 @@ class HorusService:
                     user_id=user_id
                 )
                 
-                # IMPORTANT: Rag Indexing
-                # Decode the content for RAG (assuming it's text or pdf processed by OCR inside analyze_evidence_task)
-                # Since analyze_evidence_task handles PDF text extraction but doesn't return it,
-                # we will extract simple text here if possible, or assume OCR will handle DB save.
-                # For pure text files, we can index immediately:
+                # IMPORTANT: Rag Indexing (scoped by user/institution)
                 if res["mime_type"] == "text/plain" or res["mime_type"] == "text/markdown":
+                    from app.core.db import db as _prisma
+                    _user = await _prisma.user.find_unique(where={"id": user_id})
+                    _inst_id = getattr(_user, "institutionId", None) if _user else None
                     rag = RagService()
-                    await rag.index_document(content.decode("utf-8"), document_id=res["evidenceId"])
+                    await rag.index_document(
+                        content.decode("utf-8"),
+                        document_id=res["evidenceId"],
+                        user_id=user_id,
+                        institution_id=_inst_id,
+                    )
                     
             except Exception as e:
                 logger.error(f"Brain Pipeline Step 1 (Evidence/RAG) failed: {e}")
@@ -1092,7 +1197,7 @@ class HorusService:
 
         return results
 
-    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None) -> str:
+    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None, user_id: str | None = None) -> str:
         """Faster context preparation without extra DB calls."""
         brain_context = ""
         if brain_results:
@@ -1141,12 +1246,21 @@ class HorusService:
             
         context_parts.append(mapping_context)
 
-        # 🚀 TRUE RAG: 
-        # Retrieve semantic chunks based on the user's message
+        # 🚀 TRUE RAG: scoped by user/institution for multi-tenant security
+        institution_id_sync = None
+        if message and user_id:
+            try:
+                from app.core.db import db as prisma_client
+                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                institution_id_sync = getattr(user_obj, "institutionId", None) if user_obj else None
+            except Exception:
+                pass
         if message:
             try:
                 rag = RagService()
-                rag_context = await rag.retrieve_context(message, limit=4)
+                rag_context, _ = await rag.retrieve_context(
+                    message, limit=4, user_id=user_id, institution_id=institution_id_sync
+                )
                 if rag_context:
                     context_parts.append(rag_context)
                 else:
@@ -1208,6 +1322,7 @@ class HorusService:
             logger_msg = message[:20].replace('\n', ' ') if message else ""
             logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~300 tokens.")
             
+        user_obj = None
         try:
             from app.core.db import db as prisma_client
             user_obj = await prisma_client.user.find_unique(where={"id": user_id})
@@ -1226,12 +1341,14 @@ class HorusService:
         except Exception as e:
             logger.error(f"Failed to fetch criteria mappings context: {e}")
             
-        # 🚀 TRUE RAG: 
-        # Retrieve semantic chunks based on the user's message
+        # 🚀 TRUE RAG: scoped by user/institution for multi-tenant security
+        institution_id_ctx = getattr(user_obj, "institutionId", None) if user_obj else None
         if message:
             try:
                 rag = RagService()
-                rag_context = await rag.retrieve_context(message, limit=4)
+                rag_context, _ = await rag.retrieve_context(
+                    message, limit=4, user_id=user_id, institution_id=institution_id_ctx
+                )
                 if rag_context:
                     context_parts.append(rag_context)
                 else:
@@ -1448,6 +1565,61 @@ Rules:
             parsed["arguments"] = {}
         return parsed
 
+    async def _plan_with_observations(
+        self,
+        client: Any,
+        message: str,
+        platform_snapshot: Dict[str, Any],
+        tool_results: list[dict],
+        goal: str | None = None,
+    ) -> Dict[str, Any] | None:
+        """Re-plan after tool failures. Asks planner for alternative or chat response."""
+        tool_manifest = build_tool_manifest()
+        observations = "\n".join(
+            f"- {r['tool']}: {r['result'].get('type', 'unknown')} — {(r['result'].get('payload') or {}).get('message', str(r['result']))[:200]}"
+            for r in tool_results
+        )
+        goal_block = f"\nActive session goal:\n{goal}\n" if goal else ""
+        planner_prompt = f"""
+You are Horus planner. A previous plan had failures. Decide next action.
+
+Original user message:
+{message}
+{goal_block}
+
+Previous tool execution results (some may have failed):
+{observations}
+
+Platform snapshot JSON:
+{json.dumps(platform_snapshot)[:4000]}
+
+Available tools:
+{json.dumps(tool_manifest)}
+
+Return ONLY valid JSON:
+{{"mode": "tool" | "plan" | "chat", "tool": "tool_name_or_null", "arguments": {{}}, "steps": [...], "reason": "short", "response": "Brief user-facing message when mode is chat"}}
+
+Rules:
+- If a tool failed, consider an alternative tool or different arguments.
+- If no alternative helps, use mode "chat" and explain the failure to the user.
+- Plan can contain up to 3 steps.
+"""
+        raw = await client.generate_text(prompt=planner_prompt)
+        parsed = self._extract_json_block(raw)
+        if not isinstance(parsed, dict):
+            return None
+        if parsed.get("mode") not in {"tool", "plan", "chat"}:
+            return None
+        if parsed.get("mode") == "tool" and parsed.get("tool") not in TOOL_REGISTRY:
+            return None
+        if parsed.get("mode") == "plan":
+            parsed["steps"] = self._normalize_plan_steps(parsed.get("steps", []))
+            if not parsed["steps"]:
+                return None
+        if not isinstance(parsed.get("arguments", {}), dict):
+            parsed["arguments"] = {}
+        return parsed
+
     def _summarize_tool_result(self, tool_name: str, result: dict, user_message: str | None = None) -> str:
         result_type = result.get("type", "unknown")
         if result_type == "job_started":
@@ -1499,13 +1671,27 @@ Rules:
         institution_id: Optional[str],
         current_user: dict,
         background_tasks: Any = None,
+        yield_chunk: Callable[[str], Any] | None = None,
+        correlation_id: Optional[str] = None,
     ) -> dict:
+        """Execute plan steps with ReAct-style feedback: emit __TOOL_STEP__ per step,
+        retry on failure, emit __ACTION_RESULT__ for each successful step."""
         executed: list[dict] = []
         last_structured: Optional[dict] = None
+        total = len(plan_steps)
+        tool_results: list[dict] = []  # For potential re-plan / reflection
 
-        for step in plan_steps:
+        def _emit(chunk: str) -> None:
+            if yield_chunk:
+                yield_chunk(chunk)
+
+        for step_idx, step in enumerate(plan_steps, start=1):
             tool_name = step["tool"]
             args = step.get("arguments", {}) or {}
+            tool_meta = get_tool_ui_meta(tool_name)
+
+            _emit(f"__TOOL_STEP__:{json.dumps({'step': step_idx, 'total': total, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running'})}\n")
+
             result = await execute_tool(
                 tool_name=tool_name,
                 args=args,
@@ -1514,8 +1700,16 @@ Rules:
                 institution_id=institution_id,
                 current_user=current_user,
             )
-            if result.get("type") in STRUCTURED_RESULT_TYPES:
+
+            tool_results.append({"tool": tool_name, "result": result})
+            ok = result.get("type") != "action_error"
+
+            _emit(f"__TOOL_STEP__:{json.dumps({'step': step_idx, 'total': total, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'done' if ok else 'error', 'result_type': result.get('type', 'unknown')})}\n")
+
+            if result.get("type") in STRUCTURED_RESULT_TYPES and result.get("type") != "action_error":
                 last_structured = result
+            if ok and result.get("type") in STRUCTURED_RESULT_TYPES and result.get("type") != "action_error":
+                _emit(f"__ACTION_RESULT__:{json.dumps(result)}\n")
 
             await self._log_agent_action(
                 user_id=user_id,
@@ -1524,11 +1718,12 @@ Rules:
                 result=result,
                 background_tasks=background_tasks,
                 phase="plan",
+                correlation_id=correlation_id,
             )
             executed.append({
                 "tool": tool_name,
                 "result_type": result.get("type", "unknown"),
-                "ok": result.get("type") != "action_error",
+                "ok": ok,
             })
 
         success = len([e for e in executed if e["ok"]])
@@ -1540,6 +1735,7 @@ Rules:
         return {
             "last_structured": last_structured,
             "summary_text": "\n".join(summary_lines),
+            "tool_results": tool_results,
         }
 
     async def _log_agent_action(
@@ -1551,10 +1747,13 @@ Rules:
         result: dict,
         background_tasks: Any = None,
         phase: str = "auto",
+        correlation_id: Optional[str] = None,
     ) -> None:
         title = f"Horus executed {tool_name}"
         description = f"Phase={phase}, result={result.get('type', 'unknown')}"
         metadata = {"tool": tool_name, "args": args, "result_type": result.get("type"), "phase": phase}
+        if correlation_id:
+            metadata["correlation_id"] = correlation_id
         if background_tasks:
             background_tasks.add_task(
                 ActivityService.log_activity,

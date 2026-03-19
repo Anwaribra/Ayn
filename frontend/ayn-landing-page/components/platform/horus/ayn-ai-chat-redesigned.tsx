@@ -29,13 +29,23 @@ import {
   Download,
   RefreshCw,
   Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Maximize2,
+  Minimize2,
+  Volume2,
+  VolumeX,
+  Sun,
+  Moon,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
-import { useHorus } from "@/lib/horus-context"
+import { useHorus, type CitationSource } from "@/lib/horus-context"
+import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
@@ -44,6 +54,7 @@ import { MiniOrb } from "./agent-orb"
 import { AiLoader } from "@/components/ui/ai-loader"
 import { AgentExecutionTimeline, deriveAgentSteps } from "./agent-execution-timeline"
 import { ThinkStepper } from "./think-stepper"
+import { ThinkingPanel } from "./thinking-panel"
 import { useLiveStreamingText } from "@/hooks/use-streaming-text"
 
 /** Renders assistant content with typing effect when streaming */
@@ -210,7 +221,9 @@ export default function HorusAIChat() {
     currentChatId,
     status,
     thinkingSteps,
+    toolSteps,
     activeFiles,
+    fileStatuses,
     streamError,
     sendMessage,
     resolveActionConfirmation,
@@ -220,6 +233,7 @@ export default function HorusAIChat() {
     loadChat
   } = useHorus()
 
+  const isEmpty = messages.length === 0
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [responseMode, setResponseMode] = useState<"ask" | "think" | "agent">("ask")
   const [activeResponseMode, setActiveResponseMode] = useState<"ask" | "think" | "agent">("ask")
@@ -227,18 +241,33 @@ export default function HorusAIChat() {
   // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
   const [feedbackPersisted, setFeedbackPersisted] = useState<Set<string>>(new Set())
+  // Tiered feedback: when thumbs down, expand to show categories + optional "Tell us more"
+  const [feedbackDownExpanded, setFeedbackDownExpanded] = useState<string | null>(null)
+  const [feedbackTellMore, setFeedbackTellMore] = useState<Record<string, string>>({})
   // M1: copy state tracking
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   
   const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isNearBottom, setIsNearBottom] = useState(true)
+  const userRequestedScrollRef = useRef(false)
   const fallbackQueueRef = useRef<string[]>([])
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const didLoadFromQueryRef = useRef(false)
   const [completionPulseKey, setCompletionPulseKey] = useState(0)
+  const [thinkingPanelExpanded, setThinkingPanelExpanded] = useState(false)
+  const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set())
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true
+    return !localStorage.getItem("horus-sound-disabled")
+  })
   const prevStatusRef = useRef<typeof status>(status)
+  const COLLAPSE_THRESHOLD = 600
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
+  const { focusMode, setFocusMode } = useFocusMode()
+  const { theme: _theme, setTheme, resolvedTheme } = useTheme()
 
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
@@ -255,12 +284,57 @@ export default function HorusAIChat() {
     })
   }, [searchParams, currentChatId, loadChat])
 
-  // Auto-scroll effect
+  // Check if user is near bottom (within 100px)
+  const checkNearBottom = useCallback(() => {
+    const el = scrollContainerRef.current
+    if (!el) return true
+    const { scrollTop, scrollHeight, clientHeight } = el
+    const threshold = 100
+    return scrollTop + clientHeight >= scrollHeight - threshold
+  }, [])
+
+  // Scroll handler: update isNearBottom (debounced)
+  const handleScroll = useCallback(() => {
+    const near = checkNearBottom()
+    setIsNearBottom(near)
+    if (near) userRequestedScrollRef.current = false
+  }, [checkNearBottom])
+
   useEffect(() => {
-    if (messagesEndRef.current) {
+    const el = scrollContainerRef.current
+    if (!el) return
+    let raf: number
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(handleScroll)
+    }
+    el.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      el.removeEventListener("scroll", onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [handleScroll])
+
+  // Re-check near-bottom when chat switches or messages load (after layout)
+  useEffect(() => {
+    if (isEmpty) return
+    const el = scrollContainerRef.current
+    if (!el) return
+    const check = () => {
+      const near = el.scrollTop + el.clientHeight >= el.scrollHeight - 100
+      setIsNearBottom(near)
+    }
+    const t = setTimeout(check, 100)
+    return () => clearTimeout(t)
+  }, [currentChatId, isEmpty, messages.length])
+
+  // Smart auto-scroll: only when near bottom or user just clicked "scroll to bottom"
+  useEffect(() => {
+    if (!messagesEndRef.current) return
+    if (isNearBottom || userRequestedScrollRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages, status])
+  }, [messages, status, isNearBottom])
 
   // L2: Keyboard shortcut — Ctrl/Cmd+N → new chat (⌘K is reserved for the global command palette)
   useEffect(() => {
@@ -295,7 +369,7 @@ export default function HorusAIChat() {
         steps: [] as { text: string; status: "pending" | "active" | "done" }[],
         startTime: Date.now(),
         duration: null,
-        isExpanded: true,
+        isExpanded: thinkingPanelExpanded,
         isComplete: false,
         tempUserMessage: null,
       }
@@ -308,7 +382,7 @@ export default function HorusAIChat() {
       return {
         ...base,
         steps: nextSteps,
-        isExpanded: true,
+        isExpanded: thinkingPanelExpanded,
         isComplete: false,
       }
     })
@@ -319,14 +393,30 @@ export default function HorusAIChat() {
       fallbackTimerRef.current = null
     }
     fallbackQueueRef.current = []
-  }, [thinkingSteps])
+  }, [thinkingSteps, thinkingPanelExpanded])
 
   useEffect(() => {
     if (prevStatusRef.current === "generating" && status === "idle") {
       setCompletionPulseKey((k) => k + 1)
+      // Sound notification on completion (respect user preference)
+      if (typeof window !== "undefined" && soundEnabled) {
+        try {
+          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.frequency.setValueAtTime(880, ctx.currentTime)
+          osc.frequency.setValueAtTime(660, ctx.currentTime + 0.05)
+          gain.gain.setValueAtTime(0.05, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
+          osc.start(ctx.currentTime)
+          osc.stop(ctx.currentTime + 0.15)
+        } catch (_) {}
+      }
     }
     prevStatusRef.current = status
-  }, [status])
+  }, [status, soundEnabled])
 
   useEffect(() => {
     if (status !== "idle") return
@@ -343,12 +433,12 @@ export default function HorusAIChat() {
         ...prev,
         steps: prev.steps.map((s) => ({ ...s, status: "done" as const })),
         isComplete: true,
-        isExpanded: false,
+        isExpanded: thinkingPanelExpanded,
         duration: prev.duration ?? (Date.now() - prev.startTime) / 1000,
         tempUserMessage: null,
       }
     })
-  }, [status])
+  }, [status, thinkingPanelExpanded])
 
   // Seed fallback reasoning steps for Think mode when backend sends no __THINKING__
   useEffect(() => {
@@ -467,16 +557,44 @@ export default function HorusAIChat() {
     }
   }, [])
 
-  // M2: Wire feedback to backend
-  const handleFeedback = useCallback(async (msgId: string, rating: "up" | "down") => {
-    const next = feedback[msgId] === rating ? null : rating
-    setFeedback(prev => ({ ...prev, [msgId]: next }))
-    if (!next) return // un-vote — no server call needed
-    try {
-      await api.submitMessageFeedback(msgId, currentChatId, next)
-      setFeedbackPersisted(prev => new Set([...prev, msgId]))
-    } catch {
-      // Silently fail — optimistic state is still correct locally
+  // M2: Wire feedback to backend (tiered: category + optional comment for thumbs down)
+  const handleFeedback = useCallback(async (
+    msgId: string,
+    rating: "up" | "down",
+    category?: string,
+    comment?: string
+  ) => {
+    if (rating === "up") {
+      const next = feedback[msgId] === "up" ? null : "up"
+      setFeedback(prev => ({ ...prev, [msgId]: next }))
+      setFeedbackDownExpanded(null)
+      setFeedbackTellMore(prev => { const p = { ...prev }; delete p[msgId]; return p })
+      if (!next) return
+      try {
+        await api.submitMessageFeedback(msgId, currentChatId, next)
+        setFeedbackPersisted(prev => new Set([...prev, msgId]))
+      } catch { /* optimistic state kept */ }
+      return
+    }
+    // Thumbs down: toggle or expand for tiered feedback
+    if (feedback[msgId] !== "down") {
+      setFeedback(prev => ({ ...prev, [msgId]: "down" }))
+      setFeedbackDownExpanded(msgId)
+      return
+    }
+    // Already down — if category/comment provided, submit and close
+    if (category || comment) {
+      try {
+        await api.submitMessageFeedback(msgId, currentChatId, "down", category, comment)
+        setFeedbackPersisted(prev => new Set([...prev, msgId]))
+      } catch { /* optimistic state kept */ }
+      setFeedbackDownExpanded(null)
+      setFeedbackTellMore(prev => { const p = { ...prev }; delete p[msgId]; return p })
+    } else {
+      // Un-vote
+      setFeedback(prev => ({ ...prev, [msgId]: null }))
+      setFeedbackDownExpanded(null)
+      setFeedbackTellMore(prev => { const p = { ...prev }; delete p[msgId]; return p })
     }
   }, [feedback, currentChatId])
 
@@ -608,7 +726,6 @@ export default function HorusAIChat() {
   const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
   const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
 
-  const isEmpty = messages.length === 0
   const isProcessing = status !== "idle"
   const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
 
@@ -633,8 +750,33 @@ export default function HorusAIChat() {
   return (
       <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
-      {/* New + History + Export as floating top-right (no header bar) */}
+      {/* New + History + Export + Focus as floating top-right */}
       <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setSoundEnabled((v) => {
+              const next = !v
+              if (next) localStorage.removeItem("horus-sound-disabled")
+              else localStorage.setItem("horus-sound-disabled", "1")
+              return next
+            })
+          }}
+          className={cn("horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8", !soundEnabled && "text-muted-foreground/60")}
+          title={soundEnabled ? "Disable completion sound" : "Enable completion sound"}
+        >
+          {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setFocusMode(!focusMode)}
+          className={cn("horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8", focusMode && "text-primary bg-primary/10")}
+          title={focusMode ? "Exit focus mode" : "Focus mode (hide sidebar)"}
+        >
+          {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
         {/* M8: Export chat — only visible when conversation has messages */}
         {!isEmpty && (
           <Button variant="ghost" size="sm" onClick={handleExportChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="Export chat (.txt)">
@@ -714,6 +856,7 @@ export default function HorusAIChat() {
       {/* ─── Chat Area (full height, centered) ─── */}
       <div className="flex-1 overflow-hidden relative flex flex-col items-center w-full">
         <div
+          ref={scrollContainerRef}
           className={cn(
             "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
             isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-36 md:pb-28"
@@ -859,11 +1002,12 @@ export default function HorusAIChat() {
                             (activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
                             (thinkingSteps.length > 0 || msg.pendingConfirmation) &&
                             (() => {
-                              const { steps, phase } = deriveAgentSteps(
+                              const { steps, phase, stepProgress } = deriveAgentSteps(
                                 thinkingSteps,
                                 msg.pendingConfirmation ?? null,
                                 !!(msg as any).structuredResult,
-                                status === "generating"
+                                status === "generating",
+                                toolSteps
                               )
                               if (steps.length === 0 && !msg.pendingConfirmation) return null
                               return (
@@ -871,9 +1015,11 @@ export default function HorusAIChat() {
                                   <AgentExecutionTimeline
                                     steps={steps}
                                     phase={phase}
+                                    stepProgress={stepProgress}
                                     pendingTool={msg.pendingConfirmation?.title}
                                     isWaitingConfirmation={!!msg.pendingConfirmation}
                                     activeFiles={activeFiles}
+                                    fileStatuses={fileStatuses}
                                     collapsible
                                     compact
                                   />
@@ -920,24 +1066,51 @@ export default function HorusAIChat() {
                           {msg.content ? (
                             <div
                               dir="auto"
+                              aria-live={isStreamingThis ? "polite" : undefined}
+                              aria-atomic={isStreamingThis ? false : undefined}
+                              aria-busy={isStreamingThis}
                               className={cn(
                                 "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-3xl rounded-tl-lg border border-transparent px-4 py-3.5 text-[15px] leading-relaxed text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-4",
                                 isStreamingThis && "horus-streaming-active"
                               )}
                             >
-                              <StreamingAssistantContent
-                                content={msg.content}
-                                isStreaming={isStreamingThis}
-                                onAction={handleAction}
-                              />
-                              {isStreamingThis && (
-                                <span className="inline-flex items-center gap-0.5 ml-1 align-middle">
-                                  <span
-                                    className="horus-stream-cursor inline-block w-[3px] h-[1em] bg-primary rounded-sm align-middle"
-                                    style={{ marginLeft: "2px" }}
-                                  />
-                                </span>
-                              )}
+                              {(() => {
+                                const isLong = msg.content.length > COLLAPSE_THRESHOLD && !isStreamingThis
+                                const isExpanded = expandedMsgIds.has(msg.id)
+                                const showContent = !isLong || isExpanded
+                                return (
+                                  <>
+                                    <StreamingAssistantContent
+                                      content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
+                                      isStreaming={isStreamingThis}
+                                      onAction={handleAction}
+                                    />
+                                    {isStreamingThis && (
+                                      <span className="inline-flex items-center gap-0.5 ml-1 align-middle">
+                                        <span
+                                          className="horus-stream-cursor inline-block w-[3px] h-[1em] bg-primary rounded-sm align-middle"
+                                          style={{ marginLeft: "2px" }}
+                                        />
+                                      </span>
+                                    )}
+                                    {isLong && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedMsgIds((s) => {
+                                          const next = new Set(s)
+                                          if (isExpanded) next.delete(msg.id)
+                                          else next.add(msg.id)
+                                          return next
+                                        })}
+                                        className="mt-2 flex items-center gap-1 text-[12px] font-medium text-primary hover:text-primary/80"
+                                      >
+                                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                        {isExpanded ? "Show less" : "Show more"}
+                                      </button>
+                                    )}
+                                  </>
+                                )
+                              })()}
                             </div>
                           ) : msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
@@ -948,6 +1121,46 @@ export default function HorusAIChat() {
                               التحليل لم يُولّد. يرجى المحاولة مرة أخرى أو إرفاق ملف مختلف.
                             </div>
                           ) : null}
+
+                          {/* Confidence indicator — when RAG sources cited */}
+                          {msg.role === "assistant" && (msg as any).citations?.length > 0 && (
+                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              Based on your evidence
+                            </div>
+                          )}
+
+                          {/* Citation sources — RAG sources when available */}
+                          {msg.role === "assistant" && (msg as any).citations?.length > 0 && (
+                            <div className="mt-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/60 p-3">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sources</p>
+                              <div className="space-y-2">
+                                {(msg as any).citations.map((src: CitationSource, idx: number) => (
+                                  <a
+                                    key={src.document_id}
+                                    href={`/platform/evidence?highlight=${encodeURIComponent(src.document_id)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex gap-2 rounded-xl border border-[var(--border-subtle)]/60 bg-background/50 p-2.5 text-left hover:bg-primary/5 hover:border-primary/20 transition-colors"
+                                  >
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                                      {idx + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[12px] font-medium text-foreground truncate">
+                                        {src.title || `Document ${src.document_id.slice(0, 8)}`}
+                                      </p>
+                                      {src.excerpt && (
+                                        <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                                          {src.excerpt}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Suggestion chips — Cursor-style follow-ups (only for last assistant message) */}
                           {msg.role === "assistant" &&
@@ -963,31 +1176,49 @@ export default function HorusAIChat() {
                                 const auditEn = ["Deeper analysis", "Link to standards", "Export report"]
                                 const gapAr = ["عرض التفاصيل", "تشغيل تحليل", "ربط أدلة"]
                                 const gapEn = ["Show details", "Run analysis", "Link evidence"]
-                                const defaultAr = ["اشرح أكثر", "أمثلة عملية", "سؤال آخر"]
-                                const defaultEn = ["Explain more", "Practical examples", "Another question"]
+                                const defaultAr = ["اشرح أكثر", "أمثلة عملية", "سؤال آخر", "اختصره", "أعد الصياغة"]
+                                const defaultEn = ["Explain more", "Practical examples", "Another question", "Make it shorter", "Regenerate"]
                                 const suggestions = struct?.type === "audit_report" || struct?.type === "analytics_report"
                                   ? (hasArabic ? auditAr : auditEn)
                                   : struct?.type === "gap_table"
                                     ? (hasArabic ? gapAr : gapEn)
                                     : (hasArabic ? defaultAr : defaultEn)
-                                return suggestions.map((label) => (
-                                  <button
-                                    key={label}
-                                    type="button"
-                                    onClick={() => sendMessage(label)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-colors"
-                                  >
-                                    <ArrowUpRight className="w-3 h-3" />
-                                    {label}
-                                  </button>
-                                ))
+                                return suggestions.map((label) => {
+                                  const isRegenerate = label === "Regenerate" || label === "أعد الصياغة"
+                                  const isShorter = label === "Make it shorter" || label === "اختصره"
+                                  const prompt = isShorter ? (hasArabic ? "اختصِر الرد السابق في نقاط أقل" : "Summarize the previous response in fewer points") : label
+                                  return (
+                                    <button
+                                      key={label}
+                                      type="button"
+                                      onClick={() => isRegenerate ? retryLastMessage() : sendMessage(prompt)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-colors"
+                                    >
+                                      {isRegenerate ? <RefreshCw className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                                      {label}
+                                    </button>
+                                  )
+                                })
                               })()}
                             </div>
                           )}
 
-                          {/* M3: Feedback buttons + M1: Copy button — only on completed assistant messages */}
+                          {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && (
-                            <div className="glass-panel mt-2 flex w-fit items-center gap-1 rounded-2xl p-1 sm:mt-3 sm:p-1.5">
+                            <div className="glass-panel relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-2xl p-1 sm:mt-3 sm:p-1.5">
+                              {/* Regenerate — only on last message */}
+                              {msg.id === lastAssistantMsgId && (
+                                <>
+                                  <button
+                                    onClick={() => retryLastMessage()}
+                                    className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
+                                    title="Regenerate response"
+                                  >
+                                    <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                  </button>
+                                  <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
+                                </>
+                              )}
                               {/* M1: Copy */}
                               {msg.content && (
                                 <button
@@ -1019,7 +1250,13 @@ export default function HorusAIChat() {
                                 <ThumbsUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
                               <button
-                                onClick={() => handleFeedback(msg.id, "down")}
+                                onClick={() => {
+                                  if (feedback[msg.id] === "down" && feedbackDownExpanded === msg.id) {
+                                    setFeedbackDownExpanded(null)
+                                    return
+                                  }
+                                  handleFeedback(msg.id, "down")
+                                }}
                                 className={cn(
                                   "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
                                   feedback[msg.id] === "down"
@@ -1030,6 +1267,49 @@ export default function HorusAIChat() {
                               >
                                 <ThumbsDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
+                              {/* Tiered feedback: categories + Tell us more when thumbs down expanded */}
+                              {feedback[msg.id] === "down" && feedbackDownExpanded === msg.id && !feedbackPersisted.has(msg.id) && (
+                                <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--glass-panel)] p-2 shadow-lg">
+                                  <p className="text-[11px] font-medium text-muted-foreground mb-2">What was wrong?</p>
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {["Inaccurate", "Not relevant", "Incomplete", "Harmful"].map((cat) => (
+                                      <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => handleFeedback(msg.id, "down", cat)}
+                                        className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-muted/50 hover:bg-muted text-foreground"
+                                      >
+                                        {cat}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <div className="border-t border-[var(--border-subtle)] pt-2">
+                                    <textarea
+                                      placeholder="Tell us more (optional)"
+                                      value={feedbackTellMore[msg.id] ?? ""}
+                                      onChange={(e) => setFeedbackTellMore(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                                      className="w-full min-h-[60px] rounded-lg border border-[var(--border-subtle)] bg-background px-2.5 py-2 text-[12px] placeholder:text-muted-foreground/60 resize-none"
+                                      rows={2}
+                                    />
+                                    <div className="flex justify-end gap-1.5 mt-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setFeedbackDownExpanded(null)}
+                                        className="px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleFeedback(msg.id, "down", undefined, feedbackTellMore[msg.id] || undefined)}
+                                        className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                                      >
+                                        Submit
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                               {/* Persisted check — shows after feedback is saved to backend */}
                               {feedbackPersisted.has(msg.id) && (
                                 <span className="text-[10px] text-muted-foreground/60 font-medium ml-1">Saved</span>
@@ -1043,27 +1323,30 @@ export default function HorusAIChat() {
                 })}
 
                 {showLoadingBubble && (
-                  <div className="w-full py-2 sm:py-4 animate-in fade-in">
+                  <div role="status" aria-live="polite" aria-label="Processing your request" className="w-full py-2 sm:py-4 animate-in fade-in">
                     {(activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
                     (thinkingSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation || (activeResponseMode !== "ask" && [...messages].reverse().find((m) => m.role === "user")?.attachments?.length)) ? (
                       (() => {
                         const lastMsg = messages.filter((m) => m.role === "assistant").pop()
                         const lastUserHasAttachments = !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length
                         const effectiveSteps = thinkingSteps.length > 0 ? thinkingSteps : (activeResponseMode !== "ask" && lastUserHasAttachments ? ["Preparing your request..."] : [])
-                        const { steps, phase } = deriveAgentSteps(
+                        const { steps, phase, stepProgress } = deriveAgentSteps(
                           effectiveSteps,
                           lastMsg?.pendingConfirmation ?? null,
                           !!(lastMsg as any)?.structuredResult,
-                          status === "generating"
+                          status === "generating",
+                          toolSteps
                         )
                         if (steps.length === 0 && !lastMsg?.pendingConfirmation) return null
                         return (
                           <AgentExecutionTimeline
                             steps={steps}
                             phase={phase}
+                            stepProgress={stepProgress}
                             pendingTool={lastMsg?.pendingConfirmation?.title}
                             isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
                             activeFiles={activeFiles}
+                            fileStatuses={fileStatuses}
                             collapsible
                           />
                         )
@@ -1076,7 +1359,12 @@ export default function HorusAIChat() {
                         compact
                       />
                     ) : isAskLoading ? (
-                      <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200">
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Answering your question"
+                        className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200"
+                      >
                         <div className="flex items-center gap-1">
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
@@ -1085,11 +1373,18 @@ export default function HorusAIChat() {
                         <span className="text-[11px] font-medium">Answering…</span>
                       </div>
                     ) : (
-                      <div className="glass-panel flex max-w-[14rem] items-center gap-3 rounded-2xl p-3 sm:max-w-none">
-                        <MiniOrb state="generating" className="shrink-0" />
-                        <div className="flex-1 space-y-2">
-                          <div className="horus-loading-line w-24 sm:w-40" />
-                          <div className="horus-loading-line w-36 sm:w-64" />
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Generating response"
+                        className="glass-panel flex max-w-[18rem] items-start gap-3 rounded-2xl p-3 sm:max-w-none sm:p-4"
+                      >
+                        <MiniOrb state="generating" className="mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0 space-y-2.5">
+                          <div className="horus-loading-line w-full max-w-[85%]" />
+                          <div className="horus-loading-line w-full max-w-[95%]" />
+                          <div className="horus-loading-line w-3/4 max-w-[70%]" />
+                          <div className="horus-loading-line w-1/2 max-w-[40%]" />
                         </div>
                       </div>
                     )}
@@ -1119,6 +1414,33 @@ export default function HorusAIChat() {
           </div>
         </div>
 
+        {/* Scroll-to-bottom button — when user scrolled up */}
+        {!isEmpty && !isNearBottom && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 sm:bottom-20 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <button
+              type="button"
+              onClick={() => {
+                userRequestedScrollRef.current = true
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+              }}
+              className="glass-pill glass-text-primary inline-flex items-center gap-2 px-3 py-2 text-[12px] font-medium shadow-lg hover:bg-[var(--glass-soft-bg)] transition-colors rounded-full border border-[var(--glass-border)]"
+              aria-label="Scroll to bottom"
+            >
+              {isProcessing ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  New message
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Scroll to bottom
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* ─── Input: centered, no heavy bar ─── */}
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/70 via-background/25 to-transparent px-2.5 pb-1 pt-1 sm:px-4 sm:pb-2">
           <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
@@ -1147,11 +1469,26 @@ export default function HorusAIChat() {
                     target: { files: [file] },
                   } as unknown as React.ChangeEvent<HTMLInputElement>);
                 }}
+                onThinkingSelect={() => setResponseMode("think")}
+                responseMode={responseMode}
+                draftKey={currentChatId ?? undefined}
+                lastUserMessage={[...messages].reverse().find((m) => m.role === "user")?.content ?? undefined}
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
                 footer={
                   <div className="flex items-center gap-2">
+                    {reasoning && reasoning.steps.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                        onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
+                      >
+                        <Brain className="h-3.5 w-3.5 mr-1" />
+                        {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
+                      </Button>
+                    )}
                     <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
                       <SelectTrigger
                         size="sm"
@@ -1178,8 +1515,17 @@ export default function HorusAIChat() {
                       </SelectContent>
                     </Select>
                     <span className="hidden h-4 w-px bg-white/8 sm:block" />
+                    <button
+                      type="button"
+                      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--border-subtle)]/50 transition-colors"
+                      aria-label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+                      title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+                    >
+                      {resolvedTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                    </button>
                     <span className="hidden text-[11px] font-medium text-muted-foreground/80 sm:block">
-                      Fast mode available
+                      Fast mode · ↑ last message
                     </span>
                   </div>
                 }
@@ -1191,6 +1537,12 @@ export default function HorusAIChat() {
             </p>
           </div>
         </div>
+
+        <ThinkingPanel
+          reasoning={reasoning ? { ...reasoning, isExpanded: thinkingPanelExpanded } : null}
+          status={status}
+          onClose={() => setThinkingPanelExpanded(false)}
+        />
       </div>
     </div>
   )

@@ -879,10 +879,22 @@ class ApiClient {
     return this.request(`/horus/history/${chatId}`, { method: "DELETE" })
   }
 
-  async submitMessageFeedback(messageId: string, chatId: string | null, rating: "up" | "down") {
+  async submitMessageFeedback(
+    messageId: string,
+    chatId: string | null,
+    rating: "up" | "down",
+    category?: string,
+    comment?: string
+  ) {
     return this.request("/horus/feedback", {
       method: "POST",
-      body: JSON.stringify({ message_id: messageId, chat_id: chatId, rating }),
+      body: JSON.stringify({
+        message_id: messageId,
+        chat_id: chatId,
+        rating,
+        ...(category && { category }),
+        ...(comment && { comment }),
+      }),
     })
   }
 

@@ -99,7 +99,19 @@ function HorusMiniChat() {
             chatIdRef.current = chunk.slice("__CHAT_ID__:".length).trim()
             return
           }
-          if (chunk.startsWith("__THINKING__:") || chunk.startsWith("__FILE__:") || chunk.startsWith("__ACTION_CONFIRM__:") || chunk.startsWith("__ACTION_RESULT__:")) return
+          if (chunk.startsWith("__THINKING__:")) return
+          if (chunk.startsWith("__FILE__:") || chunk.startsWith("__FILE_STATUS__:")) return
+          if (chunk.startsWith("__TOOL_STEP__:")) return
+          if (chunk.startsWith("__ACTION_CONFIRM__:")) return
+          if (chunk.startsWith("__ACTION_RESULT__:")) {
+            try {
+              const rest = chunk.slice("__ACTION_RESULT__:".length)
+              const nl = rest.indexOf("\n")
+              const narrative = nl >= 0 ? rest.slice(nl + 1).trimStart() : ""
+              if (narrative) append(narrative)
+            } catch (_) {}
+            return
+          }
           if (chunk.startsWith("__STREAM_ERROR__:")) {
             append("Connection interrupted. Please try again.")
             return

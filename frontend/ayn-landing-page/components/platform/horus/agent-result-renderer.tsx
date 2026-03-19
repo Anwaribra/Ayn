@@ -67,6 +67,50 @@ export function AgentResultRenderer({ result }: AgentResultRendererProps) {
       )
     case "analytics_report":
       return <AnalyticsReportCard payload={result.payload} />
+    case "link_result":
+      return (
+        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+          <p className="text-sm font-semibold text-foreground">Evidence Linked</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Evidence has been linked to the criterion successfully.
+          </p>
+          {result.payload?.evidenceId && (
+            <a
+              href={`/platform/evidence?highlight=${result.payload.evidenceId}`}
+              className="mt-2 inline-block text-xs text-primary hover:underline"
+            >
+              View in Evidence Vault →
+            </a>
+          )}
+        </div>
+      )
+    case "report_export":
+      return (
+        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+          <p className="text-sm font-semibold text-foreground">Report Export Ready</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your report is ready for download.
+          </p>
+          {result.payload?.relative_export_url && (
+            <a
+              href={result.payload.relative_export_url}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/20"
+              download
+            >
+              Download Report
+            </a>
+          )}
+        </div>
+      )
+    case "action_error":
+      return (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm font-semibold text-destructive">Action Failed</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {result.payload?.message || "The action could not be completed."}
+          </p>
+        </div>
+      )
     default:
       return null
   }

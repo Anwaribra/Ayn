@@ -305,6 +305,8 @@ class EvidenceService:
             # 3.5 RAG Indexing - index AI analysis + raw PDF text when available
             try:
                 from app.rag.service import RagService
+                ev = await prisma_client.evidence.find_unique(where={"id": evidence_id})
+                institution_id = getattr(ev, "ownerId", None) if ev else None
                 rag = RagService()
                 rag_content = f"Title: {title}\nType: {doc_type}\n\n{summary}"
                 if raw_response:
@@ -323,7 +325,12 @@ class EvidenceService:
                             rag_content += f"\n\n--- Raw Document Text ---\n{raw_text}"
                     except Exception as pdf_err:
                         logger.debug(f"PDF text extraction skipped for {evidence_id}: {pdf_err}")
-                await rag.index_document(rag_content, document_id=evidence_id)
+                await rag.index_document(
+                    rag_content,
+                    document_id=evidence_id,
+                    user_id=user_id,
+                    institution_id=institution_id,
+                )
                 logger.info(f"RAG indexed evidence {evidence_id}")
             except Exception as e:
                 logger.warning(f"RAG indexing failed for {evidence_id}: {e}")

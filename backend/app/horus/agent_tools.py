@@ -7,7 +7,12 @@ Typed tool registry used by the Horus planner/executor loop.
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Awaitable, Callable, Dict
+
+logger = logging.getLogger(__name__)
+TOOL_RETRY_ATTEMPTS = 2
+TOOL_RETRY_BASE_DELAY_SEC = 1
 
 from app.evidence.models import AttachEvidenceRequest
 from app.evidence.service import EvidenceService
@@ -302,10 +307,45 @@ async def execute_tool(
     if not spec:
         return {"type": "action_error", "payload": {"message": f"Unknown tool '{tool_name}'"}}
     handler: ToolFn = spec["handler"]
-    return await handler(
-        db=db,
-        user_id=user_id,
-        institution_id=institution_id,
-        current_user=current_user,
-        args=args or {},
-    )
+    last_error: str | None = None
+    for attempt in range(TOOL_RETRY_ATTEMPTS + 1):
+        try:
+            result = await handler(
+                db=db,
+                user_id=user_id,
+                institution_id=institution_id,
+                current_user=current_user,
+                args=args or {},
+            )
+            if result.get("type") == "action_error":
+                payload = result.get("payload") or {}
+                last_error = payload.get("message") or result.get("message") or str(result)
+                if attempt < TOOL_RETRY_ATTEMPTS:
+                    delay = TOOL_RETRY_BASE_DELAY_SEC * (2**attempt)
+                    logger.warning(
+                        "Tool %s failed (attempt %d/%d): %s; retrying in %.1fs",
+                        tool_name,
+                        attempt + 1,
+                        TOOL_RETRY_ATTEMPTS + 1,
+                        last_error,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+            return result
+        except Exception as exc:
+            last_error = str(exc)
+            if attempt < TOOL_RETRY_ATTEMPTS:
+                delay = TOOL_RETRY_BASE_DELAY_SEC * (2**attempt)
+                logger.warning(
+                    "Tool %s raised (attempt %d/%d): %s; retrying in %.1fs",
+                    tool_name,
+                    attempt + 1,
+                    TOOL_RETRY_ATTEMPTS + 1,
+                    last_error,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+                continue
+            return {"type": "action_error", "payload": {"message": last_error or "Unknown error"}}
+    return {"type": "action_error", "payload": {"message": last_error or "Unknown error"}}

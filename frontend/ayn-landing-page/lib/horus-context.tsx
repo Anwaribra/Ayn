@@ -11,6 +11,13 @@ interface AttachmentPreview {
     preview?: string
 }
 
+export type CitationSource = {
+    document_id: string
+    title: string | null
+    excerpt?: string
+    similarity?: number
+}
+
 interface Message {
     id: string
     role: "user" | "assistant" | "system"
@@ -24,18 +31,35 @@ interface Message {
         title: string
         description: string
     } | null
+    /** RAG sources for citation UI (from __CITATION__ protocol) */
+    citations?: CitationSource[]
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
 type HorusResponseMode = "ask" | "think" | "agent"
+
+export type ToolStep = {
+    step: number
+    total: number
+    tool: string
+    title?: string
+    status: "running" | "done" | "error"
+    result_type?: string
+}
+
+export type FileStatus = "uploading" | "extracting" | "analyzing" | "done" | "error"
 
 interface HorusContextValue {
     messages: Message[]
     currentChatId: string | null
     status: HorusStatus
     thinkingSteps: string[]
+    /** Tool execution steps (from __TOOL_STEP__ protocol) — Step X of Y */
+    toolSteps: ToolStep[]
     /** File names being processed (from __FILE__ protocol) */
     activeFiles: string[]
+    /** Per-file status (from __FILE_STATUS__ protocol) */
+    fileStatuses: Record<string, FileStatus>
     streamError: string | null
     sendMessage: (
         text?: string,
@@ -61,7 +85,9 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [status, setStatus] = useState<HorusStatus>("idle")
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([])
+    const [toolSteps, setToolSteps] = useState<ToolStep[]>([])
     const [activeFiles, setActiveFiles] = useState<string[]>([])
+    const [fileStatuses, setFileStatuses] = useState<Record<string, FileStatus>>({})
     const [streamError, setStreamError] = useState<string | null>(null)
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -181,6 +207,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         if ((!modelText && (!files || files.length === 0)) || status !== "idle") return
 
         setThinkingSteps([])
+        setToolSteps([])
         setActiveFiles([])
         setStreamError(null)
 
@@ -235,9 +262,55 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                         return
                     }
 
+                    if (chunk.startsWith("__FILE_STATUS__:")) {
+                        try {
+                            const jsonStr = chunk.slice("__FILE_STATUS__:".length).trim()
+                            const parsed = JSON.parse(jsonStr)
+                            const fn = parsed?.filename
+                            const st = parsed?.status
+                            if (fn && st) {
+                                setFileStatuses(prev => ({ ...prev, [fn]: st }))
+                                if (st === "uploading" || st === "analyzing") {
+                                    setActiveFiles(prev => (prev.includes(fn) ? prev : [...prev, fn]))
+                                }
+                            }
+                        } catch (e) {
+                            console.error("[Horus] Failed to parse file status:", e)
+                        }
+                        return
+                    }
                     if (chunk.startsWith("__FILE__:")) {
                         const filename = chunk.slice("__FILE__:".length).trim()
                         if (filename) setActiveFiles(prev => [...prev, filename])
+                        return
+                    }
+
+                    if (chunk.startsWith("__CITATION__:")) {
+                        try {
+                            const jsonStr = chunk.slice("__CITATION__:".length).trim()
+                            const parsed = JSON.parse(jsonStr) as CitationSource[]
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantMsgId ? { ...m, citations: parsed } : m
+                                ))
+                            }
+                        } catch (e) {
+                            console.error("[Horus] Failed to parse citation:", e)
+                        }
+                        return
+                    }
+
+                    if (chunk.startsWith("__TOOL_STEP__:")) {
+                        try {
+                            const jsonStr = chunk.slice("__TOOL_STEP__:".length).trim()
+                            const parsed = JSON.parse(jsonStr)
+                            setToolSteps(prev => {
+                                const without = prev.filter(t => t.step !== parsed.step)
+                                return [...without, parsed].sort((a, b) => a.step - b.step)
+                            })
+                        } catch (e) {
+                            console.error("[Horus] Failed to parse tool step:", e)
+                        }
                         return
                     }
 
@@ -379,14 +452,18 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setCurrentChatId(null)
         setMessages([])
         setThinkingSteps([])
+        setToolSteps([])
         setActiveFiles([])
+        setFileStatuses({})
         setStreamError(null)
     }
 
     const loadChat = async (chatId: string) => {
         stopGeneration()
         setThinkingSteps([])
+        setToolSteps([])
         setActiveFiles([])
+        setFileStatuses({})
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
@@ -404,7 +481,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, activeFiles, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, toolSteps, activeFiles, fileStatuses, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

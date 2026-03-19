@@ -21,7 +21,10 @@ import {
   CalendarDays,
   LayoutGrid,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
 import FloatingAIBar from "@/components/platform/floating-ai-bar";
 import { CommandPalette } from "./command-palette";
@@ -29,6 +32,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { useCommandPaletteContext } from "@/components/platform/command-palette-provider";
 import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useFocusMode } from "@/lib/focus-mode-context";
 import type { Notification } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -42,11 +46,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext();
+  const { focusMode } = useFocusMode();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette();
 
-  const resolvedTheme = "dark";
+  const platformTheme = resolvedTheme ?? "dark";
 
   // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
@@ -207,7 +213,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300",
       )}
       data-section="platform"
-      data-platform-theme={resolvedTheme}
+      data-platform-theme={platformTheme}
       data-platform-page={platformVisualMode}
     >
       {/* 🌌 Shared Platform Background Layer */}
@@ -227,11 +233,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         <style>{`@media (max-width: 1023px) { body { overflow: hidden; } }`}</style>
       )}
 
-      <PlatformSidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        notificationCount={notificationCount}
-      />
+      {!focusMode && (
+        <PlatformSidebar
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          notificationCount={notificationCount}
+        />
+      )}
 
       <main
         id="main-content"
@@ -276,6 +284,15 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   <kbd className="glass-pill glass-text-secondary ml-auto hidden items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold sm:flex">
                     <span className="text-xs">⌘</span>K
                   </kbd>
+                </button>
+
+                <button
+                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                  className="glass-button glass-text-secondary min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
+                  aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+                >
+                  {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
 
                 <div className="relative quick-pages-container">

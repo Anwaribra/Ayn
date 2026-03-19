@@ -29,7 +29,7 @@ async def start_mock_audit(
     rag_context = ""
     try:
         rag = RagService()
-        rag_context = await rag.retrieve_context(query, limit=5)
+        rag_context, _ = await rag.retrieve_context(query, limit=5)
     except Exception as e:
         logger.warning(f"Failed to fetch RAG context for initial mock audit: {e}")
         rag_context = "No pre-existing documentation could be loaded."
@@ -92,7 +92,7 @@ async def submit_mock_audit_message(
     rag_context = ""
     try:
         rag = RagService()
-        rag_context = await rag.retrieve_context(content, limit=3)
+        rag_context, _ = await rag.retrieve_context(content, limit=3)
     except Exception as e:
         logger.warning(f"Failed to fetch RAG context for mock audit message: {e}")
 

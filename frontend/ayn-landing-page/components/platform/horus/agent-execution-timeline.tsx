@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Check, Loader2, Wrench, AlertCircle, FileText, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { ToolStep } from "@/lib/horus-context"
 
 export type ExecutionStepStatus = "pending" | "active" | "done"
 
@@ -23,10 +24,12 @@ export type AgentExecutionPhase =
   | "completed"
 
 interface AgentExecutionTimelineProps {
-  /** Steps derived from __THINKING__ events */
+  /** Steps derived from __THINKING__ or __TOOL_STEP__ events */
   steps: ExecutionStep[]
   /** Current phase for visual emphasis */
   phase: AgentExecutionPhase
+  /** Step X of Y when from __TOOL_STEP__ */
+  stepProgress?: { current: number; total: number }
   /** Tool name when waiting for confirmation */
   pendingTool?: string
   /** Whether we're waiting for user to confirm */
@@ -35,6 +38,8 @@ interface AgentExecutionTimelineProps {
   compact?: boolean
   /** File names being processed (Cursor-style chips) */
   activeFiles?: string[]
+  /** Per-file status for chips */
+  fileStatuses?: Record<string, string>
   /** Collapsible when complete — show compact summary when collapsed */
   collapsible?: boolean
   className?: string
@@ -60,10 +65,12 @@ function phaseToBarIndex(phase: AgentExecutionPhase): number {
 export function AgentExecutionTimeline({
   steps,
   phase,
+  stepProgress,
   pendingTool,
   isWaitingConfirmation,
   compact = false,
   activeFiles = [],
+  fileStatuses = {},
   collapsible = false,
   className,
 }: AgentExecutionTimelineProps) {
@@ -165,32 +172,51 @@ export function AgentExecutionTimeline({
             {phase === "planning" && "Reading platform state, selecting action…"}
             {phase === "tool_selected" && "Preparing to run…"}
             {phase === "waiting_confirmation" && "User approval required"}
-            {phase === "executing" && "Running selected action…"}
+            {phase === "executing" &&
+              (stepProgress && stepProgress.total > 1
+                ? `Step ${stepProgress.current} of ${stepProgress.total}…`
+                : "Running selected action…")}
             {phase === "completed" && "Result ready"}
           </p>
         </div>
       </div>
 
-      {/* File chips — Cursor-style "Reading: filename" */}
+      {/* File chips — Cursor-style with status */}
       {activeFiles.length > 0 && (
         <div className="mt-2 mb-3 flex flex-wrap gap-1.5">
-          {activeFiles.map((filename, i) => (
-            <motion.span
-              key={`${filename}-${i}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.05, duration: 0.2 }}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium",
-                isExecuting
-                  ? "bg-primary/15 text-primary border border-primary/20"
-                  : "bg-muted/20 text-muted-foreground border border-[var(--border-subtle)]"
-              )}
-            >
-              <FileText className="w-3 h-3 shrink-0" />
-              <span className="truncate max-w-[120px]">{filename}</span>
-            </motion.span>
-          ))}
+          {activeFiles.map((filename, i) => {
+            const status = fileStatuses[filename]
+            const statusLabel =
+              status === "uploading"
+                ? "Uploading…"
+                : status === "extracting"
+                  ? "Extracting…"
+                  : status === "analyzing"
+                    ? "Analyzing…"
+                    : status === "error"
+                      ? "Error"
+                      : null
+            return (
+              <motion.span
+                key={`${filename}-${i}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05, duration: 0.2 }}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium",
+                  isExecuting
+                    ? "bg-primary/15 text-primary border border-primary/20"
+                    : "bg-muted/20 text-muted-foreground border border-[var(--border-subtle)]"
+                )}
+              >
+                <FileText className="w-3 h-3 shrink-0" />
+                <span className="truncate max-w-[120px]">{filename}</span>
+                {statusLabel && (
+                  <span className="text-[10px] opacity-80">({statusLabel})</span>
+                )}
+              </motion.span>
+            )
+          })}
         </div>
       )}
 
@@ -304,15 +330,41 @@ export function AgentExecutionTimeline({
   )
 }
 
-/** Derive execution steps from thinking steps + confirmation state */
+/** Derive execution steps from thinking steps, tool steps (__TOOL_STEP__), and confirmation state */
 export function deriveAgentSteps(
   thinkingSteps: string[],
   pendingConfirmation: { title: string; tool: string } | null,
   hasStructuredResult: boolean,
-  isGenerating: boolean
-): { steps: ExecutionStep[]; phase: AgentExecutionPhase } {
+  isGenerating: boolean,
+  toolSteps?: ToolStep[]
+): { steps: ExecutionStep[]; phase: AgentExecutionPhase; stepProgress?: { current: number; total: number } } {
   const steps: ExecutionStep[] = []
   let phase: AgentExecutionPhase = "planning"
+  let stepProgress: { current: number; total: number } | undefined
+
+  // Prefer __TOOL_STEP__ when available — Step X of Y with tool names
+  if (toolSteps && toolSteps.length > 0) {
+    const total = Math.max(...toolSteps.map((t) => t.total), 1)
+    const runningOrLast = toolSteps.find((t) => t.status === "running") ?? toolSteps[toolSteps.length - 1]
+    stepProgress = { current: runningOrLast?.step ?? 1, total }
+    phase = "executing"
+    if (hasStructuredResult) phase = "completed"
+    toolSteps.forEach((t) => {
+      const status: ExecutionStepStatus =
+        t.status === "running" ? "active" : t.status === "done" ? "done" : t.status === "error" ? "done" : "pending"
+      steps.push({
+        id: `tool-${t.step}`,
+        label: t.total > 1 ? `Step ${t.step} of ${t.total}: ${t.title ?? t.tool}` : (t.title ?? t.tool),
+        status,
+        tool: t.tool,
+      })
+    })
+    if (!isGenerating && phase === "executing") {
+      phase = "completed"
+      steps.forEach((s) => (s.status = "done"))
+    }
+    return { steps, phase, stepProgress }
+  }
 
   // Map backend thinking steps to our format
   thinkingSteps.forEach((text, idx) => {
@@ -324,7 +376,6 @@ export function deriveAgentSteps(
         ? "active"
         : "pending"
 
-    // Extract tool name from "Identified action: X"
     const toolMatch = text.match(/^Identified action:\s*(.+)$/)
     const tool = toolMatch ? toolMatch[1].trim() : undefined
 
@@ -338,14 +389,10 @@ export function deriveAgentSteps(
 
   if (hasStructuredResult) {
     phase = "completed"
-    if (steps.length > 0) {
-      steps.forEach((s) => (s.status = "done"))
-    }
+    if (steps.length > 0) steps.forEach((s) => (s.status = "done"))
   } else if (pendingConfirmation) {
     phase = "waiting_confirmation"
-    if (steps.length > 0) {
-      steps.forEach((s) => (s.status = "done"))
-    }
+    if (steps.length > 0) steps.forEach((s) => (s.status = "done"))
     steps.push({
       id: "confirm",
       label: "Ready to execute — please confirm",
@@ -354,9 +401,7 @@ export function deriveAgentSteps(
     })
   } else if (thinkingSteps.some((t) => t.includes("Identified action:"))) {
     phase = "tool_selected"
-    if (thinkingSteps.some((t) => t.includes("Executing"))) {
-      phase = "executing"
-    }
+    if (thinkingSteps.some((t) => t.includes("Executing"))) phase = "executing"
   } else if (
     thinkingSteps.some((t) =>
       t.includes("Preparing") ||
@@ -371,7 +416,6 @@ export function deriveAgentSteps(
     phase = "executing"
   }
 
-  // When stream is done, mark as completed so UI exits "Executing" state
   if (!isGenerating && phase === "executing") {
     phase = "completed"
     steps.forEach((s) => (s.status = "done"))

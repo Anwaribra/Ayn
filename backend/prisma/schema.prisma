@@ -408,15 +408,19 @@ model VectorDocument {
   embedding Unsupported("vector(768)")?
 
   // Metadata for filtering
-  documentId String? // References Evidence PDF id
-  standardId String? // References a specific standard
-  chunkIndex Int?    @default(0)
+  documentId   String? // References Evidence PDF id
+  standardId   String? // References a specific standard
+  chunkIndex   Int?    @default(0)
+  userId       String? // Owner for multi-tenant scoping
+  institutionId String? // Institution for row-level security
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([documentId])
   @@index([standardId])
+  @@index([userId])
+  @@index([institutionId])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

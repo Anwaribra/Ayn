@@ -13,6 +13,7 @@ export const metadata = {
 
 
 import { HorusProvider } from "@/lib/horus-context"
+import { FocusModeProvider } from "@/lib/focus-mode-context"
 
 export default function PlatformLayout({ children }: { children: ReactNode }) {
   return (
@@ -20,6 +21,7 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       <CommandPaletteProvider>
         <AuthGuard>
           <HorusProvider>
+            <FocusModeProvider>
             <div data-section="platform" className="relative min-h-screen">
 
 
@@ -31,6 +33,7 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
               </div>
               <Toaster />
             </div>
+            </FocusModeProvider>
           </HorusProvider>
         </AuthGuard>
       </CommandPaletteProvider>

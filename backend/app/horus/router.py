@@ -8,6 +8,7 @@ import logging
 import traceback
 from datetime import datetime, timezone
 from typing import Optional, List
+from uuid import uuid4
 from pydantic import BaseModel
 import json
 import asyncio
@@ -103,20 +104,27 @@ async def horus_chat_stream(
     Streaming chat with Horus.
     """
     user_id = get_user_id(current_user)
+    correlation_id = str(uuid4())
+    logger.info("Horus chat/stream request", extra={"correlation_id": correlation_id, "user_id": user_id})
     state_service = StateService(db)
     horus_service = HorusService(state_service)
     
     async def event_generator():
-        async for chunk in horus_service.stream_chat(
-            user_id=user_id,
-            message=message,
-            chat_id=chat_id,
-            files=files,
-            background_tasks=background_tasks,
-            db=db,
-            current_user=current_user
-        ):
-            yield chunk
+        try:
+            async for chunk in horus_service.stream_chat(
+                user_id=user_id,
+                message=message,
+                chat_id=chat_id,
+                files=files,
+                background_tasks=background_tasks,
+                db=db,
+                current_user=current_user,
+                correlation_id=correlation_id,
+            ):
+                yield chunk
+        except Exception as e:
+            logger.error(f"Horus stream error: {e}", exc_info=True, extra={"correlation_id": correlation_id})
+            yield f"__STREAM_ERROR__:{str(e)[:200]}\n"
 
     return StreamingResponse(
         event_generator(),
@@ -321,7 +329,8 @@ class MessageFeedback(BaseModel):
     message_id: str
     chat_id: str | None = None
     rating: str  # "up" | "down"
-    comment: str | None = None
+    category: str | None = None  # "Inaccurate" | "Not relevant" | "Incomplete" | "Harmful" (tiered feedback)
+    comment: str | None = None  # Optional "Tell us more" free text
 
 
 @router.post("/feedback")
@@ -329,26 +338,28 @@ async def submit_message_feedback(
     body: MessageFeedback,
     current_user = Depends(get_current_user)
 ):
-    """Record thumbs-up / thumbs-down feedback for a Horus response."""
-    import json, pathlib, datetime
+    """Record thumbs-up / thumbs-down feedback for a Horus response. Persisted to DB via Activity."""
     user_id = get_user_id(current_user)
-
-    record = {
-        "user_id": user_id,
-        "message_id": body.message_id,
-        "chat_id": body.chat_id,
-        "rating": body.rating,
-        "comment": body.comment,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-    # Persist to a simple JSONL log — zero schema migration required.
-    log_path = pathlib.Path("horus_feedback.jsonl")
+    desc = body.comment or ""
+    if body.category:
+        desc = f"{body.category}" + (f"\n\n{desc}" if desc else "")
     try:
-        with log_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(record) + "\n")
-    except Exception:
-        pass  # Never fail the client over a logging error
-
+        from app.activity.service import ActivityService
+        await ActivityService.log_activity(
+            user_id=user_id,
+            type="horus_feedback",
+            title=f"Feedback: {body.rating}",
+            description=desc,
+            entity_id=body.message_id,
+            entity_type="message",
+            metadata={
+                "message_id": body.message_id,
+                "chat_id": body.chat_id,
+                "rating": body.rating,
+                "category": body.category,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Failed to persist Horus feedback: {e}")
     return {"status": "ok", "message_id": body.message_id}
 

@@ -647,6 +647,25 @@
   animation: shimmer 1.5s linear infinite;
 }
 
+/* Shimmer on input while generating */
+.horus-input-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(96, 165, 250, 0.06) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+  border-radius: inherit;
+}
+
 /* ─── Typography Utils ─── */
 .font-arabic {
   font-family: "Noto Sans Arabic", "Arial", sans-serif;
@@ -1248,6 +1267,9 @@
   .horus-stream-cursor {
     animation: none;
     opacity: 0.8;
+  }
+  .horus-input-shimmer::after {
+    animation: none;
   }
 }
 

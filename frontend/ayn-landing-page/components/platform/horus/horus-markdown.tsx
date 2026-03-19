@@ -3,6 +3,13 @@ import remarkGfm from "remark-gfm"
 import { FileText } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
+/** Strip leaked __THINKING__: or THINKING: protocol markers from displayed content */
+function sanitizeHorusContent(content: string): string {
+  // Remove leading protocol blocks (known step labels that may leak)
+  const protocolPattern = /^(?:(?:__THINKING__:|THINKING:)(?:Searching conversation history|Generating response|Reading platform state|Reading your platform|Got it|Processing|Identified action|Executing|Prepared|Phase \d)[^\n]*(?:\n|\s*))*/
+  return content.replace(protocolPattern, "").trim()
+}
+
 export function HorusMarkdown({
     content,
     onAction
@@ -105,7 +112,7 @@ export function HorusMarkdown({
                     }
                 }}
             >
-                {content}
+                {sanitizeHorusContent(content)}
             </ReactMarkdown>
         </div>
     )

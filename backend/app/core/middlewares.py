@@ -58,12 +58,24 @@ async def get_current_user(
     
     # Prisma returns dict - handle both dict and object access
     user_id = user["id"] if isinstance(user, dict) else user.id
+    user_name = user.get("name") if isinstance(user, dict) else getattr(user, "name", None)
     user_email = user["email"] if isinstance(user, dict) else user.email
     user_role = user["role"] if isinstance(user, dict) else user.role
     user_institution = user.get("institutionId") if isinstance(user, dict) else user.institutionId
-    
+
+    # Derive first name from email when name is missing or generic (e.g. anwarmousa80@gmail.com -> Anwar)
+    if not user_name or (isinstance(user_name, str) and user_name.strip().lower() == "user"):
+        email_str = (user_email or "").strip()
+        if email_str and "@" in email_str:
+            local = email_str.split("@")[0]
+            alpha_part = "".join(c for c in local if c.isalpha())
+            if alpha_part:
+                first_name = alpha_part[:5]
+                user_name = first_name[0].upper() + first_name[1:].lower()
+
     return {
         "id": user_id,
+        "name": user_name or "User",
         "email": user_email,
         "role": user_role,
         "institutionId": user_institution,

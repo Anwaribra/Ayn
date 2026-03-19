@@ -302,13 +302,27 @@ class EvidenceService:
             except Exception as e:
                 logger.warning(f"Failed to log evidence analysis activity for {evidence_id}: {e}")
 
-            # 3.5 RAG Indexing - index the AI analysis for semantic search
+            # 3.5 RAG Indexing - index AI analysis + raw PDF text when available
             try:
                 from app.rag.service import RagService
                 rag = RagService()
                 rag_content = f"Title: {title}\nType: {doc_type}\n\n{summary}"
                 if raw_response:
                     rag_content += f"\n\nFull Analysis:\n{raw_response[:3000]}"
+                # Index raw PDF text for better retrieval (in addition to AI analysis)
+                if mime_type == "application/pdf" and file_content:
+                    try:
+                        from pypdf import PdfReader
+                        import io
+                        reader = PdfReader(io.BytesIO(file_content))
+                        raw_text_parts = []
+                        for page in reader.pages[:50]:  # Limit to 50 pages
+                            raw_text_parts.append(page.extract_text() or "")
+                        raw_text = "\n".join(raw_text_parts).strip()[:15000]  # Limit chars
+                        if raw_text:
+                            rag_content += f"\n\n--- Raw Document Text ---\n{raw_text}"
+                    except Exception as pdf_err:
+                        logger.debug(f"PDF text extraction skipped for {evidence_id}: {pdf_err}")
                 await rag.index_document(rag_content, document_id=evidence_id)
                 logger.info(f"RAG indexed evidence {evidence_id}")
             except Exception as e:

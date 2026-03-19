@@ -27,7 +27,6 @@ import {
   ThumbsDown,
   Copy,
   Download,
-  ListChecks,
   RefreshCw,
   Sparkles,
 } from "lucide-react"
@@ -43,6 +42,23 @@ import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
 import { MiniOrb } from "./agent-orb"
 import { AiLoader } from "@/components/ui/ai-loader"
+import { AgentExecutionTimeline, deriveAgentSteps } from "./agent-execution-timeline"
+import { ThinkStepper } from "./think-stepper"
+import { useLiveStreamingText } from "@/hooks/use-streaming-text"
+
+/** Renders assistant content with typing effect when streaming */
+function StreamingAssistantContent({
+  content,
+  isStreaming,
+  onAction,
+}: {
+  content: string
+  isStreaming: boolean
+  onAction: (type: string, payload: string) => void
+}) {
+  const displayed = useLiveStreamingText(content, isStreaming, 220)
+  return <HorusMarkdown content={displayed} onAction={onAction} />
+}
 
 export type ReasoningState = {
   steps: { text: string; status: "pending" | "active" | "done" }[]
@@ -194,6 +210,7 @@ export default function HorusAIChat() {
     currentChatId,
     status,
     thinkingSteps,
+    activeFiles,
     streamError,
     sendMessage,
     resolveActionConfirmation,
@@ -218,6 +235,8 @@ export default function HorusAIChat() {
   const fallbackQueueRef = useRef<string[]>([])
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const didLoadFromQueryRef = useRef(false)
+  const [completionPulseKey, setCompletionPulseKey] = useState(0)
+  const prevStatusRef = useRef<typeof status>(status)
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
 
@@ -303,6 +322,13 @@ export default function HorusAIChat() {
   }, [thinkingSteps])
 
   useEffect(() => {
+    if (prevStatusRef.current === "generating" && status === "idle") {
+      setCompletionPulseKey((k) => k + 1)
+    }
+    prevStatusRef.current = status
+  }, [status])
+
+  useEffect(() => {
     if (status !== "idle") return
 
     if (fallbackTimerRef.current) {
@@ -323,6 +349,37 @@ export default function HorusAIChat() {
       }
     })
   }, [status])
+
+  // Seed fallback reasoning steps for Think mode when backend sends no __THINKING__
+  useEffect(() => {
+    if (status !== "generating" || thinkingSteps.length > 0) return
+    if (activeResponseMode !== "think") return
+
+    const lastUser = [...messages].reverse().find((m) => m.role === "user")
+    const hasFiles = !!(lastUser?.attachments?.length)
+    const text = lastUser?.content ?? ""
+    const steps = getReasoningSteps(text, !!hasFiles)
+    if (steps.length > 0) {
+      fallbackQueueRef.current = steps
+      setReasoning((prev) => {
+        const base = prev && !prev.isComplete ? prev : {
+          steps: [] as { text: string; status: "pending" | "active" | "done" }[],
+          startTime: Date.now(),
+          duration: null,
+          isExpanded: true,
+          isComplete: false,
+          tempUserMessage: null,
+        }
+        const first = steps[0]
+        return {
+          ...base,
+          steps: [{ text: first, status: "active" as const }],
+          isExpanded: true,
+          isComplete: false,
+        }
+      })
+    }
+  }, [status, thinkingSteps.length, activeResponseMode, messages])
 
   // Fallback sequential animation for non-tool/general chat when no __THINKING__ steps are emitted.
   useEffect(() => {
@@ -757,7 +814,13 @@ export default function HorusAIChat() {
                   }
 
                   return (
-                    <div key={msg.id} className="w-full animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full"
+                    >
                       {msg.role === "user" ? (
                         <div className="flex w-full flex-col items-end py-2 sm:py-4">
                            <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-3xl rounded-tr-lg px-4 py-3 text-[14px] font-semibold sm:max-w-[88%]">
@@ -782,14 +845,52 @@ export default function HorusAIChat() {
                            <span className="mt-1.5 text-[10px] text-muted-foreground/70 sm:mt-2">{formatTimestamp(msg.timestamp)}</span>
                         </div>
                       ) : (
-                        <div className="w-full space-y-2 py-2 sm:space-y-3 sm:py-4">
+                        <div
+                          className={cn(
+                            "w-full space-y-2 py-2 sm:space-y-3 sm:py-4",
+                            msg.id === lastAssistantMsgId && status === "idle" && completionPulseKey > 0 && "horus-completion-pulse"
+                          )}
+                        >
                           {/* Inline thinking disabled for cleaner UI */}
+
+                          {/* Agent execution timeline — hide in Ask mode unless user attached files */}
+                          {msg.role === "assistant" &&
+                            msg.id === lastAssistantMsgId &&
+                            (activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
+                            (thinkingSteps.length > 0 || msg.pendingConfirmation) &&
+                            (() => {
+                              const { steps, phase } = deriveAgentSteps(
+                                thinkingSteps,
+                                msg.pendingConfirmation ?? null,
+                                !!(msg as any).structuredResult,
+                                status === "generating"
+                              )
+                              if (steps.length === 0 && !msg.pendingConfirmation) return null
+                              return (
+                                <div className="mb-3">
+                                  <AgentExecutionTimeline
+                                    steps={steps}
+                                    phase={phase}
+                                    pendingTool={msg.pendingConfirmation?.title}
+                                    isWaitingConfirmation={!!msg.pendingConfirmation}
+                                    activeFiles={activeFiles}
+                                    collapsible
+                                    compact
+                                  />
+                                </div>
+                              )
+                            })()}
 
                           {/* Agent Structured Result — rendered ABOVE the text content */}
                           {msg.role === "assistant" && (msg as any).structuredResult && (
-                            <div className="mb-3">
+                            <motion.div
+                              className="mb-3"
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            >
                               <AgentResultRenderer result={(msg as any).structuredResult} />
-                            </div>
+                            </motion.div>
                           )}
 
                           {/* Pending action confirmation */}
@@ -816,7 +917,7 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {msg.content && (
+                          {msg.content ? (
                             <div
                               dir="auto"
                               className={cn(
@@ -824,39 +925,63 @@ export default function HorusAIChat() {
                                 isStreamingThis && "horus-streaming-active"
                               )}
                             >
-                              <HorusMarkdown content={msg.content} onAction={handleAction} />
+                              <StreamingAssistantContent
+                                content={msg.content}
+                                isStreaming={isStreamingThis}
+                                onAction={handleAction}
+                              />
                               {isStreamingThis && (
                                 <span className="inline-flex items-center gap-0.5 ml-1 align-middle">
                                   <span
-                                    className="inline-block w-[2.5px] h-[1.1em] bg-primary rounded-full"
-                                    style={{ animation: "orbBreathe 1.2s ease-in-out infinite" }}
-                                  />
-                                  <span
-                                    className="inline-block w-[2px] h-[0.8em] bg-primary/50 rounded-full"
-                                    style={{ animation: "orbBreathe 1.2s ease-in-out infinite 0.2s" }}
+                                    className="horus-stream-cursor inline-block w-[3px] h-[1em] bg-primary rounded-sm align-middle"
+                                    style={{ marginLeft: "2px" }}
                                   />
                                 </span>
                               )}
                             </div>
-                          )}
+                          ) : msg.role === "assistant" &&
+                            msg.id === lastAssistantMsgId &&
+                            status === "idle" &&
+                            !(msg as any).structuredResult &&
+                            (thinkingSteps.length > 0 || [...messages].reverse().find((m) => m.role === "user")?.attachments?.length) ? (
+                            <div className="horus-assistant-bubble rounded-3xl rounded-tl-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-sm text-muted-foreground">
+                              التحليل لم يُولّد. يرجى المحاولة مرة أخرى أو إرفاق ملف مختلف.
+                            </div>
+                          ) : null}
 
-                          {/* The 'Dual Action' Footer (Spec-Driven Workflow) */}
-                          {msg.role === "assistant" && status !== "generating" && msg.id === lastAssistantMsgId && (
-                            <div className="glass-panel mt-2.5 flex flex-wrap gap-2 rounded-2xl p-2 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:mt-4 sm:gap-3 sm:p-3">
-                              <button
-                                onClick={() => handleSendMessage("Generate Export Audit Report for this analysis")}
-                                className="glass-button group flex min-h-[38px] items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold text-foreground transition-all hover:border-primary/40 sm:min-h-[44px] sm:px-4 sm:py-2.5 sm:text-[13px]"
-                              >
-                                <FileText className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                                Export Audit Report
-                              </button>
-                              <button
-                                onClick={() => handleSendMessage("Apply Recommendations to optimize this document")}
-                                className="glass-button group flex min-h-[38px] items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold text-foreground transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 sm:min-h-[44px] sm:px-4 sm:py-2.5 sm:text-[13px]"
-                              >
-                                <ListChecks className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
-                                Apply Recommendations
-                              </button>
+                          {/* Suggestion chips — Cursor-style follow-ups (only for last assistant message) */}
+                          {msg.role === "assistant" &&
+                            msg.id === lastAssistantMsgId &&
+                            status === "idle" &&
+                            msg.content?.trim() && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {(() => {
+                                const struct = (msg as any).structuredResult
+                                const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || ""
+                                const hasArabic = /[\u0600-\u06FF]/.test(lastUserMsg)
+                                const auditAr = ["تحليل أعمق", "ربط بالمعايير", "تصدير التقرير"]
+                                const auditEn = ["Deeper analysis", "Link to standards", "Export report"]
+                                const gapAr = ["عرض التفاصيل", "تشغيل تحليل", "ربط أدلة"]
+                                const gapEn = ["Show details", "Run analysis", "Link evidence"]
+                                const defaultAr = ["اشرح أكثر", "أمثلة عملية", "سؤال آخر"]
+                                const defaultEn = ["Explain more", "Practical examples", "Another question"]
+                                const suggestions = struct?.type === "audit_report" || struct?.type === "analytics_report"
+                                  ? (hasArabic ? auditAr : auditEn)
+                                  : struct?.type === "gap_table"
+                                    ? (hasArabic ? gapAr : gapEn)
+                                    : (hasArabic ? defaultAr : defaultEn)
+                                return suggestions.map((label) => (
+                                  <button
+                                    key={label}
+                                    type="button"
+                                    onClick={() => sendMessage(label)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-colors"
+                                  >
+                                    <ArrowUpRight className="w-3 h-3" />
+                                    {label}
+                                  </button>
+                                ))
+                              })()}
                             </div>
                           )}
 
@@ -913,20 +1038,55 @@ export default function HorusAIChat() {
                           )}
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   )
                 })}
 
                 {showLoadingBubble && (
                   <div className="w-full py-2 sm:py-4 animate-in fade-in">
-                    {isAskLoading ? (
-                      <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2">
-                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    {(activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
+                    (thinkingSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation || (activeResponseMode !== "ask" && [...messages].reverse().find((m) => m.role === "user")?.attachments?.length)) ? (
+                      (() => {
+                        const lastMsg = messages.filter((m) => m.role === "assistant").pop()
+                        const lastUserHasAttachments = !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length
+                        const effectiveSteps = thinkingSteps.length > 0 ? thinkingSteps : (activeResponseMode !== "ask" && lastUserHasAttachments ? ["Preparing your request..."] : [])
+                        const { steps, phase } = deriveAgentSteps(
+                          effectiveSteps,
+                          lastMsg?.pendingConfirmation ?? null,
+                          !!(lastMsg as any)?.structuredResult,
+                          status === "generating"
+                        )
+                        if (steps.length === 0 && !lastMsg?.pendingConfirmation) return null
+                        return (
+                          <AgentExecutionTimeline
+                            steps={steps}
+                            phase={phase}
+                            pendingTool={lastMsg?.pendingConfirmation?.title}
+                            isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
+                            activeFiles={activeFiles}
+                            collapsible
+                          />
+                        )
+                      })()
+                    ) : activeResponseMode === "think" && reasoning ? (
+                      <ThinkStepper
+                        steps={reasoning.steps}
+                        isComplete={reasoning.isComplete}
+                        duration={reasoning.duration}
+                        compact
+                      />
+                    ) : isAskLoading ? (
+                      <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200">
+                        <div className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
+                        </div>
                         <span className="text-[11px] font-medium">Answering…</span>
                       </div>
                     ) : (
-                      <div className="glass-panel flex max-w-[14rem] items-center gap-2 rounded-2xl p-3 sm:max-w-none">
-                        <div className="horus-loading-orb" />
+                      <div className="glass-panel flex max-w-[14rem] items-center gap-3 rounded-2xl p-3 sm:max-w-none">
+                        <MiniOrb state="generating" className="shrink-0" />
                         <div className="flex-1 space-y-2">
                           <div className="horus-loading-line w-24 sm:w-40" />
                           <div className="horus-loading-line w-36 sm:w-64" />

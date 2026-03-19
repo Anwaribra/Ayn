@@ -34,6 +34,8 @@ interface HorusContextValue {
     currentChatId: string | null
     status: HorusStatus
     thinkingSteps: string[]
+    /** File names being processed (from __FILE__ protocol) */
+    activeFiles: string[]
     streamError: string | null
     sendMessage: (
         text?: string,
@@ -59,6 +61,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [status, setStatus] = useState<HorusStatus>("idle")
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([])
+    const [activeFiles, setActiveFiles] = useState<string[]>([])
     const [streamError, setStreamError] = useState<string | null>(null)
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -178,6 +181,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         if ((!modelText && (!files || files.length === 0)) || status !== "idle") return
 
         setThinkingSteps([])
+        setActiveFiles([])
         setStreamError(null)
 
         if (appendUser) {
@@ -217,8 +221,23 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                     }
 
                     if (chunk.startsWith("__THINKING__:")) {
-                        const stepText = chunk.slice("__THINKING__:".length).trim()
+                        const rest = chunk.slice("__THINKING__:".length)
+                        const nlIdx = rest.indexOf("\n")
+                        const stepText = (nlIdx >= 0 ? rest.slice(0, nlIdx) : rest).trim()
+                        const remainder = nlIdx >= 0 ? rest.slice(nlIdx + 1) : ""
                         if (stepText) setThinkingSteps(prev => [...prev, stepText])
+                        if (remainder) {
+                            fullContent += remainder
+                            setMessages(prev => prev.map(m =>
+                                m.id === assistantMsgId ? { ...m, content: fullContent } : m
+                            ))
+                        }
+                        return
+                    }
+
+                    if (chunk.startsWith("__FILE__:")) {
+                        const filename = chunk.slice("__FILE__:".length).trim()
+                        if (filename) setActiveFiles(prev => [...prev, filename])
                         return
                     }
 
@@ -237,11 +256,22 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
 
                     if (chunk.startsWith("__ACTION_RESULT__:")) {
                         try {
-                            const jsonStr = chunk.slice("__ACTION_RESULT__:".length).trim()
+                            const rest = chunk.slice("__ACTION_RESULT__:".length)
+                            const nl = rest.indexOf("\n")
+                            const jsonStr = (nl >= 0 ? rest.slice(0, nl) : rest).trim()
                             const parsed = JSON.parse(jsonStr)
                             setMessages(prev => prev.map(m =>
                                 m.id === assistantMsgId ? { ...m, structuredResult: parsed, pendingConfirmation: null } : m
                             ))
+                            if (nl >= 0) {
+                                const narrative = rest.slice(nl + 1).trimStart()
+                                if (narrative) {
+                                    fullContent += narrative
+                                    setMessages(prev => prev.map(m =>
+                                        m.id === assistantMsgId ? { ...m, content: fullContent } : m
+                                    ))
+                                }
+                            }
                         } catch (e) {
                             console.error("[Horus] Failed to parse action result:", e)
                         }
@@ -281,7 +311,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             return "Think step by step before answering. Be thorough, structured, and explicit about reasoning when useful."
         }
         if (mode === "agent") {
-            return "Act as an execution agent. Prefer concrete actions, checks, and next steps. If a task can be broken into steps, do so clearly."
+            return "Act as an execution agent. Prefer concrete actions, checks, and next steps. When the user asks to analyze a file they attached: analyze it directly and provide the result. Do NOT propose a plan or ask for confirmation—just analyze."
         }
         return ""
     }
@@ -349,12 +379,14 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setCurrentChatId(null)
         setMessages([])
         setThinkingSteps([])
+        setActiveFiles([])
         setStreamError(null)
     }
 
     const loadChat = async (chatId: string) => {
         stopGeneration()
         setThinkingSteps([])
+        setActiveFiles([])
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
@@ -372,7 +404,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, thinkingSteps, activeFiles, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
             {children}
         </HorusContext.Provider>
     )

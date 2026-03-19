@@ -210,6 +210,97 @@ SYSTEM_PROMPT = get_system_prompt(include_all_knowledge=True)
 
 
 
+# ─── Dify Client ──────────────────────────────────────────────────────────────
+class DifyClient:
+    """
+    Dify API client - production-ready RAG + Agent platform.
+    Use when DIFY_API_KEY and DIFY_BASE_URL are set.
+    Docs: https://docs.dify.ai/use-dify/publish/developing-with-apis
+    """
+    
+    def __init__(self, api_key: str, base_url: str):
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.chat_url = f"{self.base_url}/chat-messages"
+        logger.info(f"Dify client initialized: {self.base_url}")
+    
+    async def stream_chat(
+        self,
+        messages: List[Dict[str, str]],
+        context: Optional[str] = None,
+        user_id: str = "default",
+        conversation_id: Optional[str] = None,
+    ):
+        """Stream chat via Dify chat-messages API."""
+        query = messages[-1]["content"] if messages else ""
+        if context:
+            query = f"{context}\n\n{query}"
+        payload = {
+            "query": query,
+            "user": user_id,
+            "response_mode": "streaming",
+            "inputs": {},
+        }
+        if conversation_id:
+            payload["conversation_id"] = conversation_id
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", self.chat_url, json=payload, headers=headers, timeout=120.0) as response:
+                response.raise_for_status()
+                buffer = ""
+                async for chunk in response.aiter_text():
+                    buffer += chunk
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        line = line.strip()
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data == "[DONE]":
+                                return
+                            try:
+                                obj = json.loads(data)
+                                event = obj.get("event")
+                                delta = obj.get("answer") or obj.get("delta", "")
+                                if delta and event in ("message", "agent_message", "message_delta", "text-generation"):
+                                    yield delta
+                            except json.JSONDecodeError:
+                                pass
+    
+    async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
+        """Non-streaming chat - collect stream into full response."""
+        parts = []
+        async for chunk in self.stream_chat(messages, context=context):
+            parts.append(chunk)
+        return "".join(parts)
+    
+    async def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
+        return await self.chat([{"role": "user", "content": prompt}], context=context)
+    
+    async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
+        """Dify: encode file content into message (Dify app can handle file inputs if configured)."""
+        text_parts = [message]
+        for f in files:
+            if f.get("type") == "text":
+                try:
+                    import base64
+                    decoded = base64.b64decode(f.get("data", "")).decode("utf-8", errors="replace")
+                    text_parts.append(f"\n\n--- File: {f.get('filename', '?')} ---\n{decoded}")
+                except Exception:
+                    text_parts.append(f"\n\n--- File: {f.get('filename', '?')} ---\n[Binary]")
+            elif f.get("type") == "image":
+                text_parts.append(f"\n\n[Image: {f.get('filename', '?')}]")
+            else:
+                text_parts.append(f"\n\n[Document: {f.get('filename', '?')}]")
+        combined = "".join(text_parts)
+        if context:
+            combined = f"{context}\n\n{combined}"
+        async for chunk in self.stream_chat([{"role": "user", "content": combined}], user_id="default"):
+            yield chunk
+
+
 # ─── OpenRouter Client ────────────────────────────────────────────────────────
 class OpenRouterClient:
     """OpenRouter API client (OpenAI-compatible) as fallback AI provider."""
@@ -291,6 +382,54 @@ class OpenRouterClient:
         prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
         return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
     
+    async def _stream_call(self, messages: List[Dict], system_prompt: str):
+        """Stream chat completion via OpenRouter SSE."""
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                *[{"role": m["role"], "content": m["content"]} for m in messages],
+            ],
+            "stream": True,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ayn.vercel.app",
+            "X-Title": "Ayn Platform - Horus AI",
+        }
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+                response.raise_for_status()
+                buffer = ""
+                async for chunk in response.aiter_text():
+                    buffer += chunk
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        line = line.strip()
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data == "[DONE]":
+                                return
+                            try:
+                                obj = json.loads(data)
+                                content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
+                                if content:
+                                    yield content
+                            except json.JSONDecodeError:
+                                pass
+
+    async def stream_chat(self, messages: List[Dict[str, str]], context: Optional[str] = None):
+        """Stream chat completions via OpenRouter SSE."""
+        query_text = " ".join([m.get("content", "") for m in messages[-2:]]).lower()
+        context_text = (context or "").lower()
+        needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        if context:
+            system_instruction += f"\n\nAdditional context:\n{context}"
+        async for chunk in self._stream_call(messages, system_instruction):
+            yield chunk
+
     async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
         """Multimodal chat with files."""
         content_parts = []
@@ -348,6 +487,59 @@ class OpenRouterClient:
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]
+
+    async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
+        """Stream multimodal chat with files via OpenRouter SSE."""
+        text_content = message
+        image_urls = []
+        for file_item in files:
+            if file_item["type"] == "image":
+                data_url = f"data:{file_item['mime_type']};base64,{file_item['data']}"
+                image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
+            elif file_item["type"] == "text":
+                text_content += f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"
+        if image_urls:
+            user_message = {"role": "user", "content": [{"type": "text", "text": text_content}, *image_urls]}
+        else:
+            user_message = {"role": "user", "content": text_content}
+        messages = [user_message]
+        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
+        if context and any(k in context.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"]):
+            needs_deep_knowledge = True
+        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
+        if context:
+            system_instruction += f"\n\nAdditional context:\n{context}"
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system_instruction}, user_message],
+            "stream": True,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ayn.vercel.app",
+            "X-Title": "Ayn Platform - Horus AI",
+        }
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+                response.raise_for_status()
+                buffer = ""
+                async for chunk in response.aiter_text():
+                    buffer += chunk
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        line = line.strip()
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data == "[DONE]":
+                                return
+                            try:
+                                obj = json.loads(data)
+                                content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
+                                if content:
+                                    yield content
+                            except json.JSONDecodeError:
+                                pass
 
 
 # ─── Gemini Client ────────────────────────────────────────────────────────────
@@ -540,20 +732,48 @@ class GeminiClient:
                 if file_item["type"] == "image" or (file_item["type"] == "document" and file_item.get("mime_type") == "application/pdf"):
                     import base64
                     data_bytes = base64.b64decode(file_item["data"])
+                    logger.info(f"Adding file to Gemini: {file_item.get('filename', '?')} ({len(data_bytes)} bytes, {file_item.get('mime_type', '?')})")
                     parts.append(genai_types.Part.from_bytes(data=data_bytes, mime_type=file_item["mime_type"]))
                 elif file_item["type"] == "text":
-                    parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{file_item['data']}\n"))
+                    import base64
+                    try:
+                        decoded = base64.b64decode(file_item["data"]).decode("utf-8", errors="replace")
+                        parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n{decoded}\n"))
+                    except Exception:
+                        parts.append(genai_types.Part.from_text(text=f"\n\n--- File: {file_item['filename']} ---\n[Binary content]\n"))
             
-            async for chunk in await self.client.aio.models.generate_content_stream(
-                model=self.model_name,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    max_output_tokens=4096,
-                    temperature=0.7
-                ),
-                contents=genai_types.Content(role="user", parts=parts),
-            ):
-                yield chunk.text
+            try:
+                stream = await self.client.aio.models.generate_content_stream(
+                    model=self.model_name,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        max_output_tokens=4096,
+                        temperature=0.7
+                    ),
+                    contents=genai_types.Content(role="user", parts=parts),
+                )
+                async for chunk in stream:
+                    try:
+                        text = getattr(chunk, "text", None) if chunk else None
+                        if text:
+                            yield text
+                    except (ValueError, AttributeError) as e:
+                        logger.debug(f"Chunk text access skipped: {e}")
+            except Exception as stream_err:
+                logger.error(f"Gemini stream_chat_with_files failed: {stream_err}", exc_info=True)
+                response = await self.client.aio.models.generate_content(
+                    model=self.model_name,
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        max_output_tokens=4096,
+                        temperature=0.7
+                    ),
+                    contents=genai_types.Content(role="user", parts=parts),
+                )
+                if response and getattr(response, "text", None):
+                    yield response.text
+                else:
+                    raise
         else:
             response = await self.chat_with_files(message, files)
             yield response
@@ -596,11 +816,12 @@ class GeminiClient:
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────
 class HorusAIClient:
-    """AI client with automatic fallback (Async)."""
+    """AI client with automatic fallback: Gemini -> OpenRouter -> Dify."""
     
     def __init__(self):
         self.gemini: Optional[GeminiClient] = None
         self.openrouter: Optional[OpenRouterClient] = None
+        self.dify: Optional[DifyClient] = None
         self._provider = "none"
         
         gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
@@ -618,11 +839,18 @@ class HorusAIClient:
             if self._provider == "none":
                 self._provider = "openrouter"
         
-        if not self.gemini and not self.openrouter:
-            raise ValueError("No AI provider configured.")
+        dify_key = getattr(settings, 'DIFY_API_KEY', None) or os.getenv('DIFY_API_KEY')
+        dify_url = getattr(settings, 'DIFY_BASE_URL', None) or os.getenv('DIFY_BASE_URL')
+        if dify_key and dify_url:
+            self.dify = DifyClient(api_key=dify_key, base_url=dify_url)
+            if self._provider == "none":
+                self._provider = "dify"
+        
+        if not self.gemini and not self.openrouter and not self.dify:
+            raise ValueError("No AI provider configured (Gemini, OpenRouter, or Dify).")
     
     async def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
-        """Call a method on Gemini first, fall back to OpenRouter on failure."""
+        """Call a method on Gemini first, then OpenRouter, then Dify on failure."""
         last_error = None
         if self.gemini:
             try:
@@ -630,18 +858,26 @@ class HorusAIClient:
                 return await method(*args, **kwargs)
             except Exception as e:
                 last_error = e
-                logger.warning(f"Gemini {method_name} failed: {e}. Trying OpenRouter fallback...")
+                logger.warning(f"Gemini {method_name} failed: {e}. Trying fallback...")
         if self.openrouter:
             try:
                 method = getattr(self.openrouter, method_name)
                 return await method(*args, **kwargs)
             except Exception as e:
                 last_error = e
-                logger.error(f"OpenRouter {method_name} also failed: {e}")
+                logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
+        if self.dify:
+            try:
+                method = getattr(self.dify, method_name, None)
+                if method:
+                    return await method(*args, **kwargs)
+            except Exception as e:
+                last_error = e
+                logger.error(f"Dify {method_name} failed: {e}")
         raise Exception(f"All AI providers failed: {str(last_error)}")
     
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
-        """Call a streaming method with fallback."""
+        """Call a streaming method with fallback: Gemini -> OpenRouter -> Dify."""
         if self.gemini:
             try:
                 method = getattr(self.gemini, method_name)
@@ -649,11 +885,25 @@ class HorusAIClient:
                     yield chunk
                 return
             except Exception as e:
-                logger.warning(f"Gemini {method_name} failed: {e}. Falling back to OpenRouter.")
-        
-        non_stream_method = method_name.replace("stream_", "")
-        result = await self._call_with_fallback(non_stream_method, *args, **kwargs)
-        yield result
+                logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
+        if self.openrouter:
+            try:
+                method = getattr(self.openrouter, method_name)
+                async for chunk in method(*args, **kwargs):
+                    yield chunk
+                return
+            except Exception as e:
+                logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
+        if self.dify:
+            try:
+                method = getattr(self.dify, method_name, None)
+                if method:
+                    async for chunk in method(*args, **kwargs):
+                        yield chunk
+                    return
+            except Exception as e:
+                logger.error(f"Dify {method_name} failed: {e}")
+        raise Exception("No streaming AI provider available.")
 
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         return await self._call_with_fallback("chat", messages=messages, context=context)

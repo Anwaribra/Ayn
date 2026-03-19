@@ -118,7 +118,15 @@ async def horus_chat_stream(
         ):
             yield chunk
 
-    return StreamingResponse(event_generator(), media_type="text/plain")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router.get("/events")

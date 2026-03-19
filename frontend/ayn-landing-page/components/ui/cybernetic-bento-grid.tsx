@@ -5,6 +5,8 @@ import { useState } from "react"
 import { ArrowRight, Brain, SendHorizontal } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 
 type BentoItemProps = {
   className?: string
@@ -44,6 +46,8 @@ type MiniMessage = {
 }
 
 function HorusMiniChat() {
+  const { isAuthenticated } = useAuth()
+  const chatIdRef = useRef<string | null>(null)
   const [messages, setMessages] = useState<MiniMessage[]>([
     {
       id: "welcome",
@@ -63,46 +67,48 @@ function HorusMiniChat() {
     const text = input.trim()
     if (!text || loading) return
 
+    if (!isAuthenticated) {
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "user", text },
+        { id: crypto.randomUUID(), role: "assistant", text: "Please sign in to chat with Horus." },
+      ])
+      setInput("")
+      return
+    }
+
     const user: MiniMessage = { id: crypto.randomUUID(), role: "user", text }
     const assistantId = crypto.randomUUID()
-    const newMessages = [...messages, user]
-    setMessages([...newMessages, { id: assistantId, role: "assistant", text: "" }])
+    setMessages((prev) => [...prev, user, { id: assistantId, role: "assistant", text: "" }])
     setInput("")
     setLoading(true)
 
+    let accumulated = ""
+    const append = (t: string) => {
+      accumulated += t
+      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, text: accumulated } : m)))
+    }
+
     try {
-      const response = await fetch("/api-local/horus/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: newMessages.map((m) => ({ role: m.role, content: m.text })),
-        }),
-      })
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to connect with Horus.")
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder("utf-8")
-      let done = false
-
-      while (!done) {
-        const chunk = await reader.read()
-        done = chunk.done
-        if (!chunk.value) continue
-        const textChunk = decoder.decode(chunk.value, { stream: true })
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, text: m.text + textChunk } : m))
-        )
-      }
-    } catch (err) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, text: "Failed to connect. Check GEMINI_API_KEY and try again." }
-            : m
-        )
+      await api.horusChatStream(
+        text,
+        undefined,
+        chatIdRef.current ?? undefined,
+        (chunk) => {
+          if (chunk.startsWith("__CHAT_ID__:")) {
+            chatIdRef.current = chunk.slice("__CHAT_ID__:".length).trim()
+            return
+          }
+          if (chunk.startsWith("__THINKING__:") || chunk.startsWith("__FILE__:") || chunk.startsWith("__ACTION_CONFIRM__:") || chunk.startsWith("__ACTION_RESULT__:")) return
+          if (chunk.startsWith("__STREAM_ERROR__:")) {
+            append("Connection interrupted. Please try again.")
+            return
+          }
+          append(chunk)
+        }
       )
+    } catch (err) {
+      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, text: "Failed to connect. Please try again." } : m)))
     } finally {
       setLoading(false)
     }

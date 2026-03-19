@@ -72,8 +72,12 @@ class RagService:
     async def retrieve_context(self, query: str, limit: int = 4, document_id: Optional[str] = None) -> str:
         """Embeds a query, searches the vector DB, and returns relevant text chunks."""
         try:
-            # 1. Generate query embedding
-            query_embedding = await self.ai_client.create_embedding(query)
+            # 1. Generate query embedding (requires Gemini; OpenRouter-only has no embeddings)
+            try:
+                query_embedding = await self.ai_client.create_embedding(query)
+            except NotImplementedError:
+                logger.warning("RAG: Embeddings unavailable (Gemini not configured). Skipping retrieval.")
+                return ""
             embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
             
             # 2. Run Cosine Similarity Search (<=>)
@@ -115,4 +119,4 @@ class RagService:
             
         except Exception as e:
             logger.error(f"RAG Retrieval failed: {e}")
-            return ""
+            return ""  # Caller should handle empty; horus injects note when needed

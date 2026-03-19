@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, User, Copy, RefreshCw, Paperclip, Check, X, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Send, User, Copy, Paperclip, Check, X, FileText, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 export interface AttachedFile {
@@ -60,6 +62,7 @@ function CopyButton({ text }: { text: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────
 export function HorusChat() {
+  const { isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     { 
       id: "1", 
@@ -71,6 +74,7 @@ export function HorusChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [loadingStep, setLoadingStep] = useState(0);
+  const chatIdRef = useRef<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -129,65 +133,66 @@ export function HorusChat() {
     setAttachedFiles(prev => prev.filter(f => f.id !== id));
   };
 
-  // Send message to Gemini
+  // Send message via unified backend stream (RAG + Agent)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && attachedFiles.length === 0) || isLoading) return;
 
-    // Build the user parts
-    const userParts: MessagePart[] = [];
-    if (input.trim()) {
-      userParts.push({ text: input });
+    if (!isAuthenticated) {
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: [{ text: "Please sign in to chat with Horus AI." }] }]);
+      return;
     }
-    attachedFiles.forEach(file => {
-      if (file.base64) {
-        userParts.push({ inlineData: { data: file.base64, mimeType: file.file.type } });
-      }
-    });
 
-    const userMessage: Message = { id: Date.now().toString(), role: "user", content: userParts };
-    const newMessages = [...messages, userMessage];
-    
-    setMessages(newMessages);
+    const messageText = input.trim() || (attachedFiles.length > 0 ? "Analyze the attached file(s)." : "");
+    const filesToSend = attachedFiles.map(af => af.file);
+
+    const userParts: MessagePart[] = [];
+    if (input.trim()) userParts.push({ text: input });
+    attachedFiles.forEach(file => {
+      if (file.base64) userParts.push({ inlineData: { data: file.base64, mimeType: file.file.type } });
+    });
+    const userMessage: Message = { id: Date.now().toString(), role: "user", content: userParts.length ? userParts : [{ text: "📎 Attached files for analysis" }] };
+
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setAttachedFiles([]);
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setIsLoading(true);
 
+    const assistantMessageId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, { id: assistantMessageId, role: "assistant", content: [{ text: "" }] }]);
+
+    let accumulatedContent = "";
+    const appendContent = (text: string) => {
+      accumulatedContent += text;
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMessageId ? { ...msg, content: [{ text: accumulatedContent }] } : msg
+      ));
+    };
+
     try {
-      const response = await fetch("/api-local/horus/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch response");
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      
-      const assistantMessageId = (Date.now() + 1).toString();
-      setMessages(prev => [...prev, { id: assistantMessageId, role: "assistant", content: [{ text: "" }] }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const textObj = decoder.decode(value, { stream: true });
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === assistantMessageId) {
-            const currentText = msg.content[0]?.text || "";
-            return { ...msg, content: [{ text: currentText + textObj }] };
+      await api.horusChatStream(
+        messageText,
+        filesToSend.length > 0 ? filesToSend : undefined,
+        chatIdRef.current ?? undefined,
+        (chunk) => {
+          if (chunk.startsWith("__CHAT_ID__:")) {
+            chatIdRef.current = chunk.slice("__CHAT_ID__:".length).trim();
+            return;
           }
-          return msg;
-        }));
-      }
+          if (chunk.startsWith("__THINKING__:") || chunk.startsWith("__FILE__:") || chunk.startsWith("__ACTION_CONFIRM__:") || chunk.startsWith("__ACTION_RESULT__:")) return;
+          if (chunk.startsWith("__STREAM_ERROR__:")) {
+            appendContent("Connection interrupted. Please try again.");
+            return;
+          }
+          appendContent(chunk);
+        }
+      );
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: "assistant", content: [{ text: "An error occurred while communicating with Horus AI." }] }]);
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMessageId ? { ...msg, content: [{ text: "An error occurred while communicating with Horus AI." }] } : msg
+      ));
     } finally {
       setIsLoading(false);
     }

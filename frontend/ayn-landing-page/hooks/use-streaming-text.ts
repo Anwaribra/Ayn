@@ -107,6 +107,35 @@ export function useStreamingText({
   }
 }
 
+/**
+ * For live streaming: content grows as chunks arrive from the backend.
+ * Reveals it character-by-character so the user sees typing effect.
+ * When isStreaming becomes false, shows full content immediately.
+ */
+export function useLiveStreamingText(
+  content: string,
+  isStreaming: boolean,
+  speed: number = 150
+) {
+  const [displayedLength, setDisplayedLength] = useState(0)
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setDisplayedLength(content.length)
+      return
+    }
+    if (displayedLength >= content.length) return
+
+    const msPerChar = 1000 / speed
+    const timeout = setTimeout(() => {
+      setDisplayedLength((prev) => Math.min(prev + 1, content.length))
+    }, msPerChar)
+    return () => clearTimeout(timeout)
+  }, [content, displayedLength, isStreaming, speed])
+
+  return content.slice(0, displayedLength)
+}
+
 // Hook for cursor blink effect
 export function useCursorBlink(enabled: boolean = true) {
   const [visible, setVisible] = useState(true)

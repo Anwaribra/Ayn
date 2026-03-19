@@ -30,14 +30,71 @@ from app.horus.agent_tools import (
     get_tool_ui_meta,
     requires_explicit_confirmation,
 )
+from app.core.redis import redis_client
 
 logger = logging.getLogger(__name__)
 
-# In-memory pending confirmations keyed by confirmation id.
+# Pending confirmations: Redis (persistent, survives restarts) or in-memory fallback.
 # Scope check (user_id/chat_id) prevents cross-user execution.
-PENDING_ACTION_CONFIRMATIONS: dict[str, dict[str, Any]] = {}
 PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
+_PENDING_ACTION_CONFIRMATIONS_FALLBACK: dict[str, dict[str, Any]] = {}  # Used when Redis disabled
+PENDING_CONFIRM_KEY_PREFIX = "horus:confirm:"
 STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started", "analytics_report"}
+
+
+def _pending_set(confirm_id: str, data: dict[str, Any]) -> None:
+    """Store pending confirmation in Redis (or in-memory fallback) with TTL."""
+    if redis_client.enabled:
+        key = f"{PENDING_CONFIRM_KEY_PREFIX}{confirm_id}"
+        redis_client.set(key, json.dumps(data), ex=PENDING_CONFIRMATION_TTL_SECONDS)
+    else:
+        _PENDING_ACTION_CONFIRMATIONS_FALLBACK[confirm_id] = data
+
+
+def _pending_get(confirm_id: str) -> dict[str, Any] | None:
+    """Get pending confirmation from Redis or in-memory fallback."""
+    if redis_client.enabled:
+        key = f"{PENDING_CONFIRM_KEY_PREFIX}{confirm_id}"
+        raw = redis_client.get(key)
+        if raw:
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                return None
+        return None
+    return _PENDING_ACTION_CONFIRMATIONS_FALLBACK.get(confirm_id)
+
+
+def _pending_pop(confirm_id: str) -> dict[str, Any] | None:
+    """Get and remove pending confirmation."""
+    data = _pending_get(confirm_id)
+    if data and redis_client.enabled:
+        redis_client.delete(f"{PENDING_CONFIRM_KEY_PREFIX}{confirm_id}")
+    elif data:
+        _PENDING_ACTION_CONFIRMATIONS_FALLBACK.pop(confirm_id, None)
+    return data
+
+
+def _pending_cleanup_stale() -> None:
+    """Remove expired in-memory confirmations (Redis uses TTL, no cleanup needed)."""
+    if redis_client.enabled:
+        return
+    now = datetime.now(timezone.utc)
+    expired_ids: list[str] = []
+    for cid, p in _PENDING_ACTION_CONFIRMATIONS_FALLBACK.items():
+        created_at = p.get("created_at")
+        if not created_at:
+            expired_ids.append(cid)
+            continue
+        try:
+            created_ts = datetime.fromisoformat(created_at)
+        except Exception:
+            expired_ids.append(cid)
+            continue
+        if (now - created_ts).total_seconds() > PENDING_CONFIRMATION_TTL_SECONDS:
+            expired_ids.append(cid)
+    for cid in expired_ids:
+        _PENDING_ACTION_CONFIRMATIONS_FALLBACK.pop(cid, None)
 
 
 class Observation(BaseModel):
@@ -192,7 +249,7 @@ class HorusService:
         email = getattr(current_user, "email", None) or (current_user.get("email") if isinstance(current_user, dict) else None)
         role = getattr(current_user, "role", None) or (current_user.get("role") if isinstance(current_user, dict) else None)
         institution_name = None
-        if not name:
+        if not name or (isinstance(name, str) and name.strip().lower() == "user"):
             try:
                 from app.core.db import db as prisma_client
                 user_obj = await prisma_client.user.find_unique(
@@ -201,14 +258,29 @@ class HorusService:
                 )
                 if user_obj:
                     name = getattr(user_obj, "name", None)
+                    if isinstance(name, str):
+                        name = name.strip() or None
                     email = email or getattr(user_obj, "email", None)
                     role = role or getattr(user_obj, "role", None)
                     if getattr(user_obj, "institution", None):
                         institution_name = user_obj.institution.name
             except Exception:
                 pass
+        # Fallback: derive first name from email (e.g. anwarmousa80@gmail.com -> Anwar)
+        if not name or (isinstance(name, str) and name.strip().lower() == "user"):
+            email_str = (email or "").strip()
+            if email_str and "@" in email_str:
+                local = email_str.split("@")[0]
+                alpha_part = "".join(c for c in local if c.isalpha())
+                if alpha_part:
+                    first_name = alpha_part[:5]
+                    name = first_name[0].upper() + first_name[1:].lower()
+        # Use first name for friendlier AI address (e.g. "Musa" from "Musa Ahmed")
+        display_name = (name or "User").strip()
+        if display_name and display_name.lower() != "user" and " " in display_name:
+            display_name = display_name.split()[0]
         return {
-            "name": name or "User",
+            "name": display_name or "User",
             "email": email or "",
             "role": str(role or "USER"),
             "institution": institution_name or "",
@@ -305,7 +377,14 @@ class HorusService:
 
         request_mode, message = self._extract_mode_token(message)
         client = get_gemini_client()
-        fast_path = request_mode == "ask" or (request_mode != "agent" and self._should_use_fast_path(message=message, files=files))
+        # Think mode must never use fast path — it needs full context + __THINKING__ steps for step-by-step reasoning
+        fast_path = (
+            request_mode == "ask"
+            or (
+                request_mode not in ("agent", "think")
+                and self._should_use_fast_path(message=message, files=files)
+            )
+        )
         visual_only_request = self._is_visual_only(files)
         needs_analysis = self._needs_compliance_analysis(message)
         store_as_evidence = not (visual_only_request and not needs_analysis)
@@ -320,7 +399,7 @@ class HorusService:
                     else:
                         asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
 
-                yield "__THINKING__:Generating response...\n"
+                # Skip __THINKING__ for Ask fast path — frontend shows "Answering…" immediately; saves one round-trip
 
                 fast_messages = [{"role": "user", "content": message or ""}]
                 try:
@@ -335,16 +414,12 @@ class HorusService:
                 except Exception:
                     pass
 
-                direct_identity = current_user if isinstance(current_user, dict) else {
-                    "name": getattr(current_user, "name", None),
-                    "email": getattr(current_user, "email", ""),
-                    "role": getattr(current_user, "role", "USER"),
-                    "institution": getattr(getattr(current_user, "institution", None), "name", "") if current_user else "",
-                }
-                user_name = direct_identity.get("name") or "User"
-                user_email = direct_identity.get("email") or ""
-                user_role = str(direct_identity.get("role") or "USER")
-                institution_name = direct_identity.get("institution") or ""
+                # Use _resolve_user_identity so we get name from DB when current_user dict lacks it
+                user_identity = await self._resolve_user_identity(user_id, current_user)
+                user_name = user_identity.get("name") or "User"
+                user_email = user_identity.get("email") or ""
+                user_role = str(user_identity.get("role") or "USER")
+                institution_name = user_identity.get("institution") or ""
                 institution_line = ""
                 if institution_name:
                     institution_line = f" They belong to institution '{institution_name}'."
@@ -353,10 +428,10 @@ class HorusService:
                 async for chunk in client.stream_chat(
                     messages=fast_messages,
                     context=(
-                        f"You are Horus (حورس), the AI assistant for the Ayn platform. "
+                        f"You are Horus, the AI assistant for the Ayn platform. "
                         f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
-                        f"Address them by name when appropriate. "
-                        f"Answer conversational and general questions immediately and clearly. "
+                        f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                        f"Answer conversational and general questions immediately and clearly. Stream your response token-by-token; do not buffer. "
                         f"Prefer the shortest complete useful answer. "
                         f"Do not claim you accessed platform state unless explicitly requested."
                         f"{memory_line}"
@@ -365,6 +440,7 @@ class HorusService:
                     if chunk:
                         full_response += chunk
                         yield chunk
+                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
             except Exception as fast_err:
                 logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
                 if not full_response:
@@ -385,6 +461,10 @@ class HorusService:
         user_identity = await self._resolve_user_identity(user_id, current_user)
         active_goal = await self._get_active_goal(user_id, chat_id)
 
+        # Yield immediately so user sees progress before any heavy work
+        yield "__THINKING__:Preparing your request...\n"
+        await asyncio.sleep(0)
+
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         if message and not files and request_mode != "think":
             try:
@@ -400,12 +480,12 @@ class HorusService:
                 }
 
                 # 1) Resolve pending confirmation command first.
-                self._cleanup_stale_pending_confirmations()
+                _pending_cleanup_stale()
                 confirm_id = self._extract_control_token(message, "__CONFIRM_ACTION__:")
                 cancel_id = self._extract_control_token(message, "__CANCEL_ACTION__:")
 
                 if message.startswith("__CONFIRM_ACTION__:"):
-                    pending = PENDING_ACTION_CONFIRMATIONS.get(confirm_id)
+                    pending = _pending_get(confirm_id)
                     if not confirm_id or not pending or not self._pending_matches_scope(pending, user_id, chat_id):
                         invalid_text = "That confirmation request is invalid or expired. Please run the action again."
                         yield invalid_text
@@ -418,7 +498,6 @@ class HorusService:
                     tool_name = pending["tool_name"]
                     args = pending.get("args", {})
                     yield "__THINKING__:Executing confirmed action...\n"
-                    await asyncio.sleep(0.05)
 
                     if tool_name == "__plan__":
                         plan_steps = pending.get("plan_steps", [])
@@ -430,7 +509,7 @@ class HorusService:
                             current_user=current_user_dict,
                             background_tasks=background_tasks,
                         )
-                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
+                        _pending_pop(confirm_id)
                         if plan_output["last_structured"]:
                             yield f"__ACTION_RESULT__:{json.dumps(plan_output['last_structured'])}\n"
                         if plan_output["summary_text"]:
@@ -450,7 +529,7 @@ class HorusService:
                             institution_id=institution_id,
                             current_user=current_user_dict,
                         )
-                        PENDING_ACTION_CONFIRMATIONS.pop(confirm_id, None)
+                        _pending_pop(confirm_id)
 
                         if tool_result.get("type") in STRUCTURED_RESULT_TYPES:
                             yield f"__ACTION_RESULT__:{json.dumps(tool_result)}\n"
@@ -476,7 +555,7 @@ class HorusService:
                         return
 
                 if message.startswith("__CANCEL_ACTION__:"):
-                    pending = PENDING_ACTION_CONFIRMATIONS.get(cancel_id)
+                    pending = _pending_get(cancel_id)
                     if not cancel_id or not pending or not self._pending_matches_scope(pending, user_id, chat_id):
                         cancelled_text = "That confirmation request is no longer active."
                         yield cancelled_text
@@ -486,7 +565,7 @@ class HorusService:
                             await ChatService.save_message(chat_id, user_id, "assistant", cancelled_text)
                         return
 
-                    PENDING_ACTION_CONFIRMATIONS.pop(cancel_id, None)
+                    _pending_pop(cancel_id)
                     cancelled_text = "Understood. I canceled that action."
                     yield cancelled_text
                     if background_tasks:
@@ -521,23 +600,20 @@ class HorusService:
 
                         tool_meta = get_tool_ui_meta(tool_name)
                         yield "__THINKING__:Reading your platform data...\n"
-                        await asyncio.sleep(0.05)
                         yield f"__THINKING__:Identified action: {tool_meta['title']}\n"
-                        await asyncio.sleep(0.05)
                         yield f"__THINKING__:Preparing {tool_meta['prepare_text']}...\n"
-                        await asyncio.sleep(0.05)
 
                         if requires_explicit_confirmation(tool_name):
                             confirm_id = str(uuid4())
                             description = tool_meta["description"]
-                            PENDING_ACTION_CONFIRMATIONS[confirm_id] = {
+                            _pending_set(confirm_id, {
                                 "user_id": user_id,
                                 "chat_id": chat_id,
                                 "tool_name": tool_name,
                                 "args": args,
                                 "description": description,
                                 "created_at": datetime.now(timezone.utc).isoformat(),
-                            }
+                            })
                             confirm_payload = {
                                 "id": confirm_id,
                                 "tool": tool_name,
@@ -608,14 +684,14 @@ class HorusService:
                         has_mutating = any(requires_explicit_confirmation(step["tool"]) for step in plan_steps)
                         if has_mutating:
                             confirm_id = str(uuid4())
-                            PENDING_ACTION_CONFIRMATIONS[confirm_id] = {
+                            _pending_set(confirm_id, {
                                 "user_id": user_id,
                                 "chat_id": chat_id,
                                 "tool_name": "__plan__",
                                 "plan_steps": plan_steps,
                                 "description": f"Run a {len(plan_steps)}-step agent plan including write operations.",
                                 "created_at": datetime.now(timezone.utc).isoformat(),
-                            }
+                            })
                             confirm_payload = {
                                 "id": confirm_id,
                                 "tool": "__plan__",
@@ -665,34 +741,28 @@ class HorusService:
         
         # 2. Parallelize ALL initial operations for speed
         async def process_file(f):
-            if store_as_evidence:
-                upload_result = await EvidenceService.upload_evidence(
-                    file=f,
-                    current_user=current_user,
-                    background_tasks=background_tasks
-                )
-                if upload_result.success:
-                    await f.seek(0)
-                    content = await f.read()
-                    ct = f.content_type or ""
-                    return {
-                        "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
-                        "mime_type": ct,
-                        "data": base64.b64encode(content).decode("utf-8"),
-                        "filename": f.filename,
-                        "evidenceId": upload_result.evidenceId
-                    }
-                return None
-
             content = await f.read()
             ct = f.content_type or ""
-            return {
+            file_payload = {
                 "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
                 "mime_type": ct,
                 "data": base64.b64encode(content).decode("utf-8"),
                 "filename": f.filename,
-                "evidenceId": None
+                "evidenceId": None,
             }
+            if store_as_evidence:
+                await f.seek(0)
+                try:
+                    upload_result = await EvidenceService.upload_evidence(
+                        file=f,
+                        current_user=current_user,
+                        background_tasks=background_tasks
+                    )
+                    if upload_result.success:
+                        file_payload["evidenceId"] = upload_result.evidenceId
+                except Exception as upload_err:
+                    logger.warning(f"Evidence upload failed, continuing with AI analysis: {upload_err}")
+            return file_payload
 
         async def fetch_mappings_context(uid: str):
             try:
@@ -731,15 +801,20 @@ class HorusService:
             else:
                 asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
 
-        # EXECUTE EVERYTHING IN PARALLEL
+        # Yield immediately so user sees feedback before any await (avoids 2–5s silence)
         if files:
-            yield "__THINKING__:Processing attached files...\n"
+            yield "__THINKING__:Got it, analyzing your file...\n"
+            await asyncio.sleep(0)
         else:
             yield "__THINKING__:Reading platform state...\n"
-        
+            await asyncio.sleep(0)
+
         results = await asyncio.gather(*tasks)
-        
-        
+
+        if files:
+            yield "__THINKING__:Processing attached files...\n"
+            await asyncio.sleep(0)
+
         summary = results[0]
         recent_activities = results[1]
         mapping_context = results[2]
@@ -749,7 +824,11 @@ class HorusService:
         file_results = []
         if files:
             file_results = [r for r in results[offset:offset+len(files)] if r is not None]
-        
+            for res in file_results:
+                fn = res.get("filename") or "file"
+                yield f"__FILE__:{fn}\n"
+                await asyncio.sleep(0)
+
         # Log file uploads in background
         for res in file_results:
             evidence_id = res.get("evidenceId")
@@ -802,25 +881,24 @@ class HorusService:
             
             if visual_only:
                 yield "__THINKING__:Phase 1: Reading visual content...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 2: Identifying key UI elements...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 3: Summarizing observations...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
+                yield "__THINKING__:Phase 4: Finalizing response...\n"
+                await asyncio.sleep(0)
             else:
                 yield "__THINKING__:Phase 1 (Identify): Scanning document category...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 2 (Deconstruct): Splitting PDF into semantic chunks and metadata...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 3 (Analyze): Cross-referencing against internal Quality Constitution...\n"
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 4 (Score): Calculating weighted Compliance Score...\n"
-                await asyncio.sleep(0.05)
-            
-            if visual_only:
-                yield "__THINKING__:Phase 4: Finalizing response...\n"
-            else:
+                await asyncio.sleep(0)
                 yield "__THINKING__:Phase 5 (Synthesize): Preparing Audit Report and Optimized Content...\n"
+                await asyncio.sleep(0)
             
             if visual_only:
                 if needs_analysis:
@@ -831,14 +909,21 @@ class HorusService:
                 ai_message = message or "Analyze these files."
                 ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
 
-            async for chunk in client.stream_chat_with_files(
-                message=ai_message,
-                files=file_results,
-                context=context # Pass the enriched brain context
-            ):
-                if chunk:
-                    full_response += chunk
-                    yield chunk
+            try:
+                async for chunk in client.stream_chat_with_files(
+                    message=ai_message,
+                    files=file_results,
+                    context=context # Pass the enriched brain context
+                ):
+                    if chunk:
+                        full_response += chunk
+                        yield chunk
+                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
+            except Exception as file_stream_err:
+                logger.error(f"File analysis stream failed: {file_stream_err}", exc_info=True)
+                if not full_response.strip():
+                    full_response = "I encountered an error while analyzing your file. Please try again or attach a different file."
+                    yield full_response
             if not full_response.strip():
                 # Some multimodal providers may stream empty chunks for certain files.
                 # Ensure the user never sees a silent response.
@@ -856,16 +941,25 @@ class HorusService:
         else:
             history = await history_task
             yield "__THINKING__:Searching conversation history...\n"
+            await asyncio.sleep(0)
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
             if message and not any(m["content"] == message for m in messages):
                 messages.append({"role": "user", "content": message})
+            # When user refers to a file they sent earlier but no file in this request:
+            # we don't have file content in history — add context so AI explains they must re-attach
+            file_ref_keywords = ["بعته", "ارسلت", "اللي فوق", "السابق", "الملف", "الفايل", "file", "sent", "attached", "uploaded", "حلل", "analyze"]
+            msg_lower = (message or "").lower()
+            if any(kw in msg_lower for kw in file_ref_keywords):
+                context += "\n\n[IMPORTANT] The user may be referring to a file from a previous message. You do NOT have access to file content from past messages. If they want file analysis, they must re-attach the file in this message. Respond clearly: ask them to re-attach the file to analyze it. Do NOT propose a plan or ask for confirmation—just explain this directly."
             yield "__THINKING__:Generating response...\n"
+            await asyncio.sleep(0)
             
             try:
                 async for chunk in client.stream_chat(messages=messages, context=context):
                     if chunk:
                         full_response += chunk
                         yield chunk
+                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
                 if not full_response.strip():
                     fallback_response = await client.chat(messages=messages, context=context)
                     if fallback_response and fallback_response.strip():
@@ -1055,8 +1149,11 @@ class HorusService:
                 rag_context = await rag.retrieve_context(message, limit=4)
                 if rag_context:
                     context_parts.append(rag_context)
+                else:
+                    context_parts.append("[Note: RAG retrieval returned no results. Embeddings may require Gemini. Proceed without document context.]")
             except Exception as e:
                 logger.error(f"RAG Context retrieval failed during chat sync: {e}")
+                context_parts.append(f"[Note: RAG retrieval failed ({e}). Proceed without document context.]")
 
         import re
         message_clean = (message or "").replace(" ", "")
@@ -1067,7 +1164,7 @@ class HorusService:
         user_line = ""
         if user_identity:
             inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate. Never say 'Hello User' — use their actual name or 'Hello'/'Hi'."
 
         goal_line = f"- Active goal: {goal}" if goal else ""
         context_parts.append(f"""
@@ -1137,8 +1234,11 @@ class HorusService:
                 rag_context = await rag.retrieve_context(message, limit=4)
                 if rag_context:
                     context_parts.append(rag_context)
+                else:
+                    context_parts.append("[Note: RAG retrieval returned no results. Embeddings may require Gemini. Proceed without document context.]")
             except Exception as e:
                 logger.error(f"RAG Context retrieval failed during chat loop: {e}")
+                context_parts.append(f"[Note: RAG retrieval failed ({e}). Proceed without document context.]")
         
         import re
         message_clean = (message or "").replace(" ", "")
@@ -1149,7 +1249,7 @@ class HorusService:
         user_line = ""
         if user_identity:
             inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate."
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate. Never say 'Hello User' — use their actual name or 'Hello'/'Hi'."
 
         goal_line = f"- Active goal: {goal}" if goal else ""
         context_parts.append(f"""
@@ -1261,22 +1361,8 @@ class HorusService:
         return None
 
     def _cleanup_stale_pending_confirmations(self) -> None:
-        now = datetime.now(timezone.utc)
-        expired_ids: list[str] = []
-        for confirmation_id, pending in PENDING_ACTION_CONFIRMATIONS.items():
-            created_at = pending.get("created_at")
-            try:
-                created_ts = datetime.fromisoformat(created_at) if created_at else None
-            except Exception:
-                created_ts = None
-            if not created_ts:
-                expired_ids.append(confirmation_id)
-                continue
-            age_seconds = (now - created_ts).total_seconds()
-            if age_seconds > PENDING_CONFIRMATION_TTL_SECONDS:
-                expired_ids.append(confirmation_id)
-        for confirmation_id in expired_ids:
-            PENDING_ACTION_CONFIRMATIONS.pop(confirmation_id, None)
+        """Delegates to module-level _pending_cleanup_stale (Redis or in-memory)."""
+        _pending_cleanup_stale()
 
     def _pending_matches_scope(self, pending: Dict[str, Any], user_id: str, chat_id: str | None) -> bool:
         return bool(

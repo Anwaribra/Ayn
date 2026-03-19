@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
 
+    # Dify (optional - production-ready RAG + Agent platform)
+    DIFY_API_KEY: Optional[str] = None
+    DIFY_BASE_URL: Optional[str] = None  # e.g. https://api.dify.ai/v1
+
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None

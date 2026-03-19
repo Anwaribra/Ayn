@@ -1190,9 +1190,80 @@
   to   { opacity: 1; filter: blur(0); }
 }
 
+@keyframes askTypingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+.horus-ask-dot {
+  animation: askTypingBounce 1.2s ease-in-out infinite;
+}
+
+@keyframes stepPulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+@keyframes stepPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+}
+
+.horus-step-pulse {
+  animation: stepPulse 1.5s ease-in-out infinite;
+}
+
+.horus-step-pulse-glow {
+  animation: stepPulseGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes completionPulse {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.horus-completion-pulse {
+  animation: completionPulse 0.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .horus-ask-dot {
+    animation: none;
+    opacity: 0.8;
+  }
+  .horus-loading-orb::after {
+    animation: none;
+  }
+  .horus-loading-line {
+    animation: none;
+  }
+  .horus-step-pulse,
+  .horus-step-pulse-glow {
+    animation: none;
+  }
+  .horus-completion-pulse {
+    animation: none;
+  }
+  .horus-stream-cursor {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
 /* Applied to the last-child of streaming markdown */
 .horus-streaming-active > .horus-markdown-wrapper *:last-child {
   animation: streamReveal 0.25s ease-out forwards;
+}
+
+@keyframes streamCursorBlink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+.horus-stream-cursor {
+  animation: streamCursorBlink 1s step-end infinite;
 }
 
 /* Contextual blur overlay */

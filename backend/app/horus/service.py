@@ -8,13 +8,15 @@ import base64
 import json
 import logging
 import asyncio
+import mimetypes
+from types import SimpleNamespace
 from uuid import uuid4
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, AsyncGenerator, Callable
 from pydantic import BaseModel
 
 from app.ai.service import get_gemini_client
-from app.evidence.service import EvidenceService
+from app.evidence.service import EvidenceService, ALLOWED_FILE_TYPES
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.chat.service import ChatService
@@ -132,10 +134,19 @@ class HorusService:
         if not files:
             return False
         for f in files:
-            ct = getattr(f, "content_type", "") or ""
+            if isinstance(f, dict):
+                ct = f.get("content_type") or ""
+            else:
+                ct = getattr(f, "content_type", "") or ""
             if not ct.startswith("image/"):
                 return False
         return True
+
+    @staticmethod
+    def _buffered_part_filename(part: Any) -> str:
+        if isinstance(part, dict):
+            return part.get("filename") or "file"
+        return getattr(part, "filename", None) or "file"
     
     async def chat(
         self, 
@@ -372,6 +383,30 @@ class HorusService:
         """
         corr_id = correlation_id or str(uuid4())
         logger.info("Horus stream_chat started", extra={"correlation_id": corr_id, "user_id": user_id, "chat_id": chat_id})
+
+        # 0. Read request multipart into memory BEFORE any response bytes are sent.
+        # Vercel / some ASGI stacks finalize the request body once streaming starts;
+        # a later UploadFile.read() then raises "I/O operation on closed file".
+        if files:
+            buffered_parts: list[dict[str, Any]] = []
+            for uf in files:
+                try:
+                    body = await uf.read()
+                except Exception as read_err:
+                    logger.error(
+                        "Horus: could not read uploaded file %s: %s",
+                        getattr(uf, "filename", "?"),
+                        read_err,
+                        exc_info=True,
+                    )
+                    body = b""
+                fname = getattr(uf, "filename", None) or "file"
+                ct = (getattr(uf, "content_type", None) or "").strip()
+                if not ct:
+                    guessed, _ = mimetypes.guess_type(fname)
+                    ct = (guessed or "").strip()
+                buffered_parts.append({"filename": fname, "content_type": ct, "body": body})
+            files = buffered_parts
 
         # 1. Start Chat Creation or Fetch in Parallel with State
         if not chat_id:
@@ -831,22 +866,29 @@ class HorusService:
                 logger.error(f"Agent planner/tool execution failed: {agent_err}", exc_info=True)
         
         # 2. Parallelize ALL initial operations for speed
-        async def process_file(f):
-            content = await f.read()
-            ct = f.content_type or ""
+        async def process_file(part: dict[str, Any]):
+            content = part["body"]
+            fname = part.get("filename") or "file"
+            ct = (part.get("content_type") or "").strip()
+            if not ct or ct not in ALLOWED_FILE_TYPES:
+                guessed, _ = mimetypes.guess_type(fname)
+                if guessed:
+                    ct = guessed.strip()
+            mime_for_upload = ct if ct in ALLOWED_FILE_TYPES else (ct or "application/octet-stream")
             file_payload = {
                 "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
-                "mime_type": ct,
+                "mime_type": ct or mime_for_upload,
                 "data": base64.b64encode(content).decode("utf-8"),
-                "filename": f.filename,
+                "filename": fname,
                 "evidenceId": None,
             }
-            if store_as_evidence:
+            if store_as_evidence and content:
+                meta = SimpleNamespace(filename=fname, content_type=mime_for_upload)
                 try:
                     upload_result = await EvidenceService.upload_evidence(
-                        file=f,
-                        current_user=current_user,
-                        background_tasks=background_tasks,
+                        meta,  # duck-typed; body passed as file_content
+                        current_user,
+                        background_tasks,
                         file_content=content,
                     )
                     if upload_result.success:
@@ -896,7 +938,7 @@ class HorusService:
         if files:
             yield "__THINKING__:Got it, analyzing your file...\n"
             for f in files:
-                fn = getattr(f, "filename", None) or "file"
+                fn = self._buffered_part_filename(f)
                 yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'uploading'})}\n"
             await asyncio.sleep(0)
         else:

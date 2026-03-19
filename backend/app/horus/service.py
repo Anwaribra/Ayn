@@ -447,7 +447,6 @@ class HorusService:
 
                 # Emit citations before streaming when RAG sources available
                 if rag_sources:
-                    import json
                     yield f"__CITATION__:{json.dumps(rag_sources)}\n"
                     await asyncio.sleep(0)
                 async for chunk in client.stream_chat(

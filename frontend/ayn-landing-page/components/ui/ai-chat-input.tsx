@@ -381,18 +381,6 @@ export const AIChatInput = ({
                     <span>Upload document</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={startVoiceInput}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-accent"
-                  >
-                    {isListening ? (
-                      <MicOff className="h-4 w-4 shrink-0 text-destructive" />
-                    ) : (
-                      <Mic className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <span>{isListening ? "Stop listening" : "Voice input"}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/70"></span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     onClick={() => onThinkingSelect?.()}
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-accent"
                   >
@@ -404,6 +392,21 @@ export const AIChatInput = ({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <button
+                onClick={startVoiceInput}
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                  isListening
+                    ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                    : "text-muted-foreground/80 hover:bg-[var(--border-subtle)]/50 hover:text-foreground"
+                )}
+                title={isListening ? "Stop listening" : "Voice input"}
+                type="button"
+                tabIndex={-1}
+                aria-label={isListening ? "Stop voice input" : "Start voice input"}
+              >
+                {isListening ? <MicOff size={20} strokeWidth={2} /> : <Mic size={20} strokeWidth={2} />}
+              </button>
               <input
                 ref={photoInputRef}
                 type="file"

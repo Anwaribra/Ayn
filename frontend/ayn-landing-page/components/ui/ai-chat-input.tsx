@@ -6,6 +6,11 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 const SpeechRecognition = typeof window !== "undefined" ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null
+function detectBrave(): boolean {
+  if (typeof navigator === "undefined") return false
+  const nav = navigator as any
+  return nav.userAgentData?.brands?.some((b: { brand: string }) => b.brand === "Brave") ?? !!nav.brave
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -185,6 +190,10 @@ export const AIChatInput = ({
       toast.error("Voice input is not supported. Use Chrome or Edge for best results.")
       return
     }
+    if (detectBrave()) {
+      toast.error("Voice input doesn't work in Brave. Open this page in Chrome or Edge.", { duration: 6000 })
+      return
+    }
     if (isListening) {
       recognitionRef.current?.stop()
       setIsListening(false)
@@ -232,7 +241,10 @@ export const AIChatInput = ({
         if (err === "not-allowed" || err === "service-not-allowed") {
           toast.error("Microphone access denied. Allow microphone and try again.")
         } else if (err === "network") {
-          toast.error("Voice recognition requires an internet connection. Brave browser may not support it — try Chrome or Edge.")
+          const msg = detectBrave()
+            ? "Voice input doesn't work in Brave — it blocks speech recognition. Open this page in Chrome or Edge."
+            : "Voice recognition needs internet. Check your connection and try again."
+          toast.error(msg)
         } else if (err === "audio-capture") {
           toast.error("No microphone detected. Connect a microphone and try again.")
         } else {
@@ -400,7 +412,7 @@ export const AIChatInput = ({
                     ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                     : "text-muted-foreground/80 hover:bg-[var(--border-subtle)]/50 hover:text-foreground"
                 )}
-                title={isListening ? "Stop listening" : "Voice input"}
+                title={isListening ? "Stop listening" : detectBrave() ? "Voice works in Chrome or Edge — not in Brave" : "Voice input"}
                 type="button"
                 tabIndex={-1}
                 aria-label={isListening ? "Stop voice input" : "Start voice input"}

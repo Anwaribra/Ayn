@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production.up.railway.app"
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production-1465.up.railway.app"
 
 export const runtime = "nodejs"  // Needed for streaming support
 export const dynamic = "force-dynamic"  // Never cache this route

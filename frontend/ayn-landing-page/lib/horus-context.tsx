@@ -200,7 +200,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const streamRequest = async (
         modelText: string,
         files?: File[],
-        opts?: { appendUser?: boolean; visibleUserText?: string; attachments?: AttachmentPreview[] }
+        opts?: { appendUser?: boolean; visibleUserText?: string; attachments?: AttachmentPreview[]; responseMode?: Message["responseMode"] }
     ) => {
         const appendUser = opts?.appendUser ?? true
         const visibleUserText = opts?.visibleUserText ?? modelText

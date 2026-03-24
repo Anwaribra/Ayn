@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db, Prisma
 from app.horus.service import HorusService
+from app.ai.service import transcribe_audio
 from app.horus.agent_tools import build_tool_manifest, requires_explicit_confirmation
 from app.platform_state.service import StateService
 from app.chat.service import ChatService
@@ -47,6 +48,10 @@ class GoalResponse(BaseModel):
     chat_id: str
     goal: Optional[str] = None
     goal_updated_at: Optional[datetime] = None
+
+
+class TranscriptionResponse(BaseModel):
+    text: str
 
 
 def get_user_id(current_user):
@@ -135,6 +140,30 @@ async def horus_chat_stream(
             "Connection": "keep-alive",
         },
     )
+
+
+@router.post("/stt", response_model=TranscriptionResponse)
+async def horus_speech_to_text(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Form(None),
+    current_user = Depends(get_current_user),
+):
+    """
+    Speech-to-text for Horus voice input.
+    """
+    _ = get_user_id(current_user)
+    content = await audio.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty audio file.")
+    if len(content) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Audio file too large.")
+    text = await transcribe_audio(
+        audio_bytes=content,
+        filename=audio.filename or "audio.webm",
+        mime_type=audio.content_type or "application/octet-stream",
+        language=language,
+    )
+    return {"text": text}
 
 
 @router.get("/events")

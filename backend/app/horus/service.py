@@ -384,6 +384,14 @@ class HorusService:
         corr_id = correlation_id or str(uuid4())
         logger.info("Horus stream_chat started", extra={"correlation_id": corr_id, "user_id": user_id, "chat_id": chat_id})
 
+        async def _yield_text_chunks(text: str, chunk_size: int = 32):
+            if not text:
+                return
+            for i in range(0, len(text), chunk_size):
+                yield text[i:i + chunk_size]
+                await asyncio.sleep(0)
+
+
         # 0. Read request multipart into memory BEFORE any response bytes are sent.
         # Vercel / some ASGI stacks finalize the request body once streaming starts;
         # a later UploadFile.read() then raises "I/O operation on closed file".
@@ -415,6 +423,7 @@ class HorusService:
             yield f"__CHAT_ID__:{chat_id}\n"
 
         request_mode, message = self._extract_mode_token(message)
+        user_metadata = {"responseMode": request_mode} if request_mode else None
         client = get_gemini_client()
         # Text-only fast path must NOT run when files are attached — otherwise Ask mode
         # would call stream_chat without multimodal parts and the model thinks no file exists.
@@ -436,12 +445,16 @@ class HorusService:
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if fast_path:
             full_response = ""
+            rag_sources: list[dict[str, Any]] = []
             try:
+                # Ensure immediate stream activity even in fast path.
+                yield "__THINKING__:Starting...\n"
+                await asyncio.sleep(0)
                 if message:
                     if background_tasks:
-                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
                     else:
-                        asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
+                        asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message, user_metadata))
 
                 # Skip __THINKING__ for Ask fast path — frontend shows "Answering…" immediately; saves one round-trip
 
@@ -472,7 +485,6 @@ class HorusService:
                 # RAG in Fast Path: when platform keywords present, inject document context
                 rag_fast = ""
                 compliance_kw = ["gap", "compliance", "standard", "criteria", "ncaaa", "iso", "accreditation", "analysis", "evidence", "فجوة", "امتثال", "معيار"]
-                rag_sources: List[Dict[str, Any]] = []
                 if message and any(kw in (message or "").lower() for kw in compliance_kw):
                     try:
                         from app.core.db import db as _prisma
@@ -489,7 +501,7 @@ class HorusService:
                 if rag_sources:
                     yield f"__CITATION__:{json.dumps(rag_sources)}\n"
                     await asyncio.sleep(0)
-                async for chunk in client.stream_chat(
+                gen = client.stream_chat(
                     messages=fast_messages,
                     context=(
                         f"You are Horus, the AI assistant for the Ayn platform. "
@@ -501,11 +513,43 @@ class HorusService:
                         f"{memory_line}"
                         f"{rag_fast}"
                     ),
-                ):
-                    if chunk:
-                        full_response += chunk
-                        yield chunk
-                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
+                )
+                try:
+                    first = await asyncio.wait_for(gen.__anext__(), timeout=8.0)
+                except StopAsyncIteration:
+                    first = ""
+                except asyncio.TimeoutError:
+                    first = None
+                if first is None:
+                    try:
+                        fallback = await asyncio.wait_for(
+                            client.chat(messages=fast_messages, context=( 
+                                f"You are Horus, the AI assistant for the Ayn platform. "
+                                f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
+                                f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                                f"Answer conversational and general questions immediately and clearly. "
+                                f"Prefer the shortest complete useful answer. "
+                                f"Do not claim you accessed platform state unless explicitly requested."
+                                f"{memory_line}"
+                                f"{rag_fast}"
+                            )),
+                            timeout=18.0,
+                        )
+                    except asyncio.TimeoutError:
+                        fallback = "I’m taking too long to respond. Please try again."
+                    if fallback:
+                        full_response += fallback
+                        async for piece in _yield_text_chunks(fallback):
+                            yield piece
+                else:
+                    if first:
+                        full_response += first
+                        yield first
+                    async for chunk in gen:
+                        if chunk:
+                            full_response += chunk
+                            yield chunk
+                            await asyncio.sleep(0)
             except Exception as fast_err:
                 logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
                 if not full_response:
@@ -514,11 +558,13 @@ class HorusService:
                     yield full_response
 
             if full_response and background_tasks:
-                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+                assistant_meta = {"citations": rag_sources} if rag_sources else None
+                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response, assistant_meta)
                 if message:
                     background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
             elif full_response:
-                await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+                assistant_meta = {"citations": rag_sources} if rag_sources else None
+                await ChatService.save_message(chat_id, user_id, "assistant", full_response, assistant_meta)
                 if message:
                     asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
             return
@@ -666,9 +712,9 @@ class HorusService:
                     args = plan.get("arguments", {}) or {}
                     if tool_name in TOOL_REGISTRY:
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "user", message)
+                            await ChatService.save_message(chat_id, user_id, "user", message, user_metadata)
 
                         tool_meta = get_tool_ui_meta(tool_name)
                         yield "__THINKING__:Reading your platform data...\n"
@@ -752,9 +798,9 @@ class HorusService:
                     plan_steps = self._normalize_plan_steps(raw_steps)
                     if plan_steps:
                         if background_tasks:
-                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
                         else:
-                            await ChatService.save_message(chat_id, user_id, "user", message)
+                            await ChatService.save_message(chat_id, user_id, "user", message, user_metadata)
 
                         has_mutating = any(requires_explicit_confirmation(step["tool"]) for step in plan_steps)
                         if has_mutating:
@@ -939,9 +985,9 @@ class HorusService:
         # Save user message in background to avoid blocking
         if message:
             if background_tasks:
-                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message)
+                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
             else:
-                asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message))
+                asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message, user_metadata))
 
         # Yield immediately so user sees feedback before any await (avoids 2–5s silence)
         if files:
@@ -1010,6 +1056,29 @@ class HorusService:
 
         if file_results:
             visual_only = all((f.get("type") == "image") for f in file_results)
+            language_hint = ""
+            if message:
+                import re
+                msg_clean = message.replace(" ", "")
+                arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
+                if len(msg_clean) > 0 and (arabic_chars / len(msg_clean)) > 0.1:
+                    language_hint = "Respond in Arabic."
+                elif len(msg_clean) > 0:
+                    language_hint = "Respond in English."
+
+            domain_hint = (
+                "You are Horus, the AI assistant for the Ayn platform. "
+                "Always analyze the attached file(s) and answer in a normal chat style."
+            )
+            if not needs_analysis:
+                domain_hint += " Do not return JSON unless the user explicitly asked for JSON."
+            domain_hint += (
+                " If the content relates to education quality, accreditation, or academic standards, map key points to common frameworks "
+                "such as NCAAA, AACSB, ABET, or ISO 21001, and highlight compliance gaps or missing evidence. "
+                "Be explicit when a mapping is uncertain."
+            )
+            if language_hint:
+                domain_hint += f" {language_hint}"
             for res in file_results:
                 fn = res.get("filename") or "file"
                 yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'analyzing'})}\n"
@@ -1070,17 +1139,45 @@ class HorusService:
                         "Do NOT say you cannot see or access the attachment. "
                         "Do NOT reply with only JSON unless the user explicitly asked for JSON."
                     )
+            ai_message = f"{ai_message}\n\n{domain_hint}"
 
             try:
-                async for chunk in client.stream_chat_with_files(
+                gen = client.stream_chat_with_files(
                     message=ai_message,
                     files=file_results,
                     context=context # Pass the enriched brain context
-                ):
-                    if chunk:
-                        full_response += chunk
-                        yield chunk
-                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
+                )
+                try:
+                    first = await asyncio.wait_for(gen.__anext__(), timeout=10.0)
+                except StopAsyncIteration:
+                    first = ""
+                except asyncio.TimeoutError:
+                    first = None
+                if first is None:
+                    try:
+                        fallback_response = await asyncio.wait_for(
+                            client.chat_with_files(
+                                message=ai_message,
+                                files=file_results,
+                                context=context,
+                            ),
+                            timeout=30.0,
+                        )
+                    except asyncio.TimeoutError:
+                        fallback_response = "I’m taking too long to analyze the file. Please try again."
+                    if fallback_response:
+                        full_response = (fallback_response or "").strip()
+                        async for piece in _yield_text_chunks(full_response):
+                            yield piece
+                else:
+                    if first:
+                        full_response += first
+                        yield first
+                    async for chunk in gen:
+                        if chunk:
+                            full_response += chunk
+                            yield chunk
+                            await asyncio.sleep(0)  # Yield control so chunk is sent immediately
             except Exception as file_stream_err:
                 logger.error(f"File analysis stream failed: {file_stream_err}", exc_info=True)
                 if not full_response.strip():
@@ -1117,16 +1214,40 @@ class HorusService:
             await asyncio.sleep(0)
             
             try:
-                async for chunk in client.stream_chat(messages=messages, context=context):
-                    if chunk:
-                        full_response += chunk
-                        yield chunk
-                        await asyncio.sleep(0)  # Yield control so chunk is sent immediately
+                gen = client.stream_chat(messages=messages, context=context)
+                try:
+                    first = await asyncio.wait_for(gen.__anext__(), timeout=8.0)
+                except StopAsyncIteration:
+                    first = ""
+                except asyncio.TimeoutError:
+                    first = None
+                if first is None:
+                    try:
+                        fallback_response = await asyncio.wait_for(
+                            client.chat(messages=messages, context=context),
+                            timeout=18.0,
+                        )
+                    except asyncio.TimeoutError:
+                        fallback_response = "I’m taking too long to respond. Please try again."
+                    if fallback_response and fallback_response.strip():
+                        full_response = fallback_response.strip()
+                        async for piece in _yield_text_chunks(full_response):
+                            yield piece
+                else:
+                    if first:
+                        full_response += first
+                        yield first
+                    async for chunk in gen:
+                        if chunk:
+                            full_response += chunk
+                            yield chunk
+                            await asyncio.sleep(0)  # Yield control so chunk is sent immediately
                 if not full_response.strip():
                     fallback_response = await client.chat(messages=messages, context=context)
                     if fallback_response and fallback_response.strip():
                         full_response = fallback_response.strip()
-                        yield full_response
+                        async for piece in _yield_text_chunks(full_response):
+                            yield piece
             except Exception as stream_err:
                 logger.error(f"Stream chat failed mid-response: {stream_err}", exc_info=True)
                 if not full_response.strip():

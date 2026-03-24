@@ -4,13 +4,6 @@ import { useState, useEffect, useRef, useCallback, type ReactNode } from "react"
 import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-
-const SpeechRecognition = typeof window !== "undefined" ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null
-function detectBrave(): boolean {
-  if (typeof navigator === "undefined") return false
-  const nav = navigator as any
-  return nav.userAgentData?.brands?.some((b: { brand: string }) => b.brand === "Brave") ?? !!nav.brave
-}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const DEFAULT_PLACEHOLDER = "Ask Horus…"
-const DRAFT_KEY = "horus-chat-draft"
-
 const ACCEPTED_DOC_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]
 
 function isAcceptedFile(file: File): boolean {
@@ -38,10 +29,11 @@ interface AIChatInputProps {
   footer?: ReactNode
   onThinkingSelect?: () => void
   responseMode?: "ask" | "think" | "agent"
-  /** Key for draft persistence (e.g. chatId). If not set, uses default. */
+  /** Key for draft persistence (unused; draft persistence is disabled). */
   draftKey?: string
   /** When input is empty and user presses Up, fill with this (last user message) */
   lastUserMessage?: string
+  quickPrompts?: { label: string; prompt: string }[]
 }
 
 export const AIChatInput = ({
@@ -57,40 +49,26 @@ export const AIChatInput = ({
   responseMode = "ask",
   draftKey,
   lastUserMessage,
+  quickPrompts = [],
 }: AIChatInputProps) => {
   const [isActive, setIsActive] = useState(false)
   const [inputValue, setInputValue] = useState("")
   const [isDragging, setIsDragging] = useState(false)
   const [plusMenuOpen, setPlusMenuOpen] = useState(false)
+  const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [isListening, setIsListening] = useState(false)
-  const [interimTranscript, setInterimTranscript] = useState("")
-  const recognitionRef = useRef<any>(null)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const mediaChunksRef = useRef<BlobPart[]>([])
+  const mediaStreamRef = useRef<MediaStream | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const documentInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const storageKey = draftKey ? `${DRAFT_KEY}:${draftKey}` : DRAFT_KEY
-
-  // Draft persistence: load on mount
   useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) setInputValue(saved)
-    } catch (_) {}
-  }, [storageKey])
-
-  // Draft persistence: save on change (debounced)
-  useEffect(() => {
-    if (!inputValue) return
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(storageKey, inputValue)
-      } catch (_) {}
-    }, 300)
-    return () => clearTimeout(t)
-  }, [inputValue, storageKey])
+    if (!quickPrompts.length && slashMenuOpen) setSlashMenuOpen(false)
+  }, [quickPrompts.length, slashMenuOpen])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,15 +105,25 @@ export const AIChatInput = ({
     onSend(inputValue.trim())
     setInputValue("")
     setIsActive(false)
-    try {
-      localStorage.removeItem(storageKey)
-    } catch (_) {}
+    setSlashMenuOpen(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSend()
+    }
+    if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      setSlashMenuOpen(true)
+      setIsActive(true)
+      return
+    }
+    if (e.key === "Escape" && slashMenuOpen) {
+      e.preventDefault()
+      setSlashMenuOpen(false)
+      return
     }
     if (e.key === "ArrowUp" && !inputValue.trim() && lastUserMessage) {
       e.preventDefault()
@@ -186,93 +174,81 @@ export const AIChatInput = ({
   }
 
   const startVoiceInput = useCallback(async () => {
-    if (!SpeechRecognition) {
-      toast.error("Voice input is not supported. Use Chrome or Edge for best results.")
-      return
-    }
-    if (detectBrave()) {
-      toast.error("Voice input doesn't work in Brave. Open this page in Chrome or Edge.", { duration: 6000 })
-      return
-    }
+    if (isTranscribing) return
     if (isListening) {
-      recognitionRef.current?.stop()
+      mediaRecorderRef.current?.stop()
       setIsListening(false)
-      setInterimTranscript("")
+      return
+    }
+    if (typeof window !== "undefined" && !window.isSecureContext && location.hostname !== "localhost") {
+      toast.error("Voice input requires HTTPS. Open this page over HTTPS to enable it.")
+      return
+    }
+    if (typeof MediaRecorder === "undefined") {
+      toast.error("Voice input isn't supported in this browser.")
       return
     }
     try {
-      // Request microphone permission first — surfaces permission errors clearly
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach((t) => t.stop())
-    } catch (permErr: any) {
-      if (permErr?.name === "NotAllowedError" || permErr?.name === "PermissionDeniedError") {
-        toast.error("Microphone access denied. Allow microphone in your browser settings and try again.")
-      } else {
-        toast.error("Could not access microphone. Check your device settings.")
+      const mimeCandidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"]
+      const mimeType = mimeCandidates.find((t) => MediaRecorder.isTypeSupported(t)) || ""
+      mediaChunksRef.current = []
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+      mediaStreamRef.current = stream
+      mediaRecorderRef.current = recorder
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) mediaChunksRef.current.push(event.data)
       }
-      return
-    }
-    try {
-      const recognition = new SpeechRecognition()
-      recognition.continuous = true
-      recognition.interimResults = true
-      recognition.lang = "en-US"
-      recognition.onresult = (e: any) => {
-        let final = ""
-        let interim = ""
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const transcript = e.results[i][0].transcript
-          if (e.results[i].isFinal) {
-            final += transcript
-          } else {
-            interim += transcript
-          }
-        }
-        if (final) setInputValue((prev) => (prev ? prev + " " + final : final).trim())
-        setInterimTranscript(interim)
-      }
-      recognition.onerror = (e: any) => {
-        const err = e?.error || "unknown"
-        if (err === "aborted") return
-        if (err === "no-speech") {
-          // User didn't speak — don't show error, just stop
-          return
-        }
-        if (err === "not-allowed" || err === "service-not-allowed") {
-          toast.error("Microphone access denied. Allow microphone and try again.")
-        } else if (err === "network") {
-          const msg = detectBrave()
-            ? "Voice input doesn't work in Brave — it blocks speech recognition. Open this page in Chrome or Edge."
-            : "Voice recognition needs internet. Check your connection and try again."
-          toast.error(msg)
-        } else if (err === "audio-capture") {
-          toast.error("No microphone detected. Connect a microphone and try again.")
-        } else {
-          toast.error("Voice recognition error. Try Chrome or Edge if the problem persists.")
-        }
+      recorder.onstop = async () => {
         setIsListening(false)
-        setInterimTranscript("")
+        mediaStreamRef.current?.getTracks().forEach((t) => t.stop())
+        const blob = new Blob(mediaChunksRef.current, { type: mimeType || "audio/webm" })
+        mediaChunksRef.current = []
+        if (blob.size === 0) return
+        setIsTranscribing(true)
+        try {
+          const formData = new FormData()
+          const file = new File([blob], "voice.webm", { type: blob.type })
+          const lang = typeof document !== "undefined" ? document.documentElement.lang : ""
+          formData.append("audio", file)
+          if (lang) formData.append("language", lang === "ar" ? "ar" : "en")
+          const res = await fetch("/api/horus/stt", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          })
+          if (!res.ok) throw new Error("stt_failed")
+          const data = await res.json()
+          const text = (data?.text || "").trim()
+          if (text) {
+            setInputValue((prev) => (prev ? prev + " " + text : text))
+            requestAnimationFrame(() => textareaRef.current?.focus())
+          }
+        } catch {
+          toast.error("Voice input failed. Please try again.")
+        } finally {
+          setIsTranscribing(false)
+        }
       }
-      recognition.onend = () => setIsListening(false)
-      recognition.start()
-      recognitionRef.current = recognition
+
+      recorder.start()
       setIsListening(true)
       setPlusMenuOpen(false)
-    } catch (err) {
-      toast.error("Could not start voice input. Try Chrome or Edge.")
+    } catch (err: any) {
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        toast.error("Microphone access denied. Allow microphone and try again.")
+      } else {
+        toast.error("Could not access microphone.")
+      }
+      setIsListening(false)
     }
-  }, [isListening])
-
-  const stopVoiceInput = useCallback(() => {
-    recognitionRef.current?.stop()
-    recognitionRef.current = null
-    setIsListening(false)
-    setInterimTranscript("")
-  }, [])
+  }, [isListening, isTranscribing])
 
   useEffect(() => {
     return () => {
-      recognitionRef.current?.abort()
+      mediaRecorderRef.current?.stop()
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop())
     }
   }, [])
 
@@ -297,12 +273,12 @@ export const AIChatInput = ({
     <div className="flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
       <div
         ref={wrapperRef}
-        style={{ overflow: "hidden" }}
+        style={{ overflow: "visible" }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "horus-input-shell relative w-full max-w-[900px] overflow-hidden rounded-2xl sm:rounded-3xl",
+          "horus-input-shell relative w-full max-w-[900px] overflow-visible rounded-2xl sm:rounded-3xl",
           "border border-[var(--border-subtle)] bg-[var(--glass-panel)]/90 backdrop-blur-sm",
           "shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_20px_rgba(0,0,0,0.25)]",
           "transition-all duration-200",
@@ -331,11 +307,12 @@ export const AIChatInput = ({
                     />
                   ))}
                 </span>
-                Listening…
+                Recording…
               </div>
             )}
+            <div className="relative">
             <textarea
-              value={inputValue + (interimTranscript ? (inputValue ? " " : "") + interimTranscript : "")}
+              value={inputValue}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               disabled={disabled}
@@ -360,11 +337,31 @@ export const AIChatInput = ({
               ref={textareaRef}
               rows={1}
             />
+            {slashMenuOpen && quickPrompts.length > 0 && (
+              <div className="absolute left-0 bottom-full z-50 mb-2 w-full max-w-[360px] rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/95 p-2 shadow-2xl">
+                {quickPrompts.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      setSlashMenuOpen(false)
+                      setInputValue(item.prompt)
+                      requestAnimationFrame(() => textareaRef.current?.focus())
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-[var(--border-subtle)]/50"
+                  >
+                    <span>{item.label}</span>
+                    <span className="text-[11px] text-muted-foreground">/{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            </div>
 
           </div>
 
           {/* Bottom toolbar */}
-          <div className="flex min-h-[48px] items-center justify-between gap-3 border-t border-[var(--border-subtle)]/60 px-3 py-2.5 sm:px-4">
+          <div className="flex min-h-[48px] items-center justify-between gap-3 border-t border-[var(--border-subtle)]/40 px-3 py-2.5 sm:px-4">
             <div className="flex items-center gap-1">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>
                 <DropdownMenuTrigger asChild>
@@ -407,15 +404,22 @@ export const AIChatInput = ({
               <button
                 onClick={startVoiceInput}
                 className={cn(
-                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                   isListening
                     ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                     : "text-muted-foreground/80 hover:bg-[var(--border-subtle)]/50 hover:text-foreground"
                 )}
-                title={isListening ? "Stop listening" : detectBrave() ? "Voice works in Chrome or Edge — not in Brave" : "Voice input"}
+                title={
+                  isTranscribing
+                    ? "Transcribing..."
+                    : isListening
+                      ? "Stop recording"
+                      : "Voice input"
+                }
                 type="button"
                 tabIndex={-1}
                 aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                disabled={isTranscribing}
               >
                 {isListening ? <MicOff size={20} strokeWidth={2} /> : <Mic size={20} strokeWidth={2} />}
               </button>

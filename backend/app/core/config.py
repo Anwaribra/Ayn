@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # OpenRouter (fallback AI provider)
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
+    
+    # OpenAI (speech-to-text)
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_TRANSCRIBE_MODEL: str = "gpt-4o-mini-transcribe"
 
     # Dify (optional - production-ready RAG + Agent platform)
     DIFY_API_KEY: Optional[str] = None
@@ -75,4 +79,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

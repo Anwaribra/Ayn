@@ -44,7 +44,7 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
-import { useHorus, type CitationSource } from "@/lib/horus-context"
+import { useHorus, type CitationSource, type ToolStep, type FileStatus } from "@/lib/horus-context"
 import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -57,17 +57,24 @@ import { ThinkStepper } from "./think-stepper"
 import { ThinkingPanel } from "./thinking-panel"
 import { useLiveStreamingText } from "@/hooks/use-streaming-text"
 
+const EMPTY_STRINGS: string[] = []
+const EMPTY_TOOL_STEPS: ToolStep[] = []
+const EMPTY_FILES: string[] = []
+const EMPTY_FILE_STATUSES: Record<string, FileStatus> = {}
+
 /** Renders assistant content with typing effect when streaming */
 function StreamingAssistantContent({
   content,
   isStreaming,
   onAction,
+  speedMs = 220,
 }: {
   content: string
   isStreaming: boolean
   onAction: (type: string, payload: string) => void
+  speedMs?: number
 }) {
-  const displayed = useLiveStreamingText(content, isStreaming, 220)
+  const displayed = useLiveStreamingText(content, isStreaming, speedMs)
   return <HorusMarkdown content={displayed} onAction={onAction} />
 }
 
@@ -220,10 +227,6 @@ export default function HorusAIChat() {
     messages,
     currentChatId,
     status,
-    thinkingSteps,
-    toolSteps,
-    activeFiles,
-    fileStatuses,
     streamError,
     sendMessage,
     resolveActionConfirmation,
@@ -268,6 +271,14 @@ export default function HorusAIChat() {
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
   const { focusMode, setFocusMode } = useFocusMode()
   const { theme: _theme, setTheme, resolvedTheme } = useTheme()
+
+  const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
+  const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
+  const activeAssistantMsg = messages.find((m) => m.id === lastAssistantMsgId) ?? lastAssistantMsg
+  const activeThinkingSteps = activeAssistantMsg?.thinkingSteps ?? EMPTY_STRINGS
+  const activeToolSteps = activeAssistantMsg?.toolSteps ?? EMPTY_TOOL_STEPS
+  const activeFiles = activeAssistantMsg?.activeFiles ?? EMPTY_FILES
+  const fileStatuses = activeAssistantMsg?.fileStatuses ?? EMPTY_FILE_STATUSES
 
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
@@ -362,7 +373,7 @@ export default function HorusAIChat() {
 
   // Drive reasoning UI from real backend thinking events.
   useEffect(() => {
-    if (thinkingSteps.length === 0) return
+    if (activeThinkingSteps.length === 0) return
 
     setReasoning((prev) => {
       const base = prev && !prev.isComplete ? prev : {
@@ -374,9 +385,9 @@ export default function HorusAIChat() {
         tempUserMessage: null,
       }
 
-      const nextSteps = thinkingSteps.map((text, idx) => ({
+      const nextSteps = activeThinkingSteps.map((text, idx) => ({
         text,
-        status: idx === thinkingSteps.length - 1 ? ("active" as const) : ("done" as const),
+        status: idx === activeThinkingSteps.length - 1 ? ("active" as const) : ("done" as const),
       }))
 
       return {
@@ -393,7 +404,7 @@ export default function HorusAIChat() {
       fallbackTimerRef.current = null
     }
     fallbackQueueRef.current = []
-  }, [thinkingSteps, thinkingPanelExpanded])
+  }, [activeThinkingSteps, thinkingPanelExpanded])
 
   useEffect(() => {
     if (prevStatusRef.current === "generating" && status === "idle") {
@@ -442,7 +453,7 @@ export default function HorusAIChat() {
 
   // Seed fallback reasoning steps for Think mode when backend sends no __THINKING__
   useEffect(() => {
-    if (status !== "generating" || thinkingSteps.length > 0) return
+    if (status !== "generating" || activeThinkingSteps.length > 0) return
     if (activeResponseMode !== "think") return
 
     const lastUser = [...messages].reverse().find((m) => m.role === "user")
@@ -469,18 +480,18 @@ export default function HorusAIChat() {
         }
       })
     }
-  }, [status, thinkingSteps.length, activeResponseMode, messages])
+  }, [status, activeThinkingSteps.length, activeResponseMode, messages])
 
   // Fallback sequential animation for non-tool/general chat when no __THINKING__ steps are emitted.
   useEffect(() => {
     if (status !== "generating") return
-    if (thinkingSteps.length > 0) return
+    if (activeThinkingSteps.length > 0) return
     if (fallbackTimerRef.current) return
 
     fallbackTimerRef.current = setInterval(() => {
       setReasoning((prev) => {
         if (!prev || prev.isComplete) return prev
-        if (thinkingSteps.length > 0) return prev
+        if (activeThinkingSteps.length > 0) return prev
 
         const steps = [...prev.steps]
         const activeIndex = steps.findIndex((s) => s.status === "active")
@@ -502,7 +513,7 @@ export default function HorusAIChat() {
         fallbackTimerRef.current = null
       }
     }
-  }, [status, thinkingSteps.length])
+  }, [status, activeThinkingSteps.length])
 
   // Collapse smoothly once real assistant content starts streaming.
   useEffect(() => {
@@ -721,13 +732,16 @@ export default function HorusAIChat() {
   }
 
   // Derive the id of the last assistant message for M1 contextual actions
-  const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
-  const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
   const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
   const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
 
   const isProcessing = status !== "idle"
   const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
+  const modeTone = responseMode === "ask"
+    ? "text-sky-400"
+    : responseMode === "think"
+      ? "text-amber-400"
+      : "text-emerald-400"
 
   const visibleMessages = useMemo(() => {
     const sliced = messages.slice(-30).filter((msg) => {
@@ -750,39 +764,8 @@ export default function HorusAIChat() {
   return (
       <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
-      {/* New + History + Export + Focus as floating top-right */}
+      {/* New + History as floating top-right */}
       <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSoundEnabled((v) => {
-              const next = !v
-              if (next) localStorage.removeItem("horus-sound-disabled")
-              else localStorage.setItem("horus-sound-disabled", "1")
-              return next
-            })
-          }}
-          className={cn("horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8", !soundEnabled && "text-muted-foreground/60")}
-          title={soundEnabled ? "Disable completion sound" : "Enable completion sound"}
-        >
-          {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setFocusMode(!focusMode)}
-          className={cn("horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8", focusMode && "text-primary bg-primary/10")}
-          title={focusMode ? "Exit focus mode" : "Focus mode (hide sidebar)"}
-        >
-          {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </Button>
-        {/* M8: Export chat — only visible when conversation has messages */}
-        {!isEmpty && (
-          <Button variant="ghost" size="sm" onClick={handleExportChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="Export chat (.txt)">
-            <Download className="h-4 w-4" />
-          </Button>
-        )}
         <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
@@ -876,52 +859,14 @@ export default function HorusAIChat() {
                     <AiLoader size={220} text="Horus AI" />
                   </motion.div>
                   <div className="text-center max-w-[620px]">
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Ask anything about your compliance</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Ask Horus about anything</h1>
                     <p className="mt-2 text-sm text-muted-foreground md:text-base">
                       <span className="sm:hidden">Run analysis or get your next best action.</span>
                       <span className="hidden sm:inline">Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.</span>
                     </p>
                   </div>
 
-                  {/* Quick prompts */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-[780px] flex flex-wrap items-center justify-center gap-x-3 gap-y-3"
-                  >
-                    {[
-                      { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
-                      { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
-                      { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
-                      { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                    ].map((item, index) => (
-                        <button
-                          key={item.prompt}
-                          onClick={() => handleSendMessage(item.prompt)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] text-[12px] md:text-[13px] text-muted-foreground border transition-all duration-200 glass-pill horus-quick-action hover:text-foreground hover:border-primary/35"
-                          hidden={index > 1}
-                        >
-                          <span>{item.label}</span>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
-                        </button>
-                    ))}
-                    <div className="hidden sm:contents">
-                      {[
-                        { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
-                        { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                      ].map((item) => (
-                        <button
-                          key={`desktop-${item.prompt}`}
-                          onClick={() => handleSendMessage(item.prompt)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] text-[12px] md:text-[13px] text-muted-foreground border transition-all duration-200 glass-pill horus-quick-action hover:text-foreground hover:border-primary/35"
-                        >
-                          <span>{item.label}</span>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/75" />
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
+                  {/* Quick prompts moved to slash command palette */}
                 </div>
               </div>
             ) : (
@@ -985,7 +930,14 @@ export default function HorusAIChat() {
                               ))}
                             </div>
                            )}
-                           <span className="mt-1.5 text-[10px] text-muted-foreground/70 sm:mt-2">{formatTimestamp(msg.timestamp)}</span>
+                           <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/70 sm:mt-2">
+                             {msg.responseMode && (
+                               <span className="glass-pill glass-text-secondary px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
+                                 {msg.responseMode}
+                               </span>
+                             )}
+                             <span>{formatTimestamp(msg.timestamp)}</span>
+                           </div>
                         </div>
                       ) : (
                         <div
@@ -1000,14 +952,18 @@ export default function HorusAIChat() {
                           {msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
                             (activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
-                            (thinkingSteps.length > 0 || msg.pendingConfirmation) &&
+                            ((msg.thinkingSteps?.length ?? 0) > 0 || msg.pendingConfirmation) &&
                             (() => {
+                              const msgThinkingSteps = msg.thinkingSteps ?? EMPTY_STRINGS
+                              const msgToolSteps = msg.toolSteps ?? EMPTY_TOOL_STEPS
+                              const msgActiveFiles = msg.activeFiles ?? EMPTY_FILES
+                              const msgFileStatuses = msg.fileStatuses ?? EMPTY_FILE_STATUSES
                               const { steps, phase, stepProgress } = deriveAgentSteps(
-                                thinkingSteps,
+                                msgThinkingSteps,
                                 msg.pendingConfirmation ?? null,
                                 !!(msg as any).structuredResult,
                                 status === "generating",
-                                toolSteps
+                                msgToolSteps
                               )
                               if (steps.length === 0 && !msg.pendingConfirmation) return null
                               return (
@@ -1018,8 +974,8 @@ export default function HorusAIChat() {
                                     stepProgress={stepProgress}
                                     pendingTool={msg.pendingConfirmation?.title}
                                     isWaitingConfirmation={!!msg.pendingConfirmation}
-                                    activeFiles={activeFiles}
-                                    fileStatuses={fileStatuses}
+                                    activeFiles={msgActiveFiles}
+                                    fileStatuses={msgFileStatuses}
                                     collapsible
                                     compact
                                   />
@@ -1083,6 +1039,7 @@ export default function HorusAIChat() {
                                     <StreamingAssistantContent
                                       content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
                                       isStreaming={isStreamingThis}
+                                      speedMs={isStreamingThis && activeResponseMode === "ask" ? 30 : 160}
                                       onAction={handleAction}
                                     />
                                     {isStreamingThis && (
@@ -1116,7 +1073,7 @@ export default function HorusAIChat() {
                             msg.id === lastAssistantMsgId &&
                             status === "idle" &&
                             !(msg as any).structuredResult &&
-                            (thinkingSteps.length > 0 || [...messages].reverse().find((m) => m.role === "user")?.attachments?.length) ? (
+                            ((msg.thinkingSteps?.length ?? 0) > 0 || [...messages].reverse().find((m) => m.role === "user")?.attachments?.length) ? (
                             <div className="horus-assistant-bubble rounded-3xl rounded-tl-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-sm text-muted-foreground">
                               التحليل لم يُولّد. يرجى المحاولة مرة أخرى أو إرفاق ملف مختلف.
                             </div>
@@ -1215,6 +1172,18 @@ export default function HorusAIChat() {
                                     title="Regenerate response"
                                   >
                                     <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                  </button>
+                                  <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
+                                </>
+                              )}
+                              {msg.id === lastAssistantMsgId && (
+                                <>
+                                  <button
+                                    onClick={handleExportChat}
+                                    className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
+                                    title="Export chat (.txt)"
+                                  >
+                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                   </button>
                                   <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
                                 </>
@@ -1325,17 +1294,17 @@ export default function HorusAIChat() {
                 {showLoadingBubble && (
                   <div role="status" aria-live="polite" aria-label="Processing your request" className="w-full py-2 sm:py-4 animate-in fade-in">
                     {(activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
-                    (thinkingSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation || (activeResponseMode !== "ask" && [...messages].reverse().find((m) => m.role === "user")?.attachments?.length)) ? (
+                    (activeThinkingSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation || (activeResponseMode !== "ask" && [...messages].reverse().find((m) => m.role === "user")?.attachments?.length)) ? (
                       (() => {
                         const lastMsg = messages.filter((m) => m.role === "assistant").pop()
                         const lastUserHasAttachments = !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length
-                        const effectiveSteps = thinkingSteps.length > 0 ? thinkingSteps : (activeResponseMode !== "ask" && lastUserHasAttachments ? ["Preparing your request..."] : [])
+                        const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : (activeResponseMode !== "ask" && lastUserHasAttachments ? ["Preparing your request..."] : [])
                         const { steps, phase, stepProgress } = deriveAgentSteps(
                           effectiveSteps,
                           lastMsg?.pendingConfirmation ?? null,
                           !!(lastMsg as any)?.structuredResult,
                           status === "generating",
-                          toolSteps
+                          activeToolSteps
                         )
                         if (steps.length === 0 && !lastMsg?.pendingConfirmation) return null
                         return (
@@ -1476,6 +1445,12 @@ export default function HorusAIChat() {
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
+                quickPrompts={[
+                  { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
+                  { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
+                  { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
+                  { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
+                ]}
                 footer={
                   <div className="flex items-center gap-2">
                     {reasoning && reasoning.steps.length > 0 && (
@@ -1492,11 +1467,11 @@ export default function HorusAIChat() {
                     <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
                       <SelectTrigger
                         size="sm"
-                        className="h-8 min-w-0 rounded-full border-transparent bg-transparent px-1.5 py-1 text-[11px] font-medium text-muted-foreground shadow-none hover:text-foreground"
+                        className={cn("h-8 min-w-0 rounded-full border-transparent bg-transparent px-1.5 py-1 text-[11px] font-medium shadow-none hover:text-foreground", modeTone)}
                         aria-label="Horus response mode"
                       >
                         <span className="flex items-center gap-1.5">
-                          <currentResponseMode.icon className="h-3.5 w-3.5 text-primary" />
+                          <currentResponseMode.icon className="h-3.5 w-3.5" />
                           <span>{currentResponseMode.label}</span>
                         </span>
                       </SelectTrigger>
@@ -1504,7 +1479,7 @@ export default function HorusAIChat() {
                         {RESPONSE_MODES.map((mode) => (
                           <SelectItem key={mode.key} value={mode.key}>
                             <span className="flex items-center gap-2">
-                              <mode.icon className="h-4 w-4 text-primary" />
+                              <mode.icon className={cn("h-4 w-4", mode.key === "ask" ? "text-sky-400" : mode.key === "think" ? "text-amber-400" : "text-emerald-400")} />
                               <span className="flex flex-col">
                                 <span className="text-sm font-medium text-foreground">{mode.label}</span>
                                 <span className="text-[11px] text-muted-foreground">{mode.description}</span>
@@ -1515,17 +1490,8 @@ export default function HorusAIChat() {
                       </SelectContent>
                     </Select>
                     <span className="hidden h-4 w-px bg-white/8 sm:block" />
-                    <button
-                      type="button"
-                      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--border-subtle)]/50 transition-colors"
-                      aria-label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-                      title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-                    >
-                      {resolvedTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                    </button>
-                    <span className="hidden text-[11px] font-medium text-muted-foreground/80 sm:block">
-                      Fast mode · ↑ last message
+                    <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
+                      Fast mode
                     </span>
                   </div>
                 }

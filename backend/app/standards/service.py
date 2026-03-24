@@ -420,25 +420,31 @@ class StandardService:
         db = get_db()
         standard = await db.standard.find_unique(
             where={"id": standard_id},
-            include={"criteria": True}
         )
         if not standard:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Standard not found")
 
-        all_criteria = standard.criteria or []
-        total = len(all_criteria)
+        criteria = await db.criterion.find_many(where={"standardId": standard_id})
+        criteria_ids = [c.id for c in criteria]
+        total = len(criteria_ids)
         covered = 0
 
-        for criterion in all_criteria:
+        if total > 0:
             try:
-                links = await db.evidencecriterion.find_many(
-                    where={"criterionId": criterion.id},
-                    take=1  # Only need to know if at least one exists
+                linked = await db.evidencecriterion.find_many(
+                    where={"criterionId": {"in": criteria_ids}},
+                    distinct=["criterionId"],
+                    select={"criterionId": True},
                 )
-                if links:
-                    covered += 1
+                covered = len(linked)
             except Exception:
-                pass  # Table may not exist yet in dev environments
+                try:
+                    linked = await db.evidencecriterion.find_many(
+                        where={"criterionId": {"in": criteria_ids}},
+                    )
+                    covered = len({l.criterionId for l in linked})
+                except Exception:
+                    pass  # Table may not exist yet in dev environments
 
         coverage_pct = round((covered / total) * 100, 1) if total > 0 else 0.0
         logger.info(f"Coverage for standard {standard_id}: {covered}/{total} ({coverage_pct}%)")

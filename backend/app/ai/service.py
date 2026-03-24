@@ -5,8 +5,17 @@ import httpx
 import json
 from typing import Optional, List, Dict
 import os
+import asyncio
+import time
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
+
+_GEMINI_COOLDOWN_UNTIL: float = 0.0
+
+def _gemini_rate_limited(err: Exception) -> bool:
+    msg = str(err)
+    return "RESOURCE_EXHAUSTED" in msg or "429" in msg or "rate limit" in msg.lower()
 
 # Try importing Gemini SDK
 GEMINI_AVAILABLE = False
@@ -63,6 +72,49 @@ When writing in Arabic, always use:
 - Your name: "حورس" (Horus) — NOT "هورس"
 - Platform name: "عين" (Ayn) — NOT "آين"
 """
+
+async def _chunk_text_stream(text: str, chunk_size: int = 24):
+    """Yield text in small chunks to simulate streaming when provider doesn't support it."""
+    if not text:
+        return
+    for i in range(0, len(text), chunk_size):
+        yield text[i:i + chunk_size]
+        await asyncio.sleep(0)
+
+
+async def transcribe_audio(
+    audio_bytes: bytes,
+    filename: str,
+    mime_type: str,
+    language: Optional[str] = None,
+) -> str:
+    """Transcribe audio via OpenAI speech-to-text."""
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Speech-to-text not configured.")
+    model = settings.OPENAI_TRANSCRIBE_MODEL or "gpt-4o-mini-transcribe"
+    headers = {"Authorization": f"Bearer {settings.OPENAI_API_KEY}"}
+    data = {"model": model}
+    if language:
+        data["language"] = language
+    file_tuple = (filename or "audio.webm", audio_bytes, mime_type or "application/octet-stream")
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers=headers,
+                data=data,
+                files={"file": file_tuple},
+            )
+        resp.raise_for_status()
+        payload = resp.json()
+        text = (payload.get("text") or "").strip()
+        return text
+    except httpx.HTTPStatusError as err:
+        logger.error("STT request failed: %s", err.response.text)
+        raise HTTPException(status_code=502, detail="Speech-to-text provider error.")
+    except Exception as err:
+        logger.error("STT request failed: %s", err, exc_info=True)
+        raise HTTPException(status_code=500, detail="Speech-to-text failed.")
 
 ISO_21001_KNOWLEDGE = """
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -834,7 +886,7 @@ class GeminiClient:
                 role = "user" if msg["role"] == "user" else "model"
                 contents.append(genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg["content"])]))
             
-            async for chunk in await self.client.aio.models.generate_content_stream(
+            stream = self.client.aio.models.generate_content_stream(
                 model=self.model_name,
                 config=genai_types.GenerateContentConfig(
                     system_instruction=system_instruction,
@@ -842,13 +894,17 @@ class GeminiClient:
                     temperature=0.7
                 ),
                 contents=contents,
-            ):
+            )
+            if asyncio.iscoroutine(stream):
+                stream = await stream
+            async for chunk in stream:
                 delta = _gemini_stream_chunk_text(chunk)
                 if delta:
                     yield delta
         else:
             response = await self.chat(messages, context)
-            yield response
+            async for chunk in _chunk_text_stream(response):
+                yield chunk
     
     async def summarize(self, content: str, max_length: int = 100) -> str:
         prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
@@ -924,7 +980,7 @@ class GeminiClient:
                 len(files),
             )
             try:
-                stream = await self.client.aio.models.generate_content_stream(
+                stream = self.client.aio.models.generate_content_stream(
                     model=self.model_name,
                     config=genai_types.GenerateContentConfig(
                         system_instruction=system_instruction,
@@ -933,6 +989,8 @@ class GeminiClient:
                     ),
                     contents=genai_types.Content(role="user", parts=parts),
                 )
+                if asyncio.iscoroutine(stream):
+                    stream = await stream
                 async for chunk in stream:
                     delta = _gemini_stream_chunk_text(chunk)
                     if delta:
@@ -950,12 +1008,14 @@ class GeminiClient:
                 )
                 fb = _gemini_response_text_safe(response)
                 if fb:
-                    yield fb
+                    async for chunk in _chunk_text_stream(fb):
+                        yield chunk
                 else:
                     raise
         else:
             response = await self.chat_with_files(message, files)
-            yield response
+            async for chunk in _chunk_text_stream(response):
+                yield chunk
 
     async def create_embedding(self, text: str) -> list[float]:
         """Generate a vector embedding for a given text chunk."""
@@ -1030,13 +1090,16 @@ class HorusAIClient:
     
     async def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
         """Call a method on Gemini first, then OpenRouter, then Dify on failure."""
+        global _GEMINI_COOLDOWN_UNTIL
         last_error = None
-        if self.gemini:
+        if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
                 return await method(*args, **kwargs)
             except Exception as e:
                 last_error = e
+                if _gemini_rate_limited(e):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + 60
                 logger.warning(f"Gemini {method_name} failed: {e}. Trying fallback...")
         if self.openrouter:
             try:
@@ -1057,13 +1120,16 @@ class HorusAIClient:
     
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
         """Call a streaming method with fallback: Gemini -> OpenRouter -> Dify."""
-        if self.gemini:
+        global _GEMINI_COOLDOWN_UNTIL
+        if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
                 async for chunk in method(*args, **kwargs):
                     yield chunk
                 return
             except Exception as e:
+                if _gemini_rate_limited(e):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + 60
                 logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
         if self.openrouter:
             try:

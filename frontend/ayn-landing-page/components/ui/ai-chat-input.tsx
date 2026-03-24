@@ -213,20 +213,26 @@ export const AIChatInput = ({
           const lang = typeof document !== "undefined" ? document.documentElement.lang : ""
           formData.append("audio", file)
           if (lang) formData.append("language", lang === "ar" ? "ar" : "en")
+          const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
           const res = await fetch("/api/horus/stt", {
             method: "POST",
             body: formData,
             credentials: "include",
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           })
-          if (!res.ok) throw new Error("stt_failed")
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null)
+            const detail = errData?.detail || "Voice input failed. Please try again."
+            throw new Error(detail)
+          }
           const data = await res.json()
           const text = (data?.text || "").trim()
           if (text) {
             setInputValue((prev) => (prev ? prev + " " + text : text))
             requestAnimationFrame(() => textareaRef.current?.focus())
           }
-        } catch {
-          toast.error("Voice input failed. Please try again.")
+        } catch (err: any) {
+          toast.error(err?.message || "Voice input failed. Please try again.")
         } finally {
           setIsTranscribing(false)
         }

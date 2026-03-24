@@ -105,6 +105,12 @@ async def transcribe_audio(
                 data=data,
                 files={"file": file_tuple},
             )
+        if resp.status_code == 401:
+            logger.error("STT auth failed: %s", resp.text)
+            raise HTTPException(status_code=401, detail="Speech-to-text authentication failed.")
+        if resp.status_code == 429:
+            logger.error("STT quota exceeded: %s", resp.text)
+            raise HTTPException(status_code=429, detail="Speech-to-text quota exceeded. Add billing or credits to your OpenAI key.")
         resp.raise_for_status()
         payload = resp.json()
         text = (payload.get("text") or "").strip()
@@ -112,6 +118,8 @@ async def transcribe_audio(
     except httpx.HTTPStatusError as err:
         logger.error("STT request failed: %s", err.response.text)
         raise HTTPException(status_code=502, detail="Speech-to-text provider error.")
+    except HTTPException:
+        raise
     except Exception as err:
         logger.error("STT request failed: %s", err, exc_info=True)
         raise HTTPException(status_code=500, detail="Speech-to-text failed.")

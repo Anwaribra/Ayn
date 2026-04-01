@@ -288,11 +288,23 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                 <button
                   onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className="glass-button glass-text-secondary min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
+                  className={cn(
+                    "glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]",
+                    resolvedTheme === "dark"
+                      ? "border-[var(--status-warning-border)] bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04))] text-[var(--status-warning)]"
+                      : "border-[var(--status-info-border)] bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)]"
+                  )}
                   aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
                   title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
                 >
-                  {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  <span className="absolute inset-x-2 top-1.5 h-px rounded-full bg-white/40 opacity-70" />
+                  <span className="relative flex items-center justify-center">
+                    {resolvedTheme === "dark" ? (
+                      <Sun className="h-4.5 w-4.5 drop-shadow-[0_0_10px_rgba(245,158,11,0.35)]" strokeWidth={2.2} />
+                    ) : (
+                      <Moon className="h-4.5 w-4.5 drop-shadow-[0_0_10px_rgba(37,99,235,0.28)]" strokeWidth={2.2} />
+                    )}
+                  </span>
                 </button>
 
                 <div className="relative quick-pages-container">

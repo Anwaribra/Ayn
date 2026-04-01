@@ -27,6 +27,8 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
 
     const isSuccess = ['complete', 'analyzed', 'linked'].includes(status)
     const isError = ['void', 'failed'].includes(status)
+    const confidence = (evidence as any).confidenceScore
+    const documentType = (evidence as any).documentType || (evidence as any).mimeType?.split("/")?.[1] || "Document"
     
     const dotColor = isSuccess ? "bg-emerald-500" : isError ? "bg-destructive" : "bg-amber-500"
     const badgeStyle = isSuccess 
@@ -38,8 +40,10 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
     return (
         <div
             onClick={onClick}
-            className="group relative flex flex-col justify-between p-5 rounded-3xl glass-layer-2 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer h-full"
+            className="group relative flex h-full flex-col justify-between overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 transition-all duration-300 cursor-pointer hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
         >
+            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.75),transparent)] opacity-60" />
+            <div className="absolute -right-6 top-0 h-20 w-20 rounded-full bg-primary/10 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <div className="flex justify-between items-start mb-4">
                 <div className={cn(
                     "px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-2",
@@ -52,7 +56,7 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                     {evidence.status}
                 </div>
                 {isSuccess && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary animate-pulse">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                     <Sparkles className="w-3 h-3" />
                     <span className="text-[9px] font-black uppercase tracking-tighter">Ayn Verified</span>
                   </div>
@@ -66,7 +70,17 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                 <h3 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight mb-1 line-clamp-2">
                     {title}
                 </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                        {documentType}
+                    </span>
+                    {confidence != null && (
+                        <span className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                            {Math.round(confidence)}% confidence
+                        </span>
+                    )}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground line-clamp-2">
                     {criteriaCount > 0
                         ? `Linked to ${criteriaCount} criteria${sourceFileCount > 0 ? ` in ${sourceFileCount} files` : ''}.`
                         : "No criteria linked yet."}
@@ -84,7 +98,7 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                         </div>
                     )}
                 </div>
-                <div className="text-[10px] font-medium text-muted-foreground">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.12em]">
                     {new Date(dateStr).toLocaleDateString()}
                 </div>
             </div>

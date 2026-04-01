@@ -47,7 +47,8 @@ export function EvidenceFilters({
     }
 
     return (
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <div className="mb-8 rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
             {/* Text Search */}
             <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -56,7 +57,7 @@ export function EvidenceFilters({
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Search evidence by title, content, or ID..."
-                    className="w-full pl-11 pr-4 py-3 glass-layer-2 rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
+                    className="w-full pl-11 pr-4 py-3 border border-white/8 bg-white/[0.04] rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
                 />
                 {query && (
                     <button
@@ -75,10 +76,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStatusMenu(!showStatusMenu); setShowStandardMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-3 min-h-[44px] glass-layer-2 rounded-full text-sm font-bold transition-all shadow-sm hover:border-primary/30 hover:shadow-md",
+                            "flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-full text-sm font-bold transition-all shadow-sm border border-white/8 bg-white/[0.04] hover:border-primary/30 hover:shadow-md",
                             activeStatus
                                 ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
-                                : "text-muted-foreground border-border hover:text-foreground hover:bg-muted/30"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
                         )}
                     >
                         <SlidersHorizontal className="w-4 h-4" />
@@ -93,7 +94,7 @@ export function EvidenceFilters({
                         )}
                     </button>
                     {showStatusMenu && (
-                        <div className="absolute top-full left-0 mt-2 z-30 glass-layer-3 rounded-2xl border border-[var(--border-subtle)] shadow-2xl min-w-[160px] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute top-full left-0 mt-2 z-30 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-modal)]/95 shadow-2xl min-w-[160px] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
                             {STATUSES.map((s) => (
                                 <button
                                     key={s}
@@ -115,10 +116,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStandardMenu(!showStandardMenu); setShowStatusMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-3 min-h-[44px] glass-layer-2 rounded-full text-sm font-bold transition-all shadow-sm hover:border-primary/30 hover:shadow-md",
+                            "flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-full text-sm font-bold transition-all shadow-sm border border-white/8 bg-white/[0.04] hover:border-primary/30 hover:shadow-md",
                             activeStandard
                                 ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
-                                : "text-muted-foreground border-border hover:text-foreground hover:bg-muted/30"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
                         )}
                     >
                         <Filter className="w-4 h-4" />
@@ -135,7 +136,7 @@ export function EvidenceFilters({
                         )}
                     </button>
                     {showStandardMenu && (
-                        <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-30 glass-layer-3 rounded-2xl border border-[var(--border-subtle)] shadow-2xl min-w-[220px] max-w-[calc(100vw-2rem)] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
+                        <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-30 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-modal)]/95 shadow-2xl min-w-[220px] max-w-[calc(100vw-2rem)] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-xl">
                             {!standards || standards.length === 0 ? (
                                 <p className="px-5 py-4 text-sm text-muted-foreground text-center">No standards configured</p>
                             ) : (
@@ -168,6 +169,7 @@ export function EvidenceFilters({
                     </button>
                 )}
             </div>
+        </div>
         </div>
     )
 }

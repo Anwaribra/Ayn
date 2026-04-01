@@ -424,25 +424,27 @@ function AnalyticsContent() {
 
           {/* ─── Anomalies Section ─── */}
           {analytics.anomalies && analytics.anomalies.length > 0 && (
-            <section className="glass-panel glass-border rounded-3xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-9 h-9 rounded-xl status-warning border flex items-center justify-center">
+            <section className="glass-panel glass-border relative overflow-hidden rounded-[28px] p-5 sm:p-6 lg:p-7">
+              <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(180,83,9,0.85),transparent)] opacity-70" />
+              <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl status-warning border flex items-center justify-center shadow-[0_18px_40px_-28px_rgba(180,83,9,0.45)]">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Anomaly Detection</h3>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reports with z-score &gt; 2 (±{Math.round(analytics.stdDeviation * 2)}% from mean)</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Reports with z-score &gt; 2 (±{Math.round(analytics.stdDeviation * 2)}% from mean)</p>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="relative z-10 space-y-3">
                 {analytics.anomalies.map((anomaly: any) => (
-                  <div key={anomaly.reportId} className="glass-button flex items-center gap-4 rounded-2xl p-4 transition-all">
-                    <div className="w-10 h-10 rounded-xl status-warning border flex items-center justify-center shrink-0">
+                  <div key={anomaly.reportId} className="glass-button flex items-center gap-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 transition-all hover:-translate-y-0.5">
+                    <div className="w-11 h-11 rounded-2xl status-warning border flex items-center justify-center shrink-0 shadow-[0_18px_34px_-28px_rgba(180,83,9,0.45)]">
                       <span className="mono text-[10px] font-bold">{Math.round(anomaly.score)}</span>
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-foreground">{anomaly.standardTitle}</h4>
-                      <p className="text-[10px] text-muted-foreground">z-score: {anomaly.deviation} • {new Date(anomaly.createdAt).toLocaleDateString()}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-[0.12em]">z-score: {anomaly.deviation} • {new Date(anomaly.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                 ))}
@@ -452,20 +454,24 @@ function AnalyticsContent() {
 
           {/* ─── Score Distribution (histogram) ─── */}
           {analytics.scoreDistribution && (
-            <section className="glass-panel glass-border rounded-3xl p-8">
-              <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-6">Histogram of all report scores</p>
-              <div className="grid grid-cols-5 gap-3">
+            <section className="glass-panel glass-border relative overflow-hidden rounded-[28px] p-5 sm:p-6 lg:p-7">
+              <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(124,92,224,0.85),transparent)] opacity-70" />
+              <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+              <div className="relative z-10">
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">Histogram of all report scores</p>
+              </div>
+              <div className="relative z-10 grid grid-cols-2 md:grid-cols-5 gap-3">
                 {analytics.scoreDistribution.map((bucket: any) => {
                   const maxCount = Math.max(...analytics.scoreDistribution.map((b: any) => b.count), 1)
                   const heightPct = bucket.count > 0 ? Math.max((bucket.count / maxCount) * 100, 8) : 4
                   const colors: Record<string, string> = { "0-20": "#c9424a", "21-40": "#b45309", "41-60": "#2563eb", "61-80": "#7c5ce0", "81-100": "#0d9668" }
                   return (
-                    <div key={bucket.range} className="flex flex-col items-center gap-2">
-                      <div className="glass-surface flex h-32 w-full items-end justify-center rounded-xl p-1">
+                    <div key={bucket.range} className="flex flex-col items-center gap-2 rounded-[22px] border border-white/8 bg-white/[0.03] p-3">
+                      <div className="glass-surface flex h-32 w-full items-end justify-center rounded-xl p-1.5">
                         <div className="w-full rounded-lg transition-all duration-700" style={{ height: `${heightPct}%`, backgroundColor: colors[bucket.range] || "#2563eb" }} />
                       </div>
-                      <span className="text-[10px] font-bold text-muted-foreground">{bucket.range}%</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">{bucket.range}%</span>
                       <span className="text-sm font-bold text-foreground">{bucket.count}</span>
                     </div>
                   )

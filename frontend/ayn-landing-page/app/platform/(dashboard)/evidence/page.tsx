@@ -185,6 +185,16 @@ function EvidenceContent() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isAnalyzeModalOpen, isAnalyzing, selectedEvidence, evidenceToDelete])
 
+  const vaultSummary = useMemo(() => {
+    const total = evidenceList?.length ?? 0
+    const analyzed = evidenceList?.filter((item) => ["analyzed", "linked"].includes(item.status)).length ?? 0
+    const linked = evidenceList?.filter((item) => item.status === "linked").length ?? 0
+    const avgConfidenceRaw = evidenceList?.reduce((sum, item) => sum + ((item as any).confidenceScore ?? 0), 0) ?? 0
+    const avgConfidence = total > 0 ? Math.round(avgConfidenceRaw / total) : 0
+
+    return { total, analyzed, linked, avgConfidence }
+  }, [evidenceList])
+
   const handleAnalyze = async () => {
     if (!selectedEvidence) return
     setIsAnalyzing(true)
@@ -279,23 +289,27 @@ function EvidenceContent() {
           </div>
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-6">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="px-2 py-0.5 rounded-full status-success border flex items-center gap-1.5">
+      <div className="pt-6">
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 sm:p-7 lg:p-8">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(16,185,129,0.1),transparent_24%)] pointer-events-none" />
+          <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="px-2 py-0.5 rounded-full status-success border flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
               <span className="text-[10px] font-bold uppercase tracking-widest">Vault Secure</span>
+                </div>
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground">
+                Evidence <span className="text-muted-foreground font-light">Vault</span>
+              </h1>
+              <p className="text-muted-foreground font-medium mt-3 max-w-2xl leading-relaxed">
+                Centralized repository for institutional compliance assets, mapped criteria, and AI-ready documentation across your workspace.
+              </p>
             </div>
-          </div>
-          <h1 className="text-4xl font-black tracking-tight text-foreground">
-            Evidence <span className="text-muted-foreground font-light">Vault</span>
-          </h1>
-          <p className="text-muted-foreground font-medium mt-1">
-            Centralized repository for institutional compliance assets.
-          </p>
-        </div>
 
-        <label className={cn(
+            <label className={cn(
           "group relative overflow-hidden rounded-2xl bg-primary text-primary-foreground px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-95 glass-border",
           isUploading && "opacity-70 cursor-not-allowed"
         )}>
@@ -318,7 +332,28 @@ function EvidenceContent() {
               <span>Upload New Evidence</span>
             </>
           )}
-        </label>
+            </label>
+          </div>
+
+          <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total Assets</p>
+              <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.total}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Analyzed</p>
+              <p className="mt-2 text-xl font-bold text-emerald-300">{vaultSummary.analyzed}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Linked</p>
+              <p className="mt-2 text-xl font-bold text-primary">{vaultSummary.linked}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Avg Confidence</p>
+              <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.avgConfidence}%</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <EvidenceFilters
@@ -376,7 +411,7 @@ function EvidenceContent() {
               {searchQuery && <span> for <span className="text-foreground font-bold">"{searchQuery}"</span></span>}
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredEvidence.length === 0 ? (
               <div className="col-span-full py-20 text-center">
                 <p className="text-muted-foreground font-medium">No evidence matches your filters.</p>
@@ -395,7 +430,7 @@ function EvidenceContent() {
                 shine
                 onClick={() => setSelectedEvidence(evidence)}
                 className={cn(
-                  "cursor-pointer group p-0 relative",
+                  "cursor-pointer group p-0 relative rounded-[28px] overflow-hidden",
                   (highlightId === evidence.id || highlightId === evidence.originalFilename || highlightId === evidence.title) && "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all"
                 )}
               >

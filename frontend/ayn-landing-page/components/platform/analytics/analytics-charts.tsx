@@ -22,6 +22,42 @@ const labelStyle = { color: "var(--text-secondary)", fontSize: "11px", marginBot
 
 const PALETTE = ["#2563eb", "#0d9668", "#7c5ce0", "#b45309", "#c9424a", "#06b6d4", "#f59e0b", "#ec4899"]
 
+function ChartCardShell({
+  children,
+  title,
+  subtitle,
+  accentColor,
+  className,
+}: {
+  children: React.ReactNode
+  title: string
+  subtitle: string
+  accentColor: string
+  className?: string
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={cn("glass-panel relative overflow-hidden rounded-[28px] border-[var(--border-subtle)] p-5 sm:p-6 lg:p-7", className)}
+    >
+      <div className="absolute inset-x-0 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+      <div className="absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ backgroundColor: accentColor }} />
+      <div className="relative z-10">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">{subtitle}</p>
+          </div>
+          <div className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.04] shrink-0" style={{ boxShadow: `0 18px 40px -28px ${accentColor}` }} />
+        </div>
+        {children}
+      </div>
+    </motion.div>
+  )
+}
+
 /* ─── Trend Area Chart ────────────────────────────────────────── */
 interface TrendChartProps {
   data: { date: string; score: number; standard?: string }[]
@@ -31,18 +67,7 @@ interface TrendChartProps {
 
 export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
-    >
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{subtitle}</p>
-        </div>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#2563eb">
       <div className="h-72 w-full -ml-4">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -60,7 +85,7 @@ export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </ChartCardShell>
   )
 }
 
@@ -74,16 +99,7 @@ interface DistBarProps {
 export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
   const colored = data.map((d, i) => ({ ...d, fill: d.fill ?? PALETTE[i % PALETTE.length] }))
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.15 }}
-      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
-    >
-      <div className="mb-6">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{subtitle}</p>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#7c5ce0">
       <div className="h-64 w-full -ml-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={colored} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -97,7 +113,7 @@ export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </ChartCardShell>
   )
 }
 
@@ -110,16 +126,7 @@ interface DonutProps {
 
 export function DonutChart({ data, title, subtitle }: DonutProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
-    >
-      <div className="mb-6">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{subtitle}</p>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#0d9668" className="flex flex-col">
       <div className="flex-1 min-h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -140,7 +147,7 @@ export function DonutChart({ data, title, subtitle }: DonutProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </ChartCardShell>
   )
 }
 
@@ -153,16 +160,7 @@ interface RadarProps {
 
 export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.25 }}
-      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden flex flex-col"
-    >
-      <div className="mb-6">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{subtitle}</p>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#06b6d4" className="flex flex-col">
       <div className="flex-1 min-h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
@@ -173,7 +171,7 @@ export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
           </RadarChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </ChartCardShell>
   )
 }
 
@@ -199,19 +197,10 @@ export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="glass-panel p-8 rounded-3xl border-[var(--border-subtle)] relative overflow-hidden"
-    >
-      <div className="mb-8">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{subtitle}</p>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#f59e0b">
       <div className="space-y-5">
         {data.map((item, i) => (
-          <div key={item.label} className="group">
+          <div key={item.label} className="group rounded-2xl border border-white/8 bg-white/[0.025] px-3.5 py-3">
             <div className="flex justify-between items-end mb-2">
               <span className="text-xs font-bold text-foreground truncate max-w-[180px] group-hover:text-primary transition-colors">{item.label}</span>
               <div className="flex items-center gap-3">
@@ -219,7 +208,7 @@ export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
                 <span className="mono text-sm font-bold" style={{ color: getColor(item.score) }}>{item.score}%</span>
               </div>
             </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${item.score}%` }}
@@ -231,6 +220,6 @@ export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
           </div>
         ))}
       </div>
-    </motion.div>
+    </ChartCardShell>
   )
 }

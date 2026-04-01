@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -14,15 +14,16 @@ import {
   FileText,
   AlertTriangle,
   ShieldCheck,
-  TrendingUp
+  Sparkles,
+  Brain,
+  UploadCloud,
+  Microscope,
+  BellRing
 } from "lucide-react"
 import { Cpu, Zap, Download } from "lucide-react"
 import type { DashboardMetrics, Standard } from "@/types"
-import { EmptyState } from "@/components/platform/empty-state"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import { CircularGauge } from "@/components/ui/circular-gauge"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { CoverageBar } from "@/components/platform/coverage-bar"
@@ -58,7 +59,8 @@ function DashboardContent() {
   const safeStandards = Array.isArray(standards) ? standards : []
 
   const alignmentScore = safeMetrics?.alignmentPercentage ?? 0
-  const evidenceCount = safeMetrics?.evidenceCount ?? 0
+  const alertCount = safeMetrics?.unreadNotificationsCount ?? 0
+  const analysesCount = safeMetrics?.totalGapAnalyses ?? 0
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -102,6 +104,40 @@ function DashboardContent() {
     }
   ], [metrics, alignmentScore])
 
+  const quickActions = [
+    {
+      title: "Upload Evidence",
+      description: "Add new institutional proof and let Horus process it.",
+      href: "/platform/evidence/upload",
+      icon: UploadCloud,
+    },
+    {
+      title: "Run Gap Analysis",
+      description: "Generate a fresh readiness report against your standards.",
+      href: "/platform/gap-analysis",
+      icon: Microscope,
+    },
+    {
+      title: "Ask Horus",
+      description: "Open the AI workspace for next-step guidance and drafting.",
+      href: "/platform/horus-ai",
+      icon: Brain,
+    },
+    {
+      title: "Review Alerts",
+      description: "Check active platform events and unread notifications.",
+      href: "/platform/notifications",
+      icon: BellRing,
+    },
+  ] as const
+
+  const scoreTone =
+    alignmentScore >= 85
+      ? "Strong alignment"
+      : alignmentScore >= 65
+        ? "Improving posture"
+        : "Needs attention"
+
   if (isLoading || !user) {
     return <DashboardPageSkeleton />
   }
@@ -127,7 +163,10 @@ function DashboardContent() {
       {/* Header Section with Gauges */}
       <section className="flex flex-col xl:flex-row gap-6">
         {/* Main Welcome Card */}
-        <div className="flex-1 relative overflow-hidden rounded-3xl glass-card p-8 md:p-12 flex flex-col justify-center min-h-[300px]">
+        <div className="flex-1 relative overflow-hidden rounded-[32px] glass-card p-8 md:p-12 flex flex-col justify-between min-h-[340px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.12),transparent_28%)] pointer-events-none" />
+          <div className="absolute -right-20 -top-14 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="absolute left-10 bottom-6 h-24 w-24 rounded-full border border-white/10 bg-white/5 blur-2xl pointer-events-none" />
           <div className="absolute top-4 right-4 z-50">
              <button 
                onClick={async () => {
@@ -140,23 +179,60 @@ function DashboardContent() {
                <Download className="w-4 h-4" /> Export Report (PDF)
              </button>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full status-success border mb-6 w-fit">
+          <div className="relative z-10 space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full status-success border w-fit">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
                 <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--status-success)" }}></span>
               </span>
               <span className="text-[10px] font-bold uppercase tracking-widest">Ayn Brain Live</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
-              {greeting}, <br />
-              <span className="text-muted-foreground font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
-            </h1>
-            <p className="text-muted-foreground font-medium max-w-md">
-              Horus is active. Your compliance framework is mapped with <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span> accuracy.
-            </p>
+
+            <div className="max-w-2xl">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
+                {greeting}, <br />
+                <span className="text-muted-foreground font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
+              </h1>
+              <p className="text-muted-foreground font-medium max-w-xl text-base md:text-lg leading-relaxed">
+                Horus is active and your workspace is currently showing{" "}
+                <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span>{" "}
+                compliance alignment across{" "}
+                <span className="text-foreground font-bold">{publicStandards.length}</span>{" "}
+                tracked standards.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Readiness Tone</p>
+                <p className="mt-2 text-lg font-bold text-foreground">{scoreTone}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Open Alerts</p>
+                <p className="mt-2 text-lg font-bold text-foreground">{alertCount}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Analyses Run</p>
+                <p className="mt-2 text-lg font-bold text-foreground">{analysesCount}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              href="/platform/horus-ai"
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_40px_-22px_rgba(37,99,235,0.65)] transition-transform hover:-translate-y-0.5"
+            >
+              <Sparkles className="w-4 h-4" />
+              Open Horus
+            </Link>
+            <Link
+              href="/platform/gap-analysis"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-xs font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-white/[0.07]"
+            >
+              Run Gap Analysis
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
 
@@ -192,6 +268,29 @@ function DashboardContent() {
         <StatusTiles
           stats={dashboardStats}
         />
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {quickActions.map((action) => (
+          <Link
+            key={action.title}
+            href={action.href}
+            className="group glass-card rounded-[28px] p-5 transition-all hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
+                  <action.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">{action.title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{action.description}</p>
+                </div>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+        ))}
       </section>
 
       {/* ─── Standards Progress ─── */}
@@ -249,8 +348,11 @@ function DashboardContent() {
           {/* Recent Evidence List */}
           <div className="glass-card p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-foreground">Recent Evidence</h3>
-              <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Library</Link>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Recent Evidence</h3>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">Latest documents entering the vault</p>
+              </div>
+              <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">View Vault</Link>
             </div>
             <div className="space-y-3">
               {(safeMetrics?.recentEvidence?.length ?? 0) === 0 ? (
@@ -263,7 +365,11 @@ function DashboardContent() {
                 </div>
               ) : (
                 safeMetrics?.recentEvidence?.map((ev: any) => (
-                  <div key={ev.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--surface)] transition-all group cursor-pointer border border-transparent hover:border-[var(--border-subtle)]">
+                  <Link
+                    key={ev.id}
+                    href={`/platform/evidence?highlight=${encodeURIComponent(ev.id)}`}
+                    className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--surface)] transition-all group cursor-pointer border border-transparent hover:border-[var(--border-subtle)]"
+                  >
                     <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                       <FileText className="w-5 h-5" />
                     </div>
@@ -271,11 +377,52 @@ function DashboardContent() {
                       <h4 className="font-semibold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mt-0.5">{ev.status}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                  </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Open</p>
+                      <ChevronRight className="w-4 h-4 mt-1 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
                 ))
               )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link href="/platform/analytics" className="group glass-card rounded-3xl p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reporting</p>
+                  <h3 className="mt-3 text-xl font-bold text-foreground">Analytics & Trends</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Review score movement, standard performance, and evidence growth across the last reporting window.
+                  </p>
+                </div>
+                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <div className="mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
+                Open Analytics <ArrowUpRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
+
+            <Link href="/platform/notifications" className="group glass-card rounded-3xl p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Attention Queue</p>
+                  <h3 className="mt-3 text-xl font-bold text-foreground">Platform Notifications</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Review unread updates, new report events, and evidence or workflow signals that need action.
+                  </p>
+                </div>
+                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <div className="mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary">
+                Open Notifications <ArrowUpRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
           </div>
         </div>
 

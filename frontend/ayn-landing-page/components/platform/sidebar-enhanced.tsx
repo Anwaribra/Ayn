@@ -84,8 +84,8 @@ export const SidebarItem = memo(function SidebarItem({
         isCollapsed && "justify-center px-0 mx-auto w-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
-          ? "glass-button glass-text-primary border-white/10 bg-white/7"
-          : "glass-text-secondary hover:bg-white/5 hover:text-[var(--glass-text-primary)]"
+          ? "glass-button glass-text-primary border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
+          : "glass-text-secondary hover:bg-[var(--glass-soft-bg)] hover:text-[var(--glass-text-primary)]"
       )}
     >
       {active && (
@@ -100,7 +100,7 @@ export const SidebarItem = memo(function SidebarItem({
       <item.icon
         className={cn(
           "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
-          active ? "text-white" : "group-hover:text-white"
+          active ? "text-primary" : "group-hover:text-[var(--glass-text-primary)]"
         )}
         strokeWidth={2.25}
       />
@@ -220,7 +220,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
               <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
                 Compliance Core
               </p>
-              <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+              <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_65%,transparent)] to-transparent" />
             </div>
           )}
           {COMPLIANCE_WORKFLOW.map((item) => (
@@ -234,7 +234,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
               <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
                 Reporting & Automation
               </p>
-              <div className="mt-2 h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
+              <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_65%,transparent)] to-transparent" />
             </div>
           )}
           {INSIGHTS_TOOLS.map((item) => (

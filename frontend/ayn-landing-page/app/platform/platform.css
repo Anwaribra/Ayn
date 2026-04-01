@@ -75,6 +75,8 @@
 
   --sidebar-foreground: #f1f5f9;
   --sidebar-border: rgba(255, 255, 255, 0.1);
+  --glass-text-primary: #f8fafc;
+  --glass-text-secondary: #cbd5e1;
 
   color-scheme: dark;
 }
@@ -157,6 +159,8 @@
 
   --sidebar-foreground: #0f172a;
   --sidebar-border: rgba(15, 23, 42, 0.08);
+  --glass-text-primary: #0f172a;
+  --glass-text-secondary: #64748b;
 
   color-scheme: light;
 }
@@ -240,6 +244,34 @@
     radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.09), transparent 34%),
     radial-gradient(circle at 88% 82%, rgba(14, 165, 233, 0.07), transparent 30%),
     linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 1));
+}
+
+[data-section="platform"][data-platform-theme="light"] .border-white\/10,
+[data-section="platform"][data-platform-theme="light"] .border-white\/8,
+[data-section="platform"][data-platform-theme="light"] .border-white\/6,
+[data-section="platform"][data-platform-theme="light"] .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-section="platform"][data-platform-theme="light"] .bg-white\/\[0\.05\],
+[data-section="platform"][data-platform-theme="light"] .bg-white\/\[0\.04\],
+[data-section="platform"][data-platform-theme="light"] .bg-white\/\[0\.03\],
+[data-section="platform"][data-platform-theme="light"] .bg-white\/\[0\.025\],
+[data-section="platform"][data-platform-theme="light"] .bg-white\/5,
+[data-section="platform"][data-platform-theme="light"] .bg-white\/7 {
+  background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-section="platform"][data-platform-theme="light"] .hover\:bg-white\/\[0\.07\]:hover,
+[data-section="platform"][data-platform-theme="light"] .hover\:bg-white\/\[0\.06\]:hover,
+[data-section="platform"][data-platform-theme="light"] .hover\:bg-white\/\[0\.045\]:hover,
+[data-section="platform"][data-platform-theme="light"] .hover\:bg-white\/5:hover {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-section="platform"][data-platform-theme="light"] .hover\:border-white\/12:hover,
+[data-section="platform"][data-platform-theme="light"] .hover\:border-white\/10:hover {
+  border-color: rgba(15, 23, 42, 0.12) !important;
 }
 
 [data-section="platform"] .mono {

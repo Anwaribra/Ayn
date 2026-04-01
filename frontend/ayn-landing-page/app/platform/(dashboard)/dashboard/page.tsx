@@ -20,11 +20,10 @@ import {
   Microscope,
   BellRing
 } from "lucide-react"
-import { Cpu, Zap, Download } from "lucide-react"
+import { Download } from "lucide-react"
 import type { DashboardMetrics, Standard } from "@/types"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
-import { CircularGauge } from "@/components/ui/circular-gauge"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { CoverageBar } from "@/components/platform/coverage-bar"
 
@@ -99,7 +98,7 @@ function DashboardContent() {
     {
       label: "Total Analyses",
       value: safeMetrics?.totalGapAnalyses?.toString() || "0",
-      icon: Cpu,
+      icon: Microscope,
       status: "neutral" as const
     }
   ], [metrics, alignmentScore])
@@ -161,9 +160,9 @@ function DashboardContent() {
     <div className="animate-fade-in-up space-y-6 sm:space-y-8 pb-16 sm:pb-20 relative">
       <div id="dashboard-report-content" className="space-y-6 sm:space-y-8">
       {/* Header Section with Gauges */}
-      <section className="flex flex-col xl:flex-row gap-4 sm:gap-6">
+      <section>
         {/* Main Welcome Card */}
-        <div className="flex-1 relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-card p-5 sm:p-8 md:p-12 flex flex-col justify-between min-h-[320px] sm:min-h-[340px]">
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-card p-5 sm:p-8 md:p-12 flex flex-col justify-between min-h-[320px] sm:min-h-[340px]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.12),transparent_28%)] pointer-events-none" />
           <div className="absolute -right-20 -top-14 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute left-10 bottom-6 h-24 w-24 rounded-full border border-white/10 bg-white/5 blur-2xl pointer-events-none" />
@@ -235,32 +234,6 @@ function DashboardContent() {
             </Link>
           </div>
         </div>
-
-        {/* Dashdot Gauges */}
-        <div className="flex flex-col sm:flex-row xl:flex-col gap-4 shrink-0">
-          <div className="glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-6 flex items-center gap-5 sm:gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
-            <CircularGauge value={Math.round(alignmentScore)} label="System Health" icon={<Cpu className="w-5 h-5" />} color="#3B82F6" />
-            <div className="flex flex-col justify-center">
-              <span className="text-2xl font-bold tracking-tight text-foreground">Good</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Optimal State</span>
-            </div>
-          </div>
-          <div className="glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-6 flex items-center gap-5 sm:gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
-            <CircularGauge
-              value={safeMetrics?.totalGapAnalyses ?? 0}
-              max={20}
-              label="Gap Analyses"
-              icon={<Zap className="w-5 h-5" />}
-              color="#10B981"
-            />
-            <div className="flex flex-col justify-center">
-              <span className="text-2xl font-bold tracking-tight text-foreground">
-                {safeMetrics?.totalGapAnalyses ?? 0}
-              </span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Reports</span>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Status Tiles Grid */}
@@ -295,35 +268,47 @@ function DashboardContent() {
 
       {/* ─── Standards Progress ─── */}
       {publicStandards.length > 0 && (
-        <section className="glass-card p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
+        <section className="glass-card relative overflow-hidden p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.10),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
+          <div className="relative z-10 flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">Standards Progress</h3>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Criteria coverage by evidence</p>
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.18em]">Criteria coverage by evidence</p>
               </div>
             </div>
             <Link
               href="/platform/standards"
-              className="flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-[0.16em] transition-colors hover:bg-white/[0.07]"
             >
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="space-y-5">
+          <div className="relative z-10 space-y-3">
             {publicStandards.slice(0, 6).map((standard: Standard) => (
-              <div key={standard.id} className="group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate mr-4">
-                    {standard.title}
-                  </span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">
-                    {standard.code ?? standard.category ?? "Standard"}
-                  </span>
+              <div
+                key={standard.id}
+                className="group rounded-[24px] border border-white/6 bg-white/[0.03] px-4 py-4 sm:px-5 transition-all hover:bg-white/[0.05] hover:border-white/12"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <span className="block text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                      {standard.title}
+                    </span>
+                    <span className="mt-1 inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.14em]">
+                      {standard.code ?? standard.category ?? "Standard"}
+                    </span>
+                  </div>
+                  <Link
+                    href={`/platform/standards/${standard.id}`}
+                    className="shrink-0 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary opacity-0 transition-all group-hover:opacity-100"
+                  >
+                    Open
+                  </Link>
                 </div>
                 <CoverageBar standardId={standard.id} compact />
               </div>
@@ -331,12 +316,12 @@ function DashboardContent() {
           </div>
 
           {publicStandards.length > 6 && (
-            <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+            <div className="relative z-10 mt-6 pt-4 border-t border-[var(--border-subtle)]">
               <Link
                 href="/platform/standards"
-                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.16em]"
               >
-                +{publicStandards.length - 6} more standards →
+                +{publicStandards.length - 6} more standards <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           )}

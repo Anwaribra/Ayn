@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
-import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { useRouter } from "next/navigation"
@@ -29,19 +28,148 @@ import {
   Circle,
   Check,
   RefreshCw,
+  ArrowUpRight,
+  Globe,
+  Layers3,
+  ShieldCheck,
+  SlidersHorizontal,
 } from "lucide-react"
-import type { Standard, Criterion, Evidence } from "@/types"
+import type { Standard, Evidence } from "@/types"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
 import { CoverageBar } from "@/components/platform/coverage-bar"
 
+type MappingState = "not_started" | "analyzing" | "complete"
+type DerivedStatus = "strong" | "partial" | "critical" | "unmapped" | "analyzing"
+
+type StandardInsight = {
+  standardId: string
+  totalCriteria: number
+  coveredCriteria: number
+  coveragePct: number
+  mapped: number
+  totalMapped: number
+  mappingState: MappingState
+  derivedStatus: DerivedStatus
+}
+
+function deriveStatus(coveragePct: number, mappingState: string | undefined, mapped: number, total: number): DerivedStatus {
+  if (mappingState === "analyzing") return "analyzing"
+  if ((mapped === 0 || total === 0) && coveragePct === 0) return "unmapped"
+  if (coveragePct >= 80) return "strong"
+  if (coveragePct >= 40) return "partial"
+  return "critical"
+}
+
+function getStatusBadge(status: DerivedStatus) {
+  switch (status) {
+    case "strong":
+      return {
+        label: "Strong",
+        className:
+          "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]",
+      }
+    case "partial":
+      return {
+        label: "Partial",
+        className:
+          "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]",
+      }
+    case "critical":
+      return {
+        label: "Critical",
+        className:
+          "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
+      }
+    case "analyzing":
+      return {
+        label: "Analyzing",
+        className:
+          "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-[var(--status-info)]",
+      }
+    default:
+      return {
+        label: "Unmapped",
+        className: "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground",
+      }
+  }
+}
+
+function formatFilterLabel(value?: string | null, fallback = "Uncategorized") {
+  return value?.trim() || fallback
+}
+
 export default function StandardsPage() {
-  const { user } = useAuth()
   const router = useRouter()
-  const { data: standards, isLoading, mutate } = useSWR<Standard[]>(
-    "standards",
-    () => api.getStandards()
+  const { data: standards, isLoading, mutate } = useSWR<Standard[]>("standards", () => api.getStandards())
+
+  const publicStandards = useMemo(
+    () => (standards ?? []).filter((standard) => standard.isPublic),
+    [standards],
   )
+
+  const { data: standardInsights, isLoading: insightsLoading } = useSWR<StandardInsight[]>(
+    publicStandards.length ? ["standards-insights", ...publicStandards.map((standard) => standard.id)] : null,
+    async () =>
+      Promise.all(
+        publicStandards.map(async (standard) => {
+          const [coverage, mapping] = await Promise.all([
+            api.getStandardCoverage(standard.id).catch(() => null),
+            api.getStandardMappingsStatus(standard.id).catch(() => null),
+          ])
+
+          const totalCriteria = coverage?.totalCriteria ?? standard.criteriaCount ?? 0
+          const coveredCriteria = coverage?.coveredCriteria ?? 0
+          const coveragePct = coverage?.coveragePct ?? 0
+          const mapped = mapping?.mapped ?? coveredCriteria
+          const totalMapped = mapping?.total ?? totalCriteria
+          const mappingState = (mapping?.status as MappingState | undefined) ?? "not_started"
+
+          return {
+            standardId: standard.id,
+            totalCriteria,
+            coveredCriteria,
+            coveragePct,
+            mapped,
+            totalMapped,
+            mappingState,
+            derivedStatus: deriveStatus(coveragePct, mapping?.status, mapped, totalMapped),
+          }
+        }),
+      ),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60_000,
+    },
+  )
+
+  const insightsById = useMemo(
+    () => new Map((standardInsights ?? []).map((entry) => [entry.standardId, entry])),
+    [standardInsights],
+  )
+
+  const totalCriteria = useMemo(
+    () => publicStandards.reduce((sum, standard) => sum + (standard.criteriaCount ?? standard.criteria?.length ?? 0), 0),
+    [publicStandards],
+  )
+
+  const analyzedFrameworks = useMemo(
+    () => (standardInsights ?? []).filter((entry) => entry.mappingState === "complete" || entry.coveredCriteria > 0).length,
+    [standardInsights],
+  )
+
+  const averageCoverage = useMemo(() => {
+    if (!standardInsights?.length) return 0
+    return Math.round(
+      standardInsights.reduce((sum, entry) => sum + entry.coveragePct, 0) / standardInsights.length,
+    )
+  }, [standardInsights])
+
+  const weakestStandard = useMemo(() => {
+    if (!publicStandards.length || !standardInsights?.length) return null
+    const weakest = [...standardInsights].sort((a, b) => a.coveragePct - b.coveragePct)[0]
+    return publicStandards.find((standard) => standard.id === weakest.standardId) ?? null
+  }, [publicStandards, standardInsights])
 
   // PDF Import State
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false)
@@ -63,7 +191,7 @@ export default function StandardsPage() {
   // Details Modal State
   const [selectedStandard, setSelectedStandard] = useState<Standard | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [mappingStatus, setMappingStatus] = useState<"not_started" | "analyzing" | "complete">("not_started")
+  const [mappingStatus, setMappingStatus] = useState<MappingState>("not_started")
   const [mappingsData, setMappingsData] = useState<any>(null)
 
   useEffect(() => {
@@ -72,12 +200,14 @@ export default function StandardsPage() {
       interval = setInterval(async () => {
         try {
           const statusRes = await api.getStandardMappingsStatus(selectedStandard.id)
-          setMappingStatus(statusRes.status as any)
+          setMappingStatus(statusRes.status as MappingState)
           if (statusRes.status === "complete") {
             const data = await api.getStandardMappings(selectedStandard.id)
             setMappingsData(data)
           }
-        } catch (err) { }
+        } catch {
+          // ignore polling errors
+        }
       }, 3000)
     }
     return () => clearInterval(interval)
@@ -89,13 +219,13 @@ export default function StandardsPage() {
     setMappingStatus("not_started")
     setMappingsData(null)
 
-    // Always fetch mappings to show criteria, regardless of analysis status
     try {
-      const data = await api.getStandardMappings(standard.id)
+      const [data, statusRes] = await Promise.all([
+        api.getStandardMappings(standard.id),
+        api.getStandardMappingsStatus(standard.id),
+      ])
       setMappingsData(data)
-
-      const statusRes = await api.getStandardMappingsStatus(standard.id)
-      setMappingStatus(statusRes.status as any)
+      setMappingStatus(statusRes.status as MappingState)
     } catch (err) {
       console.error(err)
     }
@@ -105,18 +235,21 @@ export default function StandardsPage() {
   const [evidenceSelection, setEvidenceSelection] = useState<"all" | "specific">("all")
   const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
 
-  const { data: allEvidence } = useSWR<Evidence[]>(
-    isDetailsOpen ? "evidence" : null,
-    () => api.getEvidence()
-  )
+  const { data: allEvidence } = useSWR<Evidence[]>(isDetailsOpen ? "evidence" : null, () => api.getEvidence())
 
-  const handleAnalyzeNow = async (forceRefetch: boolean = false) => {
+  const handleAnalyzeNow = async (forceRefetch = false) => {
     if (!selectedStandard) return
     try {
-      const ids = evidenceSelection === "specific" ? (selectedEvidenceIds.length > 0 ? selectedEvidenceIds : undefined) : undefined
+      const ids =
+        evidenceSelection === "specific"
+          ? selectedEvidenceIds.length > 0
+            ? selectedEvidenceIds
+            : undefined
+          : undefined
       await api.analyzeStandard(selectedStandard.id, ids, forceRefetch)
       setMappingStatus("analyzing")
       toast.success(forceRefetch ? "Re-analysis started!" : "Analysis started!")
+      mutate()
     } catch (err: any) {
       toast.error(err.message || "Failed to start analysis")
     }
@@ -124,21 +257,73 @@ export default function StandardsPage() {
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("all") // all, popular, recent
+  const [activeTab, setActiveTab] = useState("all")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedRegion, setSelectedRegion] = useState("all")
+  const [selectedStatus, setSelectedStatus] = useState("all")
+  const [sortBy, setSortBy] = useState("weakest")
 
-  const filteredStandards = (() => {
-    const base = standards?.filter((s: Standard) => {
-      const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.code?.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesSearch && s.isPublic
-    }) ?? []
+  const categories = useMemo(
+    () => Array.from(new Set(publicStandards.map((standard) => formatFilterLabel(standard.category)))).sort(),
+    [publicStandards],
+  )
 
-    if (activeTab === "popular") return base.filter((s: Standard) => (s.criteria?.length || 0) > 30)
-    if (activeTab === "recent") {
-      return base.slice(0, 10)
-    }
-    return base
-  })()
+  const regions = useMemo(
+    () => Array.from(new Set(publicStandards.map((standard) => formatFilterLabel(standard.region, "Global")))).sort(),
+    [publicStandards],
+  )
+
+  const filteredStandards = useMemo(() => {
+    const base = publicStandards.filter((standard) => {
+      const insight = insightsById.get(standard.id)
+      const matchesSearch =
+        standard.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        standard.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        standard.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        standard.region?.toLowerCase().includes(searchQuery.toLowerCase())
+
+      const matchesCategory =
+        selectedCategory === "all" || formatFilterLabel(standard.category) === selectedCategory
+      const matchesRegion =
+        selectedRegion === "all" || formatFilterLabel(standard.region, "Global") === selectedRegion
+      const matchesStatus = selectedStatus === "all" || insight?.derivedStatus === selectedStatus
+
+      if (!matchesSearch || !matchesCategory || !matchesRegion || !matchesStatus) return false
+
+      if (activeTab === "popular") return (standard.criteriaCount ?? standard.criteria?.length ?? 0) >= 20
+      if (activeTab === "recent") return standard.source === "custom" || standard.source === "imported"
+      return true
+    })
+
+    const withInsights = base.map((standard) => ({
+      standard,
+      insight: insightsById.get(standard.id),
+    }))
+
+    withInsights.sort((a, b) => {
+      switch (sortBy) {
+        case "strongest":
+          return (b.insight?.coveragePct ?? 0) - (a.insight?.coveragePct ?? 0)
+        case "alphabetical":
+          return a.standard.title.localeCompare(b.standard.title)
+        case "criteria":
+          return (b.standard.criteriaCount ?? 0) - (a.standard.criteriaCount ?? 0)
+        default:
+          return (a.insight?.coveragePct ?? 0) - (b.insight?.coveragePct ?? 0)
+      }
+    })
+
+    return withInsights.map(({ standard }) => standard)
+  }, [
+    activeTab,
+    insightsById,
+    publicStandards,
+    searchQuery,
+    selectedCategory,
+    selectedRegion,
+    selectedStatus,
+    sortBy,
+  ])
 
   const handlePDFUpload = async () => {
     if (!selectedFile) return
@@ -156,248 +341,493 @@ export default function StandardsPage() {
     }
   }
 
+  const selectedInsight = selectedStandard ? insightsById.get(selectedStandard.id) : null
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen relative overflow-hidden">
-
         <div className="relative z-10">
           <Header
             title="Standards Hub"
-            description="Global Quality & Accreditation Library"
+            description="Audit frameworks, coverage signals, and analysis readiness in one workspace."
             breadcrumbs={[
               { label: "Dashboard", href: "/platform/dashboard" },
               { label: "Standards Hub" },
             ]}
+            actions={
+              <Button
+                onClick={() => setIsPDFModalOpen(true)}
+                className="min-h-[44px] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
+              >
+                <FileUp className="mr-2 h-4 w-4" />
+                Import Framework
+              </Button>
+            }
           />
 
-          <div className="w-full">
-            {/* 1. HERO SECTION (Translucent Glass) */}
-            <section className="w-full py-16 px-6 md:px-12 lg:px-20 relative z-10 transition-all duration-300">
-              <div className="max-w-7xl mx-auto">
-                <div className="glass-card p-10 md:p-16 rounded-[48px] glass-border relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10 animate-pulse-subtle" />
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+            <section className="glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-7 lg:p-8">
+              <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.16),transparent_70%)] blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.45),transparent)]" />
 
-                  <div className="space-y-10">
-                    <div className="space-y-4">
-                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">
-                        Standards Hub <span className="text-muted-foreground font-light">—</span> <br />
-                        <span className="text-primary">Global Quality Library</span>
-                      </h1>
-                      <p className="text-xl font-medium max-w-2xl leading-relaxed text-muted-foreground">
-                        AI-powered accreditation frameworks from around the world. Streamline your institutional compliance with automated mapping.
+              <div className="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_440px]">
+                <div className="space-y-5">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Standards Intelligence
+                  </div>
+
+                  <div className="space-y-3">
+                    <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                      Global frameworks with live readiness signals.
+                    </h1>
+                    <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      Review your standards library, see which frameworks are actually mapped, and jump straight into the weakest coverage areas first.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                        Active Standards
                       </p>
+                      <p className="mt-2 text-2xl font-black text-foreground">{publicStandards.length}</p>
                     </div>
+                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                        Criteria Points
+                      </p>
+                      <p className="mt-2 text-2xl font-black text-foreground">{totalCriteria}</p>
+                    </div>
+                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                        Analyzed
+                      </p>
+                      <p className="mt-2 text-2xl font-black text-[var(--status-success)]">{analyzedFrameworks}</p>
+                    </div>
+                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                        Avg Coverage
+                      </p>
+                      <p className="mt-2 text-2xl font-black text-primary">{averageCoverage}%</p>
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 max-w-4xl">
-                      <div className="relative flex-1 w-full group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <input
-                          type="text"
-                          placeholder="Search standards by name, code or category..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full h-16 pl-14 pr-6 rounded-2xl border-2 glass-input transition-all font-bold placeholder:text-muted-foreground focus:ring-8 focus:ring-primary/5 outline-none group-focus-within:border-primary/50"
-                        />
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Weakest Framework
+                        </p>
+                        <h3 className="mt-2 text-xl font-bold text-foreground">
+                          {weakestStandard?.title ?? "No mapped frameworks yet"}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                          {weakestStandard
+                            ? "Best candidate for your next evidence and analysis cycle."
+                            : "Import a framework or start analysis to surface readiness signals."}
+                        </p>
                       </div>
-                      <Button
-                        onClick={() => setIsPDFModalOpen(true)}
-                        className="h-14 sm:h-16 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-primary/20 min-h-[44px]"
-                      >
-                        <FileUp className="w-5 h-5" />
-                        <span className="text-lg">Import Framework</span>
-                      </Button>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)]">
+                        <Activity className="h-5 w-5 text-[var(--status-critical)]" />
+                      </div>
+                    </div>
+                    {weakestStandard && (
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
+                        <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          {Math.round(insightsById.get(weakestStandard.id)?.coveragePct ?? 0)}% coverage
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/platform/gap-analysis?standardId=${weakestStandard.id}`)}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-primary"
+                        >
+                          Analyze <ArrowUpRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)]">
+                        <Layers3 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Library Snapshot
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-muted-foreground">
+                          {categories.length} categories • {regions.length} regions
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {categories.slice(0, 4).map((category) => (
+                        <span
+                          key={category}
+                          className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+                        >
+                          {category}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-12 space-y-12">
-              {/* 2. TABS SECTION */}
-              <div className="flex flex-wrap items-center gap-4 border-b pb-px border-[var(--border-subtle)]">
+            <section className="glass-panel rounded-[28px] border-[var(--glass-border)] p-4 sm:p-5">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,180px))]">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search by framework, code, category, or region..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="glass-input h-12 w-full rounded-2xl pl-11 pr-4 text-sm"
+                  />
+                </div>
+
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="glass-input h-12 rounded-2xl px-4 text-sm"
+                >
+                  <option value="all">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="glass-input h-12 rounded-2xl px-4 text-sm"
+                >
+                  <option value="all">All regions</option>
+                  {regions.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="glass-input h-12 rounded-2xl px-4 text-sm"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="strong">Strong</option>
+                  <option value="partial">Partial</option>
+                  <option value="critical">Critical</option>
+                  <option value="unmapped">Unmapped</option>
+                  <option value="analyzing">Analyzing</option>
+                </select>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="glass-input h-12 rounded-2xl px-4 text-sm"
+                >
+                  <option value="weakest">Sort: Weakest first</option>
+                  <option value="strongest">Sort: Strongest first</option>
+                  <option value="criteria">Sort: Most criteria</option>
+                  <option value="alphabetical">Sort: A-Z</option>
+                </select>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 {[
-                  { id: "popular", label: "Popular" },
                   { id: "all", label: "All Frameworks" },
-                  { id: "recent", label: "Recently Added" }
+                  { id: "popular", label: "High Complexity" },
+                  { id: "recent", label: "Imported / Custom" },
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "px-4 sm:px-6 py-3 sm:py-4 min-h-[44px] font-black uppercase text-[12px] tracking-widest transition-all relative border-b-4",
+                      "rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] transition-all",
                       activeTab === tab.id
-                        ? "text-primary border-primary"
-                        : "text-muted-foreground hover:text-foreground border-transparent"
+                        ? "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-primary"
+                        : "border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {tab.label}
                   </button>
                 ))}
-              </div>
 
-              {/* 3. STANDARD GRID */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-[1]">
-                {isLoading ? (
-                  Array(4).fill(0).map((_, i) => (
-                    <div key={i} className="h-[320px] animate-pulse rounded-[48px] glass-panel glass-border" />
-                  ))
-                ) : filteredStandards && filteredStandards.length > 0 ? (
-                  filteredStandards.map((standard: Standard) => (
+                <div className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  {filteredStandards.length} visible
+                </div>
+              </div>
+            </section>
+
+            <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+              {isLoading || insightsLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-[320px] animate-pulse rounded-[32px] glass-panel glass-border" />
+                ))
+              ) : filteredStandards.length > 0 ? (
+                filteredStandards.map((standard) => {
+                  const insight = insightsById.get(standard.id)
+                  const badge = getStatusBadge(insight?.derivedStatus ?? "unmapped")
+
+                  return (
                     <GlassCard
                       key={standard.id}
                       variant={2}
                       hoverEffect
                       shine
-                      className="group glass-border rounded-[48px] min-h-[320px] p-12"
+                      className="group rounded-[32px] p-6 glass-border"
                     >
-                      <div className="flex-1 flex flex-col space-y-8 relative z-10">
-                        {/* Top Segment */}
-                        <div className="flex items-start justify-between gap-6">
-                          <div className="flex items-start gap-6">
-                            <div className={cn(
-                              "w-16 h-16 rounded-[24px] flex items-center justify-center text-white shrink-0 shadow-lg",
-                              standard.color || "bg-[#1E3A8A]"
-                            )}>
-                              <GraduationCap className="w-9 h-9 text-white" />
+                      <div className="relative z-10 flex h-full flex-col">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex min-w-0 items-start gap-4">
+                            <div
+                              className={cn(
+                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] text-white shadow-lg",
+                                standard.color || "bg-[#1E3A8A]",
+                              )}
+                            >
+                              <GraduationCap className="h-7 w-7 text-white" />
                             </div>
-                            <div className="space-y-1">
-                              <h3 className="text-[26px] font-black leading-[1.1] group-hover:text-primary transition-colors text-foreground">
+                            <div className="min-w-0 space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                                  {standard.code || "STD-LIB"}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                                    badge.className,
+                                  )}
+                                >
+                                  {badge.label}
+                                </span>
+                              </div>
+                              <h3 className="line-clamp-2 text-[22px] font-black leading-tight text-foreground transition-colors group-hover:text-primary">
                                 {standard.title}
                               </h3>
-                              <div className="flex items-center gap-3">
-                                <span className="text-[11px] font-black text-primary uppercase tracking-[0.2em]">{standard.code || "STD-LIB"}</span>
-                                <span className="font-light text-border">|</span>
-                                <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{standard.criteria?.length || 0} Criteria Points</span>
-                              </div>
                             </div>
                           </div>
-                          <div className="hidden sm:block">
-                            <div className="px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                              Active
+
+                          <button
+                            type="button"
+                            onClick={() => openDetails(standard)}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] text-muted-foreground transition-colors hover:text-primary"
+                            aria-label={`Quick preview ${standard.title}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                          {standard.description ||
+                            "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            {formatFilterLabel(standard.category)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            <Globe className="h-3 w-3" />
+                            {formatFilterLabel(standard.region, "Global")}
+                          </span>
+                          <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            {standard.criteriaCount} criteria
+                          </span>
+                        </div>
+
+                        <div className="mt-5 rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-4">
+                          <CoverageBar
+                            standardId={standard.id}
+                            result={
+                              insight
+                                ? {
+                                    standardId: standard.id,
+                                    totalCriteria: insight.totalCriteria,
+                                    coveredCriteria: insight.coveredCriteria,
+                                    coveragePct: insight.coveragePct,
+                                  }
+                                : null
+                            }
+                          />
+
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-3 py-2.5">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                Mapped
+                              </p>
+                              <p className="mt-1 text-lg font-black text-foreground">
+                                {insight?.mapped ?? 0}
+                                <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                                  / {insight?.totalMapped ?? standard.criteriaCount}
+                                </span>
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-3 py-2.5">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                Setup
+                              </p>
+                              <p className="mt-1 text-lg font-black text-foreground">
+                                {standard.estimatedSetup || "N/A"}
+                              </p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Middle Segment */}
-                        <p className="text-lg font-medium leading-relaxed line-clamp-2 pr-6 text-muted-foreground">
-                          {standard.description || "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
-                        </p>
-
-                        {/* Coverage Bar */}
-                        <CoverageBar standardId={standard.id} className="pt-2" />
-
-                        {/* Bottom Segment */}
-                        <div className="grid grid-cols-2 gap-5 pt-8 mt-auto">
+                        <div className="mt-5 grid grid-cols-2 gap-3">
                           <Button
-                            variant="outline"
-                            onClick={() => openDetails(standard)}
-                            className="h-14 border-2 font-black rounded-2xl flex items-center justify-center gap-2 transition-all glass-button text-foreground"
+                            onClick={() => router.push(`/platform/standards/${standard.id}`)}
+                            className="h-12 rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
                           >
-                            <Eye className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
-                            <span>View Details</span>
+                            Open Standard
                           </Button>
                           <Button
+                            variant="outline"
                             onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                            className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl shadow-lg shadow-primary/10 flex items-center justify-center gap-2 transition-all active:scale-95"
+                            className="h-12 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
                           >
-                            <Activity className="w-5 h-5" />
-                            <span>Start Analysis</span>
+                            Start Analysis
                           </Button>
                         </div>
                       </div>
                     </GlassCard>
-                  ))
-                ) : (
-                  <GlassPanel className="col-span-full py-32 text-center border-2 border-dashed glass-border" hoverEffect>
-                    <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-sm mx-auto mb-6 glass-input">
-                      <Search className="w-10 h-10 text-muted-foreground" />
-                    </div>
-                    <h4 className="text-2xl font-black text-foreground">No frameworks found</h4>
-                    <p className="mt-2 max-w-sm mx-auto font-medium text-muted-foreground">Try adjusting your search query or switching tabs to find what you're looking for.</p>
-                  </GlassPanel>
-                )}
-              </div>
-            </div>
+                  )
+                })
+              ) : (
+                <GlassPanel className="col-span-full rounded-[32px] border-2 border-dashed glass-border py-20 text-center" hoverEffect>
+                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl glass-input shadow-sm">
+                    <Search className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <h4 className="text-2xl font-black text-foreground">No frameworks match the current filters</h4>
+                  <p className="mx-auto mt-2 max-w-md font-medium text-muted-foreground">
+                    Clear the filters, widen your search, or import a new framework to expand the standards library.
+                  </p>
+                </GlassPanel>
+              )}
+            </section>
           </div>
         </div>
 
-        {/* PDF Import Modal */}
         <AnimatePresence>
           {isPDFModalOpen && (
             <div
-              className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md transition-colors"
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
-              onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false) }}
+              className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4 backdrop-blur-md transition-colors"
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setIsDragOver(false)
+              }}
               onDrop={handleDrop}
             >
               <GlassCard
                 variant={3}
                 className={cn(
-                  "w-full max-w-lg p-10 glass-border rounded-[40px] relative overflow-hidden shadow-2xl transition-all duration-300",
-                  isDragOver && "scale-[1.02] border-primary/50 shadow-primary/20 ring-4 ring-primary/20"
+                  "relative w-full max-w-lg overflow-hidden rounded-[40px] p-10 shadow-2xl transition-all duration-300 glass-border",
+                  isDragOver && "scale-[1.02] border-primary/50 ring-4 ring-primary/20 shadow-primary/20",
                 )}
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+                <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 
-                <div className="flex flex-col items-center text-center space-y-6">
-                  <div className="w-20 h-20 bg-primary/10 rounded-[24px] flex items-center justify-center">
-                    <FileUp className="w-10 h-10 text-primary" />
+                <div className="flex flex-col items-center space-y-6 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-primary/10">
+                    <FileUp className="h-10 w-10 text-primary" />
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-3xl font-black text-foreground">Import Framework</h3>
-                    <p className="font-medium text-muted-foreground">Upload your framework PDF for AI analysis.</p>
+                    <p className="font-medium text-muted-foreground">
+                      Upload a framework PDF and let Ayn extract the standard structure.
+                    </p>
                   </div>
 
                   <label
-                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
-                    onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false) }}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setIsDragOver(true)
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault()
+                      setIsDragOver(false)
+                    }}
                     onDrop={handleDrop}
                     className={cn(
-                      "relative w-full p-8 border-2 border-dashed rounded-[32px] transition-all duration-300 group cursor-pointer flex flex-col items-center",
-                      isDragOver ? "bg-primary/5 border-primary/50" : "glass-border glass-button"
+                      "group relative flex w-full cursor-pointer flex-col items-center rounded-[32px] border-2 border-dashed p-8 transition-all duration-300",
+                      isDragOver ? "border-primary/50 bg-primary/5" : "glass-border glass-button",
                     )}
                   >
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     />
                     {selectedFile ? (
                       <>
-                        <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                        <p className="text-sm font-bold text-foreground truncate max-w-xs mx-auto">{selectedFile.name}</p>
+                        <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
+                        <p className="mx-auto max-w-xs truncate text-sm font-bold text-foreground">
+                          {selectedFile.name}
+                        </p>
                         <button
                           type="button"
-                          onClick={(e) => { e.preventDefault(); setSelectedFile(null) }}
-                          className="text-[10px] text-destructive font-bold mt-2 uppercase underline underline-offset-4 relative z-10"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            setSelectedFile(null)
+                          }}
+                          className="relative z-10 mt-2 text-[10px] font-bold uppercase text-destructive underline underline-offset-4"
                         >
-                          Change File
+                          Change file
                         </button>
                       </>
                     ) : (
                       <>
-                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-4 group-hover:text-primary transition-colors" />
-                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary">Select PDF File</p>
-                        <p className="text-xs text-muted-foreground mt-1">or drag and drop here</p>
+                        <Upload className="mx-auto mb-4 h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
+                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary">
+                          Select PDF File
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">or drag and drop here</p>
                       </>
                     )}
                   </label>
 
-                  <div className="flex gap-4 w-full pt-4">
-                    <Button variant="outline" onClick={() => { setIsPDFModalOpen(false); setSelectedFile(null); }}
-                      className="flex-1 h-14 border-2 font-black rounded-2xl glass-button text-foreground">
+                  <div className="flex w-full gap-4 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsPDFModalOpen(false)
+                        setSelectedFile(null)
+                      }}
+                      className="glass-button h-14 flex-1 rounded-2xl border-2 text-foreground"
+                    >
                       Cancel
                     </Button>
                     <Button
                       onClick={handlePDFUpload}
                       disabled={isImporting || !selectedFile}
-                      className="flex-1 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl shadow-lg shadow-primary/20"
+                      className="h-14 flex-1 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                     >
                       {isImporting ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
                       ) : (
-                        <><FileCheck className="w-4 h-4 mr-2" />Upload & Extract</>
+                        <>
+                          <FileCheck className="mr-2 h-4 w-4" />
+                          Upload & Extract
+                        </>
                       )}
                     </Button>
                   </div>
@@ -407,104 +837,187 @@ export default function StandardsPage() {
           )}
         </AnimatePresence>
 
-        {/* Standard Details Modal */}
         <AnimatePresence>
           {isDetailsOpen && selectedStandard && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xl">
-              <div className="glass-card relative w-full max-w-[1000px] h-[92vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden rounded-[28px] sm:rounded-[40px] shadow-2xl">
-                {/* ── HEADER ── fixed, never scrolls */}
-                <div className="shrink-0 px-4 sm:px-10 pt-4 sm:pt-10 pb-4 sm:pb-10 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 backdrop-blur-xl flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-                    <div className={cn(
-                      "w-12 h-12 sm:w-16 sm:h-16 rounded-[16px] sm:rounded-[22px] flex items-center justify-center text-white shadow-2xl transform -rotate-3 shrink-0",
-                      selectedStandard.color || "bg-[#1E3A8A]"
-                    )}>
-                      <GraduationCap className="w-7 h-7 sm:w-10 sm:h-10" />
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xl">
+              <div className="glass-card relative flex h-[92vh] w-full max-w-[1080px] flex-col overflow-hidden rounded-[28px] p-0 shadow-2xl sm:h-[86vh] sm:rounded-[40px]">
+                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 px-4 pb-5 pt-4 backdrop-blur-xl sm:px-10 sm:pb-8 sm:pt-8">
+                  <div className="min-w-0 space-y-4">
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      <div
+                        className={cn(
+                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-white shadow-2xl sm:h-16 sm:w-16 sm:rounded-[22px]",
+                          selectedStandard.color || "bg-[#1E3A8A]",
+                        )}
+                      >
+                        <GraduationCap className="h-7 w-7 sm:h-10 sm:w-10" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-xl font-black text-foreground sm:text-3xl">
+                          {selectedStandard.title}
+                        </h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                            {selectedStandard.code || "STD-LIB"}
+                          </span>
+                          <div className="h-1 w-1 rounded-full bg-border" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            {formatFilterLabel(selectedStandard.category)}
+                          </span>
+                          <div className="h-1 w-1 rounded-full bg-border" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            {formatFilterLabel(selectedStandard.region, "Global")}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-xl sm:text-3xl font-black text-foreground truncate">{selectedStandard.title}</h3>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{selectedStandard.code}</span>
-                        <div className="w-1 h-1 rounded-full bg-border" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{selectedStandard.category}</span>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          Criteria
+                        </p>
+                        <p className="mt-1 text-lg font-black text-foreground">{selectedStandard.criteriaCount}</p>
+                      </div>
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          Coverage
+                        </p>
+                        <p className="mt-1 text-lg font-black text-primary">
+                          {Math.round(selectedInsight?.coveragePct ?? 0)}%
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          Mapped
+                        </p>
+                        <p className="mt-1 text-lg font-black text-foreground">
+                          {selectedInsight?.mapped ?? 0}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          Status
+                        </p>
+                        <p className="mt-1 text-lg font-black text-foreground">
+                          {getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped").label}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setIsDetailsOpen(false)} className="p-3 min-h-[44px] min-w-[44px] glass-button rounded-2xl transition-all">
-                    <X className="w-6 h-6 text-muted-foreground" />
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground"
+                      onClick={() => router.push(`/platform/standards/${selectedStandard.id}`)}
+                    >
+                      Open Full
+                    </Button>
+                    <button
+                      onClick={() => setIsDetailsOpen(false)}
+                      className="glass-button min-h-[44px] min-w-[44px] rounded-2xl p-3 transition-all"
+                    >
+                      <X className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* ── CRITERIA LIST ── scrollable middle */}
-                <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-10 py-5 sm:py-8 bg-card/20 custom-scrollbar">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-muted-foreground mb-6">
-                    <Activity className="w-4 h-4 text-primary" />
+                <div className="flex-1 overflow-y-auto bg-card/20 px-4 py-5 custom-scrollbar sm:px-10 sm:py-8">
+                  <div className="mb-6 rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-4">
+                    <CoverageBar
+                      standardId={selectedStandard.id}
+                      result={
+                        selectedInsight
+                          ? {
+                              standardId: selectedStandard.id,
+                              totalCriteria: selectedInsight.totalCriteria,
+                              coveredCriteria: selectedInsight.coveredCriteria,
+                              coveragePct: selectedInsight.coveragePct,
+                            }
+                          : null
+                      }
+                    />
+                  </div>
+
+                  <h4 className="mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                    <Activity className="h-4 w-4 text-primary" />
                     Criteria Evidence Framework
                   </h4>
 
                   <div className="space-y-4">
                     {mappingStatus === "analyzing" ? (
-                      <div className="p-10 text-center glass-panel rounded-[24px] border border-dashed glass-border flex flex-col items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-                        <p className="text-muted-foreground font-bold">Analysis in progress...</p>
+                      <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
+                        <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
+                        <p className="font-bold text-muted-foreground">Analysis in progress...</p>
                       </div>
                     ) : mappingsData?.mappings?.length > 0 ? (
-                      mappingsData.mappings.map((m: any) => (
-                        <div key={m.criterion_id} className="flex flex-col gap-2 p-5 rounded-2xl glass-panel glass-border transition-colors">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              {m.status === "met" && <CheckCircle className="text-green-500 shrink-0" size={18} />}
-                              {m.status === "partial" && <AlertCircle className="text-yellow-500 shrink-0" size={18} />}
-                              {m.status === "gap" && <XCircle className="text-red-500 shrink-0" size={18} />}
-                              {m.status === "not_analyzed" && <Circle className="text-muted-foreground shrink-0" size={18} />}
-                              {m.criterion_code && m.criterion_code !== "N/A" && (
-                                <span className="text-[11px] font-black uppercase text-primary border border-primary/20 bg-primary/10 px-2 py-0.5 rounded font-mono">
-                                  {m.criterion_code}
-                                </span>
+                      mappingsData.mappings.map((mapping: any) => (
+                        <div
+                          key={mapping.criterion_id}
+                          className="glass-panel glass-border flex flex-col gap-2 rounded-2xl p-5 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex min-w-0 items-start gap-3">
+                              {mapping.status === "met" && <CheckCircle className="shrink-0 text-green-500" size={18} />}
+                              {mapping.status === "partial" && <AlertCircle className="shrink-0 text-yellow-500" size={18} />}
+                              {mapping.status === "gap" && <XCircle className="shrink-0 text-red-500" size={18} />}
+                              {mapping.status === "not_analyzed" && <Circle className="shrink-0 text-muted-foreground" size={18} />}
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {mapping.criterion_code && mapping.criterion_code !== "N/A" && (
+                                    <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-black uppercase text-primary">
+                                      {mapping.criterion_code}
+                                    </span>
+                                  )}
+                                  <span className="text-base font-bold text-foreground">
+                                    {mapping.criterion_title}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-sm font-medium text-muted-foreground">
+                                  {mapping.criterion_description ||
+                                    (mapping.ai_reasoning
+                                      ? mapping.ai_reasoning
+                                      : "Awaiting analysis against evidence...")}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={cn(
+                                "rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-wider",
+                                mapping.status === "not_analyzed"
+                                  ? "glass-button text-muted-foreground"
+                                  : mapping.status === "met"
+                                    ? "bg-green-500/10 text-green-500"
+                                    : mapping.status === "partial"
+                                      ? "bg-yellow-500/10 text-yellow-500"
+                                      : "bg-red-500/10 text-red-500",
                               )}
-                              <span className="font-bold text-base text-foreground">
-                                {m.criterion_title}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className={cn(
-                                "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider",
-                                m.status === 'not_analyzed' ? 'glass-button text-muted-foreground' :
-                                  m.status === 'met' ? 'bg-green-500/10 text-green-500' :
-                                    m.status === 'partial' ? 'bg-yellow-500/10 text-yellow-500' :
-                                      'bg-red-500/10 text-red-500'
-                              )}>
-                                {m.status === 'not_analyzed' ? 'N/A' : m.status}
-                              </span>
-                            </div>
+                            >
+                              {mapping.status === "not_analyzed" ? "N/A" : mapping.status}
+                            </span>
                           </div>
-                          <p className="text-sm text-muted-foreground font-medium pl-[38px] truncate">
-                            {m.criterion_description || (m.ai_reasoning ? m.ai_reasoning : "Awaiting analysis against evidence...")}
-                          </p>
                         </div>
                       ))
                     ) : (
-                      <div className="p-10 text-center glass-panel rounded-[24px] border border-dashed glass-border flex flex-col items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-primary animate-spin mb-3 opacity-50" />
-                        <p className="text-muted-foreground font-bold">Loading criteria...</p>
+                      <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
+                        <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary opacity-50" />
+                        <p className="font-bold text-muted-foreground">Loading criteria...</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* ── BOTTOM CONTROLS ── fixed, never scrolls */}
-                <div className="shrink-0 border-t border-[var(--border-subtle)] px-4 sm:px-10 py-5 sm:py-8 grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-8 z-10 bg-[var(--surface-modal)]/60 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-                  <div className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] bg-primary/5 border border-primary/20 space-y-6 shadow-xl shadow-primary/5">
-                    <h5 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-primary opacity-80">
-                      <Sparkles className="w-4 h-4" />
+                <div className="z-10 grid shrink-0 grid-cols-1 gap-5 border-t border-[var(--border-subtle)] bg-[var(--surface-modal)]/60 px-4 py-5 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] sm:px-10 sm:py-8 xl:grid-cols-2 xl:gap-8">
+                  <div className="space-y-6 rounded-[24px] border border-primary/20 bg-primary/5 p-5 shadow-xl shadow-primary/5 sm:rounded-[32px] sm:p-8">
+                    <h5 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                      <Sparkles className="h-4 w-4" />
                       Ayn Intelligence
                     </h5>
-                    <p className="text-lg font-bold leading-relaxed text-foreground">
-                      Analyze against:
-                    </p>
+                    <p className="text-lg font-bold leading-relaxed text-foreground">Analyze against:</p>
 
                     <div className="space-y-4">
-                      <label className="flex items-center gap-3 cursor-pointer">
+                      <label className="flex cursor-pointer items-center gap-3">
                         <input
                           type="radio"
                           name="evidence"
@@ -516,7 +1029,7 @@ export default function StandardsPage() {
                         <span className="text-sm font-bold">All Evidence ({allEvidence?.length || 0} files)</span>
                       </label>
 
-                      <label className="flex items-center gap-3 cursor-pointer">
+                      <label className="flex cursor-pointer items-center gap-3">
                         <input
                           type="radio"
                           name="evidence"
@@ -529,30 +1042,40 @@ export default function StandardsPage() {
                       </label>
 
                       {evidenceSelection === "specific" && (
-                        <div className="mt-3 pl-6 space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                          {allEvidence?.map((ev: Evidence) => (
-                            <label key={ev.id} className="flex items-center gap-2 cursor-pointer group">
-                              <div className={cn(
-                                "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                                selectedEvidenceIds.includes(ev.id) ? "bg-white border-white text-primary" : "border-white/30 group-hover:border-white/60"
-                              )}>
-                                {selectedEvidenceIds.includes(ev.id) && <Check className="w-3 h-3" />}
+                        <div className="mt-3 max-h-32 space-y-2 overflow-y-auto pl-6 custom-scrollbar">
+                          {allEvidence?.map((evidence: Evidence) => (
+                            <label key={evidence.id} className="group flex cursor-pointer items-center gap-2">
+                              <div
+                                className={cn(
+                                  "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                                  selectedEvidenceIds.includes(evidence.id)
+                                    ? "border-white bg-white text-primary"
+                                    : "border-white/30 group-hover:border-white/60",
+                                )}
+                              >
+                                {selectedEvidenceIds.includes(evidence.id) && <Check className="h-3 w-3" />}
                               </div>
                               <input
                                 type="checkbox"
                                 className="hidden"
-                                checked={selectedEvidenceIds.includes(ev.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) setSelectedEvidenceIds(p => [...p, ev.id])
-                                  else setSelectedEvidenceIds(p => p.filter(id => id !== ev.id))
+                                checked={selectedEvidenceIds.includes(evidence.id)}
+                                onChange={(event) => {
+                                  if (event.target.checked) {
+                                    setSelectedEvidenceIds((prev) => [...prev, evidence.id])
+                                  } else {
+                                    setSelectedEvidenceIds((prev) => prev.filter((id) => id !== evidence.id))
+                                  }
                                 }}
                               />
-                              <span className="text-xs truncate max-w-[180px] font-medium" title={ev.title || ev.originalFilename || undefined}>
-                                {ev.title || ev.originalFilename}
+                              <span
+                                className="max-w-[180px] truncate text-xs font-medium"
+                                title={evidence.title || evidence.originalFilename || undefined}
+                              >
+                                {evidence.title || evidence.originalFilename}
                               </span>
-                              {ev.documentType && (
-                                <span className="ml-1 px-1.5 py-0.5 rounded glass-pill text-[9px] font-bold">
-                                  {ev.documentType}
+                              {evidence.documentType && (
+                                <span className="glass-pill ml-1 rounded px-1.5 py-0.5 text-[9px] font-bold">
+                                  {evidence.documentType}
                                 </span>
                               )}
                             </label>
@@ -560,95 +1083,51 @@ export default function StandardsPage() {
                         </div>
                       )}
                     </div>
-
-                    {mappingStatus === "analyzing" ? (
-                      <Button disabled className="w-full h-14 rounded-2xl glass-button text-muted-foreground font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Analyzing...
-                      </Button>
-                    ) : (
-                      <div className="space-y-3">
-                        <Button
-                          onClick={() => handleAnalyzeNow(false)}
-                          className="w-full h-14 rounded-2xl glass-button text-primary font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-                        >
-                          Analyze Now
-                        </Button>
-
-                        {mappingStatus === "complete" && (
-                          <>
-                            <Button
-                              onClick={() => handleAnalyzeNow(true)}
-                              variant="outline"
-                              className="w-full h-12 min-h-[44px] rounded-2xl glass-button text-foreground font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
-                            >
-                              <RefreshCw className="w-3 h-3" /> Re-Analyze Selection
-                            </Button>
-                            <Button
-                              onClick={() => { setIsDetailsOpen(false); router.push(`/platform/gap-analysis?standardId=${selectedStandard.id}`); }}
-                              className="w-full h-14 rounded-2xl glass-button text-foreground font-black text-sm uppercase tracking-wider transition-all active:scale-95"
-                            >
-                              View Full Report
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
                   </div>
 
-                  <GlassPanel className="p-5 sm:p-8 rounded-[24px] sm:rounded-[32px] space-y-4 shadow-sm glass-border" hoverEffect>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none text-muted-foreground">Criteria Points</p>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-black uppercase text-foreground">Total Criteria</span>
-                        <span className="text-xs font-black text-primary">{mappingsData?.total_criteria || selectedStandard.criteria?.length || 0}</span>
-                      </div>
+                  <div className="space-y-4 rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-5 sm:rounded-[32px] sm:p-8">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Analysis Control
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Trigger a fresh pass across linked evidence or re-run mappings after new uploads.
+                    </p>
 
-                      {mappingStatus === "complete" && mappingsData ? (
-                        <div className="space-y-2 mt-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-foreground">MET</span>
-                            <span className="text-xs font-black text-green-500">{mappingsData.met}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-foreground">PARTIAL</span>
-                            <span className="text-xs font-black text-yellow-500">{mappingsData.partial}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-foreground">GAPS</span>
-                            <span className="text-xs font-black text-red-500">{mappingsData.gap}</span>
-                          </div>
-
-                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-[var(--surface)] mt-3">
-                            <div
-                              className="h-full bg-green-500 transition-all duration-700"
-                              style={{ width: `${(mappingsData.met / mappingsData.total_criteria) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="w-full h-1.5 rounded-full overflow-hidden bg-[var(--surface)] mt-3">
-                            <div
-                              className="h-full bg-primary transition-all duration-700"
-                              style={{ width: selectedStandard.criteria && selectedStandard.criteria.length > 0 ? '100%' : '0%' }}
-                            />
-                          </div>
-                          <p className="text-[10px] text-muted-foreground font-medium">
-                            {selectedStandard.criteria && selectedStandard.criteria.length > 0
-                              ? `${selectedStandard.criteria.length} evidence criteria mapped`
-                              : "No criteria mapped yet — run Gap Analysis to populate"}
-                          </p>
-                        </>
-                      )}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Button
+                        onClick={() => handleAnalyzeNow(false)}
+                        disabled={mappingStatus === "analyzing"}
+                        className="h-12 rounded-2xl bg-primary text-primary-foreground"
+                      >
+                        {mappingStatus === "analyzing" ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Running
+                          </>
+                        ) : (
+                          <>
+                            <Activity className="mr-2 h-4 w-4" />
+                            Analyze Now
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleAnalyzeNow(true)}
+                        disabled={mappingStatus === "analyzing"}
+                        className="glass-button h-12 rounded-2xl border-[var(--glass-border)] text-foreground"
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Re-run Analysis
+                      </Button>
                     </div>
-                  </GlassPanel>
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </AnimatePresence>
-      </div >
-    </ProtectedRoute >
+      </div>
+    </ProtectedRoute>
   )
 }

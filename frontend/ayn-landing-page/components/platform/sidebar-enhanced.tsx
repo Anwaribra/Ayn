@@ -17,7 +17,6 @@ import {
   LogOut,
   PanelLeft,
   ArchiveIcon,
-  Sparkles,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -132,11 +131,8 @@ export const SidebarItem = memo(function SidebarItem({
         <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
           {item.label}
           {item.id === "horus-ai" && (
-            <span className="flex items-center gap-2">
-              <span className="hidden rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-primary xl:inline-flex">
-                Live
-              </span>
-              <span className="relative mr-1 flex h-2 w-2">
+            <span className="flex items-center">
+              <span className="relative mr-2 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
               </span>
@@ -216,10 +212,6 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             <Link href="/" className="inline-flex min-w-0 items-center gap-3" title="Go to homepage">
               <AynLogo size="sm" withGlow={false} heroStyle />
             </Link>
-            <div className="hidden items-center gap-2 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground xl:inline-flex">
-              <Sparkles className="h-3 w-3 text-primary" />
-              Command
-            </div>
           </div>
         )}
         <button
@@ -309,8 +301,8 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 <p className="glass-text-primary truncate text-sm font-semibold">
                   {user?.name ?? "User"}
                 </p>
-                <p className="glass-text-secondary truncate text-[10px] font-bold uppercase tracking-[0.16em]">
-                  Workspace Access
+                <p className="glass-text-secondary truncate text-[11px]">
+                  {user?.email ?? "No email"}
                 </p>
               </div>
             )}

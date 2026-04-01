@@ -1,34 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   Activity,
-  CheckCircle2,
-  AlertCircle,
-  Info,
-  Zap,
   Cpu,
-  Database,
   Shield,
-  Clock,
-  XCircle,
   FileText,
   BarChart,
-  MessageSquare
+  MessageSquare,
+  Sparkles,
+  ChevronRight
 } from "lucide-react"
 import useSWR from "swr"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
-
-interface LogEntry {
-  id: string
-  timestamp: Date
-  type: string
-  title: string
-  description?: string
-  entityType?: string
-}
 
 const logIcons: Record<string, any> = {
   evidence_uploaded: FileText,
@@ -62,12 +47,6 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
   )
 
   const logs = activities?.recentActivities?.slice(0, maxEntries) || []
-
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
-
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
     const diff = Date.now() - date.getTime()
@@ -80,31 +59,37 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
   }
 
   return (
-    <div className={cn("glass-card rounded-3xl p-6", className)}>
+    <div className={cn("glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-6", className)}>
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
       {showHeader && (
-        <div className="flex items-center justify-between mb-6">
+        <div className="relative z-10 flex items-center justify-between mb-5 sm:mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl status-info border flex items-center justify-center">
-              <Activity className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-2xl border border-white/10 bg-white/[0.05] flex items-center justify-center shadow-[0_18px_40px_-28px_rgba(59,130,246,0.5)]">
+              <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-foreground">Neural Stream</h3>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Live Platform Activity</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">Live Platform Activity</p>
             </div>
           </div>
-          <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title="Live" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title="Live" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-300">Live</span>
+          </div>
         </div>
       )}
 
-      <div className="space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
+      <div className="relative z-10 space-y-3 max-h-[360px] overflow-y-auto custom-scrollbar pr-1 sm:pr-2">
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-14 bg-muted rounded-2xl animate-pulse" />
+              <div key={i} className="h-16 bg-muted/60 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : logs.length === 0 ? (
-          <p className="text-center py-10 text-muted-foreground italic text-sm">No activity recorded.</p>
+          <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-4 py-10 text-center">
+            <p className="text-muted-foreground italic text-sm">No activity recorded.</p>
+          </div>
         ) : (
           logs.map((log: any) => {
             const Icon = logIcons[log.type] || logIcons.default
@@ -113,37 +98,38 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
             return (
               <div
                 key={log.id}
-                className="group flex items-start gap-4 p-3.5 rounded-2xl transition-all hover:bg-muted/50 border border-transparent hover:border-border"
+                className="group flex items-start gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-[24px] transition-all border border-white/6 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/12"
               >
                 <div className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border",
+                  "w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-[0_18px_36px_-28px_rgba(0,0,0,0.45)]",
                   style
                 )}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs font-bold text-foreground truncate">
+                  <div className="flex items-center justify-between gap-3 mb-1.5">
+                    <span className="text-xs font-bold text-foreground truncate pr-2">
                       {log.title}
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                    <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap rounded-full border border-white/8 px-2 py-1 bg-white/[0.03]">
                       {getRelativeTime(log.createdAt)}
                     </span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground line-clamp-1">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
                     {log.description || "Activity detected in platform core."}
                   </p>
                 </div>
+                <ChevronRight className="w-4 h-4 mt-3 text-muted-foreground/60 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
               </div>
             )
           })
         )}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
+      <div className="relative z-10 mt-5 sm:mt-6 pt-4 border-t border-white/8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Ayn Neural Core</span>
+          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.18em]">Ayn Neural Core</span>
         </div>
         <span className="text-[9px] text-muted-foreground font-mono">256-BIT SECURE</span>
       </div>

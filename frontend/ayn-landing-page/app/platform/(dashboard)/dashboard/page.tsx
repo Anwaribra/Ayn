@@ -158,12 +158,12 @@ function DashboardContent() {
   }
 
   return (
-    <div className="animate-fade-in-up space-y-8 pb-20 relative">
-      <div id="dashboard-report-content" className="space-y-8">
+    <div className="animate-fade-in-up space-y-6 sm:space-y-8 pb-16 sm:pb-20 relative">
+      <div id="dashboard-report-content" className="space-y-6 sm:space-y-8">
       {/* Header Section with Gauges */}
-      <section className="flex flex-col xl:flex-row gap-6">
+      <section className="flex flex-col xl:flex-row gap-4 sm:gap-6">
         {/* Main Welcome Card */}
-        <div className="flex-1 relative overflow-hidden rounded-[32px] glass-card p-8 md:p-12 flex flex-col justify-between min-h-[340px]">
+        <div className="flex-1 relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-card p-5 sm:p-8 md:p-12 flex flex-col justify-between min-h-[320px] sm:min-h-[340px]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.12),transparent_28%)] pointer-events-none" />
           <div className="absolute -right-20 -top-14 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute left-10 bottom-6 h-24 w-24 rounded-full border border-white/10 bg-white/5 blur-2xl pointer-events-none" />
@@ -174,12 +174,12 @@ function DashboardContent() {
                  exportToPDF("dashboard-report-content", "Ayn-Horus-Audit-Dashboard.pdf")
                }}
                data-html2canvas-ignore="true"
-               className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl transition-all font-bold text-xs uppercase tracking-widest border border-primary/20 shadow-sm"
+               className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl transition-all font-bold text-[10px] sm:text-xs uppercase tracking-widest border border-primary/20 shadow-sm"
              >
-               <Download className="w-4 h-4" /> Export Report (PDF)
+               <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Export Report (PDF)</span><span className="sm:hidden">Export</span>
              </button>
           </div>
-          <div className="relative z-10 space-y-8">
+          <div className="relative z-10 space-y-6 sm:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full status-success border w-fit">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
@@ -189,11 +189,11 @@ function DashboardContent() {
             </div>
 
             <div className="max-w-2xl">
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
                 {greeting}, <br />
                 <span className="text-muted-foreground font-light">{user?.name?.split(" ")[0] ?? "there"}.</span>
               </h1>
-              <p className="text-muted-foreground font-medium max-w-xl text-base md:text-lg leading-relaxed">
+              <p className="text-muted-foreground font-medium max-w-xl text-sm sm:text-base md:text-lg leading-relaxed">
                 Horus is active and your workspace is currently showing{" "}
                 <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span>{" "}
                 compliance alignment across{" "}
@@ -203,32 +203,32 @@ function DashboardContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Readiness Tone</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{scoreTone}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Open Alerts</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{alertCount}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Analyses Run</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{analysesCount}</p>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 mt-8 flex flex-wrap items-center gap-3">
+          <div className="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/platform/horus-ai"
-              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_40px_-22px_rgba(37,99,235,0.65)] transition-transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 sm:px-5 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_40px_-22px_rgba(37,99,235,0.65)] transition-transform hover:-translate-y-0.5"
             >
               <Sparkles className="w-4 h-4" />
               Open Horus
             </Link>
             <Link
               href="/platform/gap-analysis"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-xs font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-white/[0.07]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 sm:px-5 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-white/[0.07]"
             >
               Run Gap Analysis
               <ArrowUpRight className="w-4 h-4" />
@@ -238,14 +238,14 @@ function DashboardContent() {
 
         {/* Dashdot Gauges */}
         <div className="flex flex-col sm:flex-row xl:flex-col gap-4 shrink-0">
-          <div className="glass-card rounded-3xl p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
+          <div className="glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-6 flex items-center gap-5 sm:gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <CircularGauge value={Math.round(alignmentScore)} label="System Health" icon={<Cpu className="w-5 h-5" />} color="#3B82F6" />
             <div className="flex flex-col justify-center">
               <span className="text-2xl font-bold tracking-tight text-foreground">Good</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Optimal State</span>
             </div>
           </div>
-          <div className="glass-card rounded-3xl p-6 flex items-center gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
+          <div className="glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-6 flex items-center gap-5 sm:gap-6 w-full sm:w-auto min-w-0 sm:min-w-[280px]">
             <CircularGauge
               value={safeMetrics?.totalGapAnalyses ?? 0}
               max={20}
@@ -275,7 +275,7 @@ function DashboardContent() {
           <Link
             key={action.title}
             href={action.href}
-            className="group glass-card rounded-[28px] p-5 transition-all hover:-translate-y-0.5"
+            className="group glass-card rounded-[26px] sm:rounded-[28px] p-4 sm:p-5 transition-all hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-3">
@@ -295,7 +295,7 @@ function DashboardContent() {
 
       {/* ─── Standards Progress ─── */}
       {publicStandards.length > 0 && (
-        <section className="glass-card p-8 rounded-3xl">
+        <section className="glass-card p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center">
@@ -343,10 +343,10 @@ function DashboardContent() {
         </section>
       )}
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Recent Evidence List */}
-          <div className="glass-card p-8 rounded-3xl">
+          <div className="glass-card p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-lg font-bold text-foreground">Recent Evidence</h3>
@@ -387,8 +387,8 @@ function DashboardContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link href="/platform/analytics" className="group glass-card rounded-3xl p-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <Link href="/platform/analytics" className="group glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reporting</p>
@@ -406,7 +406,7 @@ function DashboardContent() {
               </div>
             </Link>
 
-            <Link href="/platform/notifications" className="group glass-card rounded-3xl p-7">
+            <Link href="/platform/notifications" className="group glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Attention Queue</p>

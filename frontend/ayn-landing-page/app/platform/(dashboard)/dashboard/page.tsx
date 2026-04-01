@@ -268,44 +268,44 @@ function DashboardContent() {
 
       {/* ─── Standards Progress ─── */}
       {publicStandards.length > 0 && (
-        <section className="glass-card relative overflow-hidden p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
+        <section className="glass-card relative overflow-hidden p-4 sm:p-6 rounded-[24px] sm:rounded-[28px]">
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.10),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
-          <div className="relative z-10 flex items-center justify-between mb-6">
+          <div className="relative z-10 flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
-                <ShieldCheck className="w-4 h-4" />
+              <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
+                <ShieldCheck className="w-3.5 h-3.5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground">Standards Progress</h3>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.18em]">Criteria coverage by evidence</p>
+                <h3 className="text-base sm:text-lg font-bold text-foreground">Standards Progress</h3>
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.16em]">Criteria coverage by evidence</p>
               </div>
             </div>
             <Link
               href="/platform/standards"
-              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-[0.16em] transition-colors hover:bg-white/[0.07]"
+              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-bold text-primary uppercase tracking-[0.14em] transition-colors hover:bg-white/[0.07]"
             >
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="relative z-10 space-y-3">
-            {publicStandards.slice(0, 6).map((standard: Standard) => (
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-3">
+            {publicStandards.slice(0, 4).map((standard: Standard) => (
               <div
                 key={standard.id}
-                className="group rounded-[24px] border border-white/6 bg-white/[0.03] px-4 py-4 sm:px-5 transition-all hover:bg-white/[0.05] hover:border-white/12"
+                className="group rounded-[18px] sm:rounded-[20px] border border-white/6 bg-white/[0.03] px-3.5 py-3 sm:px-4 transition-all hover:bg-white/[0.05] hover:border-white/12"
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="min-w-0">
                     <span className="block text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                       {standard.title}
                     </span>
-                    <span className="mt-1 inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="mt-1 inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
                       {standard.code ?? standard.category ?? "Standard"}
                     </span>
                   </div>
                   <Link
                     href={`/platform/standards/${standard.id}`}
-                    className="shrink-0 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary opacity-0 transition-all group-hover:opacity-100"
+                    className="shrink-0 rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-primary opacity-0 transition-all group-hover:opacity-100"
                   >
                     Open
                   </Link>
@@ -315,13 +315,13 @@ function DashboardContent() {
             ))}
           </div>
 
-          {publicStandards.length > 6 && (
-            <div className="relative z-10 mt-6 pt-4 border-t border-[var(--border-subtle)]">
+          {publicStandards.length > 4 && (
+            <div className="relative z-10 mt-4 pt-3 border-t border-[var(--border-subtle)]">
               <Link
                 href="/platform/standards"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.16em]"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.14em]"
               >
-                +{publicStandards.length - 6} more standards <ArrowUpRight className="w-3 h-3" />
+                +{publicStandards.length - 4} more standards <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           )}

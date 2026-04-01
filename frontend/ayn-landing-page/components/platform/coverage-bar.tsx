@@ -58,40 +58,26 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
                 "bg-red-500"
 
     if (compact) {
-        const tone =
-            pct >= 80 ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/10" :
-                pct >= 50 ? "text-amber-300 border-amber-500/20 bg-amber-500/10" :
-                    "text-rose-400 border-rose-500/20 bg-rose-500/10"
-
         return (
-            <div className={cn("space-y-2.5", className)}>
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <div className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em]", tone)}>
-                            <ShieldCheck className="w-3 h-3" />
-                            Coverage
-                        </div>
-                    </div>
-                    <span className={cn("shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold tabular-nums", tone)}>
-                        {Math.round(pct)}%
-                    </span>
-                </div>
-                <div className="relative h-2.5 rounded-full bg-white/[0.05] overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05),transparent)]" />
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={cn("absolute top-0 left-0 h-full rounded-full shadow-[0_0_22px_rgba(255,255,255,0.16)]", statusColor)}
-                    />
-                </div>
+            <div className={cn("space-y-2", className)}>
                 <div className="flex items-center justify-between gap-3 text-[10px]">
-                    <span className="font-medium text-muted-foreground">Mapped criteria</span>
+                    <span className="font-medium text-muted-foreground">Coverage</span>
                     <span className="font-bold tabular-nums text-foreground">
                         {coveredCriteria}
                         <span className="mx-1 text-muted-foreground">/</span>
                         <span className="text-muted-foreground">{totalCriteria}</span>
+                        <span className={cn("ml-2", pct >= 80 ? "text-emerald-400" : pct >= 50 ? "text-amber-300" : "text-rose-400")}>
+                            {Math.round(pct)}%
+                        </span>
                     </span>
+                </div>
+                <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className={cn("absolute top-0 left-0 h-full rounded-full", statusColor)}
+                    />
                 </div>
             </div>
         )

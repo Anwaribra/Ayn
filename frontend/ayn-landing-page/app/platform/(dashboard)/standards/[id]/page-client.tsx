@@ -2,27 +2,53 @@
 
 import { Header } from "@/components/platform/header"
 import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
+import { CoverageBar } from "@/components/platform/coverage-bar"
 import { api } from "@/lib/api"
 import useSWR from "swr"
-import { useParams } from "next/navigation"
-import { BookOpen, ArrowLeft, Edit, Plus, CheckCircle2 } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+import {
+  ArrowLeft,
+  Edit,
+  Plus,
+  CheckCircle2,
+  GraduationCap,
+  Globe,
+  Layers3,
+  ArrowUpRight,
+  FileCheck,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { GlassPanel } from "@/components/ui/glass-panel"
 import Link from "next/link"
 import type { Criterion } from "@/types/standards"
+import { cn } from "@/lib/utils"
+
+function formatValue(value?: string | null, fallback = "Unspecified") {
+  return value?.trim() || fallback
+}
 
 export function StandardDetailPageClient() {
   const { id } = useParams()
-  const { data: standard, isLoading: loadingStandard } = useSWR(id ? `standard-${id}` : null, () =>
-    api.getStandard(id as string),
+  const router = useRouter()
+  const standardId = id as string
+
+  const { data: standard, isLoading: loadingStandard } = useSWR(
+    standardId ? `standard-${standardId}` : null,
+    () => api.getStandard(standardId),
   )
-  const { data: criteria, isLoading: loadingCriteria } = useSWR(id ? `criteria-${id}` : null, () =>
-    api.getCriteria(id as string),
+  const { data: criteria, isLoading: loadingCriteria } = useSWR(
+    standardId ? `criteria-${standardId}` : null,
+    () => api.getCriteria(standardId),
+  )
+  const { data: coverage, isLoading: loadingCoverage } = useSWR(
+    standardId ? `coverage-${standardId}` : null,
+    () => api.getStandardCoverage(standardId),
   )
 
-  const isLoading = loadingStandard || loadingCriteria
+  const isLoading = loadingStandard || loadingCriteria || loadingCoverage
 
   if (isLoading) {
-    return <DetailPageSkeleton title="Loading standard..." statBlocks={0} showSecondaryBlock />
+    return <DetailPageSkeleton title="Loading standard..." statBlocks={4} showSecondaryBlock />
   }
 
   if (!standard) {
@@ -30,7 +56,7 @@ export function StandardDetailPageClient() {
       <div className="min-h-screen">
         <Header title="Standard Not Found" />
         <div className="p-8 text-center">
-          <p className="text-muted-foreground mb-4">The standard you're looking for doesn't exist.</p>
+          <p className="mb-4 text-muted-foreground">The standard you're looking for doesn't exist.</p>
           <Link href="/platform/standards">
             <Button>Back to Standards</Button>
           </Link>
@@ -39,80 +65,219 @@ export function StandardDetailPageClient() {
     )
   }
 
+  const criteriaCount = criteria?.length ?? standard.criteriaCount ?? 0
+  const coveredCriteria = coverage?.coveredCriteria ?? 0
+  const totalCriteria = coverage?.totalCriteria ?? criteriaCount
+  const coveragePct = Math.round(coverage?.coveragePct ?? 0)
+  const readinessTone =
+    coveragePct >= 80 ? "Strong" : coveragePct >= 40 ? "Partial" : totalCriteria === 0 ? "Unmapped" : "Critical"
+  const readinessClass =
+    coveragePct >= 80
+      ? "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]"
+      : coveragePct >= 40
+        ? "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]"
+        : totalCriteria === 0
+          ? "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground"
+          : "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]"
+
   return (
     <div className="min-h-screen">
       <Header
         title={standard.title}
-        description={standard.description || undefined}
+        description={standard.description || "Framework detail, criteria structure, and readiness coverage."}
         breadcrumbs={[
           { label: "Dashboard", href: "/platform/dashboard" },
           { label: "Standards", href: "/platform/standards" },
           { label: standard.title },
         ]}
-      />
-
-      <div className="p-4 md:p-[var(--spacing-content)] space-y-6">
-        <Link
-          href="/platform/standards"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to standards
-        </Link>
-
-        {/* Standard Info Card */}
-        <div className="glass-panel glass-border rounded-xl p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 glass-panel glass-border rounded-lg">
-                <BookOpen className="w-8 h-8 text-foreground" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">{standard.title}</h2>
-                <p className="text-muted-foreground">{standard.description || "No description"}</p>
-              </div>
-            </div>
-            <Link href={`/platform/standards/${id}/edit`}>
-              <Button variant="outline" size="sm">
-                <Edit className="w-4 h-4 mr-2" />
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/platform/standards/${standardId}/edit`}>
+              <Button variant="outline" className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground">
+                <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
             </Link>
+            <Button
+              className="rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
+              onClick={() => router.push(`/platform/gap-analysis?standardId=${standardId}`)}
+            >
+              <ArrowUpRight className="mr-2 h-4 w-4" />
+              Run Analysis
+            </Button>
           </div>
-        </div>
+        }
+      />
 
-        {/* Criteria List */}
-        <div className="glass-panel glass-border rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Criteria ({criteria?.length ?? 0})</h3>
-            <Link href={`/platform/standards/${id}/criteria/new`}>
-              <Button size="sm">
-                <Plus className="w-4 h-4 mr-2" />
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+        <Link
+          href="/platform/standards"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to standards
+        </Link>
+
+        <section className="glass-card relative overflow-hidden rounded-[32px] p-6 sm:p-8">
+          <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.14),transparent_70%)] blur-3xl" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.45),transparent)]" />
+
+          <div className="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-5">
+              <div className="flex items-start gap-4">
+                <div
+                  className={cn(
+                    "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white shadow-xl",
+                    standard.color || "bg-[#1E3A8A]",
+                  )}
+                >
+                  <GraduationCap className="h-8 w-8 text-white" />
+                </div>
+                <div className="min-w-0 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                      {standard.code || "STD-LIB"}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                        readinessClass,
+                      )}
+                    >
+                      {readinessTone}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
+                      {standard.title}
+                    </h2>
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      {standard.description || "No description available for this framework yet."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Criteria
+                  </p>
+                  <p className="mt-2 text-2xl font-black text-foreground">{criteriaCount}</p>
+                </div>
+                <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Covered
+                  </p>
+                  <p className="mt-2 text-2xl font-black text-[var(--status-success)]">{coveredCriteria}</p>
+                </div>
+                <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Coverage
+                  </p>
+                  <p className="mt-2 text-2xl font-black text-primary">{coveragePct}%</p>
+                </div>
+                <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Estimated Setup
+                  </p>
+                  <p className="mt-2 text-lg font-black text-foreground">
+                    {standard.estimatedSetup || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  Framework Metadata
+                </p>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                      <Layers3 className="h-3.5 w-3.5" />
+                      Category
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatValue(standard.category)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                      <Globe className="h-3.5 w-3.5" />
+                      Region
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatValue(standard.region, "Global")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                      <FileCheck className="h-3.5 w-3.5" />
+                      Source
+                    </span>
+                    <span className="text-sm font-semibold capitalize text-foreground">
+                      {formatValue(standard.source, "Manual")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                <CoverageBar
+                  standardId={standardId}
+                  result={{
+                    standardId,
+                    totalCriteria,
+                    coveredCriteria,
+                    coveragePct,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="glass-panel rounded-[28px] border-[var(--glass-border)] p-5 sm:p-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Criteria Architecture</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Review the underlying clauses and add missing criteria where needed.
+              </p>
+            </div>
+            <Link href={`/platform/standards/${standardId}/criteria/new`}>
+              <Button className="rounded-2xl bg-primary text-primary-foreground">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Criterion
               </Button>
             </Link>
           </div>
 
           {!criteria || criteria.length === 0 ? (
-            <div className="text-center py-8">
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <div className="rounded-[28px] border border-dashed border-[var(--glass-border)] py-16 text-center">
+              <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
               <p className="text-muted-foreground">No criteria defined yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {criteria.map((criterion: Criterion, index: number) => (
                 <div
                   key={criterion.id}
-                  className="p-4 glass-panel glass-border rounded-lg hover:border-foreground/20 transition-colors"
+                  className="rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-4 transition-colors hover:border-[var(--glass-border)]"
                 >
                   <div className="flex items-start gap-4">
-                    <span className="flex-shrink-0 w-8 h-8 glass-panel glass-border rounded-full flex items-center justify-center text-sm font-medium text-foreground">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] text-sm font-bold text-foreground">
                       {index + 1}
                     </span>
                     <div className="flex-1">
-                      <h4 className="font-medium text-foreground">{criterion.title}</h4>
+                      <h4 className="font-semibold text-foreground">{criterion.title}</h4>
                       {criterion.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{criterion.description}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                          {criterion.description}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -120,18 +285,8 @@ export function StandardDetailPageClient() {
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-

@@ -27,6 +27,14 @@ import { SystemLog } from "@/components/platform/system-log"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { CoverageBar } from "@/components/platform/coverage-bar"
 
+interface StandardCoverageSummary {
+  standard: Standard
+  standardId: string
+  totalCriteria: number
+  coveredCriteria: number
+  coveragePct: number
+}
+
 export default function DashboardPage() {
   return (
     <ProtectedRoute>
@@ -74,6 +82,26 @@ function DashboardContent() {
         (s: Standard | null | undefined) => !!s && (s as Standard).isPublic && !!(s as Standard).id
       ) as Standard[],
     [safeStandards]
+  )
+
+  const { data: standardsCoverage } = useSWR<StandardCoverageSummary[]>(
+    user && publicStandards.length > 0
+      ? ["dashboard-standards-coverage", ...publicStandards.map((standard) => standard.id)]
+      : null,
+    async () =>
+      Promise.all(
+        publicStandards.map(async (standard) => {
+          const coverage = await api.getStandardCoverage(standard.id)
+          return {
+            standard,
+            ...coverage,
+          }
+        })
+      ),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60_000,
+    }
   )
 
   const dashboardStats = useMemo(() => [
@@ -136,6 +164,57 @@ function DashboardContent() {
       : alignmentScore >= 65
         ? "Improving posture"
         : "Needs attention"
+
+  const featuredStandards = useMemo(() => {
+    if (!publicStandards.length) return []
+
+    if (!standardsCoverage?.length) {
+      return publicStandards.slice(0, 3).map((standard) => ({
+        standard,
+        standardId: standard.id,
+        totalCriteria: 0,
+        coveredCriteria: 0,
+        coveragePct: 0,
+      }))
+    }
+
+    return [...standardsCoverage]
+      .sort((a, b) => a.coveragePct - b.coveragePct)
+      .slice(0, 3)
+  }, [publicStandards, standardsCoverage])
+
+  const getCoverageTone = (coveragePct: number) => {
+    if (coveragePct >= 80) {
+      return {
+        label: "Strong",
+        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+      }
+    }
+
+    if (coveragePct >= 50) {
+      return {
+        label: "Partial",
+        className: "border-amber-500/20 bg-amber-500/10 text-amber-200",
+      }
+    }
+
+    return {
+      label: "Critical",
+      className: "border-rose-500/20 bg-rose-500/10 text-rose-200",
+    }
+  }
+
+  const formatEvidenceDate = (value?: string | null) => {
+    if (!value) return "Recently added"
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) return "Recently added"
+
+    return parsed.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    })
+  }
 
   if (isLoading || !user) {
     return <DashboardPageSkeleton />
@@ -268,60 +347,62 @@ function DashboardContent() {
 
       {/* ─── Standards Progress ─── */}
       {publicStandards.length > 0 && (
-        <section className="glass-card relative overflow-hidden p-4 sm:p-6 rounded-[24px] sm:rounded-[28px]">
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.10),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent)]" />
-          <div className="relative z-10 flex items-center justify-between gap-3 mb-4">
+        <section className="glass-card relative overflow-hidden p-4 rounded-[20px] sm:rounded-[22px]">
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.06),transparent_16%),linear-gradient(180deg,rgba(255,255,255,0.018),transparent)]" />
+          <div className="relative z-10 flex items-center justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <div className="w-8 h-8 rounded-xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
+                <ShieldCheck className="w-3 h-3" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-foreground">Standards Progress</h3>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.16em]">Criteria coverage by evidence</p>
+                <h3 className="text-sm sm:text-base font-bold text-foreground">Standards Progress</h3>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-[0.14em]">Weakest mapped standards first</p>
               </div>
             </div>
             <Link
               href="/platform/standards"
-              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-bold text-primary uppercase tracking-[0.14em] transition-colors hover:bg-white/[0.07]"
+              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] sm:text-[10px] font-bold text-primary uppercase tracking-[0.12em] transition-colors hover:bg-white/[0.07]"
             >
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
 
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-3">
-            {publicStandards.slice(0, 4).map((standard: Standard) => (
+          <div className="relative z-10 space-y-1.5">
+            {featuredStandards.map((entry) => {
+              const tone = getCoverageTone(entry.coveragePct)
+
+              return (
               <div
-                key={standard.id}
-                className="group rounded-[18px] sm:rounded-[20px] border border-white/6 bg-white/[0.03] px-3.5 py-3 sm:px-4 transition-all hover:bg-white/[0.05] hover:border-white/12"
+                key={entry.standard.id}
+                className="rounded-[15px] border border-white/6 bg-white/[0.025] px-3 py-2.5 transition-all hover:bg-white/[0.045] hover:border-white/10"
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="min-w-0">
-                    <span className="block text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                      {standard.title}
-                    </span>
-                    <span className="mt-1 inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
-                      {standard.code ?? standard.category ?? "Standard"}
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-[13px] sm:text-sm font-bold text-foreground truncate">
+                      {entry.standard.title}
                     </span>
                   </div>
-                  <Link
-                    href={`/platform/standards/${standard.id}`}
-                    className="shrink-0 rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-primary opacity-0 transition-all group-hover:opacity-100"
-                  >
-                    Open
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.12em] ${tone.className}`}>
+                      {tone.label}
+                    </span>
+                    <span className="hidden sm:inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
+                      {entry.standard.code ?? entry.standard.category ?? "Standard"}
+                    </span>
+                  </div>
                 </div>
-                <CoverageBar standardId={standard.id} compact />
+                <CoverageBar standardId={entry.standard.id} result={entry} compact />
               </div>
-            ))}
+            )})}
           </div>
 
-          {publicStandards.length > 4 && (
-            <div className="relative z-10 mt-4 pt-3 border-t border-[var(--border-subtle)]">
+          {publicStandards.length > 3 && (
+            <div className="relative z-10 mt-2.5 pt-2 border-t border-[var(--border-subtle)]">
               <Link
                 href="/platform/standards"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.14em]"
+                className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.12em]"
               >
-                +{publicStandards.length - 4} more standards <ArrowUpRight className="w-3 h-3" />
+                +{publicStandards.length - 3} more standards <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           )}
@@ -360,10 +441,14 @@ function DashboardContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mt-0.5">{ev.status}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{ev.documentType || "Evidence file"}</span>
+                        <span className="h-1 w-1 rounded-full bg-white/20" />
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{formatEvidenceDate(ev.createdAt)}</span>
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Open</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">{ev.status || "Open"}</p>
                       <ChevronRight className="w-4 h-4 mt-1 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
                     </div>
                   </Link>

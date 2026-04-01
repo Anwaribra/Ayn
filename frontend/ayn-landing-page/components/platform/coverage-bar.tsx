@@ -17,21 +17,23 @@ interface CoverageBarProps {
     standardId: string
     /** If true, renders a compact single-line bar (for dashboard lists) */
     compact?: boolean
+    result?: CoverageResult | null
     className?: string
 }
 
-export function CoverageBar({ standardId, compact = false, className }: CoverageBarProps) {
+export function CoverageBar({ standardId, compact = false, result, className }: CoverageBarProps) {
     const { data, isLoading } = useSWR<CoverageResult>(
-        standardId ? `coverage-${standardId}` : null,
+        !result && standardId ? `coverage-${standardId}` : null,
         () => api.getStandardCoverage(standardId),
         {
             revalidateOnFocus: false,
             dedupingInterval: 60_000, // Cache for 60s — no need to re-fetch on every render
         }
     )
+    const resolvedData = result ?? data
 
     // Skeleton
-    if (isLoading) {
+    if (!result && isLoading) {
         return (
             <div className={cn("animate-pulse space-y-1.5", className)}>
                 <div className="h-3 bg-muted rounded-full w-2/3" />
@@ -41,7 +43,7 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
     }
 
     // No criteria at all
-    if (!data || data.totalCriteria === 0) {
+    if (!resolvedData || resolvedData.totalCriteria === 0) {
         return (
             <div className={cn("text-[10px] text-muted-foreground font-medium italic", className)}>
                 No criteria mapped yet
@@ -49,7 +51,7 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
         )
     }
 
-    const { coveredCriteria, totalCriteria, coveragePct } = data
+    const { coveredCriteria, totalCriteria, coveragePct } = resolvedData
     const pct = Math.min(100, Math.max(0, coveragePct))
 
     const statusColor =
@@ -59,19 +61,18 @@ export function CoverageBar({ standardId, compact = false, className }: Coverage
 
     if (compact) {
         return (
-            <div className={cn("space-y-2", className)}>
-                <div className="flex items-center justify-between gap-3 text-[10px]">
-                    <span className="font-medium text-muted-foreground">Coverage</span>
-                    <span className="font-bold tabular-nums text-foreground">
+            <div className={cn("space-y-1.5", className)}>
+                <div className="flex items-center justify-between gap-3 text-[10px] leading-none">
+                    <span className="font-semibold tabular-nums text-foreground">
                         {coveredCriteria}
                         <span className="mx-1 text-muted-foreground">/</span>
                         <span className="text-muted-foreground">{totalCriteria}</span>
-                        <span className={cn("ml-2", pct >= 80 ? "text-emerald-400" : pct >= 50 ? "text-amber-300" : "text-rose-400")}>
-                            {Math.round(pct)}%
-                        </span>
+                    </span>
+                    <span className={cn("font-semibold", pct >= 80 ? "text-emerald-400" : pct >= 50 ? "text-amber-300" : "text-rose-400")}>
+                        {Math.round(pct)}%
                     </span>
                 </div>
-                <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                <div className="relative h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                     <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}

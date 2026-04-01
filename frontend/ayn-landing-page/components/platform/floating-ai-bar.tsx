@@ -64,7 +64,7 @@ function getPageContext(pathname: string | null) {
     return "User is in Gap Analysis. Prioritize remediation, evidence linking, and risk reduction."
   }
   if (pathname.includes("/evidence")) {
-    return "User is in Evidence Library. Prioritize evidence quality, mapping, and missing files."
+    return "User is in Evidence Vault. Prioritize evidence quality, mapping, and missing files."
   }
   if (pathname.includes("/standards")) {
     return "User is in Standards workspace. Prioritize clause mapping and coverage guidance."

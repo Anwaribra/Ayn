@@ -3,13 +3,13 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowLeft, ExternalLink, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 const INTEGRATIONS = [
-  { name: "LMS", desc: "Learning Management System", status: "disconnected", icon: "📚" },
-  { name: "HRIS", desc: "Human Resources Information System", status: "disconnected", icon: "👥" },
-  { name: "Core Database", desc: "Institutional core data", status: "disconnected", icon: "🗄️" },
+  { name: "LMS", desc: "Learning Management System", status: "not_configured", icon: "📚" },
+  { name: "HRIS", desc: "Human Resources Information System", status: "not_configured", icon: "👥" },
+  { name: "Core Database", desc: "Institutional core data", status: "not_configured", icon: "🗄️" },
 ]
 
 export default function IntegrationsPage() {
@@ -38,10 +38,9 @@ function IntegrationsContent() {
   )
 
   const handleToggle = (name: string) => {
-    setStatuses((prev) => {
-      const nextStatus = prev[name] === "connected" ? "disconnected" : "connected"
-      toast.success(`${name} ${nextStatus}`)
-      return { ...prev, [name]: nextStatus }
+    setStatuses((prev) => ({ ...prev, [name]: "requested" }))
+    toast.info(`${name} setup request recorded`, {
+      description: "This connector is not live yet. Use this as a setup placeholder until the backend integration is implemented.",
     })
   }
 
@@ -60,9 +59,18 @@ function IntegrationsContent() {
           Module <span className="text-[var(--text-tertiary)] font-light">Integrations</span>
         </h1>
         <p className="text-[var(--text-secondary)] text-sm mt-1">
-          Connect external LMS, HRIS, and core databases
+          Review planned connectors and request setup for external LMS, HRIS, and core databases
         </p>
       </header>
+
+      <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/8 p-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-300">
+          Preview Only
+        </p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          These connector cards currently represent setup requests and planning status. They do not establish live external connections yet.
+        </p>
+      </div>
 
       <div className="space-y-4">
         {orderedIntegrations.map((item) => (
@@ -80,9 +88,10 @@ function IntegrationsContent() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={item.status === "connected"
-                ? "text-[10px] font-bold text-emerald-300 uppercase tracking-wider"
-                : "text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider"
+              <span className={
+                item.status === "requested"
+                  ? "text-[10px] font-bold text-amber-300 uppercase tracking-wider"
+                  : "text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider"
               }>
                 {item.status}
               </span>
@@ -90,8 +99,8 @@ function IntegrationsContent() {
                 onClick={() => handleToggle(item.name)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl glass-button text-[var(--text-secondary)] text-xs font-medium transition-colors"
               >
-                <Plus className="w-3 h-3" />
-                {item.status === "connected" ? "Disconnect" : "Connect"}
+                {item.status === "requested" ? <ExternalLink className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                {item.status === "requested" ? "Requested" : "Request Setup"}
               </button>
             </div>
           </div>
@@ -99,7 +108,7 @@ function IntegrationsContent() {
       </div>
 
       <p className="text-[11px] text-[var(--text-tertiary)] mt-8">
-        Integration setup requires admin credentials. Contact support for enterprise connectors.
+        Enterprise connector rollout still requires backend implementation and admin credentials. Contact support when you are ready to wire a real integration.
       </p>
     </div>
   )

@@ -288,7 +288,7 @@ function EvidenceContent() {
             </div>
           </div>
           <h1 className="text-4xl font-black tracking-tight text-foreground">
-            Evidence <span className="text-muted-foreground font-light">Library</span>
+            Evidence <span className="text-muted-foreground font-light">Vault</span>
           </h1>
           <p className="text-muted-foreground font-medium mt-1">
             Centralized repository for institutional compliance assets.

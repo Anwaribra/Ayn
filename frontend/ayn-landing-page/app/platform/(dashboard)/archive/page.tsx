@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
-import useSWR, { mutate } from "swr"
+import useSWR from "swr"
 import { toast } from "sonner"
 import {
   Archive,
   RotateCcw,
   Trash2,
-  Filter,
   Search,
   FileText,
   Shield,
@@ -35,6 +35,8 @@ interface ArchivedItem {
   originalLocation: string
   size?: string
   priority?: "High" | "Medium" | "Low"
+  score?: number
+  status?: string
 }
 
 export default function ArchivePage() {
@@ -54,7 +56,7 @@ function ArchiveContent() {
   const [itemToPurge, setItemToPurge] = useState<string | null>(null)
 
   // Fetch real archived gap analyses
-  const { data: archivedReports, mutate: refreshArchive } = useSWR<GapAnalysisListItem[]>(
+  const { data: archivedReports, error, isLoading, mutate: refreshArchive } = useSWR<GapAnalysisListItem[]>(
     user ? "archived-gap-analyses" : null,
     () => api.getArchivedGapAnalyses()
   )
@@ -67,8 +69,38 @@ function ArchiveContent() {
     deletedAt: report.createdAt, // Using createdAt as proxy for now, ideally backend stores archivedAt
     deletedBy: "System", // Backend doesn't return who archived it yet
     originalLocation: "Gap Analysis Hub",
-    priority: "Medium"
+    priority: "Medium",
+    score: report.overallScore,
+    status: report.status,
   })) || []
+
+  const lastArchivedAt = items.length > 0
+    ? items
+        .map((item) => new Date(item.deletedAt).getTime())
+        .filter((value) => !Number.isNaN(value))
+        .sort((a, b) => b - a)[0]
+    : null
+
+  const archiveStats = [
+    { label: "Archived Items", value: items.length, icon: Archive },
+    {
+      label: "Archived Reports",
+      value: items.filter((item) => item.type === "gap_analysis").length,
+      icon: FileText,
+    },
+    {
+      label: "Avg Score",
+      value: items.length > 0
+        ? `${Math.round(items.reduce((sum, item) => sum + (item.score ?? 0), 0) / items.length)}%`
+        : "—",
+      icon: BarChart3,
+    },
+    {
+      label: "Last Archived",
+      value: lastArchivedAt ? formatDate(new Date(lastArchivedAt).toISOString()).split(",")[0] : "Never",
+      icon: Clock,
+    },
+  ]
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -78,7 +110,6 @@ function ArchiveContent() {
 
   const handleRestore = async (id: string) => {
     try {
-      // For now we only have gap analysis items
       await api.archiveGapAnalysis(id, false)
       toast.success("Item restored successfully")
       refreshArchive()
@@ -101,6 +132,7 @@ function ArchiveContent() {
       refreshArchive()
       setIsPurging(false)
       setItemToPurge(null)
+      if (selectedItem?.id === itemToPurge) setSelectedItem(null)
     } catch (error) {
       toast.error("Failed to purge item")
     }
@@ -164,12 +196,7 @@ function ArchiveContent() {
 
       {/* Archive Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-4 mb-8">
-        {[
-          { label: "Archived Items", value: items.length, icon: Archive },
-          { label: "Vault Storage", value: items.length > 0 ? "12 MB" : "0 MB", icon: Database },
-          { label: "Retention Policy", value: "7 Years", icon: Clock },
-          { label: "Last Purge", value: "Never", icon: Trash2 },
-        ].map((stat, i) => (
+        {archiveStats.map((stat, i) => (
           <div key={i} className="glass-panel p-5 rounded-2xl glass-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">{stat.label}</span>
@@ -201,6 +228,20 @@ function ArchiveContent() {
       {/* Archive Table/List */}
       <div className="px-4">
         <div className="glass-panel rounded-[32px] overflow-hidden glass-border">
+          {error && (
+            <div className="border-b border-[var(--border-subtle)] bg-destructive/5 px-6 py-4">
+              <p className="text-sm text-muted-foreground">
+                Failed to load archived items.{" "}
+                <button
+                  type="button"
+                  onClick={() => refreshArchive()}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Retry
+                </button>
+              </p>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -213,7 +254,16 @@ function ArchiveContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
-                {filteredItems.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                        <Archive className="w-10 h-10 opacity-20 animate-pulse" />
+                        <p className="text-sm italic">Loading archived items…</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -338,6 +388,12 @@ function ArchiveContent() {
                   <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-1">Responsible Entity</p>
                   <p className="text-sm font-medium text-[var(--text-primary)]">{selectedItem.deletedBy}</p>
                 </div>
+                {selectedItem.score != null && (
+                  <div>
+                    <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest mb-1">Archived Score</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{selectedItem.score}%</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -348,7 +404,13 @@ function ArchiveContent() {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`/platform/gap-analysis?report=${selectedItem.id}`}
+                className="flex-1 py-3 rounded-xl glass-button text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all text-center"
+              >
+                Open Report
+              </Link>
               <button
                 onClick={() => handleRestore(selectedItem.id)}
                 className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"

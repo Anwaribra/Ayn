@@ -274,15 +274,29 @@ class ApiClient {
   }
 
   async importStandardPDF(file: File) {
+    const token = this.getToken()
     const formData = new FormData()
     formData.append("file", file)
 
     const response = await fetch(`${API_BASE_URL}/standards/import-pdf`, {
       method: "POST",
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : undefined,
       body: formData,
     })
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("user")
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+          window.location.assign("/login")
+        }
+      }
       const error = await response.json().catch(() => ({ detail: "PDF Import failed" }))
       throw new Error(error.detail || "PDF Import failed")
     }

@@ -36,7 +36,7 @@ function SettingsContent() {
     { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-[var(--status-warning)]", href: "/platform/settings/alerts" },
     { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-[var(--status-success)]", href: "/platform/settings/security" },
     { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-primary", href: "/platform/settings/data" },
-    { icon: Cloud, label: "Module Integrations", desc: "Connect external LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
+    { icon: Cloud, label: "Module Integrations", desc: "Review connector setup for LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
     { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-[var(--status-critical)]", href: "/platform/settings/subscription" },
   ]
 
@@ -79,15 +79,15 @@ function SettingsContent() {
           <Shield className="w-32 h-32 text-destructive" />
         </div>
         <div className="relative z-10 max-w-xl">
-          <h3 className="text-xl font-semibold text-destructive mb-2">Vault Clearance Protocol</h3>
+          <h3 className="text-xl font-semibold text-destructive mb-2">Vault Clearance Request</h3>
           <p className="text-sm text-[var(--text-secondary)] mb-8 font-medium leading-relaxed">
-            Wiping institutional data will permanently remove all evidence assets, compliance mappings, and Horus neural history. This action requires administrative consensus.
+            Full institutional purge is not self-service in the current build. Use this flow to request an administrative review before any destructive operation is approved.
           </p>
           <button
             onClick={() => setShowPurgeModal(true)}
             className="px-6 py-2.5 bg-destructive/10 text-destructive border border-destructive/25 rounded-lg text-xs font-medium uppercase tracking-widest hover:bg-destructive hover:text-destructive-foreground transition-all"
           >
-            Initiate Purge Protocol
+            Request Purge Review
           </button>
         </div>
       </div>
@@ -120,7 +120,7 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Confirm vault purge"
+        aria-label="Request vault purge review"
         className="modal-container glass-surface-strong relative z-50 w-full max-w-[520px] rounded-3xl p-10"
         onClick={(e) => e.stopPropagation()}
       >
@@ -136,12 +136,12 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
             <AlertTriangle className="w-6 h-6 text-destructive" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Confirm Data Purge</h3>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">This action cannot be undone</p>
+            <h3 className="text-lg font-semibold text-foreground">Request Data Purge Review</h3>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Administrative approval required</p>
           </div>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
-          You are about to permanently delete all institutional data including evidence assets, compliance mappings, and Horus neural history. This requires administrative consensus.
+          This action does not delete data immediately. It records your intent to request a destructive purge review for evidence assets, compliance mappings, and Horus history.
         </p>
         <div className="flex gap-3">
           <button
@@ -154,7 +154,7 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium uppercase tracking-widest hover:bg-destructive/90 transition-all"
           >
-            Confirm Purge
+            Submit Request
           </button>
         </div>
       </div>

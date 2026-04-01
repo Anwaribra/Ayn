@@ -98,7 +98,7 @@ export function HorusAIWidget() {
     setTimeout(() => {
       const responses: Record<string, string> = {
         "start-audit": "To begin an audit, navigate to the Gap Analysis section. I'll analyze your uploaded evidence against mapped standards and identify compliance gaps. Would you like me to guide you through uploading your first documents?",
-        "missing-evidence": "For ISO 21001, you'll typically need: Educational Policy Documents, Curriculum Frameworks, Staff Qualification Records, Student Assessment Procedures, and Quality Management Records. Upload these to your Evidence Library and I'll map them automatically.",
+        "missing-evidence": "For ISO 21001, you'll typically need: Educational Policy Documents, Curriculum Frameworks, Staff Qualification Records, Student Assessment Procedures, and Quality Management Records. Upload these to your Evidence Vault and I'll map them automatically.",
         "draft-policy": "I'll help you create a comprehensive quality policy. To get started, I need to know: 1) Your institution type (university/college/school), 2) Primary accreditation goals, 3) Current compliance framework. Can you share these details?",
         "gap-analysis": "A gap analysis compares your current practices against required standards. I scan your evidence, identify missing components, and create a prioritized remediation roadmap. It's the foundation of your compliance strategy.",
       }

@@ -487,7 +487,6 @@ const FloatingAIBarComponent = () => {
         <div className="relative z-10 flex h-11 w-11 items-center justify-center rounded-[16px] border border-[var(--glass-border-subtle)] bg-[linear-gradient(180deg,rgba(59,111,217,0.14),rgba(59,111,217,0.04))]">
           <Brain className="h-6 w-6" strokeWidth={2.2} />
         </div>
-        <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--glass-bg)] bg-[var(--status-success)] shadow-[0_0_14px_rgba(13,150,104,0.5)]" />
       </button>
     </div>
   )

@@ -15,11 +15,9 @@ import {
   Settings,
   UserCircle2,
   LogOut,
-  PanelLeft, 
-  ShieldCheck,
-  Layers,
-  History,
+  PanelLeft,
   ArchiveIcon,
+  Sparkles,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -42,6 +40,31 @@ type NavItemConfig = {
   label: string
   href: string
 }
+
+function SidebarSection({
+  title,
+  children,
+  isCollapsed,
+}: {
+  title: string
+  children: React.ReactNode
+  isCollapsed: boolean
+}) {
+  return (
+    <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
+      {!isCollapsed && (
+        <div className="px-2 pt-1">
+          <p className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">
+            {title}
+          </p>
+          <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_60%,transparent)] to-transparent" />
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
 // Grouped Menu Items for better visual hierarchy
 const MAIN_MENU: NavItemConfig[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
@@ -76,15 +99,15 @@ export const SidebarItem = memo(function SidebarItem({
     pathname.includes(item.id) || (item.id === "reports" && pathname.includes("analytics"))
 
   const content = (
-      <Link
+    <Link
       href={item.href}
       onClick={onNavClick}
       className={cn(
-        "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 min-h-[44px] text-sm transition-all duration-300",
+        "group relative flex min-h-[46px] items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm transition-all duration-300",
         isCollapsed && "justify-center px-0 mx-auto w-11",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
-          ? "glass-button glass-text-primary border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
+          ? "glass-button glass-text-primary border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_78%,transparent))] shadow-[0_16px_32px_-24px_rgba(37,99,235,0.42)]"
           : "glass-text-secondary hover:bg-[var(--glass-soft-bg)] hover:text-[var(--glass-text-primary)]"
       )}
     >
@@ -109,8 +132,11 @@ export const SidebarItem = memo(function SidebarItem({
         <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
           {item.label}
           {item.id === "horus-ai" && (
-            <span className="flex items-center">
-              <span className="relative flex h-2 w-2 mr-2">
+            <span className="flex items-center gap-2">
+              <span className="hidden rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-primary xl:inline-flex">
+                Live
+              </span>
+              <span className="relative mr-1 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
               </span>
@@ -167,7 +193,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         "will-change-transform",
         "fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden",
         "glass-sidebar glass-text-primary",
-        "rounded-3xl",
+        "rounded-[28px]",
         "m-3 h-[calc(100dvh-1.5rem)]",
         // Mobile / tablet: closed = zero width + off-screen + invisible so it never shows or takes space
         open ? "w-64 max-w-[85vw]" : "max-lg:w-0 max-lg:min-w-0 max-lg:overflow-hidden max-lg:invisible max-lg:-translate-x-full max-lg:shadow-none",
@@ -181,19 +207,25 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       {/* Header: Logo when expanded, toggle always (centered when collapsed) */}
       <div
         className={cn(
-          "flex items-center pb-4 pt-6 lg:py-4",
+          "flex items-center pb-4 pt-5 lg:py-4",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}
       >
         {!isCollapsed && (
-          <Link href="/" className="inline-flex items-center" title="Go to homepage">
-            <AynLogo size="sm" withGlow={false} heroStyle />
-          </Link>
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <Link href="/" className="inline-flex min-w-0 items-center gap-3" title="Go to homepage">
+              <AynLogo size="sm" withGlow={false} heroStyle />
+            </Link>
+            <div className="hidden items-center gap-2 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground xl:inline-flex">
+              <Sparkles className="h-3 w-3 text-primary" />
+              Command
+            </div>
+          </div>
         )}
         <button
           onClick={onToggle}
           type="button"
-          className="glass-button glass-text-secondary inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all hover:text-[var(--glass-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:h-9 lg:w-9"
+          className="glass-button glass-text-secondary inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border-subtle)] transition-all hover:bg-[var(--glass-soft-bg)] hover:text-[var(--glass-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:h-9 lg:w-9"
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         >
           <PanelLeft
@@ -205,74 +237,59 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         </button>
       </div>
 
-
       {/* Navigation */}
-      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2" : "px-3")}>
-        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
+      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2 pt-1" : "px-3 pt-1")}>
+        <SidebarSection title="Overview" isCollapsed={isCollapsed}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </div>
+        </SidebarSection>
 
-        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
-          {!isCollapsed && (
-            <div className="px-2">
-              <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
-                Compliance Core
-              </p>
-              <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_65%,transparent)] to-transparent" />
-            </div>
-          )}
+        <SidebarSection title="Compliance Core" isCollapsed={isCollapsed}>
           {COMPLIANCE_WORKFLOW.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </div>
+        </SidebarSection>
 
-        <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
-          {!isCollapsed && (
-            <div className="px-2">
-              <p className="glass-text-secondary text-xs uppercase tracking-wider font-medium">
-                Reporting & Automation
-              </p>
-              <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_65%,transparent)] to-transparent" />
-            </div>
-          )}
+        <SidebarSection title="Reporting & Automation" isCollapsed={isCollapsed}>
           {INSIGHTS_TOOLS.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </div>
+        </SidebarSection>
 
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-3 space-y-3">
-        <SidebarItem
-          item={{
-            id: "archive",
-            icon: ArchiveIcon,
-            label: "Archive",
-            href: "/platform/archive",
-          }}
-          isCollapsed={isCollapsed}
-          pathname={pathname}
-          onNavClick={handleNavClick}
-        />
-        <SidebarItem
-          item={{
-            id: "settings",
-            icon: Settings,
-            label: "Settings",
-            href: "/platform/settings",
-          }}
-          isCollapsed={isCollapsed}
-          pathname={pathname}
-          onNavClick={handleNavClick}
-        />
+      <div className="space-y-3 border-t border-[var(--glass-border-subtle)] p-3">
+        <div className="space-y-2">
+          <SidebarItem
+            item={{
+              id: "archive",
+              icon: ArchiveIcon,
+              label: "Archive",
+              href: "/platform/archive",
+            }}
+            isCollapsed={isCollapsed}
+            pathname={pathname}
+            onNavClick={handleNavClick}
+          />
+          <SidebarItem
+            item={{
+              id: "settings",
+              icon: Settings,
+              label: "Settings",
+              href: "/platform/settings",
+            }}
+            isCollapsed={isCollapsed}
+            pathname={pathname}
+            onNavClick={handleNavClick}
+          />
+        </div>
 
         {/* User Row */}
         <div
           className={cn(
-            "glass-surface group flex items-center rounded-2xl p-2 transition",
+            "glass-surface group flex items-center rounded-[22px] border border-[var(--glass-border-subtle)] p-2 transition",
             isCollapsed ? "justify-center" : "justify-between"
           )}
         >
@@ -292,6 +309,9 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 <p className="glass-text-primary truncate text-sm font-semibold">
                   {user?.name ?? "User"}
                 </p>
+                <p className="glass-text-secondary truncate text-[10px] font-bold uppercase tracking-[0.16em]">
+                  Workspace Access
+                </p>
               </div>
             )}
           </Link>
@@ -303,7 +323,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 e.stopPropagation()
                 handleLogout()
               }}
-              className="glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/6 hover:text-red-400 lg:h-8 lg:w-8"
+              className="glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-[var(--glass-soft-bg)] hover:text-red-400 lg:h-8 lg:w-8"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />

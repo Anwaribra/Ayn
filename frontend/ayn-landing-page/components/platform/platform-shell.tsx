@@ -286,13 +286,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   </kbd>
                 </button>
 
+                <div className="flex items-center gap-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-1 shadow-[0_12px_32px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
                 <button
                   onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                   className={cn(
-                    "glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]",
+                    "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
                     resolvedTheme === "dark"
-                      ? "border-[var(--status-warning-border)] bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04))] text-[var(--status-warning)]"
-                      : "border-[var(--status-info-border)] bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)]"
+                      ? "bg-[linear-gradient(180deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))] text-[var(--status-warning)] shadow-[0_10px_24px_-16px_rgba(245,158,11,0.7)]"
+                      : "bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)] shadow-[0_10px_24px_-16px_rgba(37,99,235,0.5)]"
                   )}
                   aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
                   title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
@@ -300,9 +301,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   <span className="absolute inset-x-2 top-1.5 h-px rounded-full bg-white/40 opacity-70" />
                   <span className="relative flex items-center justify-center">
                     {resolvedTheme === "dark" ? (
-                      <Sun className="h-4.5 w-4.5 drop-shadow-[0_0_10px_rgba(245,158,11,0.35)]" strokeWidth={2.2} />
+                      <Sun className="h-[18px] w-[18px] drop-shadow-[0_0_10px_rgba(245,158,11,0.35)]" strokeWidth={2.2} />
                     ) : (
-                      <Moon className="h-4.5 w-4.5 drop-shadow-[0_0_10px_rgba(37,99,235,0.28)]" strokeWidth={2.2} />
+                      <Moon className="h-[18px] w-[18px] drop-shadow-[0_0_10px_rgba(37,99,235,0.28)]" strokeWidth={2.2} />
                     )}
                   </span>
                 </button>
@@ -310,12 +311,17 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative quick-pages-container">
                   <button
                     onClick={() => setShowQuickPages(!showQuickPages)}
-                    className="glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
+                    className={cn(
+                      "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent text-[var(--glass-text-secondary)] transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
+                      showQuickPages
+                        ? "border-[var(--status-info-border)] bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)] shadow-[0_10px_24px_-16px_rgba(37,99,235,0.45)]"
+                        : "hover:bg-[var(--glass-soft-bg)]"
+                    )}
                     aria-label="Quick pages"
                     aria-haspopup="true"
                     aria-expanded={showQuickPages}
                   >
-                    <LayoutGrid className="w-4 h-4" />
+                    <LayoutGrid className="h-[17px] w-[17px]" strokeWidth={2.1} />
                   </button>
 
                   {showQuickPages && (
@@ -382,14 +388,19 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="relative notification-dropdown-container">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="glass-button glass-text-secondary relative min-h-[44px] min-w-[44px] rounded-2xl p-2 transition-all hover:text-[var(--glass-text-primary)]"
+                    className={cn(
+                      "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent text-[var(--glass-text-secondary)] transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
+                      showNotifications || notificationCount > 0
+                        ? "border-[var(--status-warning-border)] bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04))] text-[var(--status-warning)] shadow-[0_10px_24px_-16px_rgba(245,158,11,0.4)]"
+                        : "hover:bg-[var(--glass-soft-bg)]"
+                    )}
                     aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                     aria-haspopup="true"
                     aria-expanded={showNotifications}
                   >
-                    <Bell className="w-4 h-4" />
+                    <Bell className="h-[17px] w-[17px]" strokeWidth={2.05} />
                     {notificationCount > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-[var(--layer-0)]" />
+                      <span className="absolute right-[9px] top-[9px] h-2 w-2 rounded-full bg-primary ring-2 ring-[var(--layer-1)]" />
                     )}
                   </button>
 
@@ -498,6 +509,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       )}
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             ) : (

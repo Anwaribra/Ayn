@@ -21,12 +21,11 @@ import {
   CalendarDays,
   LayoutGrid,
   Sparkles,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
 import FloatingAIBar from "@/components/platform/floating-ai-bar";
+import { AnimatedThemeToggle } from "@/components/platform/animated-theme-toggle";
 import { CommandPalette } from "./command-palette";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -47,8 +46,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext();
   const { focusMode } = useFocusMode();
-  const { theme, setTheme, resolvedTheme } = useTheme();
-
+  const { resolvedTheme } = useTheme();
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette();
 
@@ -287,26 +285,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 </button>
 
                 <div className="flex items-center gap-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-1 shadow-[0_12px_32px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
-                <button
-                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className={cn(
-                    "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
-                    resolvedTheme === "dark"
-                      ? "bg-[linear-gradient(180deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))] text-[var(--status-warning)] shadow-[0_10px_24px_-16px_rgba(245,158,11,0.7)]"
-                      : "bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)] shadow-[0_10px_24px_-16px_rgba(37,99,235,0.5)]"
-                  )}
-                  aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-                >
-                  <span className="absolute inset-x-2 top-1.5 h-px rounded-full bg-white/40 opacity-70" />
-                  <span className="relative flex items-center justify-center">
-                    {resolvedTheme === "dark" ? (
-                      <Sun className="h-[18px] w-[18px] drop-shadow-[0_0_10px_rgba(245,158,11,0.35)]" strokeWidth={2.2} />
-                    ) : (
-                      <Moon className="h-[18px] w-[18px] drop-shadow-[0_0_10px_rgba(37,99,235,0.28)]" strokeWidth={2.2} />
-                    )}
-                  </span>
-                </button>
+                <AnimatedThemeToggle />
 
                 <div className="relative quick-pages-container">
                   <button

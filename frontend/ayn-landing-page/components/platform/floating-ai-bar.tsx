@@ -329,24 +329,31 @@ const FloatingAIBarComponent = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 24, scale: 0.98 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="glass-surface-strong glass-text-primary w-[440px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-hidden rounded-3xl will-change-transform"
+            className="glass-surface-strong glass-text-primary relative w-[448px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-hidden rounded-[32px] shadow-[0_28px_80px_-40px_rgba(15,23,42,0.45)] will-change-transform"
           >
-            <div className="p-6 pb-3 flex items-start justify-between">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(59,111,217,0.45),transparent)]" />
+            <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(59,111,217,0.14),transparent_70%)] blur-2xl" />
+
+            <div className="flex items-start justify-between p-6 pb-3">
               <div className="flex items-center gap-3">
-                <div className="horus-ai-icon relative flex h-11 w-11 items-center justify-center rounded-2xl">
-                  <Brain className="w-5 h-5 text-primary" />
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-[18px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,rgba(59,111,217,0.12),rgba(59,111,217,0.04))] shadow-[0_16px_34px_-22px_rgba(37,99,235,0.55)]">
+                  <div className="absolute inset-[3px] rounded-[14px] bg-[linear-gradient(180deg,rgba(255,255,255,0.35),transparent_65%)] opacity-60" />
+                  <Brain className="relative z-10 h-5 w-5 text-primary" strokeWidth={2.2} />
                   <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-[var(--glass-strong-bg)] bg-[var(--status-success)]" />
                 </div>
                 <div>
                   <h3 className="glass-text-primary text-lg font-bold tracking-tight">Horus Bridge</h3>
-                  <p className="glass-text-secondary text-[10px] uppercase tracking-[0.2em] font-bold">Neural Link Active</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[var(--status-success)] shadow-[0_0_10px_rgba(13,150,104,0.5)]" />
+                    <p className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Neural Link Active</p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="glass-button glass-text-secondary h-8 w-8 hover:text-[var(--glass-text-primary)]"
+                  className="glass-button glass-text-secondary h-8 w-8 rounded-xl hover:text-[var(--glass-text-primary)]"
                   onClick={handleOpenFull}
                   title="Open full Horus"
                 >
@@ -355,7 +362,7 @@ const FloatingAIBarComponent = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="glass-button glass-text-secondary h-8 w-8 hover:text-[var(--glass-text-primary)]"
+                  className="glass-button glass-text-secondary h-8 w-8 rounded-xl hover:text-[var(--glass-text-primary)]"
                   onClick={() => setIsOpen(false)}
                 >
                   <X className="h-4 w-4" />
@@ -364,7 +371,7 @@ const FloatingAIBarComponent = () => {
             </div>
 
             <div className="px-6 pb-4">
-              <div className="glass-panel flex items-center justify-between rounded-2xl px-4 py-2.5">
+              <div className="glass-panel flex items-center justify-between rounded-[18px] px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-primary/80" />
                   <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Global Sync</span>
@@ -382,7 +389,7 @@ const FloatingAIBarComponent = () => {
                   <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
                     <div className={cn("max-w-[90%]", msg.role === "user" ? "text-right" : "text-left")}>
                       {msg.isSystem && (
-                        <div className="flex items-center gap-1.5 text-primary/70 mb-1.5">
+                        <div className="mb-1.5 flex items-center gap-1.5 text-primary/70">
                           <Terminal className="w-3 h-3" />
                           <span className="text-[9px] font-bold uppercase tracking-widest">Protocol</span>
                         </div>
@@ -391,8 +398,8 @@ const FloatingAIBarComponent = () => {
                         className={cn(
                           "rounded-2xl px-4 py-3 text-[13px] leading-relaxed",
                           msg.role === "user"
-                            ? "horus-user-bubble"
-                            : "glass-bubble glass-text-primary",
+                            ? "horus-user-bubble shadow-[0_16px_34px_-26px_rgba(37,99,235,0.55)]"
+                            : "glass-bubble glass-text-primary border border-[var(--glass-border-subtle)] shadow-[0_12px_30px_-24px_rgba(15,23,42,0.28)]",
                         )}
                       >
                         <InlineText content={msg.content || (isLoading ? "Thinking..." : "")} />
@@ -402,7 +409,7 @@ const FloatingAIBarComponent = () => {
                 ))}
 
                 {isLoading && (
-                  <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2">
+                  <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 shadow-[0_10px_24px_-18px_rgba(37,99,235,0.35)]">
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                     <span className="text-[11px]">Synchronizing...</span>
                   </div>
@@ -413,7 +420,7 @@ const FloatingAIBarComponent = () => {
             </ScrollArea>
 
             <div className="px-6 pb-4">
-              <div className="glass-panel rounded-2xl p-4">
+              <div className="glass-panel rounded-[22px] p-4 shadow-[0_20px_40px_-30px_rgba(15,23,42,0.35)]">
                 <div className="flex items-center gap-2 mb-3">
                   <Activity className="w-3.5 h-3.5 text-primary/80" />
                   <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Quick Actions</span>
@@ -427,18 +434,18 @@ const FloatingAIBarComponent = () => {
                       disabled={isLoading}
                       title={item.label}
                       aria-label={item.label}
-                      className="glass-button glass-text-secondary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                      className="glass-button glass-text-secondary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border-subtle)] transition-all hover:-translate-y-0.5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <item.icon className="w-4 h-4" />
                     </button>
                   ))}
-                  <ChevronRight className="glass-text-secondary ml-auto w-3.5 h-3.5" />
+                  <ChevronRight className="glass-text-secondary ml-auto h-3.5 w-3.5" />
                 </div>
               </div>
             </div>
 
             <div className="px-6 pb-6">
-              <div className="relative">
+              <div className="relative rounded-[24px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-1.5 shadow-[0_20px_40px_-30px_rgba(15,23,42,0.35)]">
                 <input
                   ref={inputRef}
                   type="text"
@@ -451,14 +458,14 @@ const FloatingAIBarComponent = () => {
                     }
                   }}
                   placeholder="Synchronize with Horus..."
-                  className="glass-input glass-text-primary h-14 w-full rounded-2xl pl-4 pr-14 text-sm placeholder:text-[var(--glass-text-secondary)] focus:outline-none"
+                  className="glass-input glass-text-primary h-14 w-full rounded-[18px] border-0 bg-transparent pl-4 pr-14 text-sm placeholder:text-[var(--glass-text-secondary)] focus:outline-none"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={!query.trim() || isLoading}
-                  className="glass-button absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl bg-primary/90 text-primary-foreground transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:bg-[var(--glass-input-bg)] disabled:text-muted-foreground"
+                  className="glass-button absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-[14px] bg-primary/90 text-primary-foreground shadow-[0_16px_30px_-18px_rgba(37,99,235,0.65)] transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:bg-[var(--glass-input-bg)] disabled:text-muted-foreground"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpIcon className="w-4 h-4" />}
                 </button>
@@ -471,12 +478,16 @@ const FloatingAIBarComponent = () => {
       <button
         type="button"
         onClick={handleToggle}
-        className="glass-surface-strong relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-primary transition-all duration-300 hover:scale-105 active:scale-95"
+        className="glass-surface-strong group relative flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-[22px] border border-[var(--glass-border)] text-primary shadow-[0_24px_46px_-26px_rgba(37,99,235,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95"
         aria-label="Toggle Horus assistant"
       >
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-1000" />
-        <Brain className="w-7 h-7" />
-        <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--glass-bg)] bg-[var(--status-success)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,111,217,0.18),transparent_55%)]" />
+        <div className="absolute inset-[3px] rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.42),transparent_68%)] opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
+        <div className="relative z-10 flex h-11 w-11 items-center justify-center rounded-[16px] border border-[var(--glass-border-subtle)] bg-[linear-gradient(180deg,rgba(59,111,217,0.14),rgba(59,111,217,0.04))]">
+          <Brain className="h-6 w-6" strokeWidth={2.2} />
+        </div>
+        <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--glass-bg)] bg-[var(--status-success)] shadow-[0_0_14px_rgba(13,150,104,0.5)]" />
       </button>
     </div>
   )

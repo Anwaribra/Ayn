@@ -103,8 +103,8 @@ export const SidebarItem = memo(function SidebarItem({
       href={item.href}
       onClick={onNavClick}
       className={cn(
-        "group relative flex min-h-[46px] items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm transition-all duration-300",
-        isCollapsed && "justify-center px-0 mx-auto w-11",
+        "group relative flex min-h-[48px] items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm transition-all duration-300",
+        isCollapsed && "mx-auto min-h-[44px] w-12 justify-center rounded-[16px] px-0",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         active
           ? "glass-button glass-text-primary border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_78%,transparent))] shadow-[0_16px_32px_-24px_rgba(37,99,235,0.42)]"
@@ -120,13 +120,23 @@ export const SidebarItem = memo(function SidebarItem({
         />
       )}
 
-      <item.icon
+      <span
         className={cn(
-          "h-5 w-5 min-h-5 min-w-5 shrink-0 transition-colors",
-          active ? "text-primary" : "group-hover:text-[var(--glass-text-primary)]"
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border transition-all duration-300",
+          active
+            ? "border-[var(--status-info-border)] bg-[linear-gradient(180deg,rgba(37,99,235,0.14),rgba(37,99,235,0.04))] shadow-[0_14px_26px_-20px_rgba(37,99,235,0.65)]"
+            : "border-transparent bg-transparent group-hover:border-[var(--glass-border-subtle)] group-hover:bg-[var(--glass-soft-bg)]",
+          isCollapsed && "h-9 w-9 rounded-[14px]",
         )}
-        strokeWidth={2.25}
-      />
+      >
+        <item.icon
+          className={cn(
+            "h-4.5 w-4.5 min-h-4.5 min-w-4.5 shrink-0 transition-colors",
+            active ? "text-primary" : "group-hover:text-[var(--glass-text-primary)]"
+          )}
+          strokeWidth={2.15}
+        />
+      </span>
 
       {!isCollapsed && (
         <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
@@ -200,7 +210,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         open ? "translate-x-0 shadow-lg shadow-black/30" : "max-lg:pointer-events-none",
         // Desktop (lg+ only): static + collapse width so main sits beside sidebar
         "lg:translate-x-0 lg:shadow-none lg:visible",
-        open ? "lg:w-64" : "lg:w-[72px]",
+        open ? "lg:w-[272px]" : "lg:w-[84px]",
         "lg:static"
       )}
     >
@@ -208,18 +218,34 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       <div
         className={cn(
           "flex items-center pb-4 pt-5 lg:py-4",
-          isCollapsed ? "justify-center px-2" : "justify-between px-4"
+          isCollapsed ? "justify-center px-2.5" : "justify-between px-4"
         )}
       >
         {!isCollapsed && (
           <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <Link href="/" className="inline-flex min-w-0 items-center gap-3" title="Go to homepage">
-              <AynLogo size="sm" withGlow={false} heroStyle />
+              <div className="flex min-w-0 flex-col">
+                <AynLogo size="sm" withGlow={false} heroStyle />
+                <span className="glass-text-secondary mt-1 text-[10px] font-bold uppercase tracking-[0.18em]">
+                  Platform Core
+                </span>
+              </div>
             </Link>
             <div className="hidden items-center gap-2 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-muted-foreground xl:inline-flex">
               <Sparkles className="h-3 w-3 text-primary" />
               Command
             </div>
+          </div>
+        )}
+        {isCollapsed && (
+          <div className="flex flex-col items-center gap-2">
+            <Link
+              href="/"
+              className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)]"
+              title="Go to homepage"
+            >
+              <span className="text-lg font-black tracking-tight text-foreground">A</span>
+            </Link>
           </div>
         )}
         <button
@@ -238,7 +264,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       </div>
 
       {/* Navigation */}
-      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2 pt-1" : "px-3 pt-1")}>
+      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2.5 pt-1" : "px-3 pt-1")}>
         <SidebarSection title="Overview" isCollapsed={isCollapsed}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
@@ -260,7 +286,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       </nav>
 
       {/* Bottom Section */}
-      <div className="space-y-3 border-t border-[var(--glass-border-subtle)] p-3">
+      <div className={cn("space-y-3 border-t border-[var(--glass-border-subtle)]", isCollapsed ? "px-2.5 py-3" : "p-3")}>
         <div className="space-y-2">
           <SidebarItem
             item={{
@@ -290,7 +316,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
         <div
           className={cn(
             "glass-surface group flex items-center rounded-[22px] border border-[var(--glass-border-subtle)] p-2 transition",
-            isCollapsed ? "justify-center" : "justify-between"
+            isCollapsed ? "justify-center px-0 py-2.5" : "justify-between"
           )}
         >
           {/* Profile clickable area */}
@@ -302,7 +328,9 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             )}
             title="Go to profile"
           >
-            <UserCircle2 className="glass-text-secondary h-6 w-6 shrink-0 transition-colors" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)]">
+              <UserCircle2 className="glass-text-secondary h-5 w-5 transition-colors" />
+            </span>
 
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">

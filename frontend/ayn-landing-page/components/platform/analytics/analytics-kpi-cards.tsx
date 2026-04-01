@@ -24,7 +24,7 @@ interface KpiCardsProps {
 
 export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {cards.map((card, i) => {
         const TrendIcon = card.trend === "up" ? TrendingUp : card.trend === "down" ? TrendingDown : Minus
         const trendColor = card.trend === "up" ? "text-emerald-500" : card.trend === "down" ? "text-red-400" : "text-muted-foreground"
@@ -35,27 +35,28 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="glass-panel group relative overflow-hidden rounded-2xl border-[var(--border-subtle)] p-5 transition-all hover:shadow-md"
+            className="glass-panel group relative overflow-hidden rounded-[24px] border-[var(--border-subtle)] p-5 sm:p-6 transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
-            <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: card.color }} />
+            <div className="absolute inset-x-0 top-0 h-px opacity-60" style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }} />
+            <div className="absolute top-0 right-0 h-24 w-24 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: card.color }} />
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border" style={{ backgroundColor: `${card.color}15`, borderColor: `${card.color}30`, color: card.color }}>
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border shadow-[0_18px_34px_-26px_rgba(0,0,0,0.45)]" style={{ backgroundColor: `${card.color}15`, borderColor: `${card.color}30`, color: card.color }}>
                   <card.icon className="w-4 h-4" />
                 </div>
                 {card.trend && (
-                  <div className={cn("flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest", trendColor)}>
+                  <div className={cn("inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", trendColor)}>
                     <TrendIcon className="w-3 h-3" />
                     {card.trendValue}
                   </div>
                 )}
               </div>
-              <p className="text-3xl font-black text-foreground tracking-tight">
-                {card.value}{card.suffix && <span className="text-lg font-medium text-muted-foreground">{card.suffix}</span>}
+              <p className="text-3xl sm:text-[2rem] font-black text-foreground tracking-tight leading-none">
+                {card.value}{card.suffix && <span className="ml-0.5 text-lg font-medium text-muted-foreground">{card.suffix}</span>}
               </p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{card.label}</p>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{card.label}</p>
               {card.description && (
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">{card.description}</p>
+                <p className="mt-3 max-w-[22rem] text-[11px] text-muted-foreground leading-relaxed">{card.description}</p>
               )}
             </div>
           </motion.div>

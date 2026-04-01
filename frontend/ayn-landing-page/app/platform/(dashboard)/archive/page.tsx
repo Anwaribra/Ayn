@@ -55,6 +55,16 @@ function ArchiveContent() {
   const [isPurging, setIsPurging] = useState(false)
   const [itemToPurge, setItemToPurge] = useState<string | null>(null)
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  }
+
   // Fetch real archived gap analyses
   const { data: archivedReports, error, isLoading, mutate: refreshArchive } = useSWR<GapAnalysisListItem[]>(
     user ? "archived-gap-analyses" : null,
@@ -150,16 +160,6 @@ function ArchiveContent() {
 
   const getReadableType = (type: string) => {
     return type.replace("_", " ").toUpperCase()
-  }
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    })
   }
 
   return (

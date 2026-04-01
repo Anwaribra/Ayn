@@ -208,7 +208,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-sm font-bold text-white truncate">{template.name}</h3>
+                              <h3 className="truncate text-sm font-bold text-foreground">{template.name}</h3>
                               <span className="px-1.5 py-0.5 rounded bg-muted text-[9px] text-muted-foreground font-medium">
                                 {template.code}
                               </span>

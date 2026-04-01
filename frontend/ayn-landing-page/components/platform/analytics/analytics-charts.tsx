@@ -50,7 +50,7 @@ function ChartCardShell({
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">{subtitle}</p>
           </div>
-          <div className="h-10 w-10 rounded-2xl border border-white/10 bg-white/[0.04] shrink-0" style={{ boxShadow: `0 18px 40px -28px ${accentColor}` }} />
+          <div className="h-10 w-10 shrink-0 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]" style={{ boxShadow: `0 18px 40px -28px ${accentColor}` }} />
         </div>
         {children}
       </div>

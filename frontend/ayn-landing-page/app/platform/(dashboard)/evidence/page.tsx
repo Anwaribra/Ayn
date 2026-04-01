@@ -336,19 +336,19 @@ function EvidenceContent() {
           </div>
 
           <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total Assets</p>
               <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.total}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Analyzed</p>
-              <p className="mt-2 text-xl font-bold text-emerald-300">{vaultSummary.analyzed}</p>
+              <p className="mt-2 text-xl font-bold text-[var(--status-success)]">{vaultSummary.analyzed}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Linked</p>
               <p className="mt-2 text-xl font-bold text-primary">{vaultSummary.linked}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Avg Confidence</p>
               <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.avgConfidence}%</p>
             </div>

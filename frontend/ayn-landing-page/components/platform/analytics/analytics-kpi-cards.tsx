@@ -45,7 +45,7 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
                   <card.icon className="w-4 h-4" />
                 </div>
                 {card.trend && (
-                  <div className={cn("inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", trendColor)}>
+                  <div className={cn("inline-flex items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", trendColor)}>
                     <TrendIcon className="w-3 h-3" />
                     {card.trendValue}
                   </div>

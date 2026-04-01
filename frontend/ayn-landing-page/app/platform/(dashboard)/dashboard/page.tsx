@@ -187,20 +187,20 @@ function DashboardContent() {
     if (coveragePct >= 80) {
       return {
         label: "Strong",
-        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+        className: "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]",
       }
     }
 
     if (coveragePct >= 50) {
       return {
         label: "Partial",
-        className: "border-amber-500/20 bg-amber-500/10 text-amber-200",
+        className: "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]",
       }
     }
 
     return {
       label: "Critical",
-      className: "border-rose-500/20 bg-rose-500/10 text-rose-200",
+      className: "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
     }
   }
 
@@ -281,15 +281,15 @@ function DashboardContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Readiness Tone</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{scoreTone}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Open Alerts</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{alertCount}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 sm:p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Analyses Run</p>
                 <p className="mt-2 text-lg font-bold text-foreground">{analysesCount}</p>
               </div>
@@ -306,7 +306,7 @@ function DashboardContent() {
             </Link>
             <Link
               href="/platform/gap-analysis"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 sm:px-5 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-white/[0.07]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-[var(--glass-strong-bg)] sm:px-5 sm:text-xs"
             >
               Run Gap Analysis
               <ArrowUpRight className="w-4 h-4" />
@@ -331,7 +331,7 @@ function DashboardContent() {
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-3">
-                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
                   <action.icon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
@@ -361,7 +361,7 @@ function DashboardContent() {
             </div>
             <Link
               href="/platform/standards"
-              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] sm:text-[10px] font-bold text-primary uppercase tracking-[0.12em] transition-colors hover:bg-white/[0.07]"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-primary transition-colors hover:bg-[var(--glass-strong-bg)] sm:text-[10px]"
             >
               View All <ArrowUpRight className="w-3 h-3" />
             </Link>
@@ -386,7 +386,7 @@ function DashboardContent() {
                     <span className={`inline-flex rounded-full border px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.12em] ${tone.className}`}>
                       {tone.label}
                     </span>
-                    <span className="hidden sm:inline-flex max-w-full truncate rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
+                    <span className="hidden max-w-full truncate rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-muted-foreground sm:inline-flex sm:text-[9px]">
                       {entry.standard.code ?? entry.standard.category ?? "Standard"}
                     </span>
                   </div>

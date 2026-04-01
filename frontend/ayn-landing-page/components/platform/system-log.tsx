@@ -64,7 +64,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
       {showHeader && (
         <div className="relative z-10 flex items-center justify-between mb-5 sm:mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl border border-white/10 bg-white/[0.05] flex items-center justify-center shadow-[0_18px_40px_-28px_rgba(59,130,246,0.5)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] shadow-[0_18px_40px_-28px_rgba(59,130,246,0.5)]">
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
@@ -74,7 +74,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title="Live" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-300">Live</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--status-success)]">Live</span>
           </div>
         </div>
       )}
@@ -87,7 +87,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
             ))}
           </div>
         ) : logs.length === 0 ? (
-          <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-4 py-10 text-center">
+          <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-10 text-center">
             <p className="text-muted-foreground italic text-sm">No activity recorded.</p>
           </div>
         ) : (
@@ -98,7 +98,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
             return (
               <div
                 key={log.id}
-                className="group flex items-start gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-[24px] transition-all border border-white/6 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/12"
+                className="group flex items-start gap-3 rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-3.5 transition-all hover:border-[var(--glass-border)] hover:bg-[var(--glass-soft-bg)] sm:gap-4 sm:p-4"
               >
                 <div className={cn(
                   "w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-[0_18px_36px_-28px_rgba(0,0,0,0.45)]",
@@ -111,7 +111,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
                     <span className="text-xs font-bold text-foreground truncate pr-2">
                       {log.title}
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap rounded-full border border-white/8 px-2 py-1 bg-white/[0.03]">
+                    <span className="whitespace-nowrap rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2 py-1 text-[10px] font-medium text-muted-foreground">
                       {getRelativeTime(log.createdAt)}
                     </span>
                   </div>
@@ -126,7 +126,7 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
         )}
       </div>
 
-      <div className="relative z-10 mt-5 sm:mt-6 pt-4 border-t border-white/8 flex items-center justify-between">
+      <div className="relative z-10 mt-5 flex items-center justify-between border-t border-[var(--glass-border-subtle)] pt-4 sm:mt-6">
         <div className="flex items-center gap-2">
           <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.18em]">Ayn Neural Core</span>

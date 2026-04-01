@@ -75,7 +75,7 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
                         {documentType}
                     </span>
                     {confidence != null && (
-                        <span className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300">
+                        <span className="inline-flex rounded-full border border-[var(--status-success-border)] bg-[var(--status-success-bg)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--status-success)]">
                             {Math.round(confidence)}% confidence
                         </span>
                     )}

@@ -224,7 +224,7 @@ function AnalyticsContent() {
       {
         label: "Readiness",
         value: `${Math.round(analytics.avgScore ?? 0)}%`,
-        tone: (analytics.avgScore ?? 0) >= 70 ? "text-emerald-300" : (analytics.avgScore ?? 0) >= 40 ? "text-amber-200" : "text-rose-200",
+        tone: (analytics.avgScore ?? 0) >= 70 ? "text-[var(--status-success)]" : (analytics.avgScore ?? 0) >= 40 ? "text-[var(--status-warning)]" : "text-[var(--status-critical)]",
         icon: ShieldCheck,
       },
       {
@@ -236,7 +236,7 @@ function AnalyticsContent() {
       {
         label: "Anomalies",
         value: `${analytics.anomalies?.length ?? 0} flagged`,
-        tone: (analytics.anomalies?.length ?? 0) > 0 ? "text-amber-200" : "text-emerald-300",
+        tone: (analytics.anomalies?.length ?? 0) > 0 ? "text-[var(--status-warning)]" : "text-[var(--status-success)]",
         icon: Activity,
       },
       {
@@ -308,13 +308,13 @@ function AnalyticsContent() {
 
           <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {executiveNotes.map((note) => (
-              <div key={note.label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+              <div key={note.label} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{note.label}</p>
                     <p className={cn("mt-2 text-sm sm:text-base font-bold truncate", note.tone)}>{note.value}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
                     <note.icon className="w-4 h-4 text-primary" />
                   </div>
                 </div>
@@ -364,14 +364,14 @@ function AnalyticsContent() {
                   <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12),transparent_70%)] pointer-events-none" />
                   <div className="relative z-10 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300">Strongest Standard</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-success)]">Strongest Standard</p>
                       <h3 className="mt-2 text-xl font-bold text-foreground">{strongestStandard.standardTitle}</h3>
                       <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                         Leading performance this period with an average score of {Math.round(strongestStandard.avgScore)}% across {strongestStandard.reportCount} reports.
                       </p>
                     </div>
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
-                      <TrendingUp className="w-5 h-5 text-emerald-300" />
+                      <TrendingUp className="w-5 h-5 text-[var(--status-success)]" />
                     </div>
                   </div>
                 </div>
@@ -382,7 +382,7 @@ function AnalyticsContent() {
                   <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(201,66,74,0.12),transparent_70%)] pointer-events-none" />
                   <div className="relative z-10 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-rose-300">Needs Attention</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-critical)]">Needs Attention</p>
                       <h3 className="mt-2 text-xl font-bold text-foreground">{weakestStandard.standardTitle}</h3>
                       <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                         Lowest average score in the selected window at {Math.round(weakestStandard.avgScore)}%. This is the best place to focus your next evidence or analysis cycle.
@@ -391,7 +391,7 @@ function AnalyticsContent() {
                     <button
                       type="button"
                       onClick={() => router.push("/platform/gap-analysis")}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-white/[0.07]"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
                     >
                       Run Analysis
                       <ArrowUpRight className="w-4 h-4" />

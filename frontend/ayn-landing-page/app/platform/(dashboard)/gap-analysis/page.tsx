@@ -367,19 +367,19 @@ function GapAnalysisContent() {
           </div>
 
           <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Open High Risk</p>
-              <p className="mt-2 text-xl font-bold text-rose-200">{activeGapCount}</p>
+              <p className="mt-2 text-xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Completed Scans</p>
               <p className="mt-2 text-xl font-bold text-foreground">{completedReports}</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Remediation Rate</p>
-              <p className="mt-2 text-xl font-bold text-emerald-300">{remediationRate}%</p>
+              <p className="mt-2 text-xl font-bold text-[var(--status-success)]">{remediationRate}%</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Alignment Index</p>
               <p className="mt-2 text-xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "No report"}</p>
             </div>

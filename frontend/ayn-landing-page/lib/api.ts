@@ -885,6 +885,32 @@ class ApiClient {
     return this.request<any[]>("/horus/history")
   }
 
+  async getDeepagentsStatus() {
+    return this.request<{
+      enabled: boolean
+      provider_ready: boolean
+      mode: string
+      result: string | null
+      metadata: Record<string, any>
+    }>("/deepagents/status")
+  }
+
+  async runDeepResearch(prompt: string, chatId?: string | null) {
+    return this.request<{
+      enabled: boolean
+      provider_ready: boolean
+      mode: string
+      result: string | null
+      metadata: Record<string, any>
+    }>("/deepagents/research", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt,
+        chat_id: chatId ?? null,
+      }),
+    })
+  }
+
   async getChatMessages(chatId: string) {
     return this.request<any>(`/horus/history/${chatId}`)
   }

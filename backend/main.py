@@ -29,6 +29,7 @@ from app.compliance.router import router as compliance_router
 from app.analytics.router import router as analytics_router
 from app.calendar.router import router as calendar_router
 from app.drafts.router import router as drafts_router
+from app.deepagents.router import router as deepagents_router
 
 # Configure logging
 logging.basicConfig(
@@ -109,6 +110,7 @@ app.include_router(compliance_router, prefix="/api", tags=["Compliance"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])
 app.include_router(drafts_router, prefix="/api/drafts", tags=["Drafts"])
+app.include_router(deepagents_router, prefix="/api", tags=["DeepAgents"])
 
 
 @app.get("/")

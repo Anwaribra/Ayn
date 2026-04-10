@@ -44,7 +44,7 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
-import { useHorus, type CitationSource, type ToolStep, type FileStatus } from "@/lib/horus-context"
+import { useHorus, type CitationSource, type ToolStep, type FileStatus, type Message as HorusMessage } from "@/lib/horus-context"
 import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -233,7 +233,8 @@ export default function HorusAIChat() {
     retryLastMessage,
     stopGeneration,
     newChat,
-    loadChat
+    loadChat,
+    appendMessages,
   } = useHorus()
 
   const isEmpty = messages.length === 0
@@ -261,6 +262,9 @@ export default function HorusAIChat() {
   const [completionPulseKey, setCompletionPulseKey] = useState(0)
   const [thinkingPanelExpanded, setThinkingPanelExpanded] = useState(false)
   const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set())
+  const [draftMessage, setDraftMessage] = useState("")
+  const [deepResearchRunning, setDeepResearchRunning] = useState(false)
+  const [inputResetKey, setInputResetKey] = useState(0)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true
     return !localStorage.getItem("horus-sound-disabled")
@@ -269,6 +273,11 @@ export default function HorusAIChat() {
   const COLLAPSE_THRESHOLD = 600
 
   const { data: history, mutate: mutateHistory } = useSWR(user ? "horus-history" : null, () => api.getChatHistory())
+  const { data: deepagentsStatus } = useSWR(
+    user ? "deepagents-status" : null,
+    () => api.getDeepagentsStatus(),
+    { revalidateOnFocus: false }
+  )
   const { focusMode, setFocusMode } = useFocusMode()
   const { theme: _theme, setTheme, resolvedTheme } = useTheme()
 
@@ -700,8 +709,54 @@ export default function HorusAIChat() {
       attachments,
       visibleText: text,
     })
+    setDraftMessage("")
+    setInputResetKey((prev) => prev + 1)
     mutateHistory()
   }
+
+  const handleDeepResearch = useCallback(async () => {
+    const prompt = draftMessage.trim()
+    if (!prompt) {
+      toast.error("Write a research prompt first.")
+      return
+    }
+    if (!deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready) {
+      toast.error("Deep Research is not ready yet.")
+      return
+    }
+    if (isProcessing || deepResearchRunning) return
+
+    setDeepResearchRunning(true)
+    try {
+      const result = await api.runDeepResearch(prompt, currentChatId)
+      const now = Date.now()
+      const researchMessages: HorusMessage[] = [
+        {
+          id: crypto.randomUUID(),
+          role: "user",
+          content: prompt,
+          timestamp: now,
+          responseMode: "agent",
+        },
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: result.result?.trim()
+            ? `## Deep Research\n\n${result.result}`
+            : "Deep Research completed, but no text result was returned.",
+          timestamp: now + 1,
+        },
+      ]
+      appendMessages(researchMessages)
+      setDraftMessage("")
+      setInputResetKey((prev) => prev + 1)
+      toast.success("Deep Research finished")
+    } catch (error: any) {
+      toast.error(error?.message || "Deep Research failed")
+    } finally {
+      setDeepResearchRunning(false)
+    }
+  }, [appendMessages, currentChatId, deepResearchRunning, deepagentsStatus?.enabled, deepagentsStatus?.provider_ready, draftMessage, isProcessing])
 
   const handleAction = async (type: string, payload: string) => {
     if (type === 'gap_report') {
@@ -864,6 +919,11 @@ export default function HorusAIChat() {
                       <span className="sm:hidden">Run analysis or get your next best action.</span>
                       <span className="hidden sm:inline">Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.</span>
                     </p>
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <span className="glass-pill glass-text-secondary px-3 py-1 text-[11px] font-medium">
+                        Deep Research {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "ready" : "offline"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Quick prompts moved to slash command palette */}
@@ -1427,9 +1487,11 @@ export default function HorusAIChat() {
 
             <div>
               <AIChatInput
+                key={inputResetKey}
                 onSend={(message) => {
                   handleSendMessage(message, attachedFiles.map((af) => af.file));
                 }}
+                onChange={setDraftMessage}
                 onStop={() => {
                   stopGeneration();
                 }}
@@ -1453,6 +1515,17 @@ export default function HorusAIChat() {
                 ]}
                 footer={
                   <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                      onClick={handleDeepResearch}
+                      disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      {deepResearchRunning ? "Researching..." : "Deep Research"}
+                    </Button>
                     {reasoning && reasoning.steps.length > 0 && (
                       <Button
                         variant="ghost"
@@ -1491,7 +1564,7 @@ export default function HorusAIChat() {
                     </Select>
                     <span className="hidden h-4 w-px bg-white/8 sm:block" />
                     <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
-                      Fast mode
+                      {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}
                     </span>
                   </div>
                 }

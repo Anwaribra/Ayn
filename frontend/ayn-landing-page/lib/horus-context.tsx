@@ -20,7 +20,7 @@ export type CitationSource = {
     similarity?: number
 }
 
-interface Message {
+export interface Message {
     id: string
     role: "user" | "assistant" | "system"
     content: string
@@ -79,6 +79,7 @@ interface HorusContextValue {
     stopGeneration: () => void
     newChat: () => void
     loadChat: (chatId: string) => Promise<void>
+    appendMessages: (nextMessages: Message[]) => void
 }
 
 const HorusContext = createContext<HorusContextValue | undefined>(undefined)
@@ -483,6 +484,11 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setStreamError(null)
     }
 
+    const appendMessages = (nextMessages: Message[]) => {
+        if (!nextMessages.length) return
+        setMessages(prev => [...prev, ...nextMessages])
+    }
+
     const loadChat = async (chatId: string) => {
         stopGeneration()
         setStreamError(null)
@@ -504,7 +510,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <HorusContext.Provider value={{ messages, currentChatId, status, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat }}>
+        <HorusContext.Provider value={{ messages, currentChatId, status, streamError, sendMessage, resolveActionConfirmation, retryLastMessage, stopGeneration, newChat, loadChat, appendMessages }}>
             {children}
         </HorusContext.Provider>
     )

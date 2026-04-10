@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     DIFY_API_KEY: Optional[str] = None
     DIFY_BASE_URL: Optional[str] = None  # e.g. https://api.dify.ai/v1
 
+    # DeepAgents (optional - experimental deep research path)
+    DEEPAGENTS_ENABLED: bool = False
+    DEEPAGENTS_API_KEY: Optional[str] = None
+    DEEPAGENTS_BASE_URL: Optional[str] = None
+    DEEPAGENTS_MODEL: str = "openai/gpt-4o-mini"
+    DEEPAGENTS_SYSTEM_PROMPT: str = (
+        "You are Horus Deep Research, an experimental research planner for the Ayn platform. "
+        "Use provided institution context, stay evidence-first, and never perform destructive "
+        "or mutating actions."
+    )
+
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None

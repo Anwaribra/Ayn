@@ -1264,6 +1264,14 @@ export default function HorusAIChat() {
                   const assistantSourceLabel = msg.role === "assistant" ? getAttachmentContextLabel(relatedUserMessage, isArabicMessage) : null
                   const isAgentMessage = msg.role === "assistant" && msg.responseMode === "agent"
                   const hasToolState = (msg.toolSteps?.length ?? 0) > 0 || !!msg.pendingConfirmation
+                  const hasRenderableAssistantBody =
+                    msg.role === "assistant" &&
+                    (
+                      !!msg.content?.trim() ||
+                      !!(msg as any).structuredResult ||
+                      !!msg.pendingConfirmation ||
+                      ((msg as any).citations?.length ?? 0) > 0
+                    )
                   const shouldHideAssistantPlaceholder =
                     msg.role === "assistant" &&
                     isStreamingThis &&
@@ -1504,7 +1512,7 @@ export default function HorusAIChat() {
                           )}
 
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
-                          {msg.role === "assistant" && status === "idle" && (
+                          {msg.role === "assistant" && status === "idle" && hasRenderableAssistantBody && (
                             <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1 py-1 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
                               {/* Regenerate — only on last message */}
                               {msg.id === lastAssistantMsgId && (

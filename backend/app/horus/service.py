@@ -727,6 +727,33 @@ class HorusService:
                             full_response += chunk
                             yield chunk
                             await asyncio.sleep(0)
+
+                # Some providers can terminate a stream immediately with no text.
+                # In that case, fall back to a normal completion instead of returning silently.
+                if not full_response.strip():
+                    try:
+                        fallback = await asyncio.wait_for(
+                            client.chat(
+                                messages=fast_messages,
+                                context=(
+                                    f"You are Horus, the AI assistant for the Ayn platform. "
+                                    f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
+                                    f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                                    f"Answer conversational and general questions immediately and clearly. "
+                                    f"Prefer the shortest complete useful answer. "
+                                    f"Do not claim you accessed platform state unless explicitly requested."
+                                    f"{memory_line}"
+                                    f"{rag_fast}"
+                                ),
+                            ),
+                            timeout=18.0,
+                        )
+                    except asyncio.TimeoutError:
+                        fallback = "I’m taking too long to respond. Please try again."
+                    if fallback and fallback.strip():
+                        full_response = fallback.strip()
+                        async for piece in _yield_text_chunks(full_response):
+                            yield piece
             except Exception as fast_err:
                 logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
                 if not full_response:

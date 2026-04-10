@@ -233,15 +233,15 @@ function AssistantMessageMeta({
 }) {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium">
-      <span className={cn("rounded-full border px-2.5 py-1 tracking-[0.12em] uppercase", getResponseModeTone(mode))}>
+      <span className={cn("rounded-full border px-2.5 py-1 tracking-[0.12em] uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]", getResponseModeTone(mode))}>
         {getResponseModeLabel(mode, isArabic)}
       </span>
       {sourceLabel && (
-        <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-muted-foreground">
+        <span className="rounded-full border border-white/8 bg-white/[0.025] px-2.5 py-1 text-muted-foreground/90">
           {sourceLabel}
         </span>
       )}
-      <span className="text-muted-foreground/65">{formatTimestamp(timestamp, isArabic)}</span>
+      <span className="text-muted-foreground/55">{formatTimestamp(timestamp, isArabic)}</span>
     </div>
   )
 }
@@ -1296,7 +1296,7 @@ export default function HorusAIChat() {
                                 aria-atomic={isStreamingThis ? false : undefined}
                                 aria-busy={isStreamingThis}
                                 className={cn(
-                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[28px] rounded-tl-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.025))] px-4 py-4 text-[15px] leading-relaxed text-foreground prose text-start shadow-[0_24px_70px_-48px_rgba(15,23,42,0.95)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
+                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[26px] rounded-tl-lg border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02))] px-4 py-4 text-[15px] leading-relaxed text-foreground prose text-start shadow-[0_20px_52px_-42px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.025)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
                                   isStreamingThis && "horus-streaming-active"
                                 )}
                               >
@@ -1435,7 +1435,7 @@ export default function HorusAIChat() {
 
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && (
-                            <div className="glass-panel relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-2xl p-1 sm:mt-3 sm:p-1.5">
+                            <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1 py-1 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
                               {/* Regenerate — only on last message */}
                               {msg.id === lastAssistantMsgId && (
                                 <>
@@ -1446,7 +1446,7 @@ export default function HorusAIChat() {
                                   >
                                     <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                   </button>
-                                  <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
+                                  <div className="mx-0.5 h-3 w-px bg-white/10" />
                                 </>
                               )}
                               {msg.id === lastAssistantMsgId && (
@@ -1458,7 +1458,7 @@ export default function HorusAIChat() {
                                   >
                                     <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                   </button>
-                                  <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
+                                  <div className="mx-0.5 h-3 w-px bg-white/10" />
                                 </>
                               )}
                               {/* M1: Copy */}
@@ -1477,7 +1477,7 @@ export default function HorusAIChat() {
                                 </button>
                               )}
                               {/* Divider */}
-                              <div className="mx-0.5 h-3 w-px bg-[var(--glass-border)]" />
+                              <div className="mx-0.5 h-3 w-px bg-white/10" />
                               {/* M2: Feedback */}
                               <button
                                 onClick={() => handleFeedback(msg.id, "up")}
@@ -1511,7 +1511,7 @@ export default function HorusAIChat() {
                               </button>
                               {/* Tiered feedback: categories + Tell us more when thumbs down expanded */}
                               {feedback[msg.id] === "down" && feedbackDownExpanded === msg.id && !feedbackPersisted.has(msg.id) && (
-                                <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--glass-panel)] p-2 shadow-lg">
+                                <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[220px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.94)] p-2.5 shadow-lg backdrop-blur-xl">
                                   <p className="text-[11px] font-medium text-muted-foreground mb-2">What was wrong?</p>
                                   <div className="flex flex-wrap gap-1.5 mb-2">
                                     {["Inaccurate", "Not relevant", "Incomplete", "Harmful"].map((cat) => (

@@ -46,14 +46,14 @@ interface AgentExecutionTimelineProps {
 }
 
 const PHASE_LABELS: Record<AgentExecutionPhase, string> = {
-  planning: "Planning",
-  tool_selected: "Tool selected",
+  planning: "Preparing",
+  tool_selected: "Action selected",
   waiting_confirmation: "Awaiting confirmation",
-  executing: "Executing",
-  completed: "Done",
+  executing: "Working",
+  completed: "Completed",
 }
 
-const PHASE_BAR_STEPS = ["Planning", "Reading", "Executing", "Done"]
+const PHASE_BAR_STEPS = ["Prepare", "Read", "Execute", "Done"]
 
 function phaseToBarIndex(phase: AgentExecutionPhase): number {
   if (phase === "completed") return 3
@@ -92,13 +92,13 @@ export function AgentExecutionTimeline({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: animDuration, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/80 overflow-hidden",
+        "overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.018))] shadow-[0_18px_44px_-34px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.03)]",
         compact ? "p-3" : "p-4",
         className
       )}
     >
       {/* Phase Progress Bar — horizontal bar above timeline */}
-      <div className="mb-3 flex items-center gap-0.5">
+      <div className="mb-3 flex items-center gap-1">
         {PHASE_BAR_STEPS.map((label, idx) => {
           const isDone = idx < activeBarIndex || (idx === activeBarIndex && isComplete)
           const isActive = idx === activeBarIndex && !isComplete
@@ -107,14 +107,14 @@ export function AgentExecutionTimeline({
             <div key={label} className="flex flex-1 items-center min-w-0">
               <div
                 className={cn(
-                  "h-1.5 flex-1 min-w-[12px] rounded-full transition-all duration-300",
-                  isDone && "bg-emerald-500/40",
-                  isActive && "bg-primary/50 horus-step-pulse",
-                  isPending && "bg-[var(--border-subtle)]/40"
+                  "h-1 flex-1 min-w-[12px] rounded-full transition-all duration-300",
+                  isDone && "bg-emerald-400/60",
+                  isActive && "bg-primary/55 horus-step-pulse",
+                  isPending && "bg-white/8"
                 )}
               />
               {idx < PHASE_BAR_STEPS.length - 1 && (
-                <div className="w-1 shrink-0 h-px bg-[var(--border-subtle)]/60" />
+                <div className="h-px w-1 shrink-0 bg-white/8" />
               )}
             </div>
           )
@@ -122,12 +122,12 @@ export function AgentExecutionTimeline({
       </div>
 
       {/* Header: current phase with AnimatePresence for phase transitions */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-start gap-3">
         {canCollapse && (
           <button
             type="button"
             onClick={() => setIsCollapsed((c) => !c)}
-            className="shrink-0 p-0.5 rounded hover:bg-[var(--border-subtle)]/50 transition-colors"
+            className="shrink-0 rounded-full p-1 transition-colors hover:bg-white/6"
             aria-label={isCollapsed ? "Expand" : "Collapse"}
           >
             {isCollapsed ? (
@@ -145,12 +145,12 @@ export function AgentExecutionTimeline({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: reducedMotion ? 0 : 0.2 }}
             className={cn(
-              "flex items-center justify-center rounded-lg shrink-0",
+              "flex shrink-0 items-center justify-center rounded-full border",
               phase === "completed"
-                ? "w-8 h-8 bg-emerald-500/15 text-emerald-500"
+                ? "h-9 w-9 border-emerald-500/20 bg-emerald-500/12 text-emerald-400"
                 : phase === "waiting_confirmation"
-                  ? "w-8 h-8 bg-amber-500/15 text-amber-500"
-                  : "w-8 h-8 bg-primary/15 text-primary"
+                  ? "h-9 w-9 border-amber-500/20 bg-amber-500/12 text-amber-400"
+                  : "h-9 w-9 border-primary/20 bg-primary/12 text-primary"
             )}
           >
             {phase === "completed" ? (
@@ -163,12 +163,12 @@ export function AgentExecutionTimeline({
           </motion.div>
         </AnimatePresence>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground truncate">
+          <p className="truncate text-[13px] font-semibold text-foreground">
             {isWaitingConfirmation && pendingTool
               ? `Confirm: ${pendingTool}`
               : PHASE_LABELS[phase]}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
             {phase === "planning" && "Reading platform state, selecting action…"}
             {phase === "tool_selected" && "Preparing to run…"}
             {phase === "waiting_confirmation" && "User approval required"}
@@ -183,7 +183,7 @@ export function AgentExecutionTimeline({
 
       {/* File chips — Cursor-style with status */}
       {activeFiles.length > 0 && (
-        <div className="mt-2 mb-3 flex flex-wrap gap-1.5">
+        <div className="mb-3 mt-1 flex flex-wrap gap-1.5">
           {activeFiles.map((filename, i) => {
             const status = fileStatuses[filename]
             const statusLabel =
@@ -203,10 +203,10 @@ export function AgentExecutionTimeline({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05, duration: 0.2 }}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium",
                   isExecuting
-                    ? "bg-primary/15 text-primary border border-primary/20"
-                    : "bg-muted/20 text-muted-foreground border border-[var(--border-subtle)]"
+                    ? "border border-primary/20 bg-primary/12 text-primary"
+                    : "border border-white/8 bg-white/[0.03] text-muted-foreground"
                 )}
               >
                 <FileText className="w-3 h-3 shrink-0" />
@@ -249,9 +249,9 @@ export function AgentExecutionTimeline({
                   }
             }
             className={cn(
-              "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold",
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
               isExecuting
-                ? "bg-primary/20 text-primary border border-primary/30"
+                ? "border border-primary/25 bg-primary/14 text-primary"
                 : "bg-primary/10 text-primary"
             )}
           >
@@ -270,8 +270,8 @@ export function AgentExecutionTimeline({
 
       {/* Step list — hide when collapsed */}
       {hasSteps && showExpanded && (
-        <div className="space-y-2">
-          <div className="h-px bg-[var(--border-subtle)]" />
+        <div className="space-y-2.5">
+          <div className="h-px bg-white/8" />
           <AnimatePresence>
             {steps.map((step, idx) => (
               <motion.div
@@ -285,16 +285,16 @@ export function AgentExecutionTimeline({
                   duration: reducedMotion ? 0 : 0.25,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="flex items-center gap-2.5"
+                className="flex items-start gap-2.5 rounded-2xl border border-white/6 bg-white/[0.02] px-2.5 py-2"
               >
                 <div
                   className={cn(
-                    "shrink-0 w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all",
                     step.status === "done"
-                      ? "border-emerald-500 bg-emerald-500/10"
+                      ? "border-emerald-500/40 bg-emerald-500/10"
                       : step.status === "active"
-                        ? "border-primary bg-primary/10 horus-step-pulse-glow"
-                        : "border-[var(--border-subtle)] bg-transparent"
+                        ? "border-primary/40 bg-primary/10 horus-step-pulse-glow"
+                        : "border-white/10 bg-transparent"
                   )}
                 >
                   {step.status === "done" ? (
@@ -305,18 +305,18 @@ export function AgentExecutionTimeline({
                 </div>
                 <span
                   className={cn(
-                    "text-[13px] font-medium truncate",
+                    "min-w-0 flex-1 text-[13px] font-medium leading-6",
                     step.status === "active"
                       ? "text-foreground"
                       : step.status === "done"
-                        ? "text-muted-foreground"
+                        ? "text-foreground/76"
                         : "text-muted-foreground/60"
                   )}
                 >
                   {step.label}
                 </span>
                 {step.tool && !activeToolStep?.tool && (
-                  <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-semibold text-primary">
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/15 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
                     <Wrench className="w-2.5 h-2.5" />
                     {step.tool}
                   </span>

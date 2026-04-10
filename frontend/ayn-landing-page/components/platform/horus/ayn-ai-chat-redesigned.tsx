@@ -108,6 +108,33 @@ const RESPONSE_MODES = [
   },
 ] as const
 
+function containsArabic(text?: string | null): boolean {
+  return !!text && /[\u0600-\u06FF]/.test(text)
+}
+
+function getResponseModeLabel(mode?: "ask" | "think" | "agent", isArabic = false) {
+  if (mode === "think") return isArabic ? "إجابة تحليلية" : "Reasoned answer"
+  if (mode === "agent") return isArabic ? "تنفيذ وكيل" : "Agent run"
+  return isArabic ? "إجابة مباشرة" : "Direct answer"
+}
+
+function getResponseModeTone(mode?: "ask" | "think" | "agent") {
+  if (mode === "think") return "border-amber-500/20 bg-amber-500/10 text-amber-200"
+  if (mode === "agent") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+  return "border-sky-500/20 bg-sky-500/10 text-sky-200"
+}
+
+function getAttachmentContextLabel(message?: HorusMessage | null, isArabic = false) {
+  if (!message?.attachments?.length) return null
+  const hasImages = message.attachments.some((file) => file.type === "image")
+  const hasDocs = message.attachments.some((file) => file.type === "document")
+
+  if (hasImages && hasDocs) return isArabic ? "تحليل مرفقات" : "Mixed attachment analysis"
+  if (hasImages) return isArabic ? "تحليل صورة" : "Image analysis"
+  if (hasDocs) return isArabic ? "تحليل مستند" : "Document analysis"
+  return null
+}
+
 // ─── Inline Thinking Bubble ──────────────────────────────────────────────────
 function InlineThinking({ reasoning }: { reasoning: ReasoningState | null }) {
   const [expanded, setExpanded] = useState(false)
@@ -175,6 +202,32 @@ function InlineThinking({ reasoning }: { reasoning: ReasoningState | null }) {
   )
 }
 
+function AssistantMessageMeta({
+  mode,
+  sourceLabel,
+  timestamp,
+  isArabic,
+}: {
+  mode?: "ask" | "think" | "agent"
+  sourceLabel?: string | null
+  timestamp: number
+  isArabic: boolean
+}) {
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium">
+      <span className={cn("rounded-full border px-2.5 py-1 tracking-[0.12em] uppercase", getResponseModeTone(mode))}>
+        {getResponseModeLabel(mode, isArabic)}
+      </span>
+      {sourceLabel && (
+        <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-muted-foreground">
+          {sourceLabel}
+        </span>
+      )}
+      <span className="text-muted-foreground/65">{formatTimestamp(timestamp, isArabic)}</span>
+    </div>
+  )
+}
+
 // Real thinking steps are now driven by __THINKING__: events from the backend.
 // This function is kept as a FALLBACK for when no thinking events arrive within 500ms
 // (e.g. very fast responses or agent actions).
@@ -216,6 +269,13 @@ function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => v
       </button>
     </div>
   )
+}
+
+function formatTimestamp(timestamp: number, isArabic = false) {
+  return new Intl.DateTimeFormat(isArabic ? "ar-EG" : undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(timestamp)
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
@@ -290,6 +350,7 @@ export default function HorusAIChat() {
   const fileStatuses = activeAssistantMsg?.fileStatuses ?? EMPTY_FILE_STATUSES
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")
   const lastUserHasAttachments = !!lastUserMessage?.attachments?.length
+  const preferArabicUi = containsArabic(lastUserMessage?.content) || messages.some((message) => containsArabic(message.content))
 
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
@@ -815,9 +876,6 @@ export default function HorusAIChat() {
     })
   }, [messages])
 
-  const formatTimestamp = (ts: number) =>
-    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-
   return (
       <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
@@ -940,7 +998,7 @@ export default function HorusAIChat() {
                     </span>
                   </div>
                 )}
-                {visibleMessages.map((msg) => {
+                {visibleMessages.map((msg, idx) => {
                   if (msg.role === "system") {
                     return (
                       <div key={msg.id} className="flex justify-center my-2 animate-in fade-in">
@@ -952,6 +1010,14 @@ export default function HorusAIChat() {
                   }
 
                   const isStreamingThis = status === "generating" && msg.role === "assistant" && msg.id === lastAssistantMsgId
+                  const relatedUserMessage =
+                    msg.role === "assistant"
+                      ? [...visibleMessages.slice(0, idx)].reverse().find((entry) => entry.role === "user")
+                      : null
+                  const isArabicMessage = containsArabic(msg.content)
+                  const assistantSourceLabel = msg.role === "assistant" ? getAttachmentContextLabel(relatedUserMessage, isArabicMessage) : null
+                  const isAgentMessage = msg.role === "assistant" && msg.responseMode === "agent"
+                  const hasToolState = (msg.toolSteps?.length ?? 0) > 0 || !!msg.pendingConfirmation
                   const shouldHideAssistantPlaceholder =
                     msg.role === "assistant" &&
                     isStreamingThis &&
@@ -977,17 +1043,17 @@ export default function HorusAIChat() {
                              {msg.content}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2 justify-end max-w-[88%]">
+                           <div className="mt-2 flex flex-wrap gap-2 justify-end max-w-[88%]">
                               {msg.attachments.map((file, idx) => (
-                                <div key={`${msg.id}-att-${idx}`} className="flex items-center gap-2 rounded-xl glass-panel glass-border px-2 py-1.5">
+                                <div key={`${msg.id}-att-${idx}`} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 py-2 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.8)]">
                                   {file.type === "image" && file.preview ? (
                                     <img src={file.preview} alt={file.name} className="h-10 w-10 rounded-lg object-cover" />
                                   ) : (
-                                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                                       <FileText className="w-4 h-4 text-primary" />
                                     </div>
                                   )}
-                                  <div className="text-[11px] text-muted-foreground truncate max-w-[120px]">{file.name}</div>
+                                  <div className="max-w-[140px] truncate text-[11px] font-medium text-muted-foreground">{file.name}</div>
                                 </div>
                               ))}
                             </div>
@@ -998,7 +1064,7 @@ export default function HorusAIChat() {
                                  {msg.responseMode}
                                </span>
                              )}
-                             <span>{formatTimestamp(msg.timestamp)}</span>
+                             <span>{formatTimestamp(msg.timestamp, isArabicMessage)}</span>
                            </div>
                         </div>
                       ) : (
@@ -1013,8 +1079,8 @@ export default function HorusAIChat() {
                           {/* Agent execution timeline — only show when there is real agent/tool state */}
                           {msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
-                            (activeResponseMode !== "ask") &&
-                            ((msg.thinkingSteps?.length ?? 0) > 0 || (msg.toolSteps?.length ?? 0) > 0 || msg.pendingConfirmation) &&
+                            isAgentMessage &&
+                            hasToolState &&
                             (() => {
                               const msgThinkingSteps = msg.thinkingSteps ?? EMPTY_STRINGS
                               const msgToolSteps = msg.toolSteps ?? EMPTY_TOOL_STEPS
@@ -1029,7 +1095,7 @@ export default function HorusAIChat() {
                               )
                               if (steps.length === 0 && !msg.pendingConfirmation) return null
                               return (
-                                <div className="mb-3">
+                                <div className="mb-2">
                                   <AgentExecutionTimeline
                                     steps={steps}
                                     phase={phase}
@@ -1082,55 +1148,65 @@ export default function HorusAIChat() {
                           )}
 
                           {msg.content ? (
-                            <div
-                              dir="auto"
-                              aria-live={isStreamingThis ? "polite" : undefined}
-                              aria-atomic={isStreamingThis ? false : undefined}
-                              aria-busy={isStreamingThis}
-                              className={cn(
-                                "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-3xl rounded-tl-lg border border-transparent px-4 py-3.5 text-[15px] leading-relaxed text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-4",
-                                isStreamingThis && "horus-streaming-active"
-                              )}
-                            >
-                              {(() => {
-                                const isLong = msg.content.length > COLLAPSE_THRESHOLD && !isStreamingThis
-                                const isExpanded = expandedMsgIds.has(msg.id)
-                                const showContent = !isLong || isExpanded
-                                return (
-                                  <>
-                                    <StreamingAssistantContent
-                                      content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
-                                      isStreaming={isStreamingThis}
-                                      speedMs={isStreamingThis && activeResponseMode === "ask" ? 30 : 160}
-                                      onAction={handleAction}
-                                    />
-                                    {isStreamingThis && (
-                                      <span className="inline-flex items-center gap-0.5 ml-1 align-middle">
-                                        <span
-                                          className="horus-stream-cursor inline-block w-[3px] h-[1em] bg-primary rounded-sm align-middle"
-                                          style={{ marginLeft: "2px" }}
-                                        />
-                                      </span>
-                                    )}
-                                    {isLong && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setExpandedMsgIds((s) => {
-                                          const next = new Set(s)
-                                          if (isExpanded) next.delete(msg.id)
-                                          else next.add(msg.id)
-                                          return next
-                                        })}
-                                        className="mt-2 flex items-center gap-1 text-[12px] font-medium text-primary hover:text-primary/80"
-                                      >
-                                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                        {isExpanded ? "Show less" : "Show more"}
-                                      </button>
-                                    )}
-                                  </>
-                                )
-                              })()}
-                            </div>
+                            <>
+                              <AssistantMessageMeta
+                                mode={msg.responseMode}
+                                sourceLabel={assistantSourceLabel}
+                                timestamp={msg.timestamp}
+                                isArabic={isArabicMessage}
+                              />
+                              <div
+                                dir="auto"
+                                aria-live={isStreamingThis ? "polite" : undefined}
+                                aria-atomic={isStreamingThis ? false : undefined}
+                                aria-busy={isStreamingThis}
+                                className={cn(
+                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[28px] rounded-tl-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.025))] px-4 py-4 text-[15px] leading-relaxed text-foreground prose text-start shadow-[0_24px_70px_-48px_rgba(15,23,42,0.95)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
+                                  isStreamingThis && "horus-streaming-active"
+                                )}
+                              >
+                                {(() => {
+                                  const isLong = msg.content.length > COLLAPSE_THRESHOLD && !isStreamingThis
+                                  const isExpanded = expandedMsgIds.has(msg.id)
+                                  const showContent = !isLong || isExpanded
+                                  return (
+                                    <>
+                                      <StreamingAssistantContent
+                                        content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
+                                        isStreaming={isStreamingThis}
+                                        speedMs={isStreamingThis && activeResponseMode === "ask" ? 30 : 160}
+                                        onAction={handleAction}
+                                      />
+                                      {isStreamingThis && (
+                                        <span className="ml-1 inline-flex items-center gap-0.5 align-middle">
+                                          <span
+                                            className="horus-stream-cursor inline-block h-[1em] w-[3px] rounded-sm bg-primary align-middle"
+                                            style={{ marginLeft: "2px" }}
+                                          />
+                                        </span>
+                                      )}
+                                      {isLong && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedMsgIds((s) => {
+                                            const next = new Set(s)
+                                            if (isExpanded) next.delete(msg.id)
+                                            else next.add(msg.id)
+                                            return next
+                                          })}
+                                          className="mt-3 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-primary transition-colors hover:border-primary/25 hover:text-primary/80"
+                                        >
+                                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                          {isExpanded
+                                            ? (isArabicMessage ? "عرض أقل" : "Show less")
+                                            : (isArabicMessage ? "عرض المزيد" : "Show more")}
+                                        </button>
+                                      )}
+                                    </>
+                                  )
+                                })()}
+                              </div>
+                            </>
                           ) : msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
                             status === "idle" &&
@@ -1367,10 +1443,10 @@ export default function HorusAIChat() {
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
                         </div>
-                        <span className="text-[11px] font-medium">Analyzing your attachment…</span>
+                        <span className="text-[11px] font-medium">{preferArabicUi ? "جارٍ تحليل المرفق…" : "Analyzing your attachment…"}</span>
                       </div>
                     ) : (
-                    (activeResponseMode !== "ask") &&
+                    activeResponseMode === "agent" &&
                     (activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
                       (() => {
                         const lastMsg = messages.filter((m) => m.role === "assistant").pop()
@@ -1415,7 +1491,7 @@ export default function HorusAIChat() {
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
                           <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
                         </div>
-                        <span className="text-[11px] font-medium">Answering…</span>
+                        <span className="text-[11px] font-medium">{preferArabicUi ? "جارٍ تجهيز الإجابة…" : "Answering…"}</span>
                       </div>
                     ) : (
                       <div

@@ -93,6 +93,30 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
 
+    const prefersArabicUi = () => {
+        if (typeof window === "undefined") return false
+        return (window.navigator.language || "").toLowerCase().startsWith("ar")
+    }
+
+    const buildAttachmentOnlyLabel = (attachments?: AttachmentPreview[]) => {
+        const useArabic = prefersArabicUi()
+        const hasImages = !!attachments?.some((item) => item.type === "image")
+        const hasDocs = !!attachments?.some((item) => item.type === "document")
+        const count = attachments?.length ?? 0
+
+        if (useArabic) {
+            if (hasImages && hasDocs) return count > 1 ? `تم إرفاق ${count} ملفات للتحليل` : "تم إرفاق ملف للتحليل"
+            if (hasImages) return count > 1 ? `تم إرفاق ${count} صور للتحليل` : "تم إرفاق صورة للتحليل"
+            if (hasDocs) return count > 1 ? `تم إرفاق ${count} مستندات للتحليل` : "تم إرفاق مستند للتحليل"
+            return count > 1 ? `تم إرفاق ${count} ملفات` : "تم إرفاق ملف"
+        }
+
+        if (hasImages && hasDocs) return count > 1 ? `${count} attachments added for analysis` : "Attachment added for analysis"
+        if (hasImages) return count > 1 ? `${count} images added for analysis` : "Image added for analysis"
+        if (hasDocs) return count > 1 ? `${count} documents added for analysis` : "Document added for analysis"
+        return count > 1 ? `${count} files attached` : "File attached"
+    }
+
     // 1. Auto-Resume Last Session on mount
     // 1. (Auto-Resume functionality removed, chat should start empty on refresh)
     useEffect(() => {
@@ -213,7 +237,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             const userMsg: Message = {
                 id: crypto.randomUUID(),
                 role: "user",
-                content: visibleUserText || "📎 Attached files for analysis",
+                content: visibleUserText || buildAttachmentOnlyLabel(opts?.attachments),
                 timestamp: Date.now(),
                 attachments: opts?.attachments,
                 responseMode: opts?.responseMode,
@@ -435,8 +459,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             hasFiles
                 ? (normalizedText
                     ? `${normalizedText}\n📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached`
-                    : `📎 ${files!.length} file${files!.length > 1 ? "s" : ""} attached for analysis`)
-                : (normalizedText || "📎 Attached files for analysis")
+                    : buildAttachmentOnlyLabel(opts?.attachments))
+                : (normalizedText || buildAttachmentOnlyLabel(opts?.attachments))
         )
 
         let base = buildModelMessage(text, files)

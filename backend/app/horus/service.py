@@ -130,6 +130,34 @@ class HorusService:
         return any(kw.lower() in msg for kw in compliance_keywords)
 
     @staticmethod
+    def _has_explicit_platform_action_intent(message: str | None) -> bool:
+        if not message:
+            return False
+        action_keywords = [
+            "run audit", "full audit", "gap analysis", "compliance gap", "remediation",
+            "check compliance", "score this", "map to standard", "map against",
+            "ncaaa", "iso 21001", "criteria", "criterion", "evidence vault",
+            "platform data", "dashboard", "workflow", "institution data",
+            "تشغيل تدقيق", "تدقيق كامل", "تحليل فجوات", "فجوات الامتثال", "خطة معالجة",
+            "تحقق من الامتثال", "قيم الملف", "طابق مع معيار", "المعيار", "المعايير",
+            "بيانات المنصة", "لوحة التحكم", "سير العمل", "بيانات المؤسسة",
+        ]
+        msg = message.lower()
+        return any(keyword in msg for keyword in action_keywords)
+
+    @classmethod
+    def _should_route_files_to_agent(cls, message: str | None, request_mode: str | None) -> bool:
+        if not message:
+            return False
+        if cls._has_explicit_platform_action_intent(message):
+            return True
+        # Agent mode alone is not enough when the request is really "analyze this attachment".
+        # File-only requests should stay on the multimodal file-analysis path.
+        if request_mode == "agent":
+            return False
+        return False
+
+    @staticmethod
     def _is_visual_only(files: List[Any] | None) -> bool:
         if not files:
             return False
@@ -579,10 +607,7 @@ class HorusService:
 
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         # Allow agent with files when: Agent mode selected, or message has platform keywords (e.g. "حلل", "analyze", "gaps")
-        agent_keywords = ["حلل", "analyze", "gaps", "فجوات", "compliance", "audit", "report", "تحليل"]
-        msg_lower = (message or "").lower()
-        has_agent_keywords = any(kw in msg_lower for kw in agent_keywords)
-        allow_agent_with_files = request_mode == "agent" or has_agent_keywords
+        allow_agent_with_files = self._should_route_files_to_agent(message, request_mode)
         if message and request_mode != "think" and (not files or allow_agent_with_files):
             try:
                 prisma_client = db

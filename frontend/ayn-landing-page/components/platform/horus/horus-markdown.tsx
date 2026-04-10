@@ -10,6 +10,10 @@ function sanitizeHorusContent(content: string): string {
   return content.replace(protocolPattern, "").trim()
 }
 
+function containsArabic(text: string): boolean {
+  return /[\u0600-\u06FF]/.test(text)
+}
+
 export function HorusMarkdown({
     content,
     onAction
@@ -17,30 +21,37 @@ export function HorusMarkdown({
     content: string;
     onAction?: (action: string, payload: string) => void
 }) {
+    const sanitized = sanitizeHorusContent(content)
+    const isArabic = containsArabic(sanitized)
+
     return (
-        <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:glass-layer-2 prose-pre:border prose-pre:border-glass-border prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-ul:list-disc prose-ul:pl-4 text-foreground">
+        <div
+            dir="auto"
+            className="prose prose-sm max-w-none text-[14px] leading-7 text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:my-0 prose-p:text-[0.97rem] prose-p:leading-7 prose-p:text-foreground/88 prose-strong:font-semibold prose-strong:text-foreground prose-a:font-semibold prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-ul:my-4 prose-ul:space-y-2 prose-ul:ps-5 prose-ol:my-4 prose-ol:space-y-2 prose-ol:ps-5 prose-li:marker:text-primary prose-code:rounded-md prose-code:border prose-code:border-border prose-code:bg-muted/60 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[12px] prose-code:text-foreground prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-[var(--border-subtle)] prose-pre:bg-black/20 prose-pre:p-4 prose-blockquote:my-4 prose-blockquote:rounded-r-2xl prose-blockquote:border-s-2 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-3 prose-blockquote:text-foreground/78 prose-hr:my-5 prose-hr:border-[var(--border-subtle)] prose-table:my-5 prose-table:w-full prose-th:border prose-th:border-[var(--border-subtle)] prose-th:bg-white/5 prose-th:px-3 prose-th:py-2 prose-th:text-start prose-th:text-xs prose-th:font-semibold prose-td:border prose-td:border-[var(--border-subtle)] prose-td:px-3 prose-td:py-2 prose-td:align-top"
+        >
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                    h2: ({ children }: any) => <h2 className="text-lg font-black mt-6 mb-3 flex items-center gap-2 text-foreground border-b border-border pb-2">{children}</h2>,
-                    h3: ({ children }: any) => <h3 className="text-sm font-bold mt-4 mb-2 text-muted-foreground uppercase tracking-wide">{children}</h3>,
-                    p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/90 font-medium leading-relaxed">{children}</p>,
-                    ul: ({ children }: any) => <ul className="mb-3 space-y-1 text-muted-foreground">{children}</ul>,
-                    li: ({ children }: any) => <li className="pl-1"><span className="mr-2">•</span>{children}</li>,
+                    h2: ({ children }: any) => <h2 className="mt-6 mb-3 text-base font-semibold text-foreground first:mt-0">{children}</h2>,
+                    h3: ({ children }: any) => <h3 className="mt-5 mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{children}</h3>,
+                    p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/88">{children}</p>,
+                    ul: ({ children }: any) => <ul className="mb-3 space-y-2 text-foreground/82">{children}</ul>,
+                    ol: ({ children }: any) => <ol className="mb-3 space-y-2 text-foreground/82">{children}</ol>,
+                    li: ({ children }: any) => <li className="ps-1">{children}</li>,
                     code: ({ className, children, ...props }: any) => {
                         const isBlock = /language-/.test(className || "")
                         return isBlock ? (
-                            <code className="block rounded-xl glass-layer-2 p-4 font-mono text-[12px] text-muted-foreground overflow-x-auto w-full border border-glass-border" {...props}>
+                            <code className="block w-full overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-black/20 p-4 font-mono text-[12px] text-foreground/88" {...props}>
                                 {children}
                             </code>
                         ) : (
-                            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border" {...props}>
+                            <code className="rounded-md border border-border bg-muted/60 px-1.5 py-0.5 font-mono text-[12px] text-foreground" {...props}>
                                 {children}
                             </code>
                         )
                     },
                     blockquote: ({ children }: any) => (
-                        <blockquote className="border-l-4 border-primary pl-4 py-1 my-4 bg-primary/5 rounded-r-lg italic text-muted-foreground">
+                        <blockquote className="my-4 rounded-e-2xl border-s-2 border-primary/40 bg-primary/5 px-4 py-3 text-foreground/78">
                             {children}
                         </blockquote>
                     ),
@@ -48,11 +59,11 @@ export function HorusMarkdown({
                         if (href?.startsWith('ACTION:')) {
                             const [_, type, payload] = href.split(':');
                             return (
-                                <div 
+                                <div
                                     onClick={() => onAction?.(type, payload)}
-                                    className="inline-flex items-center gap-3 p-2.5 pr-4 my-2 align-middle glass-layer-2 rounded-2xl border border-[var(--border-subtle)] shadow-sm hover:border-primary/40 hover:shadow-md transition-all group cursor-pointer w-fit"
+                                    className="my-2 inline-flex w-fit items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-white/[0.03] p-2.5 pe-4 align-middle shadow-sm transition-all hover:border-primary/40 hover:bg-primary/[0.04] hover:shadow-md group cursor-pointer"
                                 >
-                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 relative">
+                                    <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                                         <FileText className="w-4 h-4 text-primary" />
                                         <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
@@ -60,12 +71,12 @@ export function HorusMarkdown({
                                         </span>
                                     </div>
                                     <div className="flex flex-col min-w-0 pr-2">
-                                        <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">{children}</span>
-                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
+                                        <span className="line-clamp-1 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">{children}</span>
+                                        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                             {type === 'view_gap' ? 'View Document' : type === 'gap_report' ? 'Gap Report' : type.replace('_', ' ')}
                                         </span>
                                     </div>
-                                    <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[var(--surface-modal)] text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-modal)] text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                                     </div>
                                 </div>
@@ -78,7 +89,7 @@ export function HorusMarkdown({
                                   <HoverCardTrigger asChild>
                                     <a
                                         href={`/platform/evidence?highlight=${encodeURIComponent((children as string).trim())}`}
-                                        className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all cursor-pointer"
+                                        className="cursor-pointer font-semibold text-primary underline-offset-4 decoration-primary/30 transition-all hover:underline"
                                     >
                                         {children}
                                     </a>
@@ -89,8 +100,8 @@ export function HorusMarkdown({
                                          <FileText className="w-4 h-4 text-primary" />
                                        </div>
                                        <div>
-                                          <h4 className="text-xs font-bold text-foreground line-clamp-2">{children as string}</h4>
-                                          <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1 tracking-wider">Known Evidence</p>
+                                          <h4 className="line-clamp-2 text-xs font-semibold text-foreground">{children as string}</h4>
+                                          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Known Evidence</p>
                                        </div>
                                      </div>
                                      <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
@@ -104,7 +115,7 @@ export function HorusMarkdown({
                         return (
                             <a
                                 href={href}
-                                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all cursor-pointer"
+                                className="cursor-pointer font-semibold text-primary underline-offset-4 decoration-primary/30 transition-all hover:underline"
                             >
                                 {children}
                             </a>
@@ -112,7 +123,7 @@ export function HorusMarkdown({
                     }
                 }}
             >
-                {sanitizeHorusContent(content)}
+                {isArabic ? sanitized.replace(/\n{3,}/g, "\n\n") : sanitized}
             </ReactMarkdown>
         </div>
     )

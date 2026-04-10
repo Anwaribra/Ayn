@@ -92,6 +92,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const [streamError, setStreamError] = useState<string | null>(null)
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
+    const streamRemainderRef = useRef("")
 
     const prefersArabicUi = () => {
         if (typeof window === "undefined") return false
@@ -260,6 +261,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         }])
 
         abortControllerRef.current = new AbortController()
+        streamRemainderRef.current = ""
         let fullContent = ""
 
         try {
@@ -268,145 +270,154 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 files,
                 currentChatId || undefined,
                 (chunk) => {
-                    if (chunk.startsWith("__CHAT_ID__:")) {
-                        const newId = chunk.split(":")[1].trim()
-                        setCurrentChatId(newId)
-                        return
-                    }
+                    const combinedChunk = streamRemainderRef.current + chunk
+                    const parts = combinedChunk.split("\n")
+                    const hasTrailingPartialProtocol = combinedChunk.startsWith("__") || combinedChunk.includes("\n__")
+                    streamRemainderRef.current = ""
 
-                    if (chunk.startsWith("__THINKING__:")) {
-                        const rest = chunk.slice("__THINKING__:".length)
-                        const nlIdx = rest.indexOf("\n")
-                        const stepText = (nlIdx >= 0 ? rest.slice(0, nlIdx) : rest).trim()
-                        const remainder = nlIdx >= 0 ? rest.slice(nlIdx + 1) : ""
-                    if (stepText) {
-                        setMessages(prev => prev.map(m =>
-                            m.id === assistantMsgId
-                                ? { ...m, thinkingSteps: [...(m.thinkingSteps ?? []), stepText] }
-                                : m
-                        ))
-                    }
-                    if (remainder) {
-                        fullContent += remainder
-                        setMessages(prev => prev.map(m =>
+                    if (hasTrailingPartialProtocol && !combinedChunk.endsWith("\n")) {
+                        const lastPart = parts.pop() ?? ""
+                        if (lastPart.startsWith("__")) {
+                            streamRemainderRef.current = lastPart
+                        } else if (parts.length === 0) {
+                            fullContent += lastPart
+                            setMessages(prev => prev.map(m =>
                                 m.id === assistantMsgId ? { ...m, content: fullContent } : m
                             ))
+                        } else {
+                            parts.push(lastPart)
                         }
-                        return
                     }
 
-                    if (chunk.startsWith("__FILE_STATUS__:")) {
-                        try {
-                            const jsonStr = chunk.slice("__FILE_STATUS__:".length).trim()
-                            const parsed = JSON.parse(jsonStr)
-                            const fn = parsed?.filename
-                            const st = parsed?.status
-                            if (fn && st) {
-                                setMessages(prev => prev.map(m => {
-                                    if (m.id !== assistantMsgId) return m
-                                    const nextStatuses = { ...(m.fileStatuses ?? {}), [fn]: st }
-                                    const nextActive = (st === "uploading" || st === "analyzing")
-                                        ? Array.from(new Set([...(m.activeFiles ?? []), fn]))
-                                        : (m.activeFiles ?? [])
-                                    return { ...m, fileStatuses: nextStatuses, activeFiles: nextActive }
-                                }))
-                            }
-                        } catch (e) {
-                            console.error("[Horus] Failed to parse file status:", e)
+                    const processProtocolLine = (line: string): boolean => {
+                        if (line.startsWith("__CHAT_ID__:")) {
+                            const newId = line.split(":")[1]?.trim()
+                            if (newId) setCurrentChatId(newId)
+                            return true
                         }
-                        return
-                    }
-                    if (chunk.startsWith("__FILE__:")) {
-                        const filename = chunk.slice("__FILE__:".length).trim()
-                        if (filename) {
-                            setMessages(prev => prev.map(m =>
-                                m.id === assistantMsgId
-                                    ? { ...m, activeFiles: Array.from(new Set([...(m.activeFiles ?? []), filename])) }
-                                    : m
-                            ))
-                        }
-                        return
-                    }
 
-                    if (chunk.startsWith("__CITATION__:")) {
-                        try {
-                            const jsonStr = chunk.slice("__CITATION__:".length).trim()
-                            const parsed = JSON.parse(jsonStr) as CitationSource[]
-                            if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (line.startsWith("__THINKING__:")) {
+                            const stepText = line.slice("__THINKING__:".length).trim()
+                            if (stepText) {
                                 setMessages(prev => prev.map(m =>
-                                    m.id === assistantMsgId ? { ...m, citations: parsed } : m
+                                    m.id === assistantMsgId
+                                        ? { ...m, thinkingSteps: [...(m.thinkingSteps ?? []), stepText] }
+                                        : m
                                 ))
                             }
-                        } catch (e) {
-                            console.error("[Horus] Failed to parse citation:", e)
+                            return true
                         }
-                        return
-                    }
 
-                    if (chunk.startsWith("__TOOL_STEP__:")) {
-                        try {
-                            const jsonStr = chunk.slice("__TOOL_STEP__:".length).trim()
-                            const parsed = JSON.parse(jsonStr)
-                            setMessages(prev => prev.map(m => {
-                                if (m.id !== assistantMsgId) return m
-                                const prevSteps = m.toolSteps ?? []
-                                const without = prevSteps.filter(t => t.step !== parsed.step)
-                                const nextSteps = [...without, parsed].sort((a, b) => a.step - b.step)
-                                return { ...m, toolSteps: nextSteps }
-                            }))
-                        } catch (e) {
-                            console.error("[Horus] Failed to parse tool step:", e)
+                        if (line.startsWith("__FILE_STATUS__:")) {
+                            try {
+                                const jsonStr = line.slice("__FILE_STATUS__:".length).trim()
+                                const parsed = JSON.parse(jsonStr)
+                                const fn = parsed?.filename
+                                const st = parsed?.status
+                                if (fn && st) {
+                                    setMessages(prev => prev.map(m => {
+                                        if (m.id !== assistantMsgId) return m
+                                        const nextStatuses = { ...(m.fileStatuses ?? {}), [fn]: st }
+                                        const nextActive = (st === "uploading" || st === "analyzing")
+                                            ? Array.from(new Set([...(m.activeFiles ?? []), fn]))
+                                            : (m.activeFiles ?? [])
+                                        return { ...m, fileStatuses: nextStatuses, activeFiles: nextActive }
+                                    }))
+                                }
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse file status:", e)
+                            }
+                            return true
                         }
-                        return
-                    }
 
-                    if (chunk.startsWith("__ACTION_CONFIRM__:")) {
-                        try {
-                            const jsonStr = chunk.slice("__ACTION_CONFIRM__:".length).trim()
-                            const parsed = JSON.parse(jsonStr)
-                            setMessages(prev => prev.map(m =>
-                                m.id === assistantMsgId ? { ...m, pendingConfirmation: parsed } : m
-                            ))
-                        } catch (e) {
-                            console.error("[Horus] Failed to parse action confirmation:", e)
+                        if (line.startsWith("__FILE__:")) {
+                            const filename = line.slice("__FILE__:".length).trim()
+                            if (filename) {
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantMsgId
+                                        ? { ...m, activeFiles: Array.from(new Set([...(m.activeFiles ?? []), filename])) }
+                                        : m
+                                ))
+                            }
+                            return true
                         }
-                        return
-                    }
 
-                    if (chunk.startsWith("__ACTION_RESULT__:")) {
-                        try {
-                            const rest = chunk.slice("__ACTION_RESULT__:".length)
-                            const nl = rest.indexOf("\n")
-                            const jsonStr = (nl >= 0 ? rest.slice(0, nl) : rest).trim()
-                            const parsed = JSON.parse(jsonStr)
-                            setMessages(prev => prev.map(m =>
-                                m.id === assistantMsgId ? { ...m, structuredResult: parsed, pendingConfirmation: null } : m
-                            ))
-                            if (nl >= 0) {
-                                const narrative = rest.slice(nl + 1).trimStart()
-                                if (narrative) {
-                                    fullContent += narrative
+                        if (line.startsWith("__CITATION__:")) {
+                            try {
+                                const jsonStr = line.slice("__CITATION__:".length).trim()
+                                const parsed = JSON.parse(jsonStr) as CitationSource[]
+                                if (Array.isArray(parsed) && parsed.length > 0) {
                                     setMessages(prev => prev.map(m =>
-                                        m.id === assistantMsgId ? { ...m, content: fullContent } : m
+                                        m.id === assistantMsgId ? { ...m, citations: parsed } : m
                                     ))
                                 }
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse citation:", e)
                             }
-                        } catch (e) {
-                            console.error("[Horus] Failed to parse action result:", e)
+                            return true
                         }
-                        return
+
+                        if (line.startsWith("__TOOL_STEP__:")) {
+                            try {
+                                const jsonStr = line.slice("__TOOL_STEP__:".length).trim()
+                                const parsed = JSON.parse(jsonStr)
+                                setMessages(prev => prev.map(m => {
+                                    if (m.id !== assistantMsgId) return m
+                                    const prevSteps = m.toolSteps ?? []
+                                    const without = prevSteps.filter(t => t.step !== parsed.step)
+                                    const nextSteps = [...without, parsed].sort((a, b) => a.step - b.step)
+                                    return { ...m, toolSteps: nextSteps }
+                                }))
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse tool step:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__ACTION_CONFIRM__:")) {
+                            try {
+                                const jsonStr = line.slice("__ACTION_CONFIRM__:".length).trim()
+                                const parsed = JSON.parse(jsonStr)
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantMsgId ? { ...m, pendingConfirmation: parsed } : m
+                                ))
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse action confirmation:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__ACTION_RESULT__:")) {
+                            try {
+                                const rest = line.slice("__ACTION_RESULT__:".length)
+                                const parsed = JSON.parse(rest.trim())
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantMsgId ? { ...m, structuredResult: parsed, pendingConfirmation: null } : m
+                                ))
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse action result:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__STREAM_ERROR__:")) {
+                            const errorMsg = line.slice("__STREAM_ERROR__:".length).trim()
+                            setStreamError(errorMsg || "Connection interrupted. Please try again.")
+                            return true
+                        }
+
+                        return false
                     }
 
-                    if (chunk.startsWith("__STREAM_ERROR__:")) {
-                        const errorMsg = chunk.slice("__STREAM_ERROR__:".length).trim()
-                        setStreamError(errorMsg || "Connection interrupted. Please try again.")
-                        return
-                    }
-
-                    fullContent += chunk
-                    setMessages(prev => prev.map(m =>
-                        m.id === assistantMsgId ? { ...m, content: fullContent } : m
-                    ))
+                    parts.forEach((part, index) => {
+                        if (!part) return
+                        if (processProtocolLine(part)) return
+                        const needsNewline = index < parts.length - 1 || combinedChunk.endsWith("\n")
+                        fullContent += part + (needsNewline ? "\n" : "")
+                        setMessages(prev => prev.map(m =>
+                            m.id === assistantMsgId ? { ...m, content: fullContent } : m
+                        ))
+                    })
                 },
                 abortControllerRef.current.signal
             )
@@ -430,6 +441,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         } finally {
             setStatus("idle")
             abortControllerRef.current = null
+            streamRemainderRef.current = ""
         }
     }
 

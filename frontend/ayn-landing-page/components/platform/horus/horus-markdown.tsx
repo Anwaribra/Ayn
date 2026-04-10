@@ -5,9 +5,14 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 
 /** Strip leaked __THINKING__: or THINKING: protocol markers from displayed content */
 function sanitizeHorusContent(content: string): string {
-  // Remove leading protocol blocks (known step labels that may leak)
+  const leakedProtocolLine =
+    /^(?:__CHAT_ID__:[^\n]*|__THINKING__:[^\n]*|THINKING:[^\n]*|__FILE_STATUS__:\{.*\}|FILE_STATUS:\{.*\}|__FILE__:[^\n]*|FILE:\{.*\}|__TOOL_STEP__:\{.*\}|__ACTION_CONFIRM__:\{.*\}|__ACTION_RESULT__:\{.*\}|__STREAM_ERROR__:[^\n]*)$/gm
   const protocolPattern = /^(?:(?:__THINKING__:|THINKING:)(?:Searching conversation history|Generating response|Reading platform state|Reading your platform|Got it|Processing|Identified action|Executing|Prepared|Phase \d)[^\n]*(?:\n|\s*))*/
-  return content.replace(protocolPattern, "").trim()
+  return content
+    .replace(leakedProtocolLine, "")
+    .replace(protocolPattern, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
 }
 
 function containsArabic(text: string): boolean {

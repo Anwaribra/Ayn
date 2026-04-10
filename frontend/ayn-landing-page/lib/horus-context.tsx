@@ -20,6 +20,17 @@ export type CitationSource = {
     similarity?: number
 }
 
+export type AgentRunMeta = {
+    mode?: string
+    intent?: string
+    route?: string
+    goal?: string
+    reason?: string
+    tool?: string
+    tools?: string[]
+    step_count?: number
+}
+
 export interface Message {
     id: string
     role: "user" | "assistant" | "system"
@@ -45,6 +56,8 @@ export interface Message {
     } | null
     /** RAG sources for citation UI (from __CITATION__ protocol) */
     citations?: CitationSource[]
+    /** Agent route/goal metadata (from __AGENT_RUN__ protocol) */
+    agentRun?: AgentRunMeta | null
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
@@ -258,6 +271,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             toolSteps: [],
             activeFiles: [],
             fileStatuses: {},
+            agentRun: null,
         }])
 
         abortControllerRef.current = new AbortController()
@@ -353,6 +367,19 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                                 }
                             } catch (e) {
                                 console.error("[Horus] Failed to parse citation:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__AGENT_RUN__:")) {
+                            try {
+                                const jsonStr = line.slice("__AGENT_RUN__:".length).trim()
+                                const parsed = JSON.parse(jsonStr) as AgentRunMeta
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantMsgId ? { ...m, agentRun: parsed } : m
+                                ))
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse agent run metadata:", e)
                             }
                             return true
                         }

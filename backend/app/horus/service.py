@@ -130,6 +130,89 @@ class HorusService:
         return any(kw.lower() in msg for kw in compliance_keywords)
 
     @staticmethod
+    def _classify_agent_intent(
+        message: str | None,
+        files: List[Any] | None = None,
+        request_mode: str | None = None,
+    ) -> Dict[str, Any]:
+        msg = (message or "").strip()
+        lower = msg.lower()
+        has_files = bool(files)
+
+        multi_step_markers = [
+            "then", "after that", "and then", "compare and", "generate and", "run and",
+            "ثم", "وبعد", "بعد كده", "وبعدين", "اعمل", "ثم اعرض",
+        ]
+        platform_action_markers = [
+            "audit", "gap analysis", "compliance gaps", "remediation", "analytics",
+            "report export", "criteria", "ncaaa", "iso 21001", "dashboard", "institution data",
+            "تدقيق", "تحليل فجوات", "فجوات الامتثال", "خطة معالجة", "تحليلات", "تقرير",
+            "المعايير", "معيار", "بيانات المؤسسة", "لوحة التحكم",
+        ]
+        file_analysis_markers = [
+            "analyze this file", "analyze the file", "summarize this", "summarize the attached",
+            "review this document", "what is this file", "what is in this", "read this pdf",
+            "حلل الملف", "حلل المستند", "لخص", "اقرأ الملف", "إيه ده", "ايه ده", "ده ايه", "ما هذا",
+        ]
+
+        if has_files:
+            if any(marker in lower for marker in file_analysis_markers) or not msg:
+                return {
+                    "kind": "file_analysis",
+                    "label": "File analysis",
+                    "confidence": "high",
+                    "reason": "The request is centered on understanding the attached file itself.",
+                }
+            if any(marker in lower for marker in platform_action_markers):
+                if any(marker in lower for marker in multi_step_markers):
+                    return {
+                        "kind": "workflow",
+                        "label": "Workflow run",
+                        "confidence": "medium",
+                        "reason": "The request mixes attached evidence with multiple compliance actions.",
+                    }
+                return {
+                    "kind": "platform_action",
+                    "label": "Platform action",
+                    "confidence": "high",
+                    "reason": "The request asks for a compliance action against platform standards or reports.",
+                }
+            return {
+                "kind": "file_analysis",
+                "label": "File analysis",
+                "confidence": "medium",
+                "reason": "An attachment is present and no explicit platform action was requested.",
+            }
+
+        if any(marker in lower for marker in multi_step_markers):
+            return {
+                "kind": "workflow",
+                "label": "Workflow run",
+                "confidence": "medium",
+                "reason": "The user asked for multiple sequential outcomes.",
+            }
+        if any(marker in lower for marker in platform_action_markers):
+            return {
+                "kind": "platform_action",
+                "label": "Platform action",
+                "confidence": "high",
+                "reason": "The user asked for a concrete audit, gap, analytics, or remediation action.",
+            }
+        if request_mode == "agent":
+            return {
+                "kind": "advisory",
+                "label": "Agent advisory",
+                "confidence": "low",
+                "reason": "Agent mode is selected, but the request does not clearly require platform execution.",
+            }
+        return {
+            "kind": "chat",
+            "label": "Direct answer",
+            "confidence": "low",
+            "reason": "The request looks conversational rather than action-oriented.",
+        }
+
+    @staticmethod
     def _has_explicit_platform_action_intent(message: str | None) -> bool:
         if not message:
             return False
@@ -175,6 +258,65 @@ class HorusService:
         if isinstance(part, dict):
             return part.get("filename") or "file"
         return getattr(part, "filename", None) or "file"
+
+    @staticmethod
+    def _infer_agent_goal(message: str | None, files: List[Any] | None = None) -> str:
+        if message and message.strip():
+            return message.strip()[:180]
+        if files:
+            filenames = [HorusService._buffered_part_filename(f) for f in files[:2]]
+            joined = ", ".join(filenames)
+            return f"Analyze attached file{'s' if len(files) > 1 else ''}: {joined}"
+        return "Assist with the current request"
+
+    @classmethod
+    def _classify_agent_intent(
+        cls,
+        *,
+        message: str | None,
+        files: List[Any] | None,
+        request_mode: str | None,
+    ) -> Dict[str, Any]:
+        msg = (message or "").strip().lower()
+        has_files = bool(files)
+        explicit_platform = cls._has_explicit_platform_action_intent(message)
+        asks_multi_step = any(phrase in msg for phrase in [
+            "full audit", "gap analysis", "remediation plan", "compare and summarize",
+            "analyze and map", "audit and recommend", "تدقيق كامل", "تحليل فجوات", "خطة معالجة",
+        ])
+        asks_file_analysis = has_files and not explicit_platform
+
+        if asks_file_analysis:
+            return {
+                "mode": request_mode or "agent",
+                "intent": "file_analysis",
+                "route": "file_analysis",
+                "goal": cls._infer_agent_goal(message, files),
+                "reason": "The request is centered on the attached file, so Horus should analyze the attachment directly before considering platform actions.",
+            }
+        if explicit_platform and asks_multi_step:
+            return {
+                "mode": request_mode or "agent",
+                "intent": "multi_step_workflow",
+                "route": "planner",
+                "goal": cls._infer_agent_goal(message, files),
+                "reason": "The request asks for a broader compliance workflow, so Horus should plan and execute multiple platform-aware steps.",
+            }
+        if explicit_platform:
+            return {
+                "mode": request_mode or "agent",
+                "intent": "platform_action",
+                "route": "planner",
+                "goal": cls._infer_agent_goal(message, files),
+                "reason": "The request explicitly references compliance or platform actions, so Horus should select the most useful tool path.",
+            }
+        return {
+            "mode": request_mode or "agent",
+            "intent": "agent_chat",
+            "route": "chat",
+            "goal": cls._infer_agent_goal(message, files),
+            "reason": "No platform action is clearly required, so Horus should respond conversationally.",
+        }
     
     async def chat(
         self, 
@@ -457,6 +599,11 @@ class HorusService:
         request_mode, message = self._extract_mode_token(message)
         user_metadata = {"responseMode": request_mode} if request_mode else None
         client = get_gemini_client()
+        agent_intent = self._classify_agent_intent(
+            message=message,
+            files=files,
+            request_mode=request_mode,
+        ) if request_mode == "agent" else None
         # Text-only fast path must NOT run when files are attached — otherwise Ask mode
         # would call stream_chat without multimodal parts and the model thinks no file exists.
         has_attachments = bool(files)
@@ -473,6 +620,7 @@ class HorusService:
         visual_only_request = self._is_visual_only(files)
         needs_analysis = self._needs_compliance_analysis(message)
         store_as_evidence = not (visual_only_request and not needs_analysis)
+        agent_intent = self._classify_agent_intent(message=message, files=files, request_mode=request_mode)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if fast_path:
@@ -602,12 +750,15 @@ class HorusService:
         active_goal = await self._get_active_goal(user_id, chat_id)
 
         # Yield immediately so user sees progress before any heavy work
+        if agent_intent:
+            yield f"__AGENT_RUN__:{json.dumps(agent_intent)}\n"
+            await asyncio.sleep(0)
         yield "__THINKING__:Preparing your request...\n"
         await asyncio.sleep(0)
 
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         # Allow agent with files when: Agent mode selected, or message has platform keywords (e.g. "حلل", "analyze", "gaps")
-        allow_agent_with_files = self._should_route_files_to_agent(message, request_mode)
+        allow_agent_with_files = agent_intent.get("kind") in {"platform_action", "workflow"}
         if message and request_mode != "think" and (not files or allow_agent_with_files):
             try:
                 prisma_client = db
@@ -730,12 +881,14 @@ class HorusService:
                     platform_snapshot=snapshot,
                     goal=active_goal,
                     mode=request_mode,
+                    agent_intent=agent_intent,
                 )
 
                 if plan and plan.get("mode") == "tool":
                     tool_name = plan.get("tool")
                     args = plan.get("arguments", {}) or {}
                     if tool_name in TOOL_REGISTRY:
+                        yield f"__AGENT_RUN__:{json.dumps({'mode': request_mode or 'agent', 'intent': agent_intent['intent'] if agent_intent else 'platform_action', 'route': 'tool', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': plan.get('reason') or 'A single tool can answer this request most directly.', 'tool': tool_name, 'step_count': 1})}\n"
                         if background_tasks:
                             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
                         else:
@@ -822,6 +975,7 @@ class HorusService:
                     raw_steps = plan.get("steps", [])
                     plan_steps = self._normalize_plan_steps(raw_steps)
                     if plan_steps:
+                        yield f"__AGENT_RUN__:{json.dumps({'mode': request_mode or 'agent', 'intent': agent_intent['intent'] if agent_intent else 'multi_step_workflow', 'route': 'plan', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': plan.get('reason') or 'This request is best handled as a short multi-step workflow.', 'step_count': len(plan_steps), 'tools': [step['tool'] for step in plan_steps]})}\n"
                         if background_tasks:
                             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
                         else:
@@ -1080,6 +1234,9 @@ class HorusService:
         history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=20))
 
         if file_results:
+            if request_mode == "agent":
+                yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'file_analysis'), 'route': 'file_analysis', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'Agent mode stayed on direct file analysis because the attached document is the main source of truth.', 'step_count': 1})}\n"
+                await asyncio.sleep(0)
             visual_only = all((f.get("type") == "image") for f in file_results)
             language_hint = ""
             if message:
@@ -1257,6 +1414,9 @@ class HorusService:
                     full_response = "I received your file, but I couldn't extract a clear answer from it. Try sending a clearer image or add more context."
                     yield full_response
         else:
+            if request_mode == "agent":
+                yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'agent_chat'), 'route': 'chat', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'No tool or file workflow was necessary, so Horus is answering directly in Agent mode.'})}\n"
+                await asyncio.sleep(0)
             history = await history_task
             yield "__THINKING__:Searching conversation history...\n"
             await asyncio.sleep(0)
@@ -1753,6 +1913,7 @@ class HorusService:
         platform_snapshot: Dict[str, Any],
         goal: str | None = None,
         mode: str | None = None,
+        agent_intent: Dict[str, Any] | None = None,
     ) -> Dict[str, Any] | None:
         tool_manifest = build_tool_manifest()
 
@@ -1760,6 +1921,15 @@ class HorusService:
         mode_block = ""
         if mode == "agent":
             mode_block = '\nMode bias:\n- The user explicitly selected AGENT mode.\n- Prefer mode "tool" or "plan" whenever a platform action can help.\n- Use mode "chat" only when no tool meaningfully helps.\n'
+        intent_block = ""
+        if agent_intent:
+            intent_block = (
+                "\nAgent intent classification:\n"
+                f"- intent: {agent_intent.get('intent')}\n"
+                f"- suggested_route: {agent_intent.get('route')}\n"
+                f"- goal: {agent_intent.get('goal')}\n"
+                f"- rationale: {agent_intent.get('reason')}\n"
+            )
         planner_prompt = f"""
 You are Horus planner. Decide whether to call exactly one tool or answer as chat.
 
@@ -1767,6 +1937,7 @@ User message:
 {message}
 {goal_block}
 {mode_block}
+{intent_block}
 
 Platform snapshot JSON:
 {json.dumps(platform_snapshot)[:5000]}
@@ -1788,6 +1959,7 @@ Rules:
 - Choose mode "plan" only when user asks for multiple outcomes in one request.
 - Plan can contain up to 3 steps.
 - For mutating tools, choose them only when user intent is explicit.
+- Respect the classified intent when it is strong. If the intent says file_analysis or chat, do not force a tool.
 - If unsure, return mode "chat".
 """
         raw = await client.generate_text(prompt=planner_prompt)

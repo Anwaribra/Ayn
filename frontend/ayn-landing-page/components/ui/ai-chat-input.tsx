@@ -34,6 +34,7 @@ interface AIChatInputProps {
   /** When input is empty and user presses Up, fill with this (last user message) */
   lastUserMessage?: string
   quickPrompts?: { label: string; prompt: string }[]
+  header?: ReactNode
 }
 
 export const AIChatInput = ({
@@ -50,6 +51,7 @@ export const AIChatInput = ({
   draftKey,
   lastUserMessage,
   quickPrompts = [],
+  header,
 }: AIChatInputProps) => {
   const [isActive, setIsActive] = useState(false)
   const [inputValue, setInputValue] = useState("")
@@ -284,26 +286,31 @@ export const AIChatInput = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "horus-input-shell relative w-full max-w-[900px] overflow-visible rounded-2xl sm:rounded-3xl",
-          "border border-[var(--border-subtle)] bg-[var(--glass-panel)]/90 backdrop-blur-sm",
-          "shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_20px_rgba(0,0,0,0.25)]",
+          "horus-input-shell relative w-full max-w-[920px] overflow-visible rounded-[28px]",
+          "border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.025))] backdrop-blur-xl",
+          "shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.04)]",
           "transition-all duration-200",
-          (isActive || inputValue) && "ring-2 ring-primary/20 border-primary/30",
-          isDragging && "ring-2 ring-primary border-primary/50 bg-primary/5",
+          (isActive || inputValue) && "border-primary/25 shadow-[0_28px_70px_-40px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.05)]",
+          isDragging && "ring-2 ring-primary/40 border-primary/50 bg-primary/5",
           isLoading && "horus-input-shimmer"
         )}
         onClick={handleActivate}
       >
         <div className="flex h-full w-full flex-col items-stretch">
+          {header && (
+            <div className="border-b border-white/8 px-4 py-2.5 sm:px-5">
+              {header}
+            </div>
+          )}
           {/* Text area */}
-          <div className="relative w-full px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
+          <div className="relative w-full px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-[18px]">
             {isDragging && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-primary/10 text-sm font-medium text-primary">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] bg-primary/10 text-sm font-medium text-primary">
                 Drop files here
               </div>
             )}
             {isListening && (
-              <div className="absolute bottom-2 left-4 z-10 flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-medium text-primary">
+              <div className="absolute bottom-2 left-4 z-10 flex items-center gap-1 rounded-full border border-primary/15 bg-primary/12 px-2.5 py-1 text-[11px] font-medium text-primary">
                 <span className="flex gap-0.5">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <span
@@ -329,8 +336,8 @@ export const AIChatInput = ({
                 if (onChange) onChange(e.target.value)
               }}
               className={cn(
-                "horus-input-field w-full min-h-[44px] resize-none bg-transparent border-none pr-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
-                "text-foreground placeholder:text-muted-foreground/60"
+                "horus-input-field w-full min-h-[48px] resize-none border-none bg-transparent pe-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
+                "text-foreground placeholder:text-muted-foreground/55"
               )}
               style={{
                 position: "relative",
@@ -344,7 +351,7 @@ export const AIChatInput = ({
               rows={1}
             />
             {slashMenuOpen && quickPrompts.length > 0 && (
-              <div className="absolute left-0 bottom-full z-50 mb-2 w-full max-w-[360px] rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/95 p-2 shadow-2xl">
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[360px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.96)] p-2 shadow-2xl backdrop-blur-xl">
                 {quickPrompts.map((item) => (
                   <button
                     key={item.label}
@@ -367,7 +374,7 @@ export const AIChatInput = ({
           </div>
 
           {/* Bottom toolbar */}
-          <div className="flex min-h-[48px] items-center justify-between gap-3 border-t border-[var(--border-subtle)]/40 px-3 py-2.5 sm:px-4">
+          <div className="flex min-h-[54px] items-center justify-between gap-3 border-t border-white/8 px-3 py-2.5 sm:px-4">
             <div className="flex items-center gap-1">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>
                 <DropdownMenuTrigger asChild>
@@ -452,10 +459,10 @@ export const AIChatInput = ({
             {!isLoading ? (
               <button
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold transition-all disabled:cursor-not-allowed disabled:opacity-30",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold transition-all disabled:cursor-not-allowed disabled:opacity-30",
                   (inputValue.trim() || hasFiles)
-                    ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(59,130,246,0.35)] hover:bg-primary/90 hover:shadow-[0_0_16px_rgba(59,130,246,0.45)]"
-                    : "bg-muted/40 text-muted-foreground"
+                    ? "bg-primary text-primary-foreground shadow-[0_12px_26px_-12px_rgba(59,130,246,0.6)] hover:bg-primary/90 hover:shadow-[0_16px_30px_-12px_rgba(59,130,246,0.65)]"
+                    : "border border-white/8 bg-white/[0.04] text-muted-foreground"
                 )}
                 title="Send (Ctrl+Enter)"
                 type="button"
@@ -467,7 +474,7 @@ export const AIChatInput = ({
               </button>
             ) : (
               <button
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-destructive/20 bg-destructive/15 text-destructive hover:bg-destructive/25"
                 onClick={onStop}
                 type="button"
               >

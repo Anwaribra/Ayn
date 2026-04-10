@@ -44,7 +44,7 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
-import { useHorus, type CitationSource, type ToolStep, type FileStatus, type Message as HorusMessage } from "@/lib/horus-context"
+import { useHorus, type CitationSource, type ToolStep, type FileStatus, type Message as HorusMessage, type AgentRunMeta } from "@/lib/horus-context"
 import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -133,6 +133,24 @@ function getAttachmentContextLabel(message?: HorusMessage | null, isArabic = fal
   if (hasImages) return isArabic ? "تحليل صورة" : "Image analysis"
   if (hasDocs) return isArabic ? "تحليل مستند" : "Document analysis"
   return null
+}
+
+function formatAgentRoute(meta?: AgentRunMeta | null, isArabic = false) {
+  if (!meta?.route) return null
+  if (meta.route === "file_analysis") return isArabic ? "تحليل مباشر للمرفق" : "Direct file analysis"
+  if (meta.route === "tool") return isArabic ? "تنفيذ أداة واحدة" : "Single tool execution"
+  if (meta.route === "plan" || meta.route === "planner") return isArabic ? "خطة متعددة الخطوات" : "Multi-step workflow"
+  if (meta.route === "chat") return isArabic ? "إجابة مباشرة داخل وضع الوكيل" : "Direct agent response"
+  return meta.route
+}
+
+function formatAgentIntent(meta?: AgentRunMeta | null, isArabic = false) {
+  if (!meta?.intent) return null
+  if (meta.intent === "file_analysis") return isArabic ? "تحليل ملف" : "File analysis"
+  if (meta.intent === "platform_action") return isArabic ? "إجراء على بيانات المنصة" : "Platform action"
+  if (meta.intent === "multi_step_workflow") return isArabic ? "سير عمل تحليلي" : "Workflow"
+  if (meta.intent === "agent_chat") return isArabic ? "محادثة وكيل" : "Agent chat"
+  return meta.intent
 }
 
 // ─── Inline Thinking Bubble ──────────────────────────────────────────────────
@@ -224,6 +242,119 @@ function AssistantMessageMeta({
         </span>
       )}
       <span className="text-muted-foreground/65">{formatTimestamp(timestamp, isArabic)}</span>
+    </div>
+  )
+}
+
+function AgentRunHeader({
+  meta,
+  isArabic,
+}: {
+  meta?: AgentRunMeta | null
+  isArabic: boolean
+}) {
+  if (!meta) return null
+  const routeLabel = formatAgentRoute(meta, isArabic)
+  const intentLabel = formatAgentIntent(meta, isArabic)
+  const stepCountLabel = meta.step_count && meta.step_count > 1
+    ? (isArabic ? `${meta.step_count} خطوات` : `${meta.step_count} steps`)
+    : null
+
+  return (
+    <div className="mb-2 rounded-2xl border border-emerald-500/12 bg-[linear-gradient(180deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03))] p-3 shadow-[0_16px_40px_-32px_rgba(16,185,129,0.5)]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
+          {isArabic ? "وضع الوكيل" : "Agent mode"}
+        </span>
+        {intentLabel && (
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+            {intentLabel}
+          </span>
+        )}
+        {routeLabel && (
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+            {routeLabel}
+          </span>
+        )}
+        {stepCountLabel && (
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+            {stepCountLabel}
+          </span>
+        )}
+      </div>
+      {meta.goal && (
+        <p className="mt-2 text-[12px] font-medium text-foreground/92">
+          <span className="text-muted-foreground">{isArabic ? "الهدف:" : "Goal:"}</span>{" "}
+          {meta.goal}
+        </p>
+      )}
+      {meta.reason && (
+        <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
+          {meta.reason}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ComposerStatusStrip({
+  responseMode,
+  attachedCount,
+  isProcessing,
+  agentRun,
+  isArabic,
+}: {
+  responseMode: "ask" | "think" | "agent"
+  attachedCount: number
+  isProcessing: boolean
+  agentRun?: AgentRunMeta | null
+  isArabic: boolean
+}) {
+  const modeLabel = responseMode === "agent"
+    ? (isArabic ? "وضع الوكيل" : "Agent")
+    : responseMode === "think"
+      ? (isArabic ? "وضع التحليل" : "Think")
+      : (isArabic ? "وضع السؤال" : "Ask")
+
+  const routeLabel = formatAgentRoute(agentRun, isArabic)
+  const intentLabel = formatAgentIntent(agentRun, isArabic)
+  const progressLabel = agentRun?.step_count
+    ? (isArabic ? `${agentRun.step_count} خطوات مخططة` : `${agentRun.step_count} planned steps`)
+    : null
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+      <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 font-medium text-foreground/88">
+        {modeLabel}
+      </span>
+      {attachedCount > 0 && (
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+          {isArabic
+            ? `${attachedCount} مرفق`
+            : `${attachedCount} attachment${attachedCount > 1 ? "s" : ""}`}
+        </span>
+      )}
+      {intentLabel && (
+        <span className="rounded-full border border-emerald-500/15 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-200">
+          {intentLabel}
+        </span>
+      )}
+      {routeLabel && (
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+          {routeLabel}
+        </span>
+      )}
+      {isProcessing && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 font-medium text-primary/90">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+          {isArabic ? "جارٍ التنفيذ" : "Running"}
+        </span>
+      )}
+      {progressLabel && (
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+          {progressLabel}
+        </span>
+      )}
     </div>
   )
 }
@@ -1076,6 +1207,10 @@ export default function HorusAIChat() {
                         >
                           {/* Inline thinking disabled for cleaner UI */}
 
+                          {msg.role === "assistant" && msg.responseMode === "agent" && msg.agentRun && (
+                            <AgentRunHeader meta={msg.agentRun} isArabic={isArabicMessage} />
+                          )}
+
                           {/* Agent execution timeline — only show when there is real agent/tool state */}
                           {msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
@@ -1447,7 +1582,7 @@ export default function HorusAIChat() {
                       </div>
                     ) : (
                     activeResponseMode === "agent" &&
-                    (activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
+                    (activeAssistantMsg?.agentRun || activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
                       (() => {
                         const lastMsg = messages.filter((m) => m.role === "assistant").pop()
                         const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : []
@@ -1458,18 +1593,23 @@ export default function HorusAIChat() {
                           status === "generating",
                           activeToolSteps
                         )
-                        if (steps.length === 0 && !lastMsg?.pendingConfirmation) return null
+                        if (!lastMsg?.agentRun && steps.length === 0 && !lastMsg?.pendingConfirmation) return null
                         return (
-                          <AgentExecutionTimeline
-                            steps={steps}
-                            phase={phase}
-                            stepProgress={stepProgress}
-                            pendingTool={lastMsg?.pendingConfirmation?.title}
-                            isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
-                            activeFiles={activeFiles}
-                            fileStatuses={fileStatuses}
-                            collapsible
-                          />
+                          <div className="space-y-2">
+                            <AgentRunHeader meta={lastMsg?.agentRun} isArabic={preferArabicUi} />
+                            {(steps.length > 0 || lastMsg?.pendingConfirmation) && (
+                              <AgentExecutionTimeline
+                                steps={steps}
+                                phase={phase}
+                                stepProgress={stepProgress}
+                                pendingTool={lastMsg?.pendingConfirmation?.title}
+                                isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
+                                activeFiles={activeFiles}
+                                fileStatuses={fileStatuses}
+                                collapsible
+                              />
+                            )}
+                          </div>
                         )
                       })()
                     ) : activeResponseMode === "think" && reasoning ? (
@@ -1565,6 +1705,41 @@ export default function HorusAIChat() {
         {/* ─── Input: centered, no heavy bar ─── */}
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/70 via-background/25 to-transparent px-2.5 pb-1 pt-1 sm:px-4 sm:pb-2">
           <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
+            {(isProcessing || activeAssistantMsg?.agentRun) && (
+              <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 shadow-[0_18px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                      <Sparkles className="h-3.5 w-3.5 text-foreground/80" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[12px] font-medium text-foreground/92">
+                        {activeAssistantMsg?.agentRun?.goal || (preferArabicUi ? "جاهز للتنفيذ" : "Ready to work")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {activeAssistantMsg?.agentRun?.reason || (isProcessing ? (preferArabicUi ? "جارٍ تجهيز الاستجابة" : "Preparing the response") : (preferArabicUi ? "في انتظار طلبك التالي" : "Waiting for your next request"))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {activeAssistantMsg?.agentRun?.step_count ? (
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                        {preferArabicUi
+                          ? `${activeAssistantMsg.agentRun.step_count} خطوة`
+                          : `${activeAssistantMsg.agentRun.step_count} step${activeAssistantMsg.agentRun.step_count > 1 ? "s" : ""}`}
+                      </span>
+                    ) : null}
+                    {isProcessing && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary/90">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                        {preferArabicUi ? "قيد التنفيذ" : "In progress"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {attachedFiles.map((file) => (
@@ -1599,6 +1774,15 @@ export default function HorusAIChat() {
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
+                header={
+                  <ComposerStatusStrip
+                    responseMode={responseMode}
+                    attachedCount={attachedFiles.length}
+                    isProcessing={isProcessing}
+                    agentRun={activeAssistantMsg?.agentRun}
+                    isArabic={preferArabicUi}
+                  />
+                }
                 quickPrompts={[
                   { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
                   { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },

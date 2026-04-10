@@ -2,6 +2,7 @@
 import asyncio
 import os
 import logging
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from prisma import Prisma
 
@@ -30,16 +31,24 @@ def _build_database_url() -> str | None:
     url = os.environ.get("DATABASE_URL", "")
     if not url:
         return None
-    separator = "&" if "?" in url else "?"
-    params = ["connection_limit=10", "pool_timeout=30"]
-    # Supabase pooler (port 6543) requires pgbouncer=true for Prisma
-    if "pooler.supabase.com:6543" in url and "pgbouncer=true" not in url:
-        params.insert(0, "pgbouncer=true")
-    if "connect_timeout" not in url:
-        # 60s for Supabase cold start; 30s for local
-        timeout = "60" if "pooler.supabase.com" in url else "30"
-        params.append(f"connect_timeout={timeout}")
-    return f"{url}{separator}{'&'.join(params)}"
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+
+    # Override low pool limits from incoming URLs so planner/tool paths don't
+    # get stuck behind a single-connection pool.
+    query["connection_limit"] = os.environ.get("DB_CONNECTION_LIMIT", "10")
+    query["pool_timeout"] = os.environ.get("DB_POOL_TIMEOUT", "30")
+
+    if "pooler.supabase.com:6543" in url:
+        query["pgbouncer"] = "true"
+
+    query["connect_timeout"] = query.get(
+        "connect_timeout",
+        "60" if "pooler.supabase.com" in url else "30",
+    )
+
+    rebuilt_query = urlencode(query)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, rebuilt_query, parts.fragment))
 
 
 _db_url = _build_database_url()

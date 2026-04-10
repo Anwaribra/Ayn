@@ -7,6 +7,7 @@ for planning and reasoning across modules.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 from app.activity.service import ActivityService
@@ -37,51 +38,41 @@ async def build_agent_context(
         else {}
     )
 
-    (
-        summary,
-        recent_activity,
-        unread_notifications,
-        evidence_count,
-        analyzed_evidence,
-        gap_reports,
-        open_platform_gaps,
-        standards,
-        mappings,
-        all_ga,
-    ) = await __import__("asyncio").gather(
+    summary, recent_activity, unread_notifications = await asyncio.gather(
         state_service.get_state_summary(user_id),
         ActivityService.get_recent_activities(user_id, limit=10),
         NotificationService.get_unread_count(user_id),
-        db.evidence.count(where=owner_filter),
-        db.evidence.count(
-            where={
-                "status": {"in": ["analyzed", "linked"]},
-                **owner_filter,
-            }
-        ),
-        db.gapanalysis.find_many(
-            where=gap_filter,
-            include={"standard": True},
-            order={"createdAt": "desc"},
-            take=5,
-        ),
-        db.platformgap.count(
-            where={"userId": user_id, "status": {"not": "closed"}}
-        ),
-        db.standard.find_many(
-            where=standards_filter,
-            include={"criteria": True},
-            take=10,
-        ),
-        db.criteriamapping.find_many(
-            where=gap_filter,
-            include={"criterion": {"include": {"standard": True}}},
-        ),
-        db.gapanalysis.find_many(
-            where=gap_filter,
-            include={"standard": True},
-            order={"createdAt": "desc"},
-        ),
+    )
+
+    evidence_count = await db.evidence.count(where=owner_filter)
+    analyzed_evidence = await db.evidence.count(
+        where={
+            "status": {"in": ["analyzed", "linked"]},
+            **owner_filter,
+        }
+    )
+    gap_reports = await db.gapanalysis.find_many(
+        where=gap_filter,
+        include={"standard": True},
+        order={"createdAt": "desc"},
+        take=5,
+    )
+    open_platform_gaps = await db.platformgap.count(
+        where={"userId": user_id, "status": {"not": "closed"}}
+    )
+    standards = await db.standard.find_many(
+        where=standards_filter,
+        include={"criteria": True},
+        take=10,
+    )
+    mappings = await db.criteriamapping.find_many(
+        where=gap_filter,
+        include={"criterion": {"include": {"standard": True}}},
+    )
+    all_ga = await db.gapanalysis.find_many(
+        where=gap_filter,
+        include={"standard": True},
+        order={"createdAt": "desc"},
     )
 
     standards_summary: list[dict[str, Any]] = []

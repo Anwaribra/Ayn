@@ -451,9 +451,6 @@ class HorusService:
             full_response = ""
             rag_sources: list[dict[str, Any]] = []
             try:
-                # Ensure immediate stream activity even in fast path.
-                yield "__THINKING__:Starting...\n"
-                await asyncio.sleep(0)
                 if message:
                     if background_tasks:
                         background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
@@ -588,8 +585,7 @@ class HorusService:
         allow_agent_with_files = request_mode == "agent" or has_agent_keywords
         if message and request_mode != "think" and (not files or allow_agent_with_files):
             try:
-                from app.core.db import db as prisma_client
-
+                prisma_client = db
                 user_obj = await prisma_client.user.find_unique(where={"id": user_id})
                 institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
                 current_user_dict = current_user if isinstance(current_user, dict) else {

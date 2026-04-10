@@ -714,6 +714,17 @@ export default function HorusAIChat() {
     mutateHistory()
   }
 
+  const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
+  const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
+
+  const isProcessing = status !== "idle"
+  const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
+  const modeTone = responseMode === "ask"
+    ? "text-sky-400"
+    : responseMode === "think"
+      ? "text-amber-400"
+      : "text-emerald-400"
+
   const handleDeepResearch = useCallback(async () => {
     const prompt = draftMessage.trim()
     if (!prompt) {
@@ -785,18 +796,6 @@ export default function HorusAIChat() {
       toast.error("Failed to delete.")
     }
   }
-
-  // Derive the id of the last assistant message for M1 contextual actions
-  const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
-  const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
-
-  const isProcessing = status !== "idle"
-  const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
-  const modeTone = responseMode === "ask"
-    ? "text-sky-400"
-    : responseMode === "think"
-      ? "text-amber-400"
-      : "text-emerald-400"
 
   const visibleMessages = useMemo(() => {
     const sliced = messages.slice(-30).filter((msg) => {

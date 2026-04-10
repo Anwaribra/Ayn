@@ -288,6 +288,8 @@ export default function HorusAIChat() {
   const activeToolSteps = activeAssistantMsg?.toolSteps ?? EMPTY_TOOL_STEPS
   const activeFiles = activeAssistantMsg?.activeFiles ?? EMPTY_FILES
   const fileStatuses = activeAssistantMsg?.fileStatuses ?? EMPTY_FILE_STATUSES
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")
+  const lastUserHasAttachments = !!lastUserMessage?.attachments?.length
 
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
@@ -716,6 +718,7 @@ export default function HorusAIChat() {
 
   const showLoadingBubble = status === "generating" && lastAssistantMsg && !lastAssistantMsg.content?.trim()
   const isAskLoading = showLoadingBubble && activeResponseMode === "ask"
+  const shouldShowAskAttachmentLoader = showLoadingBubble && activeResponseMode === "ask" && lastUserHasAttachments
 
   const isProcessing = status !== "idle"
   const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
@@ -1007,11 +1010,11 @@ export default function HorusAIChat() {
                         >
                           {/* Inline thinking disabled for cleaner UI */}
 
-                          {/* Agent execution timeline — hide in Ask mode unless user attached files */}
+                          {/* Agent execution timeline — only show when there is real agent/tool state */}
                           {msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
-                            (activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
-                            ((msg.thinkingSteps?.length ?? 0) > 0 || msg.pendingConfirmation) &&
+                            (activeResponseMode !== "ask") &&
+                            ((msg.thinkingSteps?.length ?? 0) > 0 || (msg.toolSteps?.length ?? 0) > 0 || msg.pendingConfirmation) &&
                             (() => {
                               const msgThinkingSteps = msg.thinkingSteps ?? EMPTY_STRINGS
                               const msgToolSteps = msg.toolSteps ?? EMPTY_TOOL_STEPS
@@ -1352,12 +1355,26 @@ export default function HorusAIChat() {
 
                 {showLoadingBubble && (
                   <div role="status" aria-live="polite" aria-label="Processing your request" className="w-full py-2 sm:py-4 animate-in fade-in">
-                    {(activeResponseMode !== "ask" || !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length) &&
-                    (activeThinkingSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation || (activeResponseMode !== "ask" && [...messages].reverse().find((m) => m.role === "user")?.attachments?.length)) ? (
+                    {shouldShowAskAttachmentLoader ? (
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Analyzing your attachment"
+                        className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
+                        </div>
+                        <span className="text-[11px] font-medium">Analyzing your attachment…</span>
+                      </div>
+                    ) : (
+                    (activeResponseMode !== "ask") &&
+                    (activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
                       (() => {
                         const lastMsg = messages.filter((m) => m.role === "assistant").pop()
-                        const lastUserHasAttachments = !![...messages].reverse().find((m) => m.role === "user")?.attachments?.length
-                        const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : (activeResponseMode !== "ask" && lastUserHasAttachments ? ["Preparing your request..."] : [])
+                        const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : []
                         const { steps, phase, stepProgress } = deriveAgentSteps(
                           effectiveSteps,
                           lastMsg?.pendingConfirmation ?? null,
@@ -1415,7 +1432,7 @@ export default function HorusAIChat() {
                           <div className="horus-loading-line w-1/2 max-w-[40%]" />
                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
 

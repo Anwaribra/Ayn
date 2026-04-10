@@ -29,6 +29,24 @@ from app.chat.service import ChatService
 router = APIRouter(prefix="/horus", tags=["horus"])
 
 
+async def _buffer_upload_files(files: List[UploadFile] | None) -> list[dict]:
+    """Read UploadFile objects into plain dicts before request teardown closes them."""
+    buffered: list[dict] = []
+    if not files:
+        return buffered
+
+    for upload in files:
+        content = await upload.read()
+        buffered.append(
+            {
+                "filename": upload.filename or "file",
+                "content_type": upload.content_type or "",
+                "body": content,
+            }
+        )
+    return buffered
+
+
 class Observation(BaseModel):
     """A response from Horus."""
     content: str
@@ -81,12 +99,13 @@ async def horus_chat_post(
         user_id = get_user_id(current_user)
         state_service = StateService(db)
         horus_service = HorusService(state_service)
+        buffered_files = await _buffer_upload_files(files)
         
         return await horus_service.chat(
             user_id=user_id,
             message=message,
             chat_id=chat_id,
-            files=files,
+            files=buffered_files,
             background_tasks=background_tasks,
             db=db,
             current_user=current_user
@@ -113,6 +132,7 @@ async def horus_chat_stream(
     logger.info("Horus chat/stream request", extra={"correlation_id": correlation_id, "user_id": user_id})
     state_service = StateService(db)
     horus_service = HorusService(state_service)
+    buffered_files = await _buffer_upload_files(files)
     
     async def event_generator():
         try:
@@ -120,7 +140,7 @@ async def horus_chat_stream(
                 user_id=user_id,
                 message=message,
                 chat_id=chat_id,
-                files=files,
+                files=buffered_files,
                 background_tasks=background_tasks,
                 db=db,
                 current_user=current_user,

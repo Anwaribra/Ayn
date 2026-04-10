@@ -396,25 +396,29 @@ class HorusService:
         # Vercel / some ASGI stacks finalize the request body once streaming starts;
         # a later UploadFile.read() then raises "I/O operation on closed file".
         if files:
-            buffered_parts: list[dict[str, Any]] = []
-            for uf in files:
-                try:
-                    body = await uf.read()
-                except Exception as read_err:
-                    logger.error(
-                        "Horus: could not read uploaded file %s: %s",
-                        getattr(uf, "filename", "?"),
-                        read_err,
-                        exc_info=True,
-                    )
-                    body = b""
-                fname = getattr(uf, "filename", None) or "file"
-                ct = (getattr(uf, "content_type", None) or "").strip()
-                if not ct:
-                    guessed, _ = mimetypes.guess_type(fname)
-                    ct = (guessed or "").strip()
-                buffered_parts.append({"filename": fname, "content_type": ct, "body": body})
-            files = buffered_parts
+            if all(isinstance(f, dict) and "body" in f for f in files):
+                buffered_parts = list(files)
+                files = buffered_parts
+            else:
+                buffered_parts: list[dict[str, Any]] = []
+                for uf in files:
+                    try:
+                        body = await uf.read()
+                    except Exception as read_err:
+                        logger.error(
+                            "Horus: could not read uploaded file %s: %s",
+                            getattr(uf, "filename", "?"),
+                            read_err,
+                            exc_info=True,
+                        )
+                        body = b""
+                    fname = getattr(uf, "filename", None) or "file"
+                    ct = (getattr(uf, "content_type", None) or "").strip()
+                    if not ct:
+                        guessed, _ = mimetypes.guess_type(fname)
+                        ct = (guessed or "").strip()
+                    buffered_parts.append({"filename": fname, "content_type": ct, "body": body})
+                files = buffered_parts
 
         # 1. Start Chat Creation or Fetch in Parallel with State
         if not chat_id:
@@ -1181,8 +1185,42 @@ class HorusService:
             except Exception as file_stream_err:
                 logger.error(f"File analysis stream failed: {file_stream_err}", exc_info=True)
                 if not full_response.strip():
-                    full_response = "I encountered an error while analyzing your file. Please try again or attach a different file."
-                    yield full_response
+                    # Streaming sometimes fails even when a normal multimodal completion still works.
+                    # Try one final non-streaming pass before returning a generic fallback.
+                    try:
+                        fallback_response = await asyncio.wait_for(
+                            client.chat_with_files(
+                                message=ai_message,
+                                files=file_results,
+                                context=context,
+                            ),
+                            timeout=30.0,
+                        )
+                    except Exception as fallback_err:
+                        logger.error(
+                            "File analysis fallback failed after stream error: %s",
+                            fallback_err,
+                            exc_info=True,
+                        )
+                        fallback_response = ""
+
+                    if fallback_response and fallback_response.strip():
+                        full_response = fallback_response.strip()
+                        async for piece in _yield_text_chunks(full_response):
+                            yield piece
+                    else:
+                        msg_clean = (message or "").replace(" ", "")
+                        is_arabic = False
+                        if msg_clean:
+                            import re
+                            arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
+                            is_arabic = (arabic_chars / len(msg_clean)) > 0.1
+                        full_response = (
+                            "حصل خطأ أثناء تحليل الصورة المرفقة. جرّب إرسال صورة أوضح أو اكتب لي بالتحديد ماذا تريد أن أستخرج منها."
+                            if is_arabic
+                            else "I hit an error while analyzing the attached image. Try sending a clearer image or tell me exactly what you want extracted from it."
+                        )
+                        yield full_response
             if not full_response.strip():
                 # Some multimodal providers may stream empty chunks for certain files.
                 # Ensure the user never sees a silent response.

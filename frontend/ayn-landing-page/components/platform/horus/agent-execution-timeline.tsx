@@ -42,6 +42,8 @@ interface AgentExecutionTimelineProps {
   fileStatuses?: Record<string, string>
   /** Collapsible when complete — show compact summary when collapsed */
   collapsible?: boolean
+  /** Render labels in Arabic when the surrounding message is Arabic */
+  isArabic?: boolean
   className?: string
 }
 
@@ -72,6 +74,7 @@ export function AgentExecutionTimeline({
   activeFiles = [],
   fileStatuses = {},
   collapsible = false,
+  isArabic = false,
   className,
 }: AgentExecutionTimelineProps) {
   const reducedMotion = useReducedMotion()
@@ -84,6 +87,29 @@ export function AgentExecutionTimeline({
   const showExpanded = !canCollapse || !isCollapsed
   const animDuration = reducedMotion ? 0 : 0.25
   const activeBarIndex = phaseToBarIndex(phase)
+  const phaseLabels: Record<AgentExecutionPhase, string> = isArabic
+    ? {
+        planning: "جارٍ التحضير",
+        tool_selected: "تم اختيار الإجراء",
+        waiting_confirmation: "بانتظار التأكيد",
+        executing: "جارٍ التنفيذ",
+        completed: "اكتمل",
+      }
+    : PHASE_LABELS
+  const phaseDescription =
+    phase === "planning"
+      ? (isArabic ? "جارٍ قراءة حالة المنصة واختيار أفضل مسار." : "Reading platform state, selecting action…")
+      : phase === "tool_selected"
+        ? (isArabic ? "جارٍ تجهيز التنفيذ." : "Preparing to run…")
+        : phase === "waiting_confirmation"
+          ? (isArabic ? "مطلوب تأكيد منك قبل المتابعة." : "User approval required")
+          : phase === "executing"
+            ? (
+              stepProgress && stepProgress.total > 1
+                ? (isArabic ? `الخطوة ${stepProgress.current} من ${stepProgress.total}` : `Step ${stepProgress.current} of ${stepProgress.total}…`)
+                : (isArabic ? "جارٍ تنفيذ الإجراء المحدد." : "Running selected action…")
+            )
+            : (isArabic ? "النتيجة جاهزة." : "Result ready")
 
   return (
     <motion.div
@@ -165,18 +191,11 @@ export function AgentExecutionTimeline({
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-semibold text-foreground">
             {isWaitingConfirmation && pendingTool
-              ? `Confirm: ${pendingTool}`
-              : PHASE_LABELS[phase]}
+              ? (isArabic ? `تأكيد: ${pendingTool}` : `Confirm: ${pendingTool}`)
+              : phaseLabels[phase]}
           </p>
           <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
-            {phase === "planning" && "Reading platform state, selecting action…"}
-            {phase === "tool_selected" && "Preparing to run…"}
-            {phase === "waiting_confirmation" && "User approval required"}
-            {phase === "executing" &&
-              (stepProgress && stepProgress.total > 1
-                ? `Step ${stepProgress.current} of ${stepProgress.total}…`
-                : "Running selected action…")}
-            {phase === "completed" && "Result ready"}
+            {phaseDescription}
           </p>
         </div>
       </div>
@@ -188,13 +207,13 @@ export function AgentExecutionTimeline({
             const status = fileStatuses[filename]
             const statusLabel =
               status === "uploading"
-                ? "Uploading…"
+                ? (isArabic ? "جارٍ الرفع…" : "Uploading…")
                 : status === "extracting"
-                  ? "Extracting…"
+                  ? (isArabic ? "جارٍ الاستخراج…" : "Extracting…")
                   : status === "analyzing"
-                    ? "Analyzing…"
+                    ? (isArabic ? "جارٍ التحليل…" : "Analyzing…")
                     : status === "error"
-                      ? "Error"
+                      ? (isArabic ? "خطأ" : "Error")
                       : null
             return (
               <motion.span
@@ -264,7 +283,9 @@ export function AgentExecutionTimeline({
       {/* Collapsed summary */}
       {canCollapse && isCollapsed && (
         <p className="text-[12px] text-muted-foreground">
-          {steps.length} step{steps.length !== 1 ? "s" : ""} completed
+          {isArabic
+            ? `تم إنجاز ${steps.length} ${steps.length > 1 ? "خطوات" : "خطوة"}`
+            : `${steps.length} step${steps.length !== 1 ? "s" : ""} completed`}
         </p>
       )}
 

@@ -22,11 +22,11 @@ import {
   PlusCircle,
   Search,
   Check,
-  ArrowUpRight,
   ThumbsUp,
   ThumbsDown,
   Copy,
   Download,
+  AlertCircle,
   RefreshCw,
   Sparkles,
   ChevronDown,
@@ -355,6 +355,121 @@ function ComposerStatusStrip({
           {progressLabel}
         </span>
       )}
+    </div>
+  )
+}
+
+function LiveTaskCards({
+  phase,
+  stepProgress,
+  activeFiles,
+  isArabic,
+}: {
+  phase: string
+  stepProgress?: { current: number; total: number }
+  activeFiles?: string[]
+  isArabic: boolean
+}) {
+  const phaseTitle =
+    phase === "waiting_confirmation"
+      ? (isArabic ? "بانتظار التأكيد" : "Awaiting approval")
+      : phase === "completed"
+        ? (isArabic ? "النتيجة جاهزة" : "Result ready")
+        : phase === "executing"
+          ? (isArabic ? "قيد التنفيذ" : "In progress")
+          : (isArabic ? "قيد التجهيز" : "Preparing")
+
+  const progressText = stepProgress
+    ? (isArabic
+      ? `الخطوة ${stepProgress.current} من ${stepProgress.total}`
+      : `Step ${stepProgress.current} of ${stepProgress.total}`)
+    : (isArabic ? "تجهيز المسار الأنسب" : "Preparing the best route")
+
+  const fileText = activeFiles?.length
+    ? (isArabic
+      ? `${activeFiles.length} ${activeFiles.length > 1 ? "ملفات نشطة" : "ملف نشط"}`
+      : `${activeFiles.length} active file${activeFiles.length > 1 ? "s" : ""}`)
+    : (isArabic ? "بدون مرفقات نشطة" : "No active attachments")
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-3">
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 shadow-[0_14px_30px_-28px_rgba(0,0,0,0.8)]">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "الحالة" : "Status"}</p>
+        <p className="mt-1 text-[13px] font-semibold text-foreground">{phaseTitle}</p>
+      </div>
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 shadow-[0_14px_30px_-28px_rgba(0,0,0,0.8)]">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "التقدم" : "Progress"}</p>
+        <p className="mt-1 text-[13px] font-semibold text-foreground">{progressText}</p>
+      </div>
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 shadow-[0_14px_30px_-28px_rgba(0,0,0,0.8)]">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "المرفقات" : "Attachments"}</p>
+        <p className="mt-1 text-[13px] font-semibold text-foreground">{fileText}</p>
+      </div>
+    </div>
+  )
+}
+
+function SmartConfirmationCard({
+  title,
+  description,
+  isArabic,
+  onConfirm,
+  onCancel,
+}: {
+  title: string
+  description: string
+  isArabic: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="mb-3 overflow-hidden rounded-[24px] border border-amber-500/18 bg-[linear-gradient(180deg,rgba(245,158,11,0.10),rgba(245,158,11,0.04))] shadow-[0_20px_44px_-34px_rgba(245,158,11,0.35)]">
+      <div className="border-b border-white/8 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-500/18 bg-amber-500/12 text-amber-300">
+            <AlertCircle className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-foreground">{title}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {isArabic ? "يلزم تأكيدك قبل تنفيذ هذا الإجراء." : "This action needs your approval before it runs."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 px-4 py-4">
+        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "ما الذي سيحدث" : "What will happen"}</p>
+          <p className="mt-1 text-[13px] leading-6 text-foreground/90">{description}</p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "نوع الإجراء" : "Action type"}</p>
+            <p className="mt-1 text-[13px] font-medium text-foreground">{isArabic ? "إجراء تشغيلي" : "Operational action"}</p>
+          </div>
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "التحكم" : "Control"}</p>
+            <p className="mt-1 text-[13px] font-medium text-foreground">{isArabic ? "لن يتم التنفيذ إلا بعد موافقتك" : "Nothing runs until you approve"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onConfirm}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_14px_26px_-18px_rgba(37,99,235,0.7)] transition-colors hover:bg-primary/90"
+          >
+            {isArabic ? "تأكيد التنفيذ" : "Approve and run"}
+          </button>
+          <button
+            onClick={onCancel}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-semibold text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
+          >
+            {isArabic ? "إلغاء" : "Cancel"}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1231,6 +1346,13 @@ export default function HorusAIChat() {
                               if (steps.length === 0 && !msg.pendingConfirmation) return null
                               return (
                                 <div className="mb-2">
+                                  <LiveTaskCards
+                                    phase={phase}
+                                    stepProgress={stepProgress}
+                                    activeFiles={msgActiveFiles}
+                                    isArabic={isArabicMessage}
+                                  />
+                                  <div className="mt-2">
                                   <AgentExecutionTimeline
                                     steps={steps}
                                     phase={phase}
@@ -1239,9 +1361,11 @@ export default function HorusAIChat() {
                                     isWaitingConfirmation={!!msg.pendingConfirmation}
                                     activeFiles={msgActiveFiles}
                                     fileStatuses={msgFileStatuses}
+                                    isArabic={isArabicMessage}
                                     collapsible
                                     compact
                                   />
+                                  </div>
                                 </div>
                               )
                             })()}
@@ -1260,26 +1384,13 @@ export default function HorusAIChat() {
 
                           {/* Pending action confirmation */}
                           {msg.role === "assistant" && msg.pendingConfirmation && (
-                            <div className="mb-3 rounded-2xl p-4 animate-in fade-in zoom-in-95 duration-200 glass-surface-strong">
-                              <p className="text-sm font-semibold text-foreground mb-1">{msg.pendingConfirmation.title}</p>
-                              <p className="text-sm text-muted-foreground">
-                                I&apos;m about to {msg.pendingConfirmation.description}. Confirm?
-                              </p>
-                              <div className="mt-3 flex items-center gap-2">
-                                <button
-                                  onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "confirm")}
-                                  className="glass-button h-11 rounded-xl bg-primary/90 px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  onClick={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "cancel")}
-                                  className="glass-button glass-text-secondary h-11 rounded-xl px-3 py-2 text-xs font-semibold transition-colors hover:text-foreground"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
+                            <SmartConfirmationCard
+                              title={msg.pendingConfirmation.title}
+                              description={msg.pendingConfirmation.description}
+                              isArabic={isArabicMessage}
+                              onConfirm={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "confirm")}
+                              onCancel={() => resolveActionConfirmation(msg.pendingConfirmation!.id, "cancel")}
+                            />
                           )}
 
                           {msg.content ? (
@@ -1356,14 +1467,14 @@ export default function HorusAIChat() {
                           {msg.role === "assistant" && (msg as any).citations?.length > 0 && (
                             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              Based on your evidence
+                              {isArabicMessage ? "استنادًا إلى الأدلة المرفقة" : "Based on your evidence"}
                             </div>
                           )}
 
                           {/* Citation sources — RAG sources when available */}
                           {msg.role === "assistant" && (msg as any).citations?.length > 0 && (
                             <div className="mt-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/60 p-3">
-                              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sources</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{isArabicMessage ? "المصادر" : "Sources"}</p>
                               <div className="space-y-2">
                                 {(msg as any).citations.map((src: CitationSource, idx: number) => (
                                   <a
@@ -1392,47 +1503,6 @@ export default function HorusAIChat() {
                             </div>
                           )}
 
-                          {/* Suggestion chips — Cursor-style follow-ups (only for last assistant message) */}
-                          {msg.role === "assistant" &&
-                            msg.id === lastAssistantMsgId &&
-                            status === "idle" &&
-                            msg.content?.trim() && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {(() => {
-                                const struct = (msg as any).structuredResult
-                                const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || ""
-                                const hasArabic = /[\u0600-\u06FF]/.test(lastUserMsg)
-                                const auditAr = ["تحليل أعمق", "ربط بالمعايير", "تصدير التقرير"]
-                                const auditEn = ["Deeper analysis", "Link to standards", "Export report"]
-                                const gapAr = ["عرض التفاصيل", "تشغيل تحليل", "ربط أدلة"]
-                                const gapEn = ["Show details", "Run analysis", "Link evidence"]
-                                const defaultAr = ["اشرح أكثر", "أمثلة عملية", "سؤال آخر", "اختصره", "أعد الصياغة"]
-                                const defaultEn = ["Explain more", "Practical examples", "Another question", "Make it shorter", "Regenerate"]
-                                const suggestions = struct?.type === "audit_report" || struct?.type === "analytics_report"
-                                  ? (hasArabic ? auditAr : auditEn)
-                                  : struct?.type === "gap_table"
-                                    ? (hasArabic ? gapAr : gapEn)
-                                    : (hasArabic ? defaultAr : defaultEn)
-                                return suggestions.map((label) => {
-                                  const isRegenerate = label === "Regenerate" || label === "أعد الصياغة"
-                                  const isShorter = label === "Make it shorter" || label === "اختصره"
-                                  const prompt = isShorter ? (hasArabic ? "اختصِر الرد السابق في نقاط أقل" : "Summarize the previous response in fewer points") : label
-                                  return (
-                                    <button
-                                      key={label}
-                                      type="button"
-                                      onClick={() => isRegenerate ? retryLastMessage() : sendMessage(prompt)}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-colors"
-                                    >
-                                      {isRegenerate ? <RefreshCw className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                      {label}
-                                    </button>
-                                  )
-                                })
-                              })()}
-                            </div>
-                          )}
-
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && (
                             <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1 py-1 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
@@ -1442,7 +1512,7 @@ export default function HorusAIChat() {
                                   <button
                                     onClick={() => retryLastMessage()}
                                     className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
-                                    title="Regenerate response"
+                                    title={isArabicMessage ? "إعادة توليد الرد" : "Regenerate response"}
                                   >
                                     <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                   </button>
@@ -1454,7 +1524,7 @@ export default function HorusAIChat() {
                                   <button
                                     onClick={handleExportChat}
                                     className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
-                                    title="Export chat (.txt)"
+                                    title={isArabicMessage ? "تصدير المحادثة" : "Export chat (.txt)"}
                                   >
                                     <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                   </button>
@@ -1471,7 +1541,7 @@ export default function HorusAIChat() {
                                       ? "text-green-500 bg-green-500/10"
                                       : ""
                                   )}
-                                  title={copiedMsgId === msg.id ? "Copied!" : "Copy response"}
+                                  title={copiedMsgId === msg.id ? (isArabicMessage ? "تم النسخ" : "Copied!") : (isArabicMessage ? "نسخ الرد" : "Copy response")}
                                 >
                                   {copiedMsgId === msg.id ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                                 </button>
@@ -1487,7 +1557,7 @@ export default function HorusAIChat() {
                                     ? "text-green-500 bg-green-500/10"
                                     : "hover:text-green-500 hover:bg-green-500/10"
                                 )}
-                                title="Helpful"
+                                title={isArabicMessage ? "مفيد" : "Helpful"}
                               >
                                 <ThumbsUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
@@ -1505,16 +1575,19 @@ export default function HorusAIChat() {
                                     ? "text-red-500 bg-red-500/10"
                                     : "hover:text-red-500 hover:bg-red-500/10"
                                 )}
-                                title="Not helpful"
+                                title={isArabicMessage ? "غير مفيد" : "Not helpful"}
                               >
                                 <ThumbsDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
                               {/* Tiered feedback: categories + Tell us more when thumbs down expanded */}
                               {feedback[msg.id] === "down" && feedbackDownExpanded === msg.id && !feedbackPersisted.has(msg.id) && (
                                 <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[220px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.94)] p-2.5 shadow-lg backdrop-blur-xl">
-                                  <p className="text-[11px] font-medium text-muted-foreground mb-2">What was wrong?</p>
+                                  <p className="text-[11px] font-medium text-muted-foreground mb-2">{isArabicMessage ? "ما المشكلة في الرد؟" : "What was wrong?"}</p>
                                   <div className="flex flex-wrap gap-1.5 mb-2">
-                                    {["Inaccurate", "Not relevant", "Incomplete", "Harmful"].map((cat) => (
+                                    {(isArabicMessage
+                                      ? ["غير دقيق", "غير مرتبط", "ناقص", "مضر"]
+                                      : ["Inaccurate", "Not relevant", "Incomplete", "Harmful"]
+                                    ).map((cat) => (
                                       <button
                                         key={cat}
                                         type="button"
@@ -1527,7 +1600,7 @@ export default function HorusAIChat() {
                                   </div>
                                   <div className="border-t border-[var(--border-subtle)] pt-2">
                                     <textarea
-                                      placeholder="Tell us more (optional)"
+                                      placeholder={isArabicMessage ? "أخبرنا بتفاصيل أكثر (اختياري)" : "Tell us more (optional)"}
                                       value={feedbackTellMore[msg.id] ?? ""}
                                       onChange={(e) => setFeedbackTellMore(prev => ({ ...prev, [msg.id]: e.target.value }))}
                                       className="w-full min-h-[60px] rounded-lg border border-[var(--border-subtle)] bg-background px-2.5 py-2 text-[12px] placeholder:text-muted-foreground/60 resize-none"
@@ -1539,14 +1612,14 @@ export default function HorusAIChat() {
                                         onClick={() => setFeedbackDownExpanded(null)}
                                         className="px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
                                       >
-                                        Cancel
+                                        {isArabicMessage ? "إلغاء" : "Cancel"}
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => handleFeedback(msg.id, "down", undefined, feedbackTellMore[msg.id] || undefined)}
                                         className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90"
                                       >
-                                        Submit
+                                        {isArabicMessage ? "إرسال" : "Submit"}
                                       </button>
                                     </div>
                                   </div>
@@ -1554,7 +1627,7 @@ export default function HorusAIChat() {
                               )}
                               {/* Persisted check — shows after feedback is saved to backend */}
                               {feedbackPersisted.has(msg.id) && (
-                                <span className="text-[10px] text-muted-foreground/60 font-medium ml-1">Saved</span>
+                                <span className="text-[10px] text-muted-foreground/60 font-medium ml-1">{isArabicMessage ? "تم الحفظ" : "Saved"}</span>
                               )}
                             </div>
                           )}
@@ -1597,6 +1670,12 @@ export default function HorusAIChat() {
                         return (
                           <div className="space-y-2">
                             <AgentRunHeader meta={lastMsg?.agentRun} isArabic={preferArabicUi} />
+                            <LiveTaskCards
+                              phase={phase}
+                              stepProgress={stepProgress}
+                              activeFiles={activeFiles}
+                              isArabic={preferArabicUi}
+                            />
                             {(steps.length > 0 || lastMsg?.pendingConfirmation) && (
                               <AgentExecutionTimeline
                                 steps={steps}
@@ -1606,6 +1685,7 @@ export default function HorusAIChat() {
                                 isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
                                 activeFiles={activeFiles}
                                 fileStatuses={fileStatuses}
+                                isArabic={preferArabicUi}
                                 collapsible
                               />
                             )}

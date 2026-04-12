@@ -216,7 +216,7 @@ function DashboardContent() {
     })
   }
 
-  if (isLoading || !user) {
+  if (!user) {
     return <DashboardPageSkeleton />
   }
 
@@ -265,6 +265,12 @@ function DashboardContent() {
               </span>
               <span className="text-[10px] font-bold uppercase tracking-widest">Ayn Brain Live</span>
             </div>
+            {isLoading && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+                Syncing dashboard
+              </div>
+            )}
 
             <div className="max-w-2xl">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">

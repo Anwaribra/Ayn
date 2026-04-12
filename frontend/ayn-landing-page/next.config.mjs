@@ -1,9 +1,19 @@
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     unoptimized: false,
   },
   trailingSlash: true,
+  turbopack: {
+    root: __dirname,
+  },
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
 
   // Proxy /api requests to the Railway backend.
   // The browser sees same-origin requests — no CORS needed.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
@@ -10,18 +10,25 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
     if (!isLoading && !isAuthenticated) {
       if (pathname !== "/login") {
         sessionStorage.setItem("redirectAfterLogin", pathname)
       }
       router.replace("/login")
     }
-  }, [isAuthenticated, isLoading, router, pathname])
+  }, [isAuthenticated, isLoading, mounted, router, pathname])
 
   useEffect(() => {
     const setupInstitution = async () => {
+      if (!mounted) return
       if (!isLoading && isAuthenticated) {
         // Check if user has an institutionId, if not, trigger setup
         const userStr = localStorage.getItem("user")
@@ -41,9 +48,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     }
     setupInstitution()
-  }, [isAuthenticated, isLoading])
+  }, [isAuthenticated, isLoading, mounted])
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[var(--bg-deep,#07090E)]">
         <div className="flex flex-col items-center gap-3">

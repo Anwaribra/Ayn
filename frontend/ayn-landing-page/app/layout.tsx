@@ -46,6 +46,7 @@ export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
   generator: "Next.js",
+  metadataBase: new URL(siteUrl),
   openGraph: {
     title: siteTitle,
     description: siteDescription,

@@ -22,17 +22,42 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function getInitialAuthSnapshot() {
+  if (typeof window === "undefined") {
+    return { user: null as User | null, isLoading: true, hasToken: false }
+  }
+
+  const storedUser = localStorage.getItem("user")
+  const token = localStorage.getItem("access_token")
+
+  if (!storedUser || !token) {
+    return { user: null as User | null, isLoading: false, hasToken: false }
+  }
+
+  try {
+    return {
+      user: JSON.parse(storedUser) as User,
+      // We can render immediately from cached auth and verify in the background.
+      isLoading: false,
+      hasToken: true,
+    }
+  } catch {
+    localStorage.removeItem("user")
+    localStorage.removeItem("access_token")
+    return { user: null as User | null, isLoading: false, hasToken: false }
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const initialAuth = getInitialAuthSnapshot()
+  const [user, setUser] = useState<User | null>(initialAuth.user)
+  const [isLoading, setIsLoading] = useState(initialAuth.isLoading)
 
   useEffect(() => {
-    // Load user synchronously from localStorage first
     const storedUser = localStorage.getItem("user")
     const token = localStorage.getItem("access_token")
 
     if (storedUser && token) {
-      // Set user immediately to prevent redirect
       let parsedUser: User | null = null
       try {
         parsedUser = JSON.parse(storedUser)
@@ -47,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false)
         return
       }
-      setUser(parsedUser)
+      setUser((currentUser) => currentUser ?? parsedUser)
       log('[AuthContext] User loaded from localStorage:', parsedUser.email)
 
       // Then verify token is still valid in the background

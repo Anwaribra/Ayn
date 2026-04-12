@@ -311,6 +311,9 @@ function GapAnalysisContent() {
   const activeGapCount = gaps.filter((g) => g.severity === "High").length
   const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.severity === "Low").length / gaps.length) * 100) : 94
   const completedReports = reports?.filter((report) => report.status === "completed").length ?? 0
+  const reportsReady = reports !== undefined
+  const hasReports = (reports?.length ?? 0) > 0
+  const showReportsLoadingState = !reportsReady && !reportsError && !activeReport
 
   return (
     <div className="animate-fade-in-up pb-20 relative">
@@ -460,16 +463,19 @@ function GapAnalysisContent() {
           <select
             value={selectedStandard}
             onChange={(e) => setSelectedStandard(e.target.value)}
+            disabled={!standards || standards.length === 0 || generating}
             className="flex-1 h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            <option value="" className="bg-[var(--surface-modal)]">Choose a standard to analyze...</option>
+            <option value="" className="bg-[var(--surface-modal)]">
+              {!standards ? "Loading standards..." : standards.length === 0 ? "No standards available yet" : "Choose a standard to analyze..."}
+            </option>
             {standards?.map((s: Standard) => (
               <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
             ))}
           </select>
           <button
             onClick={handleGenerate}
-            disabled={generating || !selectedStandard}
+            disabled={generating || !selectedStandard || !standards || standards.length === 0}
             className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {generating ? (
@@ -500,7 +506,25 @@ function GapAnalysisContent() {
             Retry
           </button>
         </div>
-      ) : (!reports || reports.length === 0) && !activeReport ? (
+      ) : showReportsLoadingState ? (
+        <div className="mt-10 px-4">
+          <div className="glass-panel glass-border rounded-[28px] p-6 sm:p-8">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Syncing analyses...
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="glass-panel glass-border animate-pulse rounded-[24px] p-6">
+                  <div className="mb-4 h-4 w-40 rounded bg-[var(--surface)]/60" />
+                  <div className="mb-2 h-4 w-3/4 rounded bg-[var(--surface)]/50" />
+                  <div className="h-4 w-1/2 rounded bg-[var(--surface)]/40" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : !hasReports && !activeReport ? (
         <div className="mt-10">
           <EmptyState type="gap-analysis" />
         </div>

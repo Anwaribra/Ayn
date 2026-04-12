@@ -14,6 +14,7 @@ client_secret_*.json
 *.docx
 *.pdf
 *.md
+!README.md
 *.sh
 *.text
 STRUCTURE_AND_IMPROVEMENTS.docx

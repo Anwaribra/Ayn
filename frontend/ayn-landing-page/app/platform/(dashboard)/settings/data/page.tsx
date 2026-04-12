@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { api } from "@/lib/api"
+import { useUserPreferences } from "@/hooks/use-user-preferences"
 
 export default function DataIntegrityPage() {
   return (
@@ -18,21 +18,17 @@ export default function DataIntegrityPage() {
 }
 
 function DataIntegrityContent() {
-  const [euResidency, setEuResidency] = useState(false)
-  const [bridgeEnabled, setBridgeEnabled] = useState(true)
+  const { preferences, isLoading, error, mutate, savePreferences } = useUserPreferences()
+  const euResidency = preferences.euResidency ?? false
+  const bridgeEnabled = preferences.bridgeEnabled ?? true
 
-  useEffect(() => {
-    api.getPreferences().then(p => {
-      setEuResidency(p.euResidency ?? false)
-      setBridgeEnabled(p.bridgeEnabled ?? true)
-    }).catch(() => {})
-  }, [])
-
-  const update = (key: string, value: boolean) => {
-    if (key === "euResidency") setEuResidency(value)
-    else setBridgeEnabled(value)
-    api.savePreferences({ [key]: value }).catch(() => {})
-    toast.success("Settings saved")
+  const update = async (key: string, value: boolean) => {
+    try {
+      await savePreferences({ [key]: value })
+      toast.success("Settings saved")
+    } catch {
+      toast.error("Failed to save settings")
+    }
   }
 
   return (
@@ -54,7 +50,23 @@ function DataIntegrityContent() {
         </p>
       </header>
 
+      {error && (
+        <div className="mb-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Failed to load data preferences.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void mutate()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
       <div className="glass-panel p-6 rounded-2xl glass-border space-y-6">
+        {isLoading && (
+          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-xs text-muted-foreground">
+            Syncing data preferences...
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-[var(--text-secondary)] font-medium">EU Data Residency</Label>
@@ -62,7 +74,8 @@ function DataIntegrityContent() {
           </div>
           <Switch
             checked={euResidency}
-            onCheckedChange={(v) => update("euResidency", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("euResidency", v)}
           />
         </div>
         <div className="flex items-center justify-between">
@@ -72,7 +85,8 @@ function DataIntegrityContent() {
           </div>
           <Switch
             checked={bridgeEnabled}
-            onCheckedChange={(v) => update("bridgeEnabled", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("bridgeEnabled", v)}
           />
         </div>
       </div>

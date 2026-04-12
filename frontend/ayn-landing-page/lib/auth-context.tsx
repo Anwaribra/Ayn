@@ -49,9 +49,8 @@ function getInitialAuthSnapshot() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const initialAuth = getInitialAuthSnapshot()
-  const [user, setUser] = useState<User | null>(initialAuth.user)
-  const [isLoading, setIsLoading] = useState(initialAuth.isLoading)
+  const [user, setUser] = useState<User | null>(() => getInitialAuthSnapshot().user)
+  const [isLoading, setIsLoading] = useState(() => getInitialAuthSnapshot().isLoading)
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user")

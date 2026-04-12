@@ -1,23 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
+import useSWR from "swr"
 import { api } from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { 
-  BarChart3, FileText, Target, Brain, ArrowRight, 
-  Upload, TrendingUp, AlertTriangle, Clock, Sparkles 
+import { useAuth } from "@/lib/auth-context"
+import {
+  BarChart3,
+  FileText,
+  Brain,
+  ArrowRight,
+  Upload,
+  TrendingUp,
+  AlertTriangle,
+  Clock,
+  Sparkles,
+  Target,
 } from "lucide-react"
 
 export default function OverviewPage() {
-  const [metrics, setMetrics] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const { data: metrics, isLoading } = useSWR(
+    user ? ["overview-metrics", user.id] : null,
+    () => api.getDashboardMetrics(),
+    { refreshInterval: 30000, revalidateOnFocus: false }
+  )
 
-  useEffect(() => {
-    api.getDashboardMetrics().then(setMetrics).catch(() => {}).finally(() => setLoading(false))
-  }, [])
-
-  if (loading) {
+  if (isLoading && !metrics) {
     return (
       <div className="p-8 space-y-6">
         <div className="glass-surface h-8 w-48 rounded-xl animate-pulse" />
@@ -35,19 +43,26 @@ export default function OverviewPage() {
     )
   }
 
-  const score = metrics?.complianceScore ?? 0
-  const evidence = metrics?.totalEvidence ?? 0
-  const gaps = metrics?.activeAlerts ?? 0
-  const analyses = metrics?.totalAnalyses ?? 0
+  const score = Math.round(metrics?.alignmentPercentage ?? 0)
+  const evidence = metrics?.evidenceCount ?? 0
+  const alerts = metrics?.unreadNotificationsCount ?? 0
+  const analyses = metrics?.totalGapAnalyses ?? 0
 
   return (
     <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Overview</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">Your compliance command center at a glance</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Overview</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Your compliance command center at a glance</p>
+        </div>
+        {isLoading && (
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+            Refreshing
+          </div>
+        )}
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl glass-panel glass-border hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
@@ -71,15 +86,15 @@ export default function OverviewPage() {
           <p className="text-xs text-[var(--text-secondary)] mt-1">Evidence Documents</p>
         </Link>
 
-        <Link href="/platform/gap-analysis" className="group p-5 rounded-2xl glass-panel glass-border hover:border-amber-500/30 transition-all">
+        <Link href="/platform/notifications" className="group p-5 rounded-2xl glass-panel glass-border hover:border-amber-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
             </div>
             <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-amber-500 transition-colors" />
           </div>
-          <p className="text-2xl font-bold text-[var(--text-primary)]">{gaps}</p>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">Active Gaps</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)]">{alerts}</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">Unread Alerts</p>
         </Link>
 
         <Link href="/platform/analytics" className="group p-5 rounded-2xl glass-panel glass-border hover:border-purple-500/30 transition-all">
@@ -94,7 +109,6 @@ export default function OverviewPage() {
         </Link>
       </div>
 
-      {/* Quick Actions + Horus */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-panel glass-border rounded-2xl p-6">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">

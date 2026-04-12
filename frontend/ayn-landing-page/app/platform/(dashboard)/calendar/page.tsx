@@ -3,6 +3,7 @@
 import { useState } from "react"
 import useSWR from "swr"
 import { api } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 import { Header } from "@/components/platform/header"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Button } from "@/components/ui/button"
@@ -82,7 +83,11 @@ function MilestoneSkeleton() {
 }
 
 export default function CalendarPage() {
-  const { data: milestones, isLoading, mutate } = useSWR("milestones", () => api.getMilestones())
+  const { user } = useAuth()
+  const { data: milestones, isLoading, error, mutate } = useSWR(
+    user ? ["milestones", user.id] : null,
+    () => api.getMilestones()
+  )
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState({
     title: "",
@@ -110,7 +115,7 @@ export default function CalendarPage() {
       toast.success("Milestone created")
       setForm({ title: "", description: "", dueDate: "", category: "Other", priority: "medium" })
       setDialogOpen(false)
-      mutate()
+      void mutate()
     } catch (err: any) {
       toast.error(err.message || "Failed to create milestone")
     } finally {
@@ -122,7 +127,7 @@ export default function CalendarPage() {
     try {
       await api.updateMilestone(m.id, { completed: !m.completed })
       toast.success(m.completed ? "Milestone reopened" : "Milestone completed")
-      mutate()
+      void mutate()
     } catch (err: any) {
       toast.error(err.message || "Failed to update milestone")
     }
@@ -132,14 +137,16 @@ export default function CalendarPage() {
     try {
       await api.deleteMilestone(id)
       toast.success("Milestone deleted")
-      mutate()
+      void mutate()
     } catch (err: any) {
       toast.error(err.message || "Failed to delete milestone")
     }
   }
 
-  const grouped = milestones ? groupByMonth(milestones) : {}
-  const isEmpty = milestones && milestones.length === 0
+  const safeMilestones = milestones ?? []
+  const grouped = groupByMonth(safeMilestones)
+  const isEmpty = !isLoading && safeMilestones.length === 0
+  const hasMilestones = safeMilestones.length > 0
 
   return (
     <ProtectedRoute>
@@ -160,7 +167,29 @@ export default function CalendarPage() {
         />
 
         <div className="p-4 md:p-6">
-          {isLoading && <MilestoneSkeleton />}
+          {isLoading && !hasMilestones && <MilestoneSkeleton />}
+
+          {error && !hasMilestones && (
+            <div className="flex flex-col items-center justify-center rounded-xl py-20 glass-panel glass-border">
+              <Calendar className="mb-4 h-12 w-12 opacity-30 text-foreground" />
+              <p className="text-lg font-medium text-foreground">
+                Failed to load milestones
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We could not sync your calendar right now.
+              </p>
+              <Button size="sm" className="mt-4 gap-2" onClick={() => void mutate()}>
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {isLoading && hasMilestones && (
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              Syncing milestones...
+            </div>
+          )}
 
           {isEmpty && (
             <div className="flex flex-col items-center justify-center rounded-xl py-20 glass-panel glass-border">
@@ -182,7 +211,7 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {!isLoading && !isEmpty && (
+          {hasMilestones && (
             <div className="space-y-8">
               {Object.entries(grouped).map(([month, items]) => (
                 <div key={month}>

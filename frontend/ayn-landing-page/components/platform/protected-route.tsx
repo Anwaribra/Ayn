@@ -1,7 +1,6 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
-import { log } from "@/lib/logger"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type ReactNode } from "react"
 import { Loader2 } from "lucide-react"

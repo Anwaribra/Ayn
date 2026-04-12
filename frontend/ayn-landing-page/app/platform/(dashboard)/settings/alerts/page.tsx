@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { api } from "@/lib/api"
+import { useUserPreferences } from "@/hooks/use-user-preferences"
 
 interface AlertSettings {
   complianceNotifications: boolean
@@ -32,24 +33,25 @@ export default function NeuralAlertsPage() {
 }
 
 function NeuralAlertsContent() {
-  const [settings, setSettings] = useState<AlertSettings>(defaults)
+  const { preferences, isLoading, error, mutate, savePreferences } = useUserPreferences()
 
-  useEffect(() => {
-    api.getPreferences().then(p => {
-      setSettings({
-        complianceNotifications: p.complianceNotifications ?? defaults.complianceNotifications,
-        horusTriggers: p.horusTriggers ?? defaults.horusTriggers,
-        gapAlerts: p.gapAlerts ?? defaults.gapAlerts,
-        evidenceReminders: p.evidenceReminders ?? defaults.evidenceReminders,
-      })
-    }).catch(() => {})
-  }, [])
+  const settings = useMemo<AlertSettings>(
+    () => ({
+      complianceNotifications: preferences.complianceNotifications ?? defaults.complianceNotifications,
+      horusTriggers: preferences.horusTriggers ?? defaults.horusTriggers,
+      gapAlerts: preferences.gapAlerts ?? defaults.gapAlerts,
+      evidenceReminders: preferences.evidenceReminders ?? defaults.evidenceReminders,
+    }),
+    [preferences]
+  )
 
-  const update = (key: keyof AlertSettings, value: boolean) => {
-    const next = { ...settings, [key]: value }
-    setSettings(next)
-    api.savePreferences({ [key]: value }).catch(() => {})
-    toast.success("Settings saved")
+  const update = async (key: keyof AlertSettings, value: boolean) => {
+    try {
+      await savePreferences({ [key]: value })
+      toast.success("Settings saved")
+    } catch {
+      toast.error("Failed to save settings")
+    }
   }
 
   return (
@@ -71,7 +73,29 @@ function NeuralAlertsContent() {
         </p>
       </header>
 
+      {error && (
+        <div className="mb-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Failed to load your alert preferences.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => void mutate()}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       <div className="glass-panel p-6 rounded-2xl glass-border space-y-6">
+        {isLoading && (
+          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-xs text-muted-foreground">
+            Syncing alert preferences...
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-[var(--text-secondary)] font-medium">Compliance Notifications</Label>
@@ -79,7 +103,8 @@ function NeuralAlertsContent() {
           </div>
           <Switch
             checked={settings.complianceNotifications}
-            onCheckedChange={(v) => update("complianceNotifications", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("complianceNotifications", v)}
           />
         </div>
         <div className="flex items-center justify-between">
@@ -89,7 +114,8 @@ function NeuralAlertsContent() {
           </div>
           <Switch
             checked={settings.horusTriggers}
-            onCheckedChange={(v) => update("horusTriggers", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("horusTriggers", v)}
           />
         </div>
         <div className="flex items-center justify-between">
@@ -99,7 +125,8 @@ function NeuralAlertsContent() {
           </div>
           <Switch
             checked={settings.gapAlerts}
-            onCheckedChange={(v) => update("gapAlerts", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("gapAlerts", v)}
           />
         </div>
         <div className="flex items-center justify-between">
@@ -109,7 +136,8 @@ function NeuralAlertsContent() {
           </div>
           <Switch
             checked={settings.evidenceReminders}
-            onCheckedChange={(v) => update("evidenceReminders", v)}
+            disabled={isLoading}
+            onCheckedChange={(v) => void update("evidenceReminders", v)}
           />
         </div>
       </div>

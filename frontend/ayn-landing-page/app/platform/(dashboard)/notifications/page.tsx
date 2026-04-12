@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import useSWR from "swr"
 import { api } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
@@ -32,18 +32,7 @@ export default function NotificationsPage() {
     } catch {
       toast.error("Failed to mark all as read")
     }
-  }, [api, mutate, notifications])
-
-  React.useEffect(() => {
-    if (notifications && notifications.length > 0) {
-      const hasUnread = notifications.some(n => !n.isRead);
-      if (hasUnread) {
-        handleMarkAllRead();
-      }
-    }
-  }, [notifications]);
-
-
+  }, [mutate, notifications])
 
   const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -70,10 +59,10 @@ export default function NotificationsPage() {
     }
   }
 
-  const filteredNotifications = notifications?.filter((n: Notification) => {
-    if (filter === "unread") return !n.isRead
-    return true
-  })
+  const filteredNotifications = useMemo(
+    () => notifications?.filter((n: Notification) => (filter === "unread" ? !n.isRead : true)) ?? [],
+    [filter, notifications]
+  )
 
   // Group by date logic could be added here
 
@@ -121,7 +110,7 @@ export default function NotificationsPage() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
           </div>
-        ) : !filteredNotifications || filteredNotifications.length === 0 ? (
+        ) : filteredNotifications.length === 0 ? (
           <div className="glass-panel rounded-3xl p-12 text-center glass-border">
             <div className="w-16 h-16 rounded-full glass-input flex items-center justify-center mx-auto mb-4">
               <Bell className="w-8 h-8 text-muted-foreground" />

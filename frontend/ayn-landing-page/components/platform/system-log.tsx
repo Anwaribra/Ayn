@@ -11,9 +11,6 @@ import {
   Sparkles,
   ChevronRight
 } from "lucide-react"
-import useSWR from "swr"
-import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 
 const logIcons: Record<string, any> = {
   evidence_uploaded: FileText,
@@ -37,16 +34,19 @@ interface SystemLogProps {
   maxEntries?: number
   className?: string
   showHeader?: boolean
+  logs?: any[]
+  isLoading?: boolean
 }
 
-export function SystemLog({ maxEntries = 6, className, showHeader = true }: SystemLogProps) {
-  const { user } = useAuth()
-  const { data: activities, isLoading } = useSWR(
-    user ? ["recent-activities", user.id] : null,
-    () => api.getDashboardMetrics() // Activities are now part of metrics
-  )
+export function SystemLog({
+  maxEntries = 6,
+  className,
+  showHeader = true,
+  logs = [],
+  isLoading = false,
+}: SystemLogProps) {
+  const visibleLogs = logs.slice(0, maxEntries)
 
-  const logs = activities?.recentActivities?.slice(0, maxEntries) || []
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
     const diff = Date.now() - date.getTime()
@@ -86,12 +86,12 @@ export function SystemLog({ maxEntries = 6, className, showHeader = true }: Syst
               <div key={i} className="h-16 bg-muted/60 rounded-2xl animate-pulse" />
             ))}
           </div>
-        ) : logs.length === 0 ? (
+        ) : visibleLogs.length === 0 ? (
           <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-10 text-center">
             <p className="text-muted-foreground italic text-sm">No activity recorded.</p>
           </div>
         ) : (
-          logs.map((log: any) => {
+          visibleLogs.map((log: any) => {
             const Icon = logIcons[log.type] || logIcons.default
             const style = typeStyles[log.type] || typeStyles.default
 

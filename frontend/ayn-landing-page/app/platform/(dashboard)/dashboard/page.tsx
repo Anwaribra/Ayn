@@ -64,6 +64,7 @@ function DashboardContent() {
       ? metrics
       : null
   const safeStandards = Array.isArray(standards) ? standards : []
+  const recentActivities = Array.isArray(safeMetrics?.recentActivities) ? safeMetrics.recentActivities : []
 
   const alignmentScore = safeMetrics?.alignmentPercentage ?? 0
   const alertCount = safeMetrics?.unreadNotificationsCount ?? 0
@@ -504,7 +505,12 @@ function DashboardContent() {
 
         {/* System Log */}
         <div className="h-full">
-          <SystemLog className="h-full min-h-[500px]" maxEntries={8} />
+          <SystemLog
+            className="h-full min-h-[500px]"
+            maxEntries={8}
+            logs={recentActivities}
+            isLoading={isLoading}
+          />
         </div>
       </section>
       </div>

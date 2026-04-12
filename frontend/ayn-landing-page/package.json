@@ -9,6 +9,7 @@
     "build:landing": "bash build-landing.sh",
     "dev": "next dev",
     "lint": "eslint .",
+    "smoke": "node scripts/platform-smoke.mjs",
     "start": "next start",
     "export": "next build",
     "deploy": "pnpm build:landing && gh-pages -d out",

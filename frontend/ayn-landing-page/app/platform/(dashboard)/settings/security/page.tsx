@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { Switch } from "@/components/ui/switch"
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Shield } from "lucide-react"
 import { toast } from "sonner"
-import { api } from "@/lib/api"
+import { useUserPreferences } from "@/hooks/use-user-preferences"
 
 export default function SecurityPage() {
   return (
@@ -19,25 +19,28 @@ export default function SecurityPage() {
 }
 
 function SecurityContent() {
-  const [mfaEnabled, setMfaEnabled] = useState(false)
-  const [sessionTimeout, setSessionTimeout] = useState(24)
+  const { preferences, isLoading, error, mutate, savePreferences } = useUserPreferences()
+  const [sessionTimeout, setSessionTimeout] = useState<number | null>(null)
 
-  useEffect(() => {
-    api.getPreferences().then(p => {
-      setMfaEnabled(p.mfaEnabled ?? false)
-      setSessionTimeout(p.sessionTimeout ?? 24)
-    }).catch(() => {})
-  }, [])
+  const mfaEnabled = useMemo(() => preferences.mfaEnabled ?? false, [preferences.mfaEnabled])
+  const resolvedSessionTimeout = sessionTimeout ?? preferences.sessionTimeout ?? 24
 
-  const handleMfaToggle = (v: boolean) => {
-    setMfaEnabled(v)
-    api.savePreferences({ mfaEnabled: v }).catch(() => {})
-    toast.success(v ? "MFA policy enabled. Enforcement begins next login." : "MFA policy disabled")
+  const handleMfaToggle = async (v: boolean) => {
+    try {
+      await savePreferences({ mfaEnabled: v })
+      toast.success(v ? "MFA policy enabled. Enforcement begins next login." : "MFA policy disabled")
+    } catch {
+      toast.error("Failed to save MFA policy")
+    }
   }
 
-  const handleSaveTimeout = () => {
-    api.savePreferences({ sessionTimeout }).catch(() => {})
-    toast.success("Session timeout saved")
+  const handleSaveTimeout = async () => {
+    try {
+      await savePreferences({ sessionTimeout: resolvedSessionTimeout })
+      toast.success("Session timeout saved")
+    } catch {
+      toast.error("Failed to save session timeout")
+    }
   }
 
   return (
@@ -59,13 +62,29 @@ function SecurityContent() {
         </p>
       </header>
 
+      {error && (
+        <div className="mb-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Failed to load your security preferences.
+          </p>
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void mutate()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
       <div className="glass-panel p-6 rounded-2xl glass-border space-y-6">
+        {isLoading && (
+          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-xs text-muted-foreground">
+            Syncing security preferences...
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-[var(--text-secondary)] font-medium">Multi-Factor Authentication</Label>
             <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Require MFA for account access</p>
           </div>
-          <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} />
+          <Switch checked={mfaEnabled} disabled={isLoading} onCheckedChange={(value) => void handleMfaToggle(value)} />
         </div>
         <div>
           <Label className="text-[var(--text-secondary)] font-medium">Session Timeout (hours)</Label>
@@ -74,11 +93,11 @@ function SecurityContent() {
               type="number"
               min={1}
               max={168}
-              value={sessionTimeout}
+              value={resolvedSessionTimeout}
               onChange={(e) => setSessionTimeout(Number(e.target.value))}
               className="w-20 h-9 rounded-xl glass-input px-3 text-[var(--text-primary)] text-sm"
             />
-            <Button size="sm" variant="outline" onClick={handleSaveTimeout}>
+            <Button size="sm" variant="outline" disabled={isLoading} onClick={() => void handleSaveTimeout()}>
               Save
             </Button>
           </div>

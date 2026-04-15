@@ -1283,7 +1283,9 @@ class HorusService:
                 domain_hint += " Do not return JSON unless the user explicitly asked for JSON."
             domain_hint += (
                 " If the content relates to education quality, accreditation, or academic standards, map key points to common frameworks "
-                "such as NCAAA, AACSB, ABET, or ISO 21001, and highlight compliance gaps or missing evidence. "
+                "such as NAQAAE, ISO 21001, AACSB, ABET, or other clearly indicated frameworks, and highlight compliance gaps or missing evidence. "
+                "Do not assume a Saudi context or mention NCAAA unless the user or the document explicitly points to it. "
+                "If the user asks about Ayn itself without country context, treat Ayn as Egypt-first. "
                 "Be explicit when a mapping is uncertain."
             )
             if language_hint:
@@ -1338,7 +1340,15 @@ class HorusService:
                 user_line = (message or "").strip()
                 if needs_analysis:
                     ai_message = user_line or "Analyze these files."
-                    ai_message += "\n\nCRITICAL: You must generate a JSON-ready markdown report containing:\n- **overall_score**: (0-100)\n- **key_findings**: (List of strengths and weaknesses)\n- **improvement_suggestions**: (Actionable steps)"
+                    ai_message += (
+                        "\n\nRespond for an end user in plain language, not as raw JSON. "
+                        "Use short readable sections when helpful. Include: "
+                        "1) a concise summary, "
+                        "2) an overall score from 0-100, "
+                        "3) key findings as bullet points, and "
+                        "4) improvement suggestions as actionable bullet points. "
+                        "Do not say 'JSON-formatted analysis'. Do not return code blocks unless the user explicitly asked for them."
+                    )
                 else:
                     ai_message = user_line or "Please look at the attached file(s)."
                     ai_message += (

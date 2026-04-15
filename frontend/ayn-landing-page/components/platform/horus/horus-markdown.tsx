@@ -3,6 +3,17 @@ import remarkGfm from "remark-gfm"
 import { FileText } from "lucide-react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
+type ComplianceJsonPayload = {
+  summary?: string
+  overall_score?: number | string
+  confidence?: number | string
+  key_findings?: unknown
+  improvement_suggestions?: unknown
+  document_type?: string
+  related_standard?: string
+  mapped_criteria?: unknown
+}
+
 /** Strip leaked __THINKING__: or THINKING: protocol markers from displayed content */
 function sanitizeHorusContent(content: string): string {
   const leakedProtocolLine =
@@ -19,6 +30,119 @@ function containsArabic(text: string): boolean {
   return /[\u0600-\u06FF]/.test(text)
 }
 
+function toStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+}
+
+function extractComplianceJsonPayload(content: string): ComplianceJsonPayload | null {
+  const candidates: string[] = []
+  const fencedMatches = content.match(/```(?:json)?\s*([\s\S]*?)```/gi) ?? []
+
+  for (const block of fencedMatches) {
+    const inner = block.replace(/```(?:json)?/i, "").replace(/```$/, "").trim()
+    if (inner.startsWith("{") && inner.endsWith("}")) {
+      candidates.push(inner)
+    }
+  }
+
+  const objectMatch = content.match(/\{[\s\S]*"overall_score"[\s\S]*\}/m)
+  if (objectMatch) {
+    candidates.push(objectMatch[0].trim())
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as ComplianceJsonPayload
+      if (
+        parsed &&
+        (parsed.overall_score !== undefined ||
+          toStringList(parsed.key_findings).length > 0 ||
+          toStringList(parsed.improvement_suggestions).length > 0)
+      ) {
+        return parsed
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return null
+}
+
+function formatComplianceJsonPayload(payload: ComplianceJsonPayload, isArabic: boolean): string {
+  const scoreValue = Number(payload.overall_score ?? payload.confidence ?? 0)
+  const scoreLabel = Number.isFinite(scoreValue) ? `${Math.round(scoreValue)}/100` : null
+  const findings = toStringList(payload.key_findings)
+  const suggestions = toStringList(payload.improvement_suggestions)
+  const mappedCriteria = toStringList(payload.mapped_criteria)
+  const lines: string[] = []
+
+  if (payload.summary) {
+    lines.push(isArabic ? "### الملخص" : "### Summary")
+    lines.push(String(payload.summary).trim())
+    lines.push("")
+  }
+
+  if (scoreLabel) {
+    lines.push(isArabic ? "### التقييم العام" : "### Overall Score")
+    lines.push(`**${scoreLabel}**`)
+    lines.push("")
+  }
+
+  if (payload.document_type || payload.related_standard || mappedCriteria.length > 0) {
+    lines.push(isArabic ? "### سياق المستند" : "### Document Context")
+    if (payload.document_type) {
+      lines.push(`- ${isArabic ? "نوع المستند" : "Document type"}: ${payload.document_type}`)
+    }
+    if (payload.related_standard) {
+      lines.push(`- ${isArabic ? "المعيار المرتبط" : "Related standard"}: ${payload.related_standard}`)
+    }
+    if (mappedCriteria.length > 0) {
+      lines.push(`- ${isArabic ? "المعايير أو البنود المرتبطة" : "Mapped criteria"}: ${mappedCriteria.join(", ")}`)
+    }
+    lines.push("")
+  }
+
+  if (findings.length > 0) {
+    lines.push(isArabic ? "### أهم الملاحظات" : "### Key Findings")
+    lines.push(...findings.map((finding) => `- ${finding}`))
+    lines.push("")
+  }
+
+  if (suggestions.length > 0) {
+    lines.push(isArabic ? "### مقترحات التحسين" : "### Improvement Suggestions")
+    lines.push(...suggestions.map((suggestion) => `- ${suggestion}`))
+    lines.push("")
+  }
+
+  return lines.join("\n").trim()
+}
+
+function normalizeHorusContent(content: string): string {
+  const sanitized = sanitizeHorusContent(content)
+  const payload = extractComplianceJsonPayload(sanitized)
+
+  if (!payload) return sanitized
+
+  const withoutGenericIntro = sanitized
+    .replace(/^.*json-formatted analysis.*\n*/im, "")
+    .replace(/^.*raw json.*\n*/im, "")
+    .trim()
+
+  const preface = withoutGenericIntro
+    .replace(/```(?:json)?[\s\S]*?```/gi, "")
+    .replace(/\{[\s\S]*"overall_score"[\s\S]*\}/m, "")
+    .trim()
+
+  const isArabic = containsArabic(sanitized)
+  const formatted = formatComplianceJsonPayload(payload, isArabic)
+
+  return [preface, formatted].filter(Boolean).join("\n\n").trim()
+}
+
 export function HorusMarkdown({
     content,
     onAction
@@ -26,7 +150,7 @@ export function HorusMarkdown({
     content: string;
     onAction?: (action: string, payload: string) => void
 }) {
-    const sanitized = sanitizeHorusContent(content)
+    const sanitized = normalizeHorusContent(content)
     const isArabic = containsArabic(sanitized)
 
     return (

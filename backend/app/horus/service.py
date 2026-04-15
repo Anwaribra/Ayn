@@ -1430,10 +1430,16 @@ class HorusService:
                             import re
                             arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
                             is_arabic = (arabic_chars / len(msg_clean)) > 0.1
+                        attachment_label = "الصورة المرفقة" if visual_only else "الملف المرفق"
+                        attachment_hint = "صورة أوضح" if visual_only else "ملفًا أوضح أو صيغة مختلفة"
                         full_response = (
-                            "حصل خطأ أثناء تحليل الصورة المرفقة. جرّب إرسال صورة أوضح أو اكتب لي بالتحديد ماذا تريد أن أستخرج منها."
+                            f"حصل خطأ أثناء تحليل {attachment_label}. جرّب إرسال {attachment_hint} أو اكتب لي بالتحديد ماذا تريد أن أستخرج منه."
                             if is_arabic
-                            else "I hit an error while analyzing the attached image. Try sending a clearer image or tell me exactly what you want extracted from it."
+                            else (
+                                "I hit an error while analyzing the attached image. Try sending a clearer image or tell me exactly what you want extracted from it."
+                                if visual_only
+                                else "I hit an error while analyzing the attached file. Try re-uploading the file or tell me exactly what you want extracted from it."
+                            )
                         )
                         yield full_response
             if not full_response.strip():
@@ -1448,7 +1454,11 @@ class HorusService:
                     full_response = fallback_response.strip()
                     yield full_response
                 else:
-                    full_response = "I received your file, but I couldn't extract a clear answer from it. Try sending a clearer image or add more context."
+                    full_response = (
+                        "I received your image, but I couldn't extract a clear answer from it. Try sending a clearer image or add more context."
+                        if visual_only
+                        else "I received your file, but I couldn't extract a clear answer from it. Try re-uploading the file or add more context."
+                    )
                     yield full_response
         else:
             if request_mode == "agent":

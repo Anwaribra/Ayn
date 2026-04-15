@@ -589,7 +589,9 @@ export default function HorusAIChat() {
 
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
   const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
-  const activeAssistantMsg = messages.find((m) => m.id === lastAssistantMsgId) ?? lastAssistantMsg
+  const activeAssistantMsg = status === "generating"
+    ? (messages.find((m) => m.id === lastAssistantMsgId) ?? lastAssistantMsg)
+    : [...messages].reverse().find((m) => m.role === "assistant" && !!m.pendingConfirmation)
   const activeThinkingSteps = activeAssistantMsg?.thinkingSteps ?? EMPTY_STRINGS
   const activeToolSteps = activeAssistantMsg?.toolSteps ?? EMPTY_TOOL_STEPS
   const activeFiles = activeAssistantMsg?.activeFiles ?? EMPTY_FILES
@@ -1665,7 +1667,7 @@ export default function HorusAIChat() {
                     activeResponseMode === "agent" &&
                     (activeAssistantMsg?.agentRun || activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
                       (() => {
-                        const lastMsg = messages.filter((m) => m.role === "assistant").pop()
+                        const lastMsg = activeAssistantMsg
                         const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : []
                         const { steps, phase, stepProgress } = deriveAgentSteps(
                           effectiveSteps,
@@ -1793,7 +1795,7 @@ export default function HorusAIChat() {
         {/* ─── Input: centered, no heavy bar ─── */}
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/70 via-background/25 to-transparent px-2.5 pb-1 pt-1 sm:px-4 sm:pb-2">
           <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
-            {(isProcessing || activeAssistantMsg?.agentRun) && (
+            {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
               <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 shadow-[0_18px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
@@ -1867,7 +1869,7 @@ export default function HorusAIChat() {
                     responseMode={responseMode}
                     attachedCount={attachedFiles.length}
                     isProcessing={isProcessing}
-                    agentRun={activeAssistantMsg?.agentRun}
+                    agentRun={isProcessing ? activeAssistantMsg?.agentRun : null}
                     isArabic={preferArabicUi}
                   />
                 }

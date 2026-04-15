@@ -298,24 +298,16 @@ function AgentRunHeader({
 }
 
 function ComposerStatusStrip({
-  responseMode,
   attachedCount,
   isProcessing,
   agentRun,
   isArabic,
 }: {
-  responseMode: "ask" | "think" | "agent"
   attachedCount: number
   isProcessing: boolean
   agentRun?: AgentRunMeta | null
   isArabic: boolean
 }) {
-  const modeLabel = responseMode === "agent"
-    ? (isArabic ? "وضع الوكيل" : "Agent")
-    : responseMode === "think"
-      ? (isArabic ? "وضع التحليل" : "Think")
-      : (isArabic ? "وضع السؤال" : "Ask")
-
   const routeLabel = formatAgentRoute(agentRun, isArabic)
   const intentLabel = formatAgentIntent(agentRun, isArabic)
   const progressLabel = agentRun?.step_count
@@ -324,9 +316,6 @@ function ComposerStatusStrip({
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-[11px]">
-      <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 font-medium text-foreground/88">
-        {modeLabel}
-      </span>
       {attachedCount > 0 && (
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
           {isArabic
@@ -1866,7 +1855,6 @@ export default function HorusAIChat() {
                 hasFiles={attachedFiles.length > 0}
                 header={
                   <ComposerStatusStrip
-                    responseMode={responseMode}
                     attachedCount={attachedFiles.length}
                     isProcessing={isProcessing}
                     agentRun={isProcessing ? activeAssistantMsg?.agentRun : null}

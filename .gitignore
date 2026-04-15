@@ -66,3 +66,4 @@ notuse/*
 .cursor/plans/
 
 .gemini/ 
+.codex

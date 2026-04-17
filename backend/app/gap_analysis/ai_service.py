@@ -150,6 +150,62 @@ def _parse_gap_response(response_text: str) -> dict:
     }
 
 
+def _build_fallback_gap_response(standard: Any, criteria: list, evidence: list, error: Exception) -> dict:
+    """Build a simple deterministic fallback report when AI providers are unavailable."""
+    evidence_titles = [
+        getattr(item, "title", None) or getattr(item, "originalFilename", None) or "Untitled evidence"
+        for item in evidence
+    ]
+    evidence_text = ", ".join(evidence_titles[:3]) if evidence_titles else "No evidence was selected"
+    has_evidence = len(evidence) > 0
+
+    gaps = []
+    for criterion in criteria:
+        criterion_title = getattr(criterion, "title", "Unknown criterion")
+        criterion_id = getattr(criterion, "id", "")
+        if has_evidence:
+            gaps.append({
+                "criterionId": criterion_id,
+                "criterionTitle": criterion_title,
+                "status": "partially_aligned",
+                "currentState": f"Selected evidence exists for manual review. Example evidence: {evidence_text}.",
+                "gap": "Automated scoring is temporarily unavailable, so this criterion still needs a full AI review.",
+                "evidenceCited": evidence_text,
+                "recommendation": "Review the selected evidence against this criterion and rerun once AI provider access is restored.",
+                "priority": "Medium",
+            })
+        else:
+            gaps.append({
+                "criterionId": criterion_id,
+                "criterionTitle": criterion_title,
+                "status": "no_evidence",
+                "currentState": "No evidence was available for this criterion in the current run.",
+                "gap": "There is no linked or selected evidence to evaluate against this criterion.",
+                "evidenceCited": "No evidence provided",
+                "recommendation": "Upload or link evidence for this criterion, then rerun the analysis.",
+                "priority": "High",
+            })
+
+    total_criteria = len(criteria) or 1
+    partial_count = sum(1 for gap in gaps if gap["status"] == "partially_aligned")
+    overall_score = round((partial_count * 50) / total_criteria, 2)
+
+    return {
+        "overallScore": overall_score,
+        "summary": (
+            f"A preliminary fallback report was generated for {getattr(standard, 'title', 'this standard')} because the AI provider "
+            f"is currently unavailable ({str(error)[:140]}). "
+            f"{'Evidence was found and marked for manual review.' if has_evidence else 'No evidence was found in this run.'}"
+        ),
+        "gaps": gaps,
+        "recommendations": [
+            "Reconnect or fund the configured AI provider to generate a full criterion-by-criterion analysis.",
+            "Use this preliminary report to confirm the right files and criteria were selected.",
+            "Upload or link additional evidence before rerunning if key criteria still have no supporting documents.",
+        ],
+    }
+
+
 async def generate_gap_analysis(
     standard: Any,
     criteria: list,
@@ -184,4 +240,5 @@ async def generate_gap_analysis(
 
     except Exception as e:
         logger.error(f"Error generating gap analysis: {e}")
-        raise Exception(f"Failed to generate gap analysis: {str(e)}")
+        logger.warning("Returning fallback gap analysis because AI providers are unavailable.")
+        return _build_fallback_gap_response(standard, criteria, evidence, e)

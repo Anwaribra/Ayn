@@ -198,6 +198,7 @@ def _build_fallback_gap_response(standard: Any, criteria: list, evidence: list, 
 
     return {
         "overallScore": overall_score,
+        "isFallback": True,
         "summary": (
             f"A preliminary report was generated for {standard_title}. "
             f"{fallback_reason}. "

@@ -26,10 +26,16 @@ class GapAnalysisService:
     """Service for gap analysis business logic."""
 
     @staticmethod
-    def _encode_summary(summary: str, analysis_scope: str, evidence_count: int | None) -> str:
+    def _encode_summary(
+        summary: str,
+        analysis_scope: str,
+        evidence_count: int | None,
+        is_fallback: bool = False,
+    ) -> str:
         scope = (analysis_scope or "linked").lower()
         count = "" if evidence_count is None else str(evidence_count)
-        return f"{SUMMARY_META_PREFIX}scope={scope};count={count}]] {summary}".strip()
+        fallback = "1" if is_fallback else "0"
+        return f"{SUMMARY_META_PREFIX}scope={scope};count={count};fallback={fallback}]] {summary}".strip()
 
     @staticmethod
     def _parse_summary(summary: str | None):
@@ -39,6 +45,7 @@ class GapAnalysisService:
                 "summary": raw_summary,
                 "analysisScope": "linked",
                 "evidenceCount": None,
+                "isFallback": False,
             }
 
         closing_index = raw_summary.find("]]")
@@ -47,6 +54,7 @@ class GapAnalysisService:
                 "summary": raw_summary,
                 "analysisScope": "linked",
                 "evidenceCount": None,
+                "isFallback": False,
             }
 
         metadata = {}
@@ -63,6 +71,7 @@ class GapAnalysisService:
             "summary": cleaned_summary,
             "analysisScope": metadata.get("scope") or "linked",
             "evidenceCount": int(evidence_count_raw) if evidence_count_raw and evidence_count_raw.isdigit() else None,
+            "isFallback": metadata.get("fallback") == "1",
         }
 
     @staticmethod
@@ -146,6 +155,7 @@ class GapAnalysisService:
             summary=summary_meta["summary"],
             analysisScope=summary_meta["analysisScope"],
             evidenceCount=summary_meta["evidenceCount"],
+            isFallback=summary_meta["isFallback"],
             status=record.status if hasattr(record, "status") else "pending",
             gaps=[GapItem(**g) for g in gaps_data],
             recommendations=recommendations_data,
@@ -274,6 +284,7 @@ class GapAnalysisService:
                         result["summary"],
                         analysis_scope,
                         len(evidence),
+                        result.get("isFallback", False),
                     ),
                     "status": "completed",
                     "gapsJson": json.dumps(result["gaps"]),
@@ -354,6 +365,7 @@ class GapAnalysisService:
                 summary=summary_meta["summary"],
                 analysisScope=summary_meta["analysisScope"],
                 evidenceCount=summary_meta["evidenceCount"],
+                isFallback=summary_meta["isFallback"],
                 status=r.status if hasattr(r, "status") else "pending",
                 archived=r.archived,
                 createdAt=r.createdAt,

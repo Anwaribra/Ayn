@@ -416,6 +416,7 @@ function GapAnalysisContent() {
         : "Choose the exact evidence files Horus should analyze for this report."
   const displayedGaps = gaps.slice(0, 5)
   const remainingGapCount = Math.max(gaps.length - displayedGaps.length, 0)
+  const isFallbackReport = Boolean(activeReport?.isFallback)
 
   return (
     <div className="animate-fade-in-up pb-20 relative">
@@ -693,6 +694,11 @@ function GapAnalysisContent() {
                       <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
                         {getAnalysisScopeLabel(activeReport.analysisScope)}
                       </span>
+                      {isFallbackReport ? (
+                        <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300">
+                          Preliminary
+                        </span>
+                      ) : null}
                       {activeReport.evidenceCount ? (
                         <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-foreground">
                           {activeReport.evidenceCount} file{activeReport.evidenceCount === 1 ? "" : "s"}
@@ -768,6 +774,21 @@ function GapAnalysisContent() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : isFallbackReport ? (
+              <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 px-5 py-5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Preliminary report only</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      The AI provider was unavailable during this run, so Horus returned a simple preliminary review instead of full criterion-by-criterion findings.
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      You can still verify the selected evidence, attach more evidence if needed, then rerun later for a full AI report.
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : gaps.length === 0 ? (
               <div className="text-center py-16">

@@ -62,6 +62,7 @@ class GapAnalysisResponse(BaseModel):
     summary: str  # AI executive summary
     analysisScope: Optional[str] = None
     evidenceCount: Optional[int] = None
+    isFallback: bool = False
     gaps: List[GapItem]
     recommendations: List[str]  # Top-level recommendations
     status: str = "pending"
@@ -80,6 +81,7 @@ class GapAnalysisListItem(BaseModel):
     summary: str
     analysisScope: Optional[str] = None
     evidenceCount: Optional[int] = None
+    isFallback: bool = False
     status: str = "pending"
     archived: bool
     createdAt: datetime

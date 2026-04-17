@@ -120,6 +120,7 @@ export interface GapAnalysisListItem {
   standardTitle: string;
   overallScore: number;
   summary: string;
+  isFallback?: boolean;
   status?: string;
   archived: boolean;
   createdAt: string;
@@ -136,6 +137,7 @@ export interface GapAnalysisResponse {
   standardTitle: string;
   overallScore: number;
   summary: string;
+  isFallback?: boolean;
   status?: string;
   gaps: GapItem[];
   recommendations: string[];

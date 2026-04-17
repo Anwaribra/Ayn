@@ -20,7 +20,6 @@ import {
   Microscope,
   BellRing
 } from "lucide-react"
-import { Download } from "lucide-react"
 import type { DashboardMetrics, Standard } from "@/types"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
@@ -246,18 +245,6 @@ function DashboardContent() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.12),transparent_28%)] pointer-events-none" />
           <div className="absolute -right-20 -top-14 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute left-10 bottom-6 h-24 w-24 rounded-full border border-white/10 bg-white/5 blur-2xl pointer-events-none" />
-          <div className="absolute top-4 right-4 z-50">
-             <button 
-               onClick={async () => {
-                 const { exportToPDF } = await import("@/lib/pdf-export")
-                 exportToPDF("dashboard-report-content", "Ayn-Horus-Audit-Dashboard.pdf")
-               }}
-               data-html2canvas-ignore="true"
-               className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl transition-all font-bold text-[10px] sm:text-xs uppercase tracking-widest border border-primary/20 shadow-sm"
-             >
-               <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Export Report (PDF)</span><span className="sm:hidden">Export</span>
-             </button>
-          </div>
           <div className="relative z-10 space-y-6 sm:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full status-success border w-fit">
               <span className="relative flex h-2 w-2">

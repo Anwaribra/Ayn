@@ -65,7 +65,6 @@ function GapAnalysisContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   usePageTitle("Gap Analysis")
-  const [activeTab, setActiveTab] = useState<"all" | "urgent">("all")
   const [selectedStandard, setSelectedStandard] = useState("")
   const [generating, setGenerating] = useState(false)
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
@@ -303,10 +302,6 @@ function GapAnalysisContent() {
     }
   }) ?? []
 
-  const filteredGaps = activeTab === "urgent"
-    ? gaps.filter((g) => g.severity === "High")
-    : gaps
-
   const overallScore = activeReport?.overallScore ?? null
   const activeGapCount = gaps.filter((g) => g.severity === "High").length
   const remediationRate = gaps.length > 0 ? Math.round((gaps.filter((g) => g.severity === "Low").length / gaps.length) * 100) : 94
@@ -352,20 +347,6 @@ function GapAnalysisContent() {
           >
             <Download className="w-4 h-4" /> Export Report (PDF)
           </button>
-              <div className="p-1 glass-panel rounded-xl flex flex-wrap gap-1 glass-border">
-                <button
-                  onClick={() => setActiveTab("all")}
-                  className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
-                >
-                  All Gaps
-                </button>
-                <button
-                  onClick={() => setActiveTab("urgent")}
-                  className={cn("px-4 sm:px-6 py-2.5 min-h-[44px] rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === "urgent" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
-                >
-                  High Severity
-                </button>
-              </div>
             </div>
           </div>
 
@@ -564,13 +545,13 @@ function GapAnalysisContent() {
                   </div>
                 ))}
               </div>
-            ) : filteredGaps.length === 0 ? (
+            ) : gaps.length === 0 ? (
               <div className="text-center py-16">
                 <CheckCircle2 className="w-10 h-10 text-[var(--status-success)] opacity-50 mx-auto mb-4" />
                 <p className="text-sm text-muted-foreground italic">No critical gaps detected. System is stable.</p>
               </div>
             ) : (
-              filteredGaps.map((gap, i) => (
+              gaps.map((gap, i) => (
                 <div key={i} className="glass-panel p-6 sm:p-8 rounded-[30px] flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8 group hover:bg-[var(--surface)] transition-all glass-border relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
                   <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.75),transparent)] opacity-0 transition-opacity duration-300 group-hover:opacity-70" />
                   <div className={cn("w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center border border-[var(--border-subtle)]", gap.statusClass)}>

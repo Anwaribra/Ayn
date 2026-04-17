@@ -1,5 +1,5 @@
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import { toast } from "sonner";
 
 export const exportToPDF = async (elementId: string, filename: string = "audit-report.pdf") => {
@@ -9,11 +9,15 @@ export const exportToPDF = async (elementId: string, filename: string = "audit-r
 
     toast.info("Generating PDF...", { description: "Please wait while we capture the report.", duration: 3000 });
 
+    await new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined)))
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: "#050810", // the dark background mostly used
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: element.scrollHeight,
     });
 
     const imgData = canvas.toDataURL("image/jpeg", 0.95);

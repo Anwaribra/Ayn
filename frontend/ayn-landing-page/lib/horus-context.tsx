@@ -460,6 +460,14 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                             return true
                         }
 
+                        // Safety net: any unrecognised __TOKEN__: line is silently consumed.
+                        // Without this, an unknown or future protocol token would fall through
+                        // to fullContent where the markdown renderer strips the __ delimiters
+                        // (rendering __FOO__ as bold "FOO") — causing visible leakage.
+                        if (line.startsWith("__") && line.includes(":")) {
+                            return true
+                        }
+
                         return false
                     }
 
@@ -475,6 +483,19 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 },
                 abortControllerRef.current.signal
             )
+
+            // Post-stream content sanitization: strip any protocol-token lines that
+            // may have slipped through the per-line parser (e.g. in rare chunk-boundary
+            // edge cases). Protocol lines start with __ and contain a colon.
+            // Also handle the case where any buffered remainder from streamRemainderRef
+            // was never flushed (stream ended mid-protocol-line).
+            const PROTOCOL_LINE_RE = /^__[A-Z_]+__:[^\n]*/gm
+            setMessages(prev => prev.map(m => {
+                if (m.id !== assistantMsgId) return m
+                const cleaned = (m.content || "").replace(PROTOCOL_LINE_RE, "").replace(/\n{3,}/g, "\n\n").trim()
+                if (cleaned === (m.content || "").trim()) return m
+                return { ...m, content: cleaned }
+            }))
 
             // Guard against "silent success" cases:
             // stream finishes with no visible text and no structured payload.

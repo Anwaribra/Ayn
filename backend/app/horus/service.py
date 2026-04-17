@@ -647,7 +647,7 @@ class HorusService:
                             timeout=18.0,
                         )
                     except asyncio.TimeoutError:
-                        fallback = "I’m taking too long to respond. Please try again."
+                        fallback = "The AI service is taking longer than expected. Please try again in a moment."
                     if fallback:
                         full_response += fallback
                         async for piece in _yield_text_chunks(fallback):
@@ -683,7 +683,7 @@ class HorusService:
                             timeout=18.0,
                         )
                     except asyncio.TimeoutError:
-                        fallback = "I’m taking too long to respond. Please try again."
+                        fallback = "The AI service is taking longer than expected. Please try again in a moment."
                     if fallback and fallback.strip():
                         full_response = fallback.strip()
                         async for piece in _yield_text_chunks(full_response):
@@ -1325,7 +1325,7 @@ class HorusService:
                             timeout=30.0,
                         )
                     except asyncio.TimeoutError:
-                        fallback_response = "I’m taking too long to analyze the file. Please try again."
+                        fallback_response = "The AI analysis service is taking longer than expected. Your file was received — please try again or select an action below."
                     if fallback_response:
                         full_response = (fallback_response or "").strip()
                         async for piece in _yield_text_chunks(full_response):
@@ -1372,17 +1372,25 @@ class HorusService:
                             import re
                             arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
                             is_arabic = (arabic_chars / len(msg_clean)) > 0.1
-                        attachment_label = "الصورة المرفقة" if visual_only else "الملف المرفق"
-                        attachment_hint = "صورة أوضح" if visual_only else "ملفًا أوضح أو صيغة مختلفة"
-                        full_response = (
-                            f"حصل خطأ أثناء تحليل {attachment_label}. جرّب إرسال {attachment_hint} أو اكتب لي بالتحديد ماذا تريد أن أستخرج منه."
-                            if is_arabic
-                            else (
-                                "I hit an error while analyzing the attached image. Try sending a clearer image or tell me exactly what you want extracted from it."
-                                if visual_only
-                                else "I hit an error while analyzing the attached file. Try re-uploading the file or tell me exactly what you want extracted from it."
+                        if self._is_provider_unavailable_err(file_stream_err):
+                            # Provider unavailable — give intentional message; suggestions will still fire
+                            full_response = (
+                                "تعذّر تحليل الملف الآن بسبب عدم توفر خدمة الذكاء الاصطناعي مؤقتًا. يمكنك اختيار إجراء من الخيارات أدناه."
+                                if is_arabic
+                                else "The AI analysis service is temporarily unavailable. Your file was received — select an action below to continue."
                             )
-                        )
+                        else:
+                            attachment_label = "الصورة المرفقة" if visual_only else "الملف المرفق"
+                            attachment_hint = "صورة أوضح" if visual_only else "ملفًا أوضح أو صيغة مختلفة"
+                            full_response = (
+                                f"حصل خطأ أثناء تحليل {attachment_label}. جرّب إرسال {attachment_hint} أو اكتب لي بالتحديد ماذا تريد أن أستخرج منه."
+                                if is_arabic
+                                else (
+                                    "I hit an error while analyzing the attached image. Try sending a clearer image or tell me exactly what you want extracted."
+                                    if visual_only
+                                    else "I hit an error while analyzing the attached file. Try re-uploading the file or tell me exactly what you want extracted."
+                                )
+                            )
                         yield full_response
             if not full_response.strip():
                 # Some multimodal providers may stream empty chunks for certain files.
@@ -1436,7 +1444,7 @@ class HorusService:
                             timeout=18.0,
                         )
                     except asyncio.TimeoutError:
-                        fallback_response = "I’m taking too long to respond. Please try again."
+                        fallback_response = "The AI service is taking longer than expected. Please try again in a moment."
                     if fallback_response and fallback_response.strip():
                         full_response = fallback_response.strip()
                         async for piece in _yield_text_chunks(full_response):
@@ -1470,24 +1478,30 @@ class HorusService:
                         full_response = "The connection was interrupted. Please try sending your message again."
                         yield full_response
 
-        # 4. Emit contextual next-step suggestions if the response was substantive
-        if full_response.strip() and not full_response.startswith("My AI provider"):
-            try:
-                if file_results:
-                    primary = file_results[0] if file_results else {}
-                    sug = self._get_file_suggestions(
-                        filename=primary.get("filename", "file"),
-                        message=message,
-                        file_type=primary.get("mime_type", ""),
-                    )
-                elif self._needs_compliance_analysis(message) or self._has_explicit_platform_action_intent(message):
-                    sug = self._get_chat_suggestions(message, full_response)
-                else:
-                    sug = []
-                if sug:
-                    yield f"__AGENT_SUGGESTIONS__:{json.dumps(sug)}\n"
-            except Exception as _sug_err:
-                logger.debug(f"Suggestion generation skipped: {_sug_err}")
+        # 4. Emit contextual next-step suggestions
+        # File analysis: always suggest (suggestions are generated locally; provider not needed).
+        # Text chat: only suggest when the response is substantive and compliance-related.
+        try:
+            if file_results:
+                primary = file_results[0] if file_results else {}
+                sug = self._get_file_suggestions(
+                    filename=primary.get("filename", "file"),
+                    message=message,
+                    file_type=primary.get("mime_type", ""),
+                )
+            elif (
+                self._is_substantive_response(full_response)
+                and (self._needs_compliance_analysis(message) or self._has_explicit_platform_action_intent(message))
+            ):
+                sug = self._get_chat_suggestions(message, full_response)
+            else:
+                sug = []
+            if sug:
+                # Leading \n guarantees clean line separation even when the previous
+                # content chunk was coalesced with this yield by the ASGI transport.
+                yield f"\n__AGENT_SUGGESTIONS__:{json.dumps(sug)}\n"
+        except Exception as _sug_err:
+            logger.debug(f"Suggestion generation skipped: {_sug_err}")
 
         # 5. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:
@@ -1967,6 +1981,29 @@ Behavioral rules:
 
         return None
 
+
+
+    @staticmethod
+    def _is_substantive_response(text: str) -> bool:
+        """Return True when the response looks like a real answer rather than an error or
+        fallback string that was produced when a provider was unavailable."""
+        t = text.strip().lower()
+        if len(t) < 80:
+            return False
+        _ERROR_PHRASES = (
+            "i'm having trouble",
+            "i'm taking too long",
+            "my ai provider",
+            "hit an error while analyzing",
+            "the connection was interrupted",
+            "provider is temporarily unavailable",
+            "request was interrupted",
+            "حصل خطأ",       # Arabic: "an error occurred"
+            "جرّب إرسال",    # Arabic: "try sending"
+        )
+        if any(phrase in t for phrase in _ERROR_PHRASES):
+            return False
+        return True
 
     @staticmethod
     def _get_file_suggestions(filename: str, message: str | None, file_type: str) -> list[dict]:

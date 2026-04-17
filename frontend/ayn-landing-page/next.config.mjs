@@ -15,12 +15,12 @@ const nextConfig = {
   },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
 
-  // Proxy /api requests to the Railway backend.
-  // The browser sees same-origin requests — no CORS needed.
-  // Two rules: one for paths with trailing slash (after trailingSlash redirect),
-  // one without. The trailing-slash version strips the slash before forwarding.
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production-1465.up.railway.app"
+    const backendUrl =
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      "http://127.0.0.1:8000"
+
     return {
       beforeFiles: [
         {

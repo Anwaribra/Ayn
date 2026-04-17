@@ -2,7 +2,7 @@
  * Streaming proxy for Horus chat.
  *
  * WHY THIS EXISTS:
- * next.config.mjs uses Next.js rewrites() to forward /api/* to the Railway backend.
+ * next.config.mjs uses Next.js rewrites() to forward /api/* to the configured backend.
  * Next.js rewrites BUFFER the entire response before forwarding it to the browser,
  * which breaks streaming — the user sees all tokens appear at once when the response
  * is complete instead of word-by-word.
@@ -16,7 +16,10 @@
 
 import { NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://ayn-production-1465.up.railway.app"
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "http://127.0.0.1:8000"
 
 export const runtime = "nodejs"  // Needed for streaming support
 export const dynamic = "force-dynamic"  // Never cache this route

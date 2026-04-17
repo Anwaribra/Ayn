@@ -8,7 +8,7 @@ node_modules/
 
 # Next.js
 /.next/
-# /out/  # Commented out to allow deploying to main branch
+/out/
 next-env.d.ts
 
 # Production
@@ -78,4 +78,3 @@ logs
 
 # Scripts (optional - remove if you want to keep them)
 *.sh
-

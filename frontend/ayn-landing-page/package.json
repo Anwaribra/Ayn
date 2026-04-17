@@ -6,15 +6,11 @@
   "scripts": {
     "generate-contracts": "python3 ../../backend/scripts/generate_contracts.py",
     "build": "next build",
-    "build:landing": "bash build-landing.sh",
     "dev": "next dev",
     "lint": "eslint .",
     "smoke": "node scripts/platform-smoke.mjs",
     "start": "next start",
-    "export": "next build",
-    "deploy": "pnpm build:landing && gh-pages -d out",
-    "deploy:main": "bash deploy-to-main.sh",
-    "deploy:root": "bash deploy-to-root.sh"
+    "export": "next build"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.31",
@@ -100,7 +96,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.183.1",
-    "gh-pages": "^6.1.1",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",

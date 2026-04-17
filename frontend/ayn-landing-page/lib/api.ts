@@ -4,7 +4,7 @@ import { log } from "./logger"
 import { isDemoMode, getMockResponse } from "./demo"
 
 // Use relative /api path so requests go through Next.js rewrites (same-origin, no CORS).
-// The rewrite in next.config.mjs proxies /api/* to the Railway backend.
+// The rewrite in next.config.mjs proxies /api/* to the configured backend URL.
 const API_BASE_URL = "/api"
 
 class ApiClient {

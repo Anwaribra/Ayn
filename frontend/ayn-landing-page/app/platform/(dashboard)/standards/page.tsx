@@ -29,10 +29,10 @@ import {
   Check,
   RefreshCw,
   ArrowUpRight,
-  Globe,
   Layers3,
   ShieldCheck,
   SlidersHorizontal,
+  type LucideIcon,
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
 import { GlassCard } from "@/components/ui/glass-card"
@@ -89,7 +89,7 @@ function getStatusBadge(status: DerivedStatus) {
       }
     default:
       return {
-        label: "Unmapped",
+        label: "Not Started",
         className: "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground",
       }
   }
@@ -97,6 +97,33 @@ function getStatusBadge(status: DerivedStatus) {
 
 function formatFilterLabel(value?: string | null, fallback = "Uncategorized") {
   return value?.trim() || fallback
+}
+
+const MAPPING_STATUS_META: Record<string, { label: string; Icon: LucideIcon; iconClass: string; badgeClass: string }> = {
+  met: {
+    label: "Covered",
+    Icon: CheckCircle,
+    iconClass: "text-green-500",
+    badgeClass: "bg-green-500/10 text-green-500",
+  },
+  partial: {
+    label: "Partial",
+    Icon: AlertCircle,
+    iconClass: "text-yellow-500",
+    badgeClass: "bg-yellow-500/10 text-yellow-500",
+  },
+  gap: {
+    label: "Gap",
+    Icon: XCircle,
+    iconClass: "text-red-500",
+    badgeClass: "bg-red-500/10 text-red-500",
+  },
+  not_analyzed: {
+    label: "Pending",
+    Icon: Circle,
+    iconClass: "text-muted-foreground",
+    badgeClass: "glass-button text-muted-foreground",
+  },
 }
 
 export default function StandardsPage() {
@@ -536,7 +563,7 @@ export default function StandardsPage() {
                   <option value="strong">Strong</option>
                   <option value="partial">Partial</option>
                   <option value="critical">Critical</option>
-                  <option value="unmapped">Unmapped</option>
+                  <option value="unmapped">Not Started</option>
                   <option value="analyzing">Analyzing</option>
                 </select>
 
@@ -638,27 +665,32 @@ export default function StandardsPage() {
                           </button>
                         </div>
 
-                        <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                          {standard.description ||
-                            "Comprehensive accreditation standards and institutional frameworks for global quality assurance and performance monitoring."}
-                        </p>
+                        {standard.description && (
+                          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {standard.description}
+                          </p>
+                        )}
 
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                            {formatFilterLabel(standard.category)}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                            <Globe className="h-3 w-3" />
-                            {formatFilterLabel(standard.region, "Global")}
-                          </span>
-                          <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                            {standard.criteriaCount} criteria
-                          </span>
+                        <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                          <span className="font-medium">{standard.criteriaCount} criteria</span>
+                          {standard.category && (
+                            <>
+                              <span className="opacity-30">·</span>
+                              <span>{formatFilterLabel(standard.category)}</span>
+                            </>
+                          )}
+                          {standard.region && (
+                            <>
+                              <span className="opacity-30">·</span>
+                              <span>{formatFilterLabel(standard.region, "Global")}</span>
+                            </>
+                          )}
                         </div>
 
-                        <div className="mt-5 rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-4">
+                        <div className="mt-4 rounded-[20px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-4 py-3">
                           <CoverageBar
                             standardId={standard.id}
+                            compact
                             result={
                               insight
                                 ? {
@@ -670,44 +702,42 @@ export default function StandardsPage() {
                                 : null
                             }
                           />
-
-                          <div className="mt-4 grid grid-cols-2 gap-3">
-                            <div className="rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-3 py-2.5">
-                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                                Mapped
-                              </p>
-                              <p className="mt-1 text-lg font-black text-foreground">
-                                {insight?.mapped ?? 0}
-                                <span className="ml-1 text-xs font-semibold text-muted-foreground">
-                                  / {insight?.totalMapped ?? standard.criteriaCount}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-3 py-2.5">
-                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                                Setup
-                              </p>
-                              <p className="mt-1 text-lg font-black text-foreground">
-                                {standard.estimatedSetup || "N/A"}
-                              </p>
-                            </div>
-                          </div>
                         </div>
 
-                        <div className="mt-5 grid grid-cols-2 gap-3">
-                          <Button
-                            onClick={() => router.push(`/platform/standards/${standard.id}`)}
-                            className="h-12 rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
-                          >
-                            Open Standard
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                            className="h-12 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
-                          >
-                            Start Analysis
-                          </Button>
+                        <div className="mt-4 grid grid-cols-2 gap-2.5">
+                          {insight?.derivedStatus === "unmapped" || !insight ? (
+                            <>
+                              <Button
+                                onClick={() => openDetails(standard)}
+                                className="h-11 rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_24px_-12px_rgba(37,99,235,0.4)]"
+                              >
+                                Analyze Now
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => router.push(`/platform/standards/${standard.id}`)}
+                                className="h-11 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
+                              >
+                                Browse
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                onClick={() => router.push(`/platform/standards/${standard.id}`)}
+                                className="h-11 rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_24px_-12px_rgba(37,99,235,0.4)]"
+                              >
+                                Open Standard
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
+                                className="h-11 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
+                              >
+                                Gap Analysis
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </GlassCard>
@@ -881,14 +911,14 @@ export default function StandardsPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           Criteria
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">{selectedStandard.criteriaCount}</p>
                       </div>
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           Coverage
                         </p>
@@ -896,22 +926,25 @@ export default function StandardsPage() {
                           {Math.round(selectedInsight?.coveragePct ?? 0)}%
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           Mapped
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">
                           {selectedInsight?.mapped ?? 0}
+                          <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                            / {selectedInsight?.totalMapped ?? selectedStandard.criteriaCount}
+                          </span>
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          Status
-                        </p>
-                        <p className="mt-1 text-lg font-black text-foreground">
-                          {getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped").label}
-                        </p>
-                      </div>
+                      {(() => {
+                        const badge = getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped")
+                        return (
+                          <span className={cn("rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]", badge.className)}>
+                            {badge.label}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
 
@@ -921,7 +954,7 @@ export default function StandardsPage() {
                       className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground"
                       onClick={() => router.push(`/platform/standards/${selectedStandard.id}`)}
                     >
-                      Open Full
+                      Open Standard
                     </Button>
                     <button
                       onClick={() => setIsDetailsOpen(false)}
@@ -949,69 +982,57 @@ export default function StandardsPage() {
                     />
                   </div>
 
-                  <h4 className="mb-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                  <h4 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
                     <Activity className="h-4 w-4 text-primary" />
-                    Criteria Evidence Framework
+                    Evidence Mapping
                   </h4>
 
-                  <div className="space-y-4">
+                        <div className="space-y-3">
                     {mappingStatus === "analyzing" ? (
                       <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
                         <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground">Analysis in progress...</p>
+                        <p className="font-bold text-muted-foreground">Analysis in progress…</p>
                       </div>
                     ) : mappingsData?.mappings?.length > 0 ? (
-                      mappingsData.mappings.map((mapping: any) => (
-                        <div
-                          key={mapping.criterion_id}
-                          className="glass-panel glass-border flex flex-col gap-2 rounded-2xl p-5 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex min-w-0 items-start gap-3">
-                              {mapping.status === "met" && <CheckCircle className="shrink-0 text-green-500" size={18} />}
-                              {mapping.status === "partial" && <AlertCircle className="shrink-0 text-yellow-500" size={18} />}
-                              {mapping.status === "gap" && <XCircle className="shrink-0 text-red-500" size={18} />}
-                              {mapping.status === "not_analyzed" && <Circle className="shrink-0 text-muted-foreground" size={18} />}
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  {mapping.criterion_code && mapping.criterion_code !== "N/A" && (
-                                    <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-black uppercase text-primary">
-                                      {mapping.criterion_code}
+                      mappingsData.mappings.map((mapping: any) => {
+                        const statusMeta = MAPPING_STATUS_META[mapping.status as keyof typeof MAPPING_STATUS_META] ?? MAPPING_STATUS_META.not_analyzed
+                        return (
+                          <div
+                            key={mapping.criterion_id}
+                            className="glass-panel glass-border flex flex-col gap-2 rounded-2xl p-5 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <statusMeta.Icon className={cn("mt-0.5 shrink-0", statusMeta.iconClass)} size={18} />
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {mapping.criterion_code && mapping.criterion_code !== "N/A" && (
+                                      <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-black uppercase text-primary">
+                                        {mapping.criterion_code}
+                                      </span>
+                                    )}
+                                    <span className="text-base font-bold text-foreground">
+                                      {mapping.criterion_title}
                                     </span>
-                                  )}
-                                  <span className="text-base font-bold text-foreground">
-                                    {mapping.criterion_title}
-                                  </span>
+                                  </div>
+                                  <p className="mt-1.5 text-sm text-muted-foreground">
+                                    {mapping.criterion_description ||
+                                      mapping.ai_reasoning ||
+                                      "Awaiting analysis against evidence."}
+                                  </p>
                                 </div>
-                                <p className="mt-2 text-sm font-medium text-muted-foreground">
-                                  {mapping.criterion_description ||
-                                    (mapping.ai_reasoning
-                                      ? mapping.ai_reasoning
-                                      : "Awaiting analysis against evidence...")}
-                                </p>
                               </div>
+                              <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", statusMeta.badgeClass)}>
+                                {statusMeta.label}
+                              </span>
                             </div>
-                            <span
-                              className={cn(
-                                "rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-wider",
-                                mapping.status === "not_analyzed"
-                                  ? "glass-button text-muted-foreground"
-                                  : mapping.status === "met"
-                                    ? "bg-green-500/10 text-green-500"
-                                    : mapping.status === "partial"
-                                      ? "bg-yellow-500/10 text-yellow-500"
-                                      : "bg-red-500/10 text-red-500",
-                              )}
-                            >
-                              {mapping.status === "not_analyzed" ? "N/A" : mapping.status}
-                            </span>
                           </div>
-                        </div>
-                      ))
+                        )
+                      })
                     ) : (
                       <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
                         <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary opacity-50" />
-                        <p className="font-bold text-muted-foreground">Loading criteria...</p>
+                        <p className="font-bold text-muted-foreground">Loading criteria…</p>
                       </div>
                     )}
                   </div>
@@ -1096,10 +1117,10 @@ export default function StandardsPage() {
 
                   <div className="space-y-4 rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-5 sm:rounded-[32px] sm:p-8">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                      Analysis Control
+                      Run Analysis
                     </p>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      Trigger a fresh pass across linked evidence or re-run mappings after new uploads.
+                      Run a fresh pass across linked evidence, or re-analyze after new uploads.
                     </p>
 
                     <div className="grid gap-3 sm:grid-cols-2">

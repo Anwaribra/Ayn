@@ -13,10 +13,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
-  Zap,
   Play,
-  Target,
-  Radio,
   Loader2,
   FileText,
   X,
@@ -383,11 +380,6 @@ function GapAnalysisContent() {
       return haystack.includes(query)
     })
   }, [analysisScope, recentEvidence, sortedEvidence, evidenceSearchQuery])
-  const selectedEvidence = useMemo(
-    () => sortedEvidence.filter((item) => selectedEvidenceIds.includes(item.id)),
-    [sortedEvidence, selectedEvidenceIds],
-  )
-
   useEffect(() => {
     if (analysisScope !== "recent" || recentEvidence.length === 0) return
 
@@ -412,49 +404,48 @@ function GapAnalysisContent() {
       : analysisScope === "recent"
         ? "Start from your latest uploads, then keep only the files you want in this run."
         : "Choose the exact evidence files Horus should analyze for this report."
+  const displayedGaps = gaps.slice(0, 5)
+  const remainingGapCount = Math.max(gaps.length - displayedGaps.length, 0)
 
   return (
     <div className="animate-fade-in-up pb-20 relative">
       <div id="gap-analysis-report-content">
-      <header className="mb-8 pt-6 px-4">
+      <header className="mb-6 pt-6 px-4">
         <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-panel glass-border p-5 sm:p-7 lg:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_82%_18%,rgba(239,68,68,0.08),transparent_26%)] pointer-events-none" />
-          <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col gap-6">
+          <div className="relative z-10 flex flex-col gap-4">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="px-2 py-0.5 rounded status-info border">
                   <span className="text-[10px] font-bold uppercase tracking-widest">Gap Analysis</span>
                 </div>
-                <div className="h-px w-6 bg-border" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Clearer run flow</span>
               </div>
               <div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--text-primary)] relative">
-                  Compliance Gap <span className="text-[var(--text-tertiary)] font-light">Center</span>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] relative">
+                  Run Gap Analysis
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Choose a standard, decide which evidence should be included, run the analysis, then review the latest report and its findings in one place.
+                  Choose the standard, choose the evidence, then run. Horus checks your evidence against each criterion and returns a score, summary, and the main gaps to fix.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="relative z-10 mt-6 grid grid-cols-2 xl:grid-cols-4 gap-3">
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Open High Risk</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Gaps</p>
               <p className="mt-2 text-xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Completed Scans</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Saved Runs</p>
               <p className="mt-2 text-xl font-bold text-foreground">{completedReports}</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Remediation Rate</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Coverage</p>
               <p className="mt-2 text-xl font-bold text-[var(--status-success)]">{remediationRate}%</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Alignment Index</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Latest Score</p>
               <p className="mt-2 text-xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "No report"}</p>
             </div>
           </div>
@@ -468,7 +459,7 @@ function GapAnalysisContent() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">1. Standard</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">1. Choose Standard</p>
                 <select
                   value={selectedStandard}
                   onChange={(e) => setSelectedStandard(e.target.value)}
@@ -484,14 +475,14 @@ function GapAnalysisContent() {
                 </select>
                 {selectedStandardObject && (
                   <p className="text-xs text-muted-foreground">
-                    {selectedStandardObject.criteriaCount} criteria will be checked in this run.
+                    Horus will check {selectedStandardObject.criteriaCount} criteria in this standard.
                   </p>
                 )}
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">2. Analysis Scope</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">2. Choose Evidence</p>
                   {(analysisScope === "recent" || analysisScope === "selected") && (
                     <span className="text-[11px] text-primary font-medium">
                       {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
@@ -502,18 +493,18 @@ function GapAnalysisContent() {
                   {[
                     {
                       id: "linked" as const,
-                      label: "Full standard scan",
-                      description: "Use all evidence already mapped to this standard.",
+                      label: "Use linked evidence",
+                      description: "Run on evidence already mapped to this standard.",
                     },
                     {
                       id: "recent" as const,
-                      label: "Recent uploads",
+                      label: "Use recent uploads",
                       description: "Start from your latest files, then trim the list.",
                     },
                     {
                       id: "selected" as const,
-                      label: "Selected evidence",
-                      description: "Pick the exact files you want in this run.",
+                      label: "Pick files myself",
+                      description: "Choose the exact files you want in this run.",
                     },
                   ].map((scope) => (
                     <button
@@ -539,9 +530,9 @@ function GapAnalysisContent() {
             <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Source Preview</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Included Evidence</p>
                   <p className="mt-1 text-sm text-foreground font-semibold">
-                    {analysisScope === "linked" ? "Institution-linked evidence" : "Files included in this run"}
+                    {analysisScope === "linked" ? "Run on linked evidence" : "Files in this run"}
                   </p>
                 </div>
                 {(analysisScope === "recent" || analysisScope === "selected") && (
@@ -554,10 +545,10 @@ function GapAnalysisContent() {
               {analysisScope === "linked" ? (
                 <div className="mt-4 space-y-3">
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    Horus will inspect the evidence already attached to criteria inside the selected standard. This is the right option for a full institutional scan.
+                    Horus will inspect the evidence already attached to criteria inside the selected standard.
                   </p>
                   <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-background/30 px-4 py-3 text-xs text-muted-foreground">
-                    No manual file picking here. If you want to test fresh uploads first, switch to <span className="text-foreground font-semibold">Recent uploads</span> or <span className="text-foreground font-semibold">Selected evidence</span>.
+                    If you want to control exactly which files are included, switch to <span className="text-foreground font-semibold">Use recent uploads</span> or <span className="text-foreground font-semibold">Pick files myself</span>.
                   </div>
                 </div>
               ) : (
@@ -619,15 +610,11 @@ function GapAnalysisContent() {
             <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground">
                 {analysisScope === "linked"
-                  ? "This run will analyze the evidence currently linked to the selected standard."
-                  : `This run will analyze ${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"} against ${selectedStandardObject?.title || "the selected standard"}.`}
+                  ? `Run ${selectedStandardObject?.title || "this standard"} against all linked evidence.`
+                  : `Run ${selectedStandardObject?.title || "this standard"} against ${selectedEvidenceIds.length} selected file${selectedEvidenceIds.length === 1 ? "" : "s"}.`}
               </p>
               <p className="text-xs text-muted-foreground">
-                {analysisScope === "selected" && selectedEvidence.length > 0
-                  ? selectedEvidence.slice(0, 3).map(getEvidenceLabel).join(" • ")
-                  : analysisScope === "recent"
-                    ? "Recent uploads stay editable before you start the scan."
-                    : "Best for full compliance scans after linking evidence in the vault."}
+                The AI prompt runs in the background and decides for each criterion whether your evidence is aligned, partial, missing, or needs improvement.
               </p>
             </div>
 
@@ -639,7 +626,7 @@ function GapAnalysisContent() {
               {generating ? (
                 <>
                   <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Scanning...
+                  Running analysis...
                 </>
               ) : (
                 <>
@@ -694,7 +681,7 @@ function GapAnalysisContent() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Current Report</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Latest Result</p>
                     </div>
                     <h2 className="text-xl font-bold text-foreground">{activeReport.standardTitle ?? "Gap Analysis Report"}</h2>
                     <p className="text-sm text-muted-foreground">
@@ -715,21 +702,28 @@ function GapAnalysisContent() {
                     </div>
                   </div>
 
+                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-4 lg:max-w-[520px]">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">AI Summary</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {activeReport.summary || "No summary is available for this analysis yet."}
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Overall Score</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Score</p>
                       <p className="mt-2 text-2xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "--"}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Risk Gaps</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Gaps</p>
                       <p className="mt-2 text-2xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Analyses Saved</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Saved Runs</p>
                       <p className="mt-2 text-2xl font-bold text-foreground">{completedReports}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Coverage Signal</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Coverage</p>
                       <p className="mt-2 text-2xl font-bold text-[var(--status-success)]">{remediationRate}%</p>
                     </div>
                   </div>
@@ -787,10 +781,10 @@ function GapAnalysisContent() {
                 <div className="mb-2">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Findings</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    These are the gaps found in the currently opened report. Use <span className="text-foreground font-semibold">Attach evidence</span> to connect proof for a specific criterion.
+                    These are the main gaps from the current report. Attach evidence where needed, then rerun.
                   </p>
                 </div>
-                {gaps.map((gap, i) => (
+                {displayedGaps.map((gap, i) => (
                 <div key={i} className="glass-panel p-6 sm:p-8 rounded-[30px] flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8 group hover:bg-[var(--surface)] transition-all glass-border relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
                   <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.75),transparent)] opacity-0 transition-opacity duration-300 group-hover:opacity-70" />
                   <div className={cn("w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center border border-[var(--border-subtle)]", gap.statusClass)}>
@@ -846,6 +840,11 @@ function GapAnalysisContent() {
                   </div>
                 </div>
               ))}
+              {remainingGapCount > 0 && (
+                <div className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-4 text-center text-sm text-muted-foreground">
+                  {remainingGapCount} more gap{remainingGapCount === 1 ? "" : "s"} exist in this report. The export includes the full report.
+                </div>
+              )}
               </>
             )}
           </div>
@@ -853,17 +852,22 @@ function GapAnalysisContent() {
           {/* Previous Reports */}
           {reports && reports.length > 0 && (
             <section className="mt-16 px-4">
-              <div className="mb-8">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Previous Analyses</h2>
-                  <div className="h-px w-20 bg-[var(--border-subtle)]" />
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Each run now keeps the source it used, so you can tell whether Horus scanned linked evidence, recent uploads, or a hand-picked file set.
-                </p>
-              </div>
-              <div className="space-y-3">
-                {reports
+              <details className="glass-panel glass-border rounded-[24px] p-5">
+                <summary className="cursor-pointer list-none">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-[var(--text-primary)]">Previous Analyses</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Open this only if you want to revisit older runs.
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                      {reports.length}
+                    </span>
+                  </div>
+                </summary>
+                <div className="mt-5 space-y-3">
+                  {reports
                   .filter((report: GapAnalysisListItem) => report.status !== "pending" && report.status !== "running" || report.id === pendingJobId)
                   .map((report: GapAnalysisListItem) => {
                     const isQueued = report.status === "pending" || report.status === "running" || report.id === pendingJobId
@@ -936,7 +940,8 @@ function GapAnalysisContent() {
                       </GlassCard>
                     )
                   })}
-              </div>
+                </div>
+              </details>
             </section>
           )}
         </>

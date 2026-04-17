@@ -1,13 +1,9 @@
-"""Gap analysis AI service - generates structured gap reports using Gemini."""
-import asyncio
+"""Gap analysis AI service - generates structured gap reports using Horus AI client."""
 import json
 import logging
 from typing import List, Dict, Any, Optional
 
-from app.ai.service import get_gemini_client, SYSTEM_PROMPT, USE_NEW_API
-
-if USE_NEW_API:
-    from google.genai import types as genai_types
+from app.ai.service import get_gemini_client
 
 logger = logging.getLogger(__name__)
 
@@ -178,26 +174,12 @@ async def generate_gap_analysis(
         evidence_text=_format_evidence(evidence),
     )
 
-    client = get_gemini_client()
-
-    def _sync_generate():
-        if USE_NEW_API:
-            response = client.client.models.generate_content(
-                model=client.model_name,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    response_mime_type="application/json",
-                ),
-                contents=prompt,
-            )
-            return response.text
-        else:
-            full_prompt = f"{SYSTEM_PROMPT}\n\n---\n\n{prompt}"
-            response = client.model.generate_content(full_prompt)
-            return response.text
-
     try:
-        result_text = await asyncio.to_thread(_sync_generate)
+        client = get_gemini_client()
+        result_text = await client.chat(
+            messages=[{"role": "user", "content": prompt}],
+            context="Return raw JSON only. No markdown fences. No commentary.",
+        )
         return _parse_gap_response(result_text)
 
     except Exception as e:

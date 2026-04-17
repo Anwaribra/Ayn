@@ -50,6 +50,29 @@ function getAlignment(value?: string): UiAlignment {
   return "Not Aligned"
 }
 
+function getGapAction(item: GapItem) {
+  const status = (item.status ?? "").toLowerCase()
+  if (status === "no_evidence" || status === "not_aligned" || status === "missing") {
+    return {
+      label: "Link Evidence",
+      helper: "No matching evidence is linked to this criterion yet.",
+      showButton: true,
+    }
+  }
+  if (status === "partially_aligned" || status === "partially_met") {
+    return {
+      label: "",
+      helper: "Evidence is already linked here. Review its coverage, then rerun the analysis.",
+      showButton: false,
+    }
+  }
+  return {
+    label: "",
+    helper: "This criterion does not need a new evidence link right now.",
+    showButton: false,
+  }
+}
+
 function getEvidenceLabel(evidence: Evidence) {
   return evidence.title || evidence.originalFilename || "Untitled evidence"
 }
@@ -350,6 +373,7 @@ function GapAnalysisContent() {
     const statusClass =
       severity === "High" ? "status-critical" :
       severity === "Medium" ? "status-warning" : "status-success"
+    const action = getGapAction(item)
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
@@ -357,6 +381,7 @@ function GapAnalysisContent() {
       alignment,
       desc: item.recommendation ?? "No recommendation available.",
       statusClass,
+      action,
     }
   }) ?? []
 
@@ -776,12 +801,19 @@ function GapAnalysisContent() {
                         <p className="text-sm leading-relaxed text-muted-foreground">{gap.desc}</p>
                       </div>
 
-                      <button
-                        onClick={() => handleRemediateClick(gap.original)}
-                        className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
-                      >
-                        Link Evidence
-                      </button>
+                      <div className="shrink-0 self-stretch sm:self-center flex flex-col items-end justify-center gap-2 min-w-[220px]">
+                        {gap.action.showButton ? (
+                          <button
+                            onClick={() => handleRemediateClick(gap.original)}
+                            className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                          >
+                            {gap.action.label}
+                          </button>
+                        ) : null}
+                        <p className="max-w-[220px] text-right text-xs leading-relaxed text-muted-foreground">
+                          {gap.action.helper}
+                        </p>
+                      </div>
                     </div>
                   ))}
 

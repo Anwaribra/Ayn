@@ -624,6 +624,13 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 role: m.role,
                 content: m.content,
                 timestamp: new Date(m.timestamp).getTime(),
+                attachments: Array.isArray(m.metadata?.attachments)
+                    ? m.metadata.attachments.map((att: any) => ({
+                        name: att.name || "Attachment",
+                        type: att.type === "image" ? "image" : "document",
+                        preview: att.preview || undefined,
+                    }))
+                    : undefined,
                 structuredResult: m.metadata?.structuredResult || null,
                 citations: m.metadata?.citations || undefined,
                 responseMode: m.metadata?.responseMode || undefined,

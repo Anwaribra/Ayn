@@ -6,7 +6,6 @@ import { api } from "@/lib/api"
 import useSWR from "swr"
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { toast } from "sonner"
 import {
@@ -15,7 +14,6 @@ import {
   Info,
   Play,
   Loader2,
-  ExternalLink,
   Check,
 } from "lucide-react"
 import type { GapAnalysis, GapItem, Standard, Evidence, GapAnalysisListItem } from "@/types"
@@ -712,7 +710,7 @@ function GapAnalysisContent() {
                   ))}
                 </div>
               ) : isFallbackReport ? (
-                <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/8 px-5 py-5">
+                <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/10 px-5 py-5">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
                     <div className="space-y-1.5">
@@ -772,23 +770,12 @@ function GapAnalysisContent() {
                         <p className="text-sm leading-relaxed text-muted-foreground">{gap.desc}</p>
                       </div>
 
-                      <div className="flex shrink-0 flex-col gap-2 sm:min-w-[160px]">
-                        {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
-                          <Link
-                            href={`/platform/evidence?highlight=${gap.original.criterionId}`}
-                            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-xs font-semibold text-foreground transition hover:bg-background/40"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View Evidence
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => handleRemediateClick(gap.original)}
-                          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
-                        >
-                          Link Evidence
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRemediateClick(gap.original)}
+                        className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                      >
+                        Link Evidence
+                      </button>
                     </div>
                   ))}
 

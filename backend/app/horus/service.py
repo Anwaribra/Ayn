@@ -118,6 +118,44 @@ class HorusService:
         self.state_manager = state_manager
 
     @staticmethod
+    def _build_attachment_metadata(files: List[Any] | None) -> List[Dict[str, str]]:
+        if not files:
+            return []
+        attachments: List[Dict[str, str]] = []
+        for item in files:
+            if isinstance(item, dict):
+                filename = item.get("filename") or "file"
+                content_type = (item.get("content_type") or "").strip()
+            else:
+                filename = getattr(item, "filename", None) or "file"
+                content_type = (getattr(item, "content_type", None) or "").strip()
+            attachment_type = "image" if content_type.startswith("image/") else "document"
+            attachments.append(
+                {
+                    "name": filename,
+                    "type": attachment_type,
+                    "mime_type": content_type,
+                }
+            )
+        return attachments
+
+    @staticmethod
+    def _message_metadata(message_obj: Any) -> Dict[str, Any]:
+        metadata = getattr(message_obj, "metadata", None)
+        return metadata if isinstance(metadata, dict) else {}
+
+    @classmethod
+    def _history_has_recent_attachment_context(cls, messages: List[Any] | None) -> bool:
+        if not messages:
+            return False
+        recent_messages = messages[-6:]
+        for msg in recent_messages:
+            meta = cls._message_metadata(msg)
+            if meta.get("attachments"):
+                return True
+        return False
+
+    @staticmethod
     def _needs_compliance_analysis(message: str | None) -> bool:
         if not message:
             return False
@@ -514,7 +552,12 @@ class HorusService:
             yield f"__CHAT_ID__:{chat_id}\n"
 
         request_mode, message = self._extract_mode_token(message)
-        user_metadata = {"responseMode": request_mode} if request_mode else None
+        user_metadata = {"responseMode": request_mode} if request_mode else {}
+        attachment_metadata = self._build_attachment_metadata(files)
+        if attachment_metadata:
+            user_metadata["attachments"] = attachment_metadata
+        if not user_metadata:
+            user_metadata = None
         client = get_gemini_client()
         agent_intent = self._classify_agent_intent(
             message=message,
@@ -1425,7 +1468,19 @@ class HorusService:
             file_ref_keywords = ["بعته", "ارسلت", "اللي فوق", "السابق", "الملف", "الفايل", "file", "sent", "attached", "uploaded", "حلل", "analyze"]
             msg_lower = (message or "").lower()
             if any(kw in msg_lower for kw in file_ref_keywords):
-                context += "\n\n[IMPORTANT] The user may be referring to a file from a previous message. You do NOT have access to file content from past messages. If they want file analysis, they must re-attach the file in this message. Respond clearly: ask them to re-attach the file to analyze it. Do NOT propose a plan or ask for confirmation—just explain this directly."
+                has_recent_attachment_context = self._history_has_recent_attachment_context(history.messages if history else [])
+                if has_recent_attachment_context:
+                    context += (
+                        "\n\n[IMPORTANT] The user is likely referring to an attachment shared earlier in this same chat. "
+                        "Use the recent conversation context about that attachment to answer the follow-up naturally. "
+                        "Do NOT say you cannot access past files unless the answer truly requires raw file content that is not available from the conversation context."
+                    )
+                else:
+                    context += (
+                        "\n\n[IMPORTANT] The user may be referring to a file that is not attached in this request. "
+                        "Use the recent conversation context if it is enough to answer. "
+                        "Only ask them to re-attach the file if the needed document details are genuinely unavailable in this chat."
+                    )
             yield "__THINKING__:Preparing response...\n"
             await asyncio.sleep(0)
             

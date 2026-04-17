@@ -451,6 +451,19 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 },
                 abortControllerRef.current.signal
             )
+
+            // Guard against "silent success" cases:
+            // stream finishes with no visible text and no structured payload.
+            setMessages(prev => prev.map(m => {
+                if (m.id !== assistantMsgId) return m
+                const hasRenderablePayload = !!(m.content?.trim() || m.structuredResult || m.pendingConfirmation)
+                if (hasRenderablePayload) return m
+                return {
+                    ...m,
+                    content: "I couldn't generate a response this time. Please retry.",
+                }
+            }))
+
         } catch (err: any) {
             if (err.name !== 'AbortError') {
                 const msg = err?.message || ""

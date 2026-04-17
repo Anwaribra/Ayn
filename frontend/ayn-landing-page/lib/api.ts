@@ -783,7 +783,8 @@ class ApiClient {
             // Flush any remaining buffered content
             if (protocolBuffer) {
               fullText += protocolBuffer
-              if (onChunk) onChunk(protocolBuffer)
+              // Ensure protocol markers remain line-delimited at EOF.
+              if (onChunk) onChunk(protocolBuffer.startsWith("__") ? `${protocolBuffer}\n` : protocolBuffer)
             }
             break
           }
@@ -801,7 +802,8 @@ class ApiClient {
               protocolBuffer = ""
 
               fullText += completeLine
-              if (onChunk) onChunk(completeLine)
+              // Preserve newline so protocol parser in horus-context can split lines correctly.
+              if (onChunk) onChunk(`${completeLine}\n`)
 
               // Any text after the protocol line on the same read — pass through immediately
               if (remainder) {

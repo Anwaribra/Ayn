@@ -1458,7 +1458,9 @@ export default function HorusAIChat() {
                             !(msg as any).structuredResult &&
                             ((msg.thinkingSteps?.length ?? 0) > 0 || [...messages].reverse().find((m) => m.role === "user")?.attachments?.length) ? (
                             <div className="horus-assistant-bubble rounded-3xl rounded-tl-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-sm text-muted-foreground">
-                              التحليل لم يُولّد. يرجى المحاولة مرة أخرى أو إرفاق ملف مختلف.
+                              {isArabicMessage
+                                ? "التحليل لم يُولّد. يرجى المحاولة مرة أخرى أو إرفاق ملف مختلف."
+                                : "No response was generated. Please retry or attach a different file."}
                             </div>
                           ) : null}
 

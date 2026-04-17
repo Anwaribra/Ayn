@@ -104,7 +104,7 @@ class NotificationService:
                 where={"userId": user_id, "isRead": False},
                 data={"isRead": True}
             )
-            return result.count
+            return result if isinstance(result, int) else result.count
         except Exception as e:
             logger.error(f"Error marking all read: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to mark all read")

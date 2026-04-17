@@ -68,6 +68,7 @@ class GapAnalysisService:
     @staticmethod
     async def _resolve_evidence_scope(
         db,
+        user_id: str,
         institution_id: str,
         standard_id: str,
         analysis_scope: str,
@@ -78,11 +79,14 @@ class GapAnalysisService:
 
         normalized_scope = (analysis_scope or "linked").lower()
         selected_ids = list(dict.fromkeys(evidence_ids or []))
+        ownership_filters = [{"uploadedById": user_id}]
+        if institution_id:
+            ownership_filters.insert(0, {"ownerId": institution_id})
 
         if normalized_scope in {"selected", "recent"} and selected_ids:
             scoped_evidence = await db.evidence.find_many(
                 where={
-                    "institutionId": institution_id,
+                    "OR": ownership_filters,
                     "id": {"in": selected_ids},
                 }
             )
@@ -96,12 +100,21 @@ class GapAnalysisService:
             )
             seen_ids = set()
             for ec in evidence_criteria:
-                if ec.evidence and ec.evidence.id not in seen_ids:
+                if not ec.evidence:
+                    continue
+                evidence_owner_id = getattr(ec.evidence, "ownerId", None)
+                evidence_uploaded_by_id = getattr(ec.evidence, "uploadedById", None)
+                belongs_to_scope = (
+                    (institution_id and evidence_owner_id == institution_id)
+                    or evidence_uploaded_by_id == user_id
+                )
+                if belongs_to_scope and ec.evidence.id not in seen_ids:
                     evidence.append(ec.evidence)
                     seen_ids.add(ec.evidence.id)
 
             legacy_evidence = await db.evidence.find_many(
                 where={
+                    "OR": ownership_filters,
                     "criterionId": {"in": criterion_ids},
                     "id": {"notIn": list(seen_ids)},
                 }
@@ -230,6 +243,7 @@ class GapAnalysisService:
 
             criteria, evidence = await GapAnalysisService._resolve_evidence_scope(
                 db=db,
+                user_id=user_id,
                 institution_id=institution_id,
                 standard_id=standard_id,
                 analysis_scope=analysis_scope,

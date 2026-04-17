@@ -950,6 +950,11 @@ function GapAnalysisContent() {
                                   {report.evidenceCount} file{report.evidenceCount === 1 ? "" : "s"}
                                 </span>
                               ) : null}
+                              {report.isFallback ? (
+                                <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-300">
+                                  Preliminary
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                         </div>

@@ -130,89 +130,6 @@ class HorusService:
         return any(kw.lower() in msg for kw in compliance_keywords)
 
     @staticmethod
-    def _classify_agent_intent(
-        message: str | None,
-        files: List[Any] | None = None,
-        request_mode: str | None = None,
-    ) -> Dict[str, Any]:
-        msg = (message or "").strip()
-        lower = msg.lower()
-        has_files = bool(files)
-
-        multi_step_markers = [
-            "then", "after that", "and then", "compare and", "generate and", "run and",
-            "ثم", "وبعد", "بعد كده", "وبعدين", "اعمل", "ثم اعرض",
-        ]
-        platform_action_markers = [
-            "audit", "gap analysis", "compliance gaps", "remediation", "analytics",
-            "report export", "criteria", "ncaaa", "iso 21001", "dashboard", "institution data",
-            "تدقيق", "تحليل فجوات", "فجوات الامتثال", "خطة معالجة", "تحليلات", "تقرير",
-            "المعايير", "معيار", "بيانات المؤسسة", "لوحة التحكم",
-        ]
-        file_analysis_markers = [
-            "analyze this file", "analyze the file", "summarize this", "summarize the attached",
-            "review this document", "what is this file", "what is in this", "read this pdf",
-            "حلل الملف", "حلل المستند", "لخص", "اقرأ الملف", "إيه ده", "ايه ده", "ده ايه", "ما هذا",
-        ]
-
-        if has_files:
-            if any(marker in lower for marker in file_analysis_markers) or not msg:
-                return {
-                    "kind": "file_analysis",
-                    "label": "File analysis",
-                    "confidence": "high",
-                    "reason": "The request is centered on understanding the attached file itself.",
-                }
-            if any(marker in lower for marker in platform_action_markers):
-                if any(marker in lower for marker in multi_step_markers):
-                    return {
-                        "kind": "workflow",
-                        "label": "Workflow run",
-                        "confidence": "medium",
-                        "reason": "The request mixes attached evidence with multiple compliance actions.",
-                    }
-                return {
-                    "kind": "platform_action",
-                    "label": "Platform action",
-                    "confidence": "high",
-                    "reason": "The request asks for a compliance action against platform standards or reports.",
-                }
-            return {
-                "kind": "file_analysis",
-                "label": "File analysis",
-                "confidence": "medium",
-                "reason": "An attachment is present and no explicit platform action was requested.",
-            }
-
-        if any(marker in lower for marker in multi_step_markers):
-            return {
-                "kind": "workflow",
-                "label": "Workflow run",
-                "confidence": "medium",
-                "reason": "The user asked for multiple sequential outcomes.",
-            }
-        if any(marker in lower for marker in platform_action_markers):
-            return {
-                "kind": "platform_action",
-                "label": "Platform action",
-                "confidence": "high",
-                "reason": "The user asked for a concrete audit, gap, analytics, or remediation action.",
-            }
-        if request_mode == "agent":
-            return {
-                "kind": "advisory",
-                "label": "Agent advisory",
-                "confidence": "low",
-                "reason": "Agent mode is selected, but the request does not clearly require platform execution.",
-            }
-        return {
-            "kind": "chat",
-            "label": "Direct answer",
-            "confidence": "low",
-            "reason": "The request looks conversational rather than action-oriented.",
-        }
-
-    @staticmethod
     def _has_explicit_platform_action_intent(message: str | None) -> bool:
         if not message:
             return False
@@ -810,7 +727,7 @@ class HorusService:
 
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         # Allow agent with files when: Agent mode selected, or message has platform keywords (e.g. "حلل", "analyze", "gaps")
-        allow_agent_with_files = agent_intent.get("kind") in {"platform_action", "workflow"}
+        allow_agent_with_files = agent_intent.get("intent") in {"platform_action", "multi_step_workflow"}
         if message and request_mode != "think" and (not files or allow_agent_with_files):
             try:
                 prisma_client = db
@@ -947,7 +864,7 @@ class HorusService:
                             await ChatService.save_message(chat_id, user_id, "user", message, user_metadata)
 
                         tool_meta = get_tool_ui_meta(tool_name)
-                        yield "__THINKING__:Reading your platform data...\n"
+                        yield "__THINKING__:Fetching platform data...\n"
                         yield f"__THINKING__:Identified action: {tool_meta['title']}\n"
                         yield f"__THINKING__:Preparing {tool_meta['prepare_text']}...\n"
 
@@ -1228,7 +1145,7 @@ class HorusService:
                 yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'uploading'})}\n"
             await asyncio.sleep(0)
         else:
-            yield "__THINKING__:Reading platform state...\n"
+            yield "__THINKING__:Checking your platform context...\n"
             await asyncio.sleep(0)
 
         results = await asyncio.gather(*tasks)
@@ -1283,7 +1200,7 @@ class HorusService:
         full_response = ""
         
         # Lazily fetch history without blocking initial file processing or state fetching
-        history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=20))
+        history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=10))
 
         if file_results:
             if request_mode == "agent":
@@ -1490,7 +1407,7 @@ class HorusService:
                 yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'agent_chat'), 'route': 'chat', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'No tool or file workflow was necessary, so Horus is answering directly in Agent mode.'})}\n"
                 await asyncio.sleep(0)
             history = await history_task
-            yield "__THINKING__:Searching conversation history...\n"
+            yield "__THINKING__:Reviewing conversation history...\n"
             await asyncio.sleep(0)
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
             if message and not any(m["content"] == message for m in messages):
@@ -1501,7 +1418,7 @@ class HorusService:
             msg_lower = (message or "").lower()
             if any(kw in msg_lower for kw in file_ref_keywords):
                 context += "\n\n[IMPORTANT] The user may be referring to a file from a previous message. You do NOT have access to file content from past messages. If they want file analysis, they must re-attach the file in this message. Respond clearly: ask them to re-attach the file to analyze it. Do NOT propose a plan or ask for confirmation—just explain this directly."
-            yield "__THINKING__:Generating response...\n"
+            yield "__THINKING__:Preparing response...\n"
             await asyncio.sleep(0)
             
             try:
@@ -1678,103 +1595,119 @@ class HorusService:
         return results
 
     async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None, user_id: str | None = None) -> str:
-        """Faster context preparation without extra DB calls."""
-        brain_context = ""
-        if brain_results:
-            reports_text = []
-            for r in brain_results["gap_reports"]:
-                gaps = ", ".join(r["gaps"])
-                reports_text.append(f"- {r['title']}: Score {r['score']}% | Gaps: {gaps} | ReportID: {r['id']}")
-            
-            brain_context = f"""
-            === RECENT BRAIN ANALYSIS RESULTS ===
-            Files Analyzed: {brain_results['files_analyzed']}
-            Gap Reports Generated:
-            {" ".join(reports_text) if reports_text else "No standards affected."}
-            Dashboard Metrics: Synchronized
-            
-            MANDATORY RESPONSE TEMPLATE FOR FILE UPLOADS:
-            ✅ File analyzed
-            📊 Overall score: [Score]%
-            ⚠️ Gaps: [Summarize critical gaps]
-            📈 Dashboard updated
-            📄 [Download Report](ACTION:gap_report:{brain_results['gap_reports'][0]['id'] if brain_results['gap_reports'] else 'none'}) | [View Reports](/platform/gap-analysis)
-            
-            Note: Use the actual data above.
-            """
+        """Build a clean, deliberate system prompt for Horus. Instructions come first so the
+        model always knows who it is before reading any data."""
 
-        compliance_keywords = ["gap", "compliance", "standard", "criteria", "NCAAA", "ISO", "accreditation", "analysis"]
-        message_lower = (message or "").lower()
-        needs_heavy_context = any(kw.lower() in message_lower for kw in compliance_keywords)
-        
-        context_parts = []
-        
-        if needs_heavy_context:
-            context_parts.append(f"""
-        Current Platform State Summary:
-        - Files: {summary.total_files} ({summary.analyzed_files} analyzed)
-        - Evidence Vault: {summary.total_evidence} items ({summary.linked_evidence} mapped to criteria)
-        - Compliance Gaps: {summary.total_gaps} detected ({summary.closed_gaps} resolved)
-        - Global Compliance Score: {summary.total_score}%
-        """)
-        else:
-            logger_msg = message[:20].replace('\n', ' ') if message else ""
-            logger.info(f"Skipping heavy context injection for '{logger_msg}...': skipped ~150 tokens.")
-            
-        if brain_context:
-            context_parts.append(brain_context)
-            
-        context_parts.append(mapping_context)
+        import re as _re
 
-        # 🚀 TRUE RAG: scoped by user/institution for multi-tenant security
-        institution_id_sync = None
-        if message and user_id:
-            try:
-                from app.core.db import db as prisma_client
-                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
-                institution_id_sync = getattr(user_obj, "institutionId", None) if user_obj else None
-            except Exception:
-                pass
-        if message:
-            try:
-                rag = RagService()
-                rag_context, _ = await rag.retrieve_context(
-                    message, limit=4, user_id=user_id, institution_id=institution_id_sync
-                )
-                if rag_context:
-                    context_parts.append(rag_context)
-                else:
-                    context_parts.append("[Note: RAG retrieval returned no results. Embeddings may require Gemini. Proceed without document context.]")
-            except Exception as e:
-                logger.error(f"RAG Context retrieval failed during chat sync: {e}")
-                context_parts.append(f"[Note: RAG retrieval failed ({e}). Proceed without document context.]")
+        # ── Language detection ────────────────────────────────────────────────────
+        msg_clean = (message or "").replace(" ", "")
+        arabic_chars = len(_re.findall(r'[\u0600-\u06FF]', msg_clean))
+        is_arabic = (arabic_chars / len(msg_clean)) > 0.1 if msg_clean else False
+        language_directive = (
+            "Respond in Arabic throughout your entire answer."
+            if is_arabic
+            else "Respond in English unless the user wrote in Arabic."
+        )
 
-        import re
-        message_clean = (message or "").replace(" ", "")
-        arabic_chars = len(re.findall(r'[\u0600-\u06FF]', message_clean))
-        is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
-        language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
-
+        # ── Identity + behavioral instructions ──────────────────────────────────
         user_line = ""
         if user_identity:
-            inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate. Never say 'Hello User' — use their actual name or 'Hello'/'Hi'."
+            name = user_identity.get("name") or ""
+            email = user_identity.get("email") or ""
+            role = user_identity.get("role") or ""
+            inst = user_identity.get("institution") or ""
+            inst_part = f" at {inst}" if inst else ""
+            user_line = (
+                f"You are speaking with {name} ({email}, {role}{inst_part}). "
+                f"Address them by name. Never say \'Hello User\'."
+            )
 
-        goal_line = f"- Active goal: {goal}" if goal else ""
-        context_parts.append(f"""
-        Recent Platform Activities:
-        {self._format_activities(recent_activities)}
-        
-        Instructions for Horus Brain:
-        - You are Horus (حورس), the central intelligence of the Ayn Platform.
-        {user_line}
-        {goal_line}
-        - You process compliance data, analyze evidence, and manage gaps.
-        - When files are uploaded, ALWAYS use the brain results provided above.
-        - Be concise, professional, and data-driven.
-        {language_instruction}
-        """)
-        return "\n".join(context_parts)
+        goal_line = f"Active session goal: {goal}" if goal else ""
+
+        instructions = f"""You are Horus (حورس), the AI compliance advisor built into the Ayn platform.
+Your role: answer questions, analyze documents, and help the user navigate their compliance programme.
+
+{user_line}
+{goal_line}
+
+Behavioral rules:
+- {language_directive}
+- Be specific and data-driven; avoid vague reassurances.
+- When you have platform data (scores, gaps, evidence counts), cite it directly.
+- When you do not have relevant data, say so honestly rather than inventing details.
+- Keep responses focused; avoid repeating the same point in different words.
+- Use plain prose for conversational answers; use short bullet lists only when listing distinct items.
+- Do not return JSON unless the user explicitly asks for it.
+- If the user asks about uploading, evidence, or standards, reference the relevant platform section.
+"""
+
+        parts = [instructions.strip()]
+
+        # ── Platform state (only when compliance-relevant) ────────────────────
+        compliance_keywords = [
+            "gap", "compliance", "standard", "criteria", "criterion", "ncaaa", "iso",
+            "accreditation", "analysis", "audit", "score", "evaluate", "evidence",
+            "فجوة", "امتثال", "معيار", "معايير", "تقييم", "تدقيق", "اعتماد", "تحليل", "درجة",
+        ]
+        needs_platform_state = any(kw in (message or "").lower() for kw in compliance_keywords)
+
+        if needs_platform_state and summary:
+            score_str = f"{summary.total_score}%" if hasattr(summary, "total_score") else "—"
+            files_str = str(getattr(summary, "total_files", "—"))
+            analyzed_str = str(getattr(summary, "analyzed_files", "—"))
+            evidence_str = str(getattr(summary, "total_evidence", "—"))
+            linked_str = str(getattr(summary, "linked_evidence", "—"))
+            gaps_str = str(getattr(summary, "total_gaps", "—"))
+            closed_str = str(getattr(summary, "closed_gaps", "—"))
+            parts.append(
+                f"Platform state:\n"
+                f"  Compliance score: {score_str}\n"
+                f"  Files: {files_str} total, {analyzed_str} analyzed\n"
+                f"  Evidence vault: {evidence_str} items, {linked_str} mapped to criteria\n"
+                f"  Open gaps: {gaps_str} detected, {closed_str} resolved"
+            )
+
+        # ── Criteria mapping context ──────────────────────────────────────────
+        if mapping_context and mapping_context.strip():
+            parts.append(mapping_context.strip())
+
+        # ── RAG: retrieve relevant document excerpts ──────────────────────────
+        if message and user_id:
+            try:
+                from app.core.db import db as _prisma
+                _user = await _prisma.user.find_unique(where={"id": user_id})
+                _inst_id = getattr(_user, "institutionId", None) if _user else None
+                rag = RagService()
+                rag_context, _ = await rag.retrieve_context(
+                    message, limit=4, user_id=user_id, institution_id=_inst_id
+                )
+                if rag_context and rag_context.strip():
+                    parts.append(f"Relevant document excerpts:\n{rag_context.strip()}")
+            except Exception as _rag_err:
+                logger.debug(f"RAG retrieval skipped: {_rag_err}")
+
+        # ── Brain pipeline results (file uploads) ────────────────────────────
+        if brain_results and brain_results.get("gap_reports"):
+            reports = brain_results["gap_reports"]
+            report_lines = []
+            for r in reports:
+                gaps = ", ".join(r.get("gaps", [])) or "none identified yet"
+                report_lines.append(
+                    f"  - {r['title']}: score {r.get('score', '—')}% | gaps: {gaps} | report ID: {r['id']}"
+                )
+            parts.append(
+                f"Files analyzed this session: {brain_results['files_analyzed']}\n"
+                f"Gap reports generated:\n" + "\n".join(report_lines)
+            )
+
+        # ── Recent activity context ────────────────────────────────────────────
+        activity_str = self._format_activities(recent_activities)
+        if activity_str and activity_str.strip():
+            parts.append(f"Recent platform activity:\n{activity_str.strip()}")
+
+        return "\n\n".join(p for p in parts if p and p.strip())
+
 
     async def _prepare_context(self, user_id: str, summary, message: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None) -> str:
         """Prepare deep platform state context for AI."""
@@ -1949,7 +1882,6 @@ class HorusService:
         return word_count <= 12
 
     @staticmethod
-    @staticmethod
     def _is_provider_unavailable_err(err: Exception) -> bool:
         msg = str(err).lower()
         return (
@@ -1962,6 +1894,7 @@ class HorusService:
             or "quota" in msg
         )
 
+    @staticmethod
     def _local_fast_response(message: str | None, user_name: str | None = None) -> str | None:
         if not message:
             return None
@@ -2077,7 +2010,7 @@ class HorusService:
                 f"- rationale: {agent_intent.get('reason')}\n"
             )
         planner_prompt = f"""
-You are Horus planner. Decide whether to call exactly one tool or answer as chat.
+You are the Horus agent planner. Your job is to decide the best next action for the user's request.
 
 User message:
 {message}
@@ -2085,28 +2018,47 @@ User message:
 {mode_block}
 {intent_block}
 
-Platform snapshot JSON:
-{json.dumps(platform_snapshot)[:5000]}
+Platform snapshot:
+{json.dumps(platform_snapshot)[:4000]}
 
 Available tools:
 {json.dumps(tool_manifest)}
 
-Return ONLY valid JSON with this exact schema:
+Decision rules:
+1. Choose mode "tool" when a single tool gives a materially better answer than a text reply.
+   - Prefer "tool" when the user asks for gap analysis, audit report, remediation plan, or platform analytics.
+   - Do NOT choose a tool when the user is asking a general question that does not require platform data.
+2. Choose mode "plan" only when the user explicitly asks for two or more distinct outcomes in one request.
+   - A plan can have at most 3 steps.
+   - Do not create a plan for a request a single tool already covers.
+3. Choose mode "chat" when no tool adds value — conversational questions, explanations, general compliance advice.
+4. For tools that mutate data (write/create/delete), only choose them when user intent is clearly explicit.
+5. When the classified intent is "file_analysis" or "agent_chat", prefer mode "chat" unless the user has clearly asked for a platform action.
+
+Return ONLY valid JSON in this exact format (no markdown, no commentary):
 {{
-  "mode": "tool" | "plan" | "chat",
-  "tool": "tool_name_or_null",
+  "mode": "tool",
+  "tool": "tool_name",
+  "arguments": {{}},
+  "steps": [],
+  "reason": "one concise sentence"
+}}
+or
+{{
+  "mode": "plan",
+  "tool": null,
   "arguments": {{}},
   "steps": [{{"tool":"tool_name","arguments":{{}},"reason":"short"}}],
-  "reason": "short reason"
+  "reason": "one concise sentence"
 }}
-
-Rules:
-- Choose mode "tool" only if a tool materially improves accuracy/action.
-- Choose mode "plan" only when user asks for multiple outcomes in one request.
-- Plan can contain up to 3 steps.
-- For mutating tools, choose them only when user intent is explicit.
-- Respect the classified intent when it is strong. If the intent says file_analysis or chat, do not force a tool.
-- If unsure, return mode "chat".
+or
+{{
+  "mode": "chat",
+  "tool": null,
+  "arguments": {{}},
+  "steps": [],
+  "reason": "one concise sentence"
+}}
 """
         raw = await client.generate_text(prompt=planner_prompt)
         parsed = self._extract_json_block(raw)
@@ -2180,26 +2132,50 @@ Rules:
         return parsed
 
     def _summarize_tool_result(self, tool_name: str, result: dict, user_message: str | None = None) -> str:
+        """Return a short, natural, user-facing sentence after a tool runs."""
         result_type = result.get("type", "unknown")
-        if result_type == "job_started":
-            job_id = result.get("jobId") or result.get("job_id")
-            return f"I started `{tool_name}` successfully.{f' Job ID: {job_id}.' if job_id else ''}"
+        payload = result.get("payload") or {}
+
         if result_type == "action_error":
-            detail = result.get("message") or result.get("error") or "The action did not complete successfully."
-            return str(detail)
+            detail = (
+                result.get("message")
+                or result.get("error")
+                or payload.get("message")
+                or "The action did not complete successfully."
+            )
+            return str(detail).strip()
+
+        if result_type == "job_started":
+            job_id = result.get("jobId") or result.get("job_id") or payload.get("jobId")
+            if job_id:
+                return f"The job is now running in the background (ID: `{job_id}`). You will be notified when it completes."
+            return "The task has been queued and is running in the background."
+
         if result_type == "audit_report":
-            return "I generated the audit report and attached the structured output above."
+            score = payload.get("score") or payload.get("overallScore")
+            score_str = f" — overall score: **{round(score)}%**" if score is not None else ""
+            return f"Your audit report is ready{score_str}. Review the findings above to see which criteria need attention."
+
         if result_type == "gap_table":
-            return "I prepared the gap analysis table and highlighted the main issues above."
+            gap_count = len(payload.get("gaps") or [])
+            high = sum(1 for g in (payload.get("gaps") or []) if (g.get("priority") or "").lower() == "high")
+            detail = f"{gap_count} criteria reviewed" + (f", {high} high-priority" if high else "")
+            return f"Gap analysis complete — {detail}. See the table above for the full breakdown."
+
         if result_type == "remediation_plan":
-            return "I generated a remediation plan with the next recommended steps."
+            steps = len(payload.get("steps") or [])
+            steps_str = f" with {steps} recommended steps" if steps else ""
+            return f"Remediation plan ready{steps_str}. Each step above includes a specific action and deadline."
+
         if result_type == "analytics_report":
-            return "I prepared the analytics summary and included the structured result above."
-        if isinstance(result.get("message"), str) and result["message"].strip():
-            return result["message"].strip()
-        if user_message:
-            return f"I completed `{tool_name}` for: {user_message.strip()}"
-        return f"I completed `{tool_name}` successfully."
+            return "Analytics report generated. The charts and trend data are attached above."
+
+        # Fallback: use any message the tool returned
+        msg = result.get("message") or payload.get("message") or ""
+        if msg and str(msg).strip():
+            return str(msg).strip()
+
+        return "Done."
 
     def _normalize_plan_steps(self, raw_steps: Any) -> list[dict]:
         if not isinstance(raw_steps, list):
@@ -2286,14 +2262,17 @@ Rules:
             })
 
         success = len([e for e in executed if e["ok"]])
-        summary_lines = [f"Executed {len(executed)} plan steps ({success} successful)."]
-        for idx, e in enumerate(executed, start=1):
-            status = "ok" if e["ok"] else "failed"
-            summary_lines.append(f"{idx}. {e['tool']} -> {e['result_type']} ({status})")
+        failed = len(executed) - success
+        if success == len(executed):
+            summary_text = f"All {len(executed)} step{'s' if len(executed) > 1 else ''} completed successfully."
+        elif failed == len(executed):
+            summary_text = f"None of the {len(executed)} planned steps completed. Please check the details above."
+        else:
+            summary_text = f"Completed {success} of {len(executed)} steps. {failed} step{'s' if failed > 1 else ''} did not complete — see the details above."
 
         return {
             "last_structured": last_structured,
-            "summary_text": "\n".join(summary_lines),
+            "summary_text": summary_text,
             "tool_results": tool_results,
         }
 

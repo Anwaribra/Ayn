@@ -50,10 +50,11 @@ function DashboardContent() {
     user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
     {
-      refreshInterval: 60000,
+      refreshInterval: 300_000, // 5-minute auto-refresh; user can always hit Retry manually
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 30000,
+      dedupingInterval: 60_000,
+      revalidateIfStale: false,
     }
   )
 
@@ -95,22 +96,26 @@ function DashboardContent() {
 
   const { data: standardsCoverage } = useSWR<StandardCoverageSummary[]>(
     user && publicStandards.length > 0
-      ? ["dashboard-standards-coverage", ...publicStandards.map((standard) => standard.id)]
+      ? ["dashboard-standards-coverage", ...publicStandards.slice(0, 5).map((standard) => standard.id)]
       : null,
-    async () =>
-      Promise.all(
-        publicStandards.map(async (standard) => {
+    async () => {
+      // Fetch up to 5 standards concurrently; failures on individual calls are swallowed
+      // so one bad standard does not block the entire section.
+      const results = await Promise.allSettled(
+        publicStandards.slice(0, 5).map(async (standard) => {
           const coverage = await api.getStandardCoverage(standard.id)
-          return {
-            standard,
-            ...coverage,
-          }
+          return { standard, ...coverage }
         })
-      ),
+      )
+      return results
+        .filter((r): r is PromiseFulfilledResult<StandardCoverageSummary> => r.status === "fulfilled")
+        .map((r) => r.value)
+    },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 60_000,
+      dedupingInterval: 120_000,
+      revalidateIfStale: false,
     }
   )
 

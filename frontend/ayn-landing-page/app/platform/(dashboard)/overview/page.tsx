@@ -20,13 +20,15 @@ import {
 export default function OverviewPage() {
   const { user } = useAuth()
   const { data: metrics, isLoading } = useSWR(
-    user ? ["overview-metrics", user.id] : null,
+    // Use the same key as dashboard/page.tsx so the two pages share the SWR cache entry.
+    user ? ["dashboard-metrics", user.id] : null,
     () => api.getDashboardMetrics(),
     {
-      refreshInterval: 60000,
+      refreshInterval: 300_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 30000,
+      dedupingInterval: 60_000,
+      revalidateIfStale: false,
     }
   )
 

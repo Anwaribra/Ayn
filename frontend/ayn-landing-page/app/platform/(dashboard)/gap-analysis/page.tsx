@@ -68,12 +68,14 @@ function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
   if (!report) return false
 
   const summary = (report.summary ?? "").toLowerCase()
+
+  // Matches both has-evidence and no-evidence fallback summaries produced by the backend
   const fallbackSummary =
     summary.includes("preliminary report was generated") &&
-    summary.includes("ai provider") &&
-    summary.includes("manual review")
+    summary.includes("ai provider")
 
-  const fallbackGaps =
+  // Has-evidence fallback: all gaps are partially_aligned with the standard rerun recommendation
+  const fallbackGapsPartial =
     (report.gaps?.length ?? 0) > 0 &&
     report.gaps.every((gap) => {
       const recommendation = (gap.recommendation ?? "").toLowerCase()
@@ -83,7 +85,18 @@ function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
       )
     })
 
-  return fallbackSummary || fallbackGaps
+  // No-evidence fallback: all gaps are no_evidence with the upload-and-rerun recommendation
+  const fallbackGapsNoEvidence =
+    (report.gaps?.length ?? 0) > 0 &&
+    report.gaps.every((gap) => {
+      const recommendation = (gap.recommendation ?? "").toLowerCase()
+      return (
+        gap.status === "no_evidence" &&
+        recommendation.includes("upload or link evidence for this criterion")
+      )
+    })
+
+  return fallbackSummary || fallbackGapsPartial || fallbackGapsNoEvidence
 }
 
 function sortEvidenceNewestFirst(items: Evidence[]) {

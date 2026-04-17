@@ -774,9 +774,17 @@ class HorusService:
             except Exception as fast_err:
                 logger.error(f"Fast path failed, continuing with fallback error response: {fast_err}", exc_info=True)
                 if not full_response:
-                    yield "__STREAM_ERROR__:Connection interrupted. Please try again.\n"
-                    full_response = "I’m having trouble right now. Please try again."
-                    yield full_response
+                    if self._is_provider_unavailable_err(fast_err):
+                        full_response = (
+                            "My AI provider is temporarily unavailable right now. "
+                            "I can still answer simple questions directly — for deeper analysis, "
+                            "please try again in a few minutes once the provider is back."
+                        )
+                        yield full_response
+                    else:
+                        yield "__STREAM_ERROR__:Request failed. Please try again.\n"
+                        full_response = "The request was interrupted. Please try sending your message again."
+                        yield full_response
 
             if full_response and background_tasks:
                 assistant_meta = {"citations": rag_sources} if rag_sources else None
@@ -1534,9 +1542,16 @@ class HorusService:
             except Exception as stream_err:
                 logger.error(f"Stream chat failed mid-response: {stream_err}", exc_info=True)
                 if not full_response.strip():
-                    yield "__STREAM_ERROR__:Connection interrupted. Please try again.\n"
-                    full_response = "I encountered an error while generating a response. Please try again."
-                    yield full_response
+                    if self._is_provider_unavailable_err(stream_err):
+                        full_response = (
+                            "My AI provider is temporarily unavailable right now. "
+                            "Please try again in a few minutes, or ask a simpler question and I’ll do my best."
+                        )
+                        yield full_response
+                    else:
+                        yield "__STREAM_ERROR__:Request failed. Please try again.\n"
+                        full_response = "The connection was interrupted. Please try sending your message again."
+                        yield full_response
 
         # 4. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:
@@ -1934,6 +1949,19 @@ class HorusService:
         return word_count <= 12
 
     @staticmethod
+    @staticmethod
+    def _is_provider_unavailable_err(err: Exception) -> bool:
+        msg = str(err).lower()
+        return (
+            "402" in msg
+            or "payment required" in msg
+            or "429" in msg
+            or "resource_exhausted" in msg
+            or "all ai providers failed" in msg
+            or "no streaming ai provider available" in msg
+            or "quota" in msg
+        )
+
     def _local_fast_response(message: str | None, user_name: str | None = None) -> str | None:
         if not message:
             return None

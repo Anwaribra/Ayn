@@ -64,6 +64,28 @@ function getAnalysisScopeLabel(scope?: string) {
   return "Full standard scan"
 }
 
+function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
+  if (!report) return false
+
+  const summary = (report.summary ?? "").toLowerCase()
+  const fallbackSummary =
+    summary.includes("preliminary report was generated") &&
+    summary.includes("ai provider") &&
+    summary.includes("manual review")
+
+  const fallbackGaps =
+    (report.gaps?.length ?? 0) > 0 &&
+    report.gaps.every((gap) => {
+      const recommendation = (gap.recommendation ?? "").toLowerCase()
+      return (
+        gap.status === "partially_aligned" &&
+        recommendation.includes("rerun once ai provider access is restored")
+      )
+    })
+
+  return fallbackSummary || fallbackGaps
+}
+
 function sortEvidenceNewestFirst(items: Evidence[]) {
   return [...items].sort(
     (left, right) =>
@@ -416,7 +438,7 @@ function GapAnalysisContent() {
         : "Choose the exact evidence files Horus should analyze for this report."
   const displayedGaps = gaps.slice(0, 5)
   const remainingGapCount = Math.max(gaps.length - displayedGaps.length, 0)
-  const isFallbackReport = Boolean(activeReport?.isFallback)
+  const isFallbackReport = Boolean(activeReport?.isFallback) || looksLikeLegacyFallbackReport(activeReport)
 
   return (
     <div className="animate-fade-in-up pb-20 relative">

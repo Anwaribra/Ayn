@@ -999,10 +999,22 @@ class ApiClient {
   }
 
   // Gap Analysis
-  async generateGapAnalysis(standardId: string, assessmentId?: string) {
+  async generateGapAnalysis(
+    standardId: string,
+    options?: {
+      assessmentId?: string
+      analysisScope?: "linked" | "selected" | "recent"
+      evidenceIds?: string[]
+    }
+  ) {
     return this.request<{ jobId: string; status: string }>("/gap-analysis/generate", {
       method: "POST",
-      body: JSON.stringify({ standardId, assessmentId }),
+      body: JSON.stringify({
+        standardId,
+        assessmentId: options?.assessmentId,
+        analysisScope: options?.analysisScope,
+        evidenceIds: options?.evidenceIds,
+      }),
     })
   }
 

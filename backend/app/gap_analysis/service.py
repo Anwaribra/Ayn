@@ -20,13 +20,100 @@ from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap
 from app.standards.mapping_service import analyze_standard_criteria
 
 logger = logging.getLogger(__name__)
+SUMMARY_META_PREFIX = "[[gap-meta:"
 
 class GapAnalysisService:
     """Service for gap analysis business logic."""
+
+    @staticmethod
+    def _encode_summary(summary: str, analysis_scope: str, evidence_count: int | None) -> str:
+        scope = (analysis_scope or "linked").lower()
+        count = "" if evidence_count is None else str(evidence_count)
+        return f"{SUMMARY_META_PREFIX}scope={scope};count={count}]] {summary}".strip()
+
+    @staticmethod
+    def _parse_summary(summary: str | None):
+        raw_summary = summary or ""
+        if not raw_summary.startswith(SUMMARY_META_PREFIX):
+            return {
+                "summary": raw_summary,
+                "analysisScope": "linked",
+                "evidenceCount": None,
+            }
+
+        closing_index = raw_summary.find("]]")
+        if closing_index == -1:
+            return {
+                "summary": raw_summary,
+                "analysisScope": "linked",
+                "evidenceCount": None,
+            }
+
+        metadata = {}
+        for part in raw_summary[len(SUMMARY_META_PREFIX):closing_index].split(";"):
+            if "=" not in part:
+                continue
+            key, value = part.split("=", 1)
+            metadata[key.strip()] = value.strip()
+
+        cleaned_summary = raw_summary[closing_index + 2 :].strip()
+        evidence_count_raw = metadata.get("count") or None
+
+        return {
+            "summary": cleaned_summary,
+            "analysisScope": metadata.get("scope") or "linked",
+            "evidenceCount": int(evidence_count_raw) if evidence_count_raw and evidence_count_raw.isdigit() else None,
+        }
+
+    @staticmethod
+    async def _resolve_evidence_scope(
+        db,
+        institution_id: str,
+        standard_id: str,
+        analysis_scope: str,
+        evidence_ids: list[str] | None,
+    ):
+        criteria = await db.criterion.find_many(where={"standardId": standard_id})
+        criterion_ids = [c.id for c in criteria]
+
+        normalized_scope = (analysis_scope or "linked").lower()
+        selected_ids = list(dict.fromkeys(evidence_ids or []))
+
+        if normalized_scope in {"selected", "recent"} and selected_ids:
+            scoped_evidence = await db.evidence.find_many(
+                where={
+                    "institutionId": institution_id,
+                    "id": {"in": selected_ids},
+                }
+            )
+            return criteria, scoped_evidence
+
+        evidence = []
+        if criterion_ids:
+            evidence_criteria = await db.evidencecriterion.find_many(
+                where={"criterionId": {"in": criterion_ids}},
+                include={"evidence": True}
+            )
+            seen_ids = set()
+            for ec in evidence_criteria:
+                if ec.evidence and ec.evidence.id not in seen_ids:
+                    evidence.append(ec.evidence)
+                    seen_ids.add(ec.evidence.id)
+
+            legacy_evidence = await db.evidence.find_many(
+                where={
+                    "criterionId": {"in": criterion_ids},
+                    "id": {"notIn": list(seen_ids)},
+                }
+            )
+            evidence.extend(legacy_evidence)
+
+        return criteria, evidence
     
     @staticmethod
     def _build_response(record, standard_title: str) -> GapAnalysisResponse:
         """Build a GapAnalysisResponse from a DB record."""
+        summary_meta = GapAnalysisService._parse_summary(getattr(record, "summary", ""))
         try:
             gaps_data = json.loads(record.gapsJson) if record.gapsJson else []
         except json.JSONDecodeError:
@@ -43,7 +130,9 @@ class GapAnalysisService:
             standardId=record.standardId,
             standardTitle=standard_title,
             overallScore=record.overallScore,
-            summary=record.summary,
+            summary=summary_meta["summary"],
+            analysisScope=summary_meta["analysisScope"],
+            evidenceCount=summary_meta["evidenceCount"],
             status=record.status if hasattr(record, "status") else "pending",
             gaps=[GapItem(**g) for g in gaps_data],
             recommendations=recommendations_data,
@@ -75,7 +164,11 @@ class GapAnalysisService:
                 "institutionId": institution_id,
                 "standardId": request.standardId,
                 "overallScore": 0.0,           # Sentinel: 0.0 = queued/processing
-                "summary": "queued",            # Sentinel: "queued" = in progress
+                "summary": GapAnalysisService._encode_summary(
+                    "queued",
+                    request.analysisScope or "linked",
+                    len(request.evidenceIds or []),
+                ),
                 "status": "pending",
                 "gapsJson": "[]",
                 "recommendationsJson": "[]",
@@ -95,6 +188,8 @@ class GapAnalysisService:
         user_id: str,
         institution_id: str,
         standard_id: str,
+        analysis_scope: str,
+        evidence_ids: list[str],
         current_user: UserDTO,
     ) -> None:
         """
@@ -115,7 +210,12 @@ class GapAnalysisService:
                 logger.error(f"Standard {standard_id} not found for job {job_id}")
                 await db.gapanalysis.update(
                     where={"id": job_id},
-                    data={"summary": "failed", "status": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                    data={
+                        "summary": GapAnalysisService._encode_summary("failed", analysis_scope, len(evidence_ids or [])),
+                        "status": "failed",
+                        "gapsJson": "[]",
+                        "recommendationsJson": "[]",
+                    }
                 )
                 return
 
@@ -128,23 +228,13 @@ class GapAnalysisService:
             except Exception as cache_err:
                 logger.warning(f"Failed to invalidate dashboard cache after gap analysis status running: {cache_err}")
 
-            criteria = await db.criterion.find_many(where={"standardId": standard_id})
-            criterion_ids = [c.id for c in criteria]
-            evidence = []
-            if criterion_ids:
-                evidence_criteria = await db.evidencecriterion.find_many(
-                    where={"criterionId": {"in": criterion_ids}},
-                    include={"evidence": True}
-                )
-                seen_ids = set()
-                for ec in evidence_criteria:
-                    if ec.evidence and ec.evidence.id not in seen_ids:
-                        evidence.append(ec.evidence)
-                        seen_ids.add(ec.evidence.id)
-                legacy_evidence = await db.evidence.find_many(
-                    where={"criterionId": {"in": criterion_ids}, "id": {"notIn": list(seen_ids)}}
-                )
-                evidence.extend(legacy_evidence)
+            criteria, evidence = await GapAnalysisService._resolve_evidence_scope(
+                db=db,
+                institution_id=institution_id,
+                standard_id=standard_id,
+                analysis_scope=analysis_scope,
+                evidence_ids=evidence_ids,
+            )
 
             result = None
             last_error = None
@@ -166,7 +256,11 @@ class GapAnalysisService:
                 where={"id": job_id},
                 data={
                     "overallScore": result["overallScore"],
-                    "summary": result["summary"],
+                    "summary": GapAnalysisService._encode_summary(
+                        result["summary"],
+                        analysis_scope,
+                        len(evidence),
+                    ),
                     "status": "completed",
                     "gapsJson": json.dumps(result["gaps"]),
                     "recommendationsJson": json.dumps(result["recommendations"]),
@@ -203,7 +297,12 @@ class GapAnalysisService:
             try:
                 await db.gapanalysis.update(
                     where={"id": job_id},
-                    data={"summary": "failed", "status": "failed", "gapsJson": "[]", "recommendationsJson": "[]"}
+                    data={
+                        "summary": GapAnalysisService._encode_summary("failed", analysis_scope, len(evidence_ids or [])),
+                        "status": "failed",
+                        "gapsJson": "[]",
+                        "recommendationsJson": "[]",
+                    }
                 )
                 try:
                     redis_client.invalidate_dashboard_cache()
@@ -238,12 +337,15 @@ class GapAnalysisService:
                 id=r.id,
                 standardTitle=r.standard.title if r.standard else "Unknown",
                 overallScore=r.overallScore,
-                summary=r.summary,
+                summary=summary_meta["summary"],
+                analysisScope=summary_meta["analysisScope"],
+                evidenceCount=summary_meta["evidenceCount"],
                 status=r.status if hasattr(r, "status") else "pending",
                 archived=r.archived,
                 createdAt=r.createdAt,
             )
             for r in records
+            for summary_meta in [GapAnalysisService._parse_summary(r.summary)]
         ]
 
     @staticmethod

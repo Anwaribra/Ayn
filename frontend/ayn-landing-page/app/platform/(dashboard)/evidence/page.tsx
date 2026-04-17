@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR, { mutate as globalMutate } from "swr"
 import { Evidence } from "@/types"
-import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle } from "lucide-react"
+import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle, Check } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { DocumentEditor } from "@/components/platform/document-editor"
@@ -28,6 +28,7 @@ export default function EvidencePage() {
 
 function EvidenceContent() {
   const { user } = useAuth()
+  const router = useRouter()
   usePageTitle("Evidence Vault")
   const { data: evidenceList, isLoading, error, mutate: localMutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
@@ -101,6 +102,9 @@ function EvidenceContent() {
  
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
+  const [isBulkGapModalOpen, setIsBulkGapModalOpen] = useState(false)
+  const [bulkStandardId, setBulkStandardId] = useState<string>("")
   const [isDragOver, setIsDragOver] = useState(false)
 
   // H3: Filter state
@@ -274,6 +278,101 @@ function EvidenceContent() {
     }
   }
 
+  const handleOpenGapAnalysisForEvidence = () => {
+    if (!selectedEvidence) return
+
+    const params = new URLSearchParams()
+    params.set("scope", "selected")
+    params.set("evidenceIds", selectedEvidence.id)
+
+    const criteria = Array.isArray(selectedEvidence.criteria) ? selectedEvidence.criteria : []
+    const standardIds = Array.from(
+      new Set(
+        criteria
+          .map((criterion: any) => criterion?.standardId)
+          .filter((value: string | undefined | null): value is string => Boolean(value)),
+      ),
+    )
+
+    if (standardIds.length === 1) {
+      params.set("standardId", standardIds[0])
+    }
+
+    router.push(`/platform/gap-analysis?${params.toString()}`)
+  }
+
+  const handleOpenGapAnalysisForSelected = () => {
+    if (selectedEvidenceIds.length === 0) return
+
+    const params = new URLSearchParams()
+    params.set("scope", "selected")
+    params.set("evidenceIds", selectedEvidenceIds.join(","))
+
+    const selectedItems = filteredEvidence.filter((item) => selectedEvidenceIds.includes(item.id))
+    const standardIds = Array.from(
+      new Set(
+        selectedItems.flatMap((item) =>
+          (Array.isArray(item.criteria) ? item.criteria : [])
+            .map((criterion: any) => criterion?.standardId)
+            .filter((value: string | undefined | null): value is string => Boolean(value)),
+        ),
+      ),
+    )
+
+    if (bulkStandardId) {
+      params.set("standardId", bulkStandardId)
+    } else if (standardIds.length === 1) {
+      params.set("standardId", standardIds[0])
+    }
+
+    setIsBulkGapModalOpen(false)
+    router.push(`/platform/gap-analysis?${params.toString()}`)
+  }
+
+  const toggleEvidenceSelection = (evidenceId: string) => {
+    setSelectedEvidenceIds((current) =>
+      current.includes(evidenceId)
+        ? current.filter((id) => id !== evidenceId)
+        : [...current, evidenceId],
+    )
+  }
+
+  const clearSelection = () => setSelectedEvidenceIds([])
+
+  const selectAllVisible = () => {
+    setSelectedEvidenceIds(filteredEvidence.map((item) => item.id))
+  }
+
+  const selectedItems = useMemo(
+    () => filteredEvidence.filter((item) => selectedEvidenceIds.includes(item.id)),
+    [filteredEvidence, selectedEvidenceIds],
+  )
+
+  const selectedStandardCandidates = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          selectedItems.flatMap((item) =>
+            (Array.isArray(item.criteria) ? item.criteria : [])
+              .map((criterion: any) => criterion?.standardId)
+              .filter((value: string | undefined | null): value is string => Boolean(value)),
+          ),
+        ),
+      ),
+    [selectedItems],
+  )
+
+  useEffect(() => {
+    if (selectedStandardCandidates.length === 1) {
+      setBulkStandardId(selectedStandardCandidates[0])
+      return
+    }
+
+    if (selectedStandardCandidates.length === 0 || !selectedStandardCandidates.includes(bulkStandardId)) {
+      setBulkStandardId("")
+    }
+  }, [bulkStandardId, selectedStandardCandidates])
+
   return (
     <div
       className="animate-fade-in-up pb-20 space-y-8 relative"
@@ -411,6 +510,46 @@ function EvidenceContent() {
               {searchQuery && <span> for <span className="text-foreground font-bold">"{searchQuery}"</span></span>}
             </p>
           )}
+          {filteredEvidence.length > 0 && (
+            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedEvidenceIds.length > 0
+                    ? `${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"} selected`
+                    : "Select one or more files to send them directly into Gap Analysis"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Multi-select is best when you want to test recent uploads together before doing a full standard scan.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllVisible}
+                  className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  Select all visible
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  disabled={selectedEvidenceIds.length === 0}
+                  className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBulkGapModalOpen(true)}
+                  disabled={selectedEvidenceIds.length === 0}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Run Gap Analysis on Selected
+                </button>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredEvidence.length === 0 ? (
               <div className="col-span-full py-20 text-center">
@@ -431,9 +570,31 @@ function EvidenceContent() {
                 onClick={() => setSelectedEvidence(evidence)}
                 className={cn(
                   "cursor-pointer group p-0 relative rounded-[28px] overflow-hidden",
+                  selectedEvidenceIds.includes(evidence.id) && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_24px_rgba(var(--primary),0.18)]",
                   (highlightId === evidence.id || highlightId === evidence.originalFilename || highlightId === evidence.title) && "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all"
                 )}
               >
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    toggleEvidenceSelection(evidence.id)
+                  }}
+                  className={cn(
+                    "absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all",
+                    selectedEvidenceIds.includes(evidence.id)
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-[var(--glass-border)] bg-[var(--surface-modal)]/80 text-transparent hover:border-primary/40",
+                  )}
+                  aria-label={selectedEvidenceIds.includes(evidence.id) ? "Deselect evidence" : "Select evidence"}
+                >
+                  <Check className={cn("h-3.5 w-3.5", selectedEvidenceIds.includes(evidence.id) ? "opacity-100" : "opacity-0")} />
+                </button>
+                {selectedEvidenceIds.includes(evidence.id) && (
+                  <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    Selected
+                  </div>
+                )}
                 <EvidenceCard evidence={evidence} onClick={() => setSelectedEvidence(evidence)} />
               </GlassCard>
             ))}
@@ -464,6 +625,13 @@ function EvidenceContent() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleOpenGapAnalysisForEvidence}
+                className="px-4 py-2 text-xs font-bold glass-button text-foreground rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" /> Open in Gap Analysis
+              </button>
               <button
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(true)}
@@ -621,6 +789,76 @@ function EvidenceContent() {
                 )}
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isBulkGapModalOpen && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            onClick={() => setIsBulkGapModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative w-full max-w-lg glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-gap-modal-title"
+          >
+            <h3 id="bulk-gap-modal-title" className="text-xl font-black text-foreground mb-1">Run Gap Analysis on Selected Files</h3>
+            <p className="text-sm font-medium text-muted-foreground mb-6">
+              Choose a standard now, or leave it blank and pick the standard inside Gap Analysis.
+            </p>
+
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 mb-5">
+              <p className="text-sm font-semibold text-foreground">
+                {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {selectedItems.slice(0, 3).map((item) => item.title || item.originalFilename || "Untitled evidence").join(" • ") || "Selected files will be sent to Gap Analysis."}
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-8">
+              <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Target Standard
+              </label>
+              <select
+                value={bulkStandardId}
+                onChange={(event) => setBulkStandardId(event.target.value)}
+                className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Choose later in Gap Analysis</option>
+                {standards?.map((standard: any) => (
+                  <option key={standard.id} value={standard.id}>
+                    {standard.title}
+                  </option>
+                ))}
+              </select>
+              {selectedStandardCandidates.length === 1 && !bulkStandardId && (
+                <p className="text-xs text-primary">
+                  We detected one matching linked standard for these files and can prefill it automatically.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsBulkGapModalOpen(false)}
+                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenGapAnalysisForSelected}
+                className="flex-[2] px-4 py-3 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-primary/20"
+              >
+                Open Gap Analysis <Sparkles className="w-4 h-4 ml-1" />
+              </button>
             </div>
           </div>
         </div>

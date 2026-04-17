@@ -39,6 +39,8 @@ async def generate_gap_analysis_report(
         user_id=user_dto.id,
         institution_id=user_dto.institutionId,
         standard_id=request.standardId,
+        analysis_scope=request.analysisScope or "linked",
+        evidence_ids=request.evidenceIds or [],
         current_user=user_dto,
     )
     return JSONResponse(status_code=202, content=job)

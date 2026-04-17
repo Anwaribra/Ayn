@@ -4,7 +4,7 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { usePageTitle } from "@/hooks/use-page-title"
@@ -38,6 +38,17 @@ import { cn } from "@/lib/utils"
 
 type UiSeverity = "High" | "Medium" | "Low"
 type UiAlignment = "Aligned" | "Partially Aligned" | "Not Aligned"
+type AnalysisScope = "linked" | "recent" | "selected"
+
+function buildGapAnalysisFilename(report: { standardTitle?: string; id: string }) {
+  const safeTitle = (report.standardTitle || "gap-analysis")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "gap-analysis"
+
+  return `${safeTitle}-${report.id.slice(0, 8)}.pdf`
+}
 
 function getSeverity(value?: string): UiSeverity {
   const normalized = (value ?? "").toLowerCase()
@@ -53,6 +64,23 @@ function getAlignment(value?: string): UiAlignment {
   return "Not Aligned"
 }
 
+function getEvidenceLabel(evidence: Evidence) {
+  return evidence.title || evidence.originalFilename || "Untitled evidence"
+}
+
+function getAnalysisScopeLabel(scope?: string) {
+  if (scope === "selected") return "Selected evidence"
+  if (scope === "recent") return "Recent uploads"
+  return "Full standard scan"
+}
+
+function sortEvidenceNewestFirst(items: Evidence[]) {
+  return [...items].sort(
+    (left, right) =>
+      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  )
+}
+
 export default function GapAnalysisPage() {
   return (
     <ProtectedRoute>
@@ -66,6 +94,9 @@ function GapAnalysisContent() {
   const searchParams = useSearchParams()
   usePageTitle("Gap Analysis")
   const [selectedStandard, setSelectedStandard] = useState("")
+  const [analysisScope, setAnalysisScope] = useState<AnalysisScope>("linked")
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
+  const [evidenceSearchQuery, setEvidenceSearchQuery] = useState("")
   const [generating, setGenerating] = useState(false)
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -95,6 +126,34 @@ function GapAnalysisContent() {
     return () => { cancelled = true }
   }, [searchParams, user])
 
+  useEffect(() => {
+    const standardId = searchParams.get("standardId")
+    const scope = searchParams.get("scope") as AnalysisScope | null
+    const evidenceIdsParam = searchParams.get("evidenceIds")
+
+    if (standardId) {
+      setSelectedStandard(standardId)
+    }
+
+    if (scope === "linked" || scope === "recent" || scope === "selected") {
+      setAnalysisScope(scope)
+    }
+
+    if (evidenceIdsParam) {
+      const ids = evidenceIdsParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+
+      if (ids.length > 0) {
+        setSelectedEvidenceIds(ids)
+        if (!scope) {
+          setAnalysisScope("selected")
+        }
+      }
+    }
+  }, [searchParams])
+
   // ESC to close delete confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -122,6 +181,11 @@ function GapAnalysisContent() {
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
+  )
+
+  const { data: evidenceList } = useSWR<Evidence[]>(
+    user ? ["evidence", user.id] : null,
+    () => api.getEvidence(),
   )
 
   const { data: reports, error: reportsError, mutate } = useSWR<GapAnalysisListItem[]>(
@@ -153,13 +217,28 @@ function GapAnalysisContent() {
 
   const handleGenerate = useCallback(async () => {
     if (!selectedStandard) return toast.error("Select a standard first")
+    if ((analysisScope === "recent" || analysisScope === "selected") && selectedEvidenceIds.length === 0) {
+      toast.error("Choose at least one file", {
+        description: analysisScope === "recent"
+          ? "Pick one or more recent uploads before starting the scan."
+          : "Select the evidence you want Horus to analyze.",
+      })
+      return
+    }
+
     setGenerating(true)
     try {
-      const job = await api.generateGapAnalysis(selectedStandard)
+      const job = await api.generateGapAnalysis(selectedStandard, {
+        analysisScope,
+        evidenceIds: analysisScope === "linked" ? undefined : selectedEvidenceIds,
+      })
       // 202: queued — set the pending job ID, SWR will poll until done
       setPendingJobId(job.jobId)
       toast.success("Analysis queued", {
-        description: "Horus is analyzing your evidence. We'll notify you when it's ready."
+        description:
+          analysisScope === "linked"
+            ? "Horus is analyzing the evidence already linked to this standard."
+            : `Horus is analyzing ${selectedEvidenceIds.length} selected file${selectedEvidenceIds.length === 1 ? "" : "s"}.`,
       })
       mutate() // Immediately refresh to show the 'queued' stub in the list
     } catch {
@@ -167,16 +246,49 @@ function GapAnalysisContent() {
       setGenerating(false)
     }
     // Note: setGenerating(false) is handled in SWR onSuccess once the job completes
-  }, [selectedStandard, mutate])
+  }, [selectedStandard, analysisScope, selectedEvidenceIds, mutate])
 
   const handleViewReport = useCallback(async (id: string) => {
     try {
       const full = await api.getGapAnalysis(id)
       setActiveReport(full)
+      return full
     } catch {
       toast.error("Failed to load report")
+      return null
     }
   }, [])
+
+  const handleExportSnapshot = useCallback(async (reportId?: string) => {
+    if (!reportId && !activeReport) {
+      toast.error("Open a completed report first")
+      return
+    }
+
+    const targetReport =
+      !reportId || activeReport?.id === reportId
+        ? activeReport
+        : await handleViewReport(reportId)
+
+    if (!targetReport) return
+
+    if (targetReport.status !== "completed") {
+      toast.error("Only completed reports can be exported", {
+        description: "This analysis did not finish successfully, so there is no useful report to export.",
+      })
+      return
+    }
+
+    const { exportToPDF } = await import("@/lib/pdf-export")
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve())
+      })
+    })
+
+    await exportToPDF("gap-analysis-report-content", buildGapAnalysisFilename(targetReport))
+  }, [activeReport, handleViewReport])
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -309,6 +421,49 @@ function GapAnalysisContent() {
   const reportsReady = reports !== undefined
   const hasReports = (reports?.length ?? 0) > 0
   const showReportsLoadingState = !reportsReady && !reportsError && !activeReport
+  const selectedStandardObject = standards?.find((standard) => standard.id === selectedStandard) ?? null
+  const sortedEvidence = useMemo(() => sortEvidenceNewestFirst(evidenceList ?? []), [evidenceList])
+  const recentEvidence = useMemo(() => sortedEvidence.slice(0, 8), [sortedEvidence])
+  const evidenceOptions = useMemo(() => {
+    const pool = analysisScope === "recent" ? recentEvidence : sortedEvidence
+    const query = evidenceSearchQuery.trim().toLowerCase()
+
+    if (!query) return pool
+
+    return pool.filter((item) => {
+      const haystack = `${item.title ?? ""} ${item.originalFilename ?? ""} ${item.summary ?? ""}`.toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [analysisScope, recentEvidence, sortedEvidence, evidenceSearchQuery])
+  const selectedEvidence = useMemo(
+    () => sortedEvidence.filter((item) => selectedEvidenceIds.includes(item.id)),
+    [sortedEvidence, selectedEvidenceIds],
+  )
+
+  useEffect(() => {
+    if (analysisScope !== "recent" || recentEvidence.length === 0) return
+
+    setSelectedEvidenceIds((current) => {
+      const recentIds = recentEvidence.map((item) => item.id)
+      const stillValid = current.filter((id) => recentIds.includes(id))
+      return stillValid.length > 0 ? stillValid : recentIds.slice(0, 4)
+    })
+  }, [analysisScope, recentEvidence])
+
+  const toggleEvidenceSelection = useCallback((evidenceId: string) => {
+    setSelectedEvidenceIds((current) =>
+      current.includes(evidenceId)
+        ? current.filter((id) => id !== evidenceId)
+        : [...current, evidenceId],
+    )
+  }, [])
+
+  const scopeDescription =
+    analysisScope === "linked"
+      ? "Run against all evidence already linked to this standard across your institution."
+      : analysisScope === "recent"
+        ? "Start from your latest uploads, then keep only the files you want in this run."
+        : "Choose the exact evidence files Horus should analyze for this report."
 
   return (
     <div className="animate-fade-in-up pb-20 relative">
@@ -338,10 +493,7 @@ function GapAnalysisContent() {
 
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
               <button 
-            onClick={async () => {
-              const { exportToPDF } = await import("@/lib/pdf-export")
-              exportToPDF("gap-analysis-report-content", "Horus-Gap-Analysis-Report.pdf")
-            }}
+            onClick={() => handleExportSnapshot()}
             data-html2canvas-ignore="true"
             className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20"
           >
@@ -439,38 +591,192 @@ function GapAnalysisContent() {
 
       {/* Generate Controls */}
       <div className="px-4 mb-10">
-        <div className="glass-panel p-6 rounded-[28px] glass-border flex flex-col md:flex-row items-center gap-4 relative overflow-hidden">
+        <div className="glass-panel p-6 rounded-[28px] glass-border relative overflow-hidden space-y-5">
           <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.85),transparent)] opacity-70" />
-          <select
-            value={selectedStandard}
-            onChange={(e) => setSelectedStandard(e.target.value)}
-            disabled={!standards || standards.length === 0 || generating}
-            className="flex-1 h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="" className="bg-[var(--surface-modal)]">
-              {!standards ? "Loading standards..." : standards.length === 0 ? "No standards available yet" : "Choose a standard to analyze..."}
-            </option>
-            {standards?.map((s: Standard) => (
-              <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !selectedStandard || !standards || standards.length === 0}
-            className="flex items-center gap-2 px-8 py-3 min-h-[44px] bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            {generating ? (
-              <>
-                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-current" />
-                Initiate Analysis
-              </>
-            )}
-          </button>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">1. Standard</p>
+                <select
+                  value={selectedStandard}
+                  onChange={(e) => setSelectedStandard(e.target.value)}
+                  disabled={!standards || standards.length === 0 || generating}
+                  className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="" className="bg-[var(--surface-modal)]">
+                    {!standards ? "Loading standards..." : standards.length === 0 ? "No standards available yet" : "Choose a standard to analyze..."}
+                  </option>
+                  {standards?.map((s: Standard) => (
+                    <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
+                  ))}
+                </select>
+                {selectedStandardObject && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedStandardObject.criteriaCount} criteria will be checked in this run.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">2. Analysis Scope</p>
+                  {(analysisScope === "recent" || analysisScope === "selected") && (
+                    <span className="text-[11px] text-primary font-medium">
+                      {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
+                    </span>
+                  )}
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {[
+                    {
+                      id: "linked" as const,
+                      label: "Full standard scan",
+                      description: "Use all evidence already mapped to this standard.",
+                    },
+                    {
+                      id: "recent" as const,
+                      label: "Recent uploads",
+                      description: "Start from your latest files, then trim the list.",
+                    },
+                    {
+                      id: "selected" as const,
+                      label: "Selected evidence",
+                      description: "Pick the exact files you want in this run.",
+                    },
+                  ].map((scope) => (
+                    <button
+                      key={scope.id}
+                      type="button"
+                      onClick={() => setAnalysisScope(scope.id)}
+                      className={cn(
+                        "rounded-2xl border px-4 py-4 text-left transition-all",
+                        analysisScope === scope.id
+                          ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
+                          : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:border-primary/40 hover:bg-primary/5",
+                      )}
+                    >
+                      <p className="text-sm font-bold text-foreground">{scope.label}</p>
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{scope.description}</p>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{scopeDescription}</p>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Source Preview</p>
+                  <p className="mt-1 text-sm text-foreground font-semibold">
+                    {analysisScope === "linked" ? "Institution-linked evidence" : "Files included in this run"}
+                  </p>
+                </div>
+                {(analysisScope === "recent" || analysisScope === "selected") && (
+                  <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                    {selectedEvidenceIds.length} chosen
+                  </span>
+                )}
+              </div>
+
+              {analysisScope === "linked" ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Horus will inspect the evidence already attached to criteria inside the selected standard. This is the right option for a full institutional scan.
+                  </p>
+                  <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-background/30 px-4 py-3 text-xs text-muted-foreground">
+                    No manual file picking here. If you want to test fresh uploads first, switch to <span className="text-foreground font-semibold">Recent uploads</span> or <span className="text-foreground font-semibold">Selected evidence</span>.
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <input
+                    value={evidenceSearchQuery}
+                    onChange={(e) => setEvidenceSearchQuery(e.target.value)}
+                    placeholder={analysisScope === "recent" ? "Filter recent uploads..." : "Search evidence by title or filename..."}
+                    className="w-full h-10 glass-input rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                    {evidenceOptions.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-8 text-center text-sm text-muted-foreground">
+                        {analysisScope === "recent"
+                          ? "No recent uploads matched your filter."
+                          : "No evidence matched your search."}
+                      </div>
+                    ) : (
+                      evidenceOptions.map((item) => {
+                        const checked = selectedEvidenceIds.includes(item.id)
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => toggleEvidenceSelection(item.id)}
+                            className={cn(
+                              "w-full rounded-2xl border px-4 py-3 text-left transition-all",
+                              checked
+                                ? "border-primary bg-primary/10"
+                                : "border-[var(--glass-border)] bg-background/30 hover:border-primary/40 hover:bg-primary/5",
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border",
+                                checked ? "border-primary bg-primary text-primary-foreground" : "border-[var(--glass-border)] text-transparent"
+                              )}>
+                                <Check className="h-3.5 w-3.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-foreground">{getEvidenceLabel(item)}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Uploaded {new Date(item.createdAt).toLocaleDateString()}
+                                  {item.documentType ? ` • ${item.documentType}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 border-t border-[var(--glass-border)] pt-5 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">
+                {analysisScope === "linked"
+                  ? "This run will analyze the evidence currently linked to the selected standard."
+                  : `This run will analyze ${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"} against ${selectedStandardObject?.title || "the selected standard"}.`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {analysisScope === "selected" && selectedEvidence.length > 0
+                  ? selectedEvidence.slice(0, 3).map(getEvidenceLabel).join(" • ")
+                  : analysisScope === "recent"
+                    ? "Recent uploads stay editable before you start the scan."
+                    : "Best for full compliance scans after linking evidence in the vault."}
+              </p>
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !selectedStandard || !standards || standards.length === 0}
+              className="flex items-center justify-center gap-2 px-8 py-3 min-h-[44px] bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {generating ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-current" />
+                  Run Gap Analysis
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -625,9 +931,14 @@ function GapAnalysisContent() {
           {/* Previous Reports */}
           {reports && reports.length > 0 && (
             <section className="mt-16 px-4">
-              <div className="flex items-center gap-4 mb-8">
-                <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Previous Scans</h2>
-                <div className="h-px w-20 bg-[var(--border-subtle)]" />
+              <div className="mb-8">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-black italic text-[var(--text-primary)]">Previous Analyses</h2>
+                  <div className="h-px w-20 bg-[var(--border-subtle)]" />
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Each run now keeps the source it used, so you can tell whether Horus scanned linked evidence, recent uploads, or a hand-picked file set.
+                </p>
               </div>
               <div className="space-y-3">
                 {reports
@@ -662,14 +973,33 @@ function GapAnalysisContent() {
                             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
                               {isQueued ? "Analyzing..." : isFailed ? "Analysis Failed" : new Date(report.createdAt).toLocaleDateString()}
                             </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                                {getAnalysisScopeLabel(report.analysisScope)}
+                              </span>
+                              {report.evidenceCount ? (
+                                <span className="rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
+                                  {report.evidenceCount} file{report.evidenceCount === 1 ? "" : "s"}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 self-end sm:self-auto">
                           <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); api.downloadGapAnalysisReport(report.id) }}
-                            className="text-[10px] font-bold text-primary hover:underline transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                            title="Download PDF Report"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleExportSnapshot(report.id)
+                            }}
+                            className={cn(
+                              "text-[10px] font-bold transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100",
+                              isFailed || isQueued
+                                ? "text-muted-foreground/50 cursor-not-allowed pointer-events-none"
+                                : "text-primary hover:underline"
+                            )}
+                            title={isFailed || isQueued ? "Only completed reports can be exported" : "Export snapshot PDF"}
                           >
                             Export PDF
                           </a>

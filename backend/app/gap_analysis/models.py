@@ -15,11 +15,21 @@ class UserDTO(BaseModel):
 class GapAnalysisRequest(BaseModel):
     """Request model for generating a gap analysis."""
     standardId: str = Field(..., description="Standard ID to analyze against")
+    analysisScope: Optional[str] = Field(
+        default="linked",
+        description="linked, selected, or recent",
+    )
+    evidenceIds: Optional[List[str]] = Field(
+        default=None,
+        description="Optional evidence IDs to analyze instead of all linked evidence",
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "standardId": "standard-uuid"
+                "standardId": "standard-uuid",
+                "analysisScope": "selected",
+                "evidenceIds": ["evidence-uuid-1", "evidence-uuid-2"],
             }
         }
 
@@ -50,6 +60,8 @@ class GapAnalysisResponse(BaseModel):
     standardTitle: str
     overallScore: float  # 0-100
     summary: str  # AI executive summary
+    analysisScope: Optional[str] = None
+    evidenceCount: Optional[int] = None
     gaps: List[GapItem]
     recommendations: List[str]  # Top-level recommendations
     status: str = "pending"
@@ -66,6 +78,8 @@ class GapAnalysisListItem(BaseModel):
     standardTitle: str
     overallScore: float
     summary: str
+    analysisScope: Optional[str] = None
+    evidenceCount: Optional[int] = None
     status: str = "pending"
     archived: bool
     createdAt: datetime

@@ -129,9 +129,16 @@ export const SidebarItem = memo(function SidebarItem({
 
       {!isCollapsed && (
         <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
-          {item.label}
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="truncate">{item.label}</span>
+            {item.id === "workflows" && (
+              <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.22em] text-red-400">
+                Beta
+              </span>
+            )}
+          </span>
           {item.id === "horus-ai" && (
-            <span className="flex items-center">
+            <span className="flex items-center shrink-0">
               <span className="relative mr-2 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
@@ -149,6 +156,11 @@ export const SidebarItem = memo(function SidebarItem({
         <TooltipTrigger asChild>{content}</TooltipTrigger>
         <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
           {item.label}
+          {item.id === "workflows" && (
+            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.22em] text-red-400">
+              Beta
+            </span>
+          )}
           {item.id === "horus-ai" && (
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react"
+import { usePathname } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
@@ -99,6 +100,7 @@ const HorusContext = createContext<HorusContextValue | undefined>(undefined)
 
 export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth()
+    const pathname = usePathname()
     const [messages, setMessages] = useState<Message[]>([])
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [status, setStatus] = useState<HorusStatus>("idle")
@@ -139,7 +141,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
 
     // 2. Persistent SSE Event Listener with reconnection
     useEffect(() => {
-        if (!user) return
+        const isHorusPage = pathname?.startsWith("/platform/horus-ai")
+        if (!user || !isHorusPage) return
 
         let eventSource: EventSource | null = null
         let retryCount = 0
@@ -193,7 +196,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             eventSource?.close()
             if (retryTimer) clearTimeout(retryTimer)
         }
-    }, [user])
+    }, [user, pathname])
 
     // 3. Cleanup effect to stop phantom streams on unmount
     useEffect(() => {

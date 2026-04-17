@@ -49,13 +49,22 @@ function DashboardContent() {
   const { data: metrics, isLoading, error, mutate } = useSWR<DashboardMetrics>(
     user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
-    { refreshInterval: 30000 }
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
   )
 
   const { data: standards } = useSWR<Standard[]>(
     user ? [`standards-dashboard`, user.id] : null,
     () => api.getStandards(),
-    { revalidateOnFocus: false }
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
   )
 
   const safeMetrics =
@@ -100,6 +109,7 @@ function DashboardContent() {
       ),
     {
       revalidateOnFocus: false,
+      revalidateOnReconnect: false,
       dedupingInterval: 60_000,
     }
   )

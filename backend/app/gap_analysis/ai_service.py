@@ -189,17 +189,23 @@ def _build_fallback_gap_response(standard: Any, criteria: list, evidence: list, 
     total_criteria = len(criteria) or 1
     partial_count = sum(1 for gap in gaps if gap["status"] == "partially_aligned")
     overall_score = round((partial_count * 50) / total_criteria, 2)
+    standard_title = getattr(standard, "title", "this standard")
+    fallback_reason = (
+        "The AI analysis provider is temporarily unavailable"
+        if has_evidence
+        else "The AI analysis provider is temporarily unavailable and no evidence was found in this run"
+    )
 
     return {
         "overallScore": overall_score,
         "summary": (
-            f"A preliminary fallback report was generated for {getattr(standard, 'title', 'this standard')} because the AI provider "
-            f"is currently unavailable ({str(error)[:140]}). "
-            f"{'Evidence was found and marked for manual review.' if has_evidence else 'No evidence was found in this run.'}"
+            f"A preliminary report was generated for {standard_title}. "
+            f"{fallback_reason}. "
+            f"{'Evidence was found and marked for manual review.' if has_evidence else 'Upload or link evidence, then rerun the analysis.'}"
         ),
         "gaps": gaps,
         "recommendations": [
-            "Reconnect or fund the configured AI provider to generate a full criterion-by-criterion analysis.",
+            "Restore AI provider access to generate a full criterion-by-criterion analysis.",
             "Use this preliminary report to confirm the right files and criteria were selected.",
             "Upload or link additional evidence before rerunning if key criteria still have no supporting documents.",
         ],

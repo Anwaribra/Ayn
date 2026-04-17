@@ -41,6 +41,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showQuickPages, setShowQuickPages] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [isWindowVisible, setIsWindowVisible] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
@@ -71,6 +72,17 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsWindowVisible(document.visibilityState === "visible");
+    };
+
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", updateVisibility);
   }, []);
 
   // Close dropdowns when clicking outside or pressing ESC
@@ -107,9 +119,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
     {
-      refreshInterval: 10_000,
+      refreshInterval: isWindowVisible ? (showNotifications ? 15_000 : 30_000) : 0,
       revalidateOnFocus: false,
-      dedupingInterval: 5_000,
+      revalidateOnReconnect: false,
+      dedupingInterval: 15_000,
     },
   );
   const notificationCount = useMemo(

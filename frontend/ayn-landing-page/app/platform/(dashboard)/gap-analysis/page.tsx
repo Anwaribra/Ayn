@@ -101,6 +101,7 @@ function GapAnalysisContent() {
   useEffect(() => {
     const reportId = searchParams.get("report")
     if (!reportId || !user) return
+    if (activeReport?.id === reportId) return
     let cancelled = false
     api.getGapAnalysis(reportId).then((full) => {
       if (!cancelled) setActiveReport(full)
@@ -108,7 +109,7 @@ function GapAnalysisContent() {
       if (!cancelled) toast.error("Failed to load report")
     })
     return () => { cancelled = true }
-  }, [searchParams, user])
+  }, [searchParams, user, activeReport?.id])
 
   useEffect(() => {
     const standardId = searchParams.get("standardId")
@@ -165,11 +166,21 @@ function GapAnalysisContent() {
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30_000,
+    },
   )
 
   const { data: evidenceList } = useSWR<Evidence[]>(
     user ? ["evidence", user.id] : null,
     () => api.getEvidence(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 15_000,
+    },
   )
 
   const { data: reports, error: reportsError, mutate } = useSWR<GapAnalysisListItem[]>(
@@ -179,6 +190,9 @@ function GapAnalysisContent() {
       // Poll every 3s when there's a pending background job
       // Once the report appears as done (status === 'completed' or 'failed'), stop polling
       refreshInterval: pendingJobId ? 3000 : 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: pendingJobId ? 1500 : 10_000,
       onSuccess: (data: GapAnalysisListItem[]) => {
         if (!pendingJobId) return
         const job = data?.find((r: GapAnalysisListItem) => r.id === pendingJobId)
@@ -253,6 +267,9 @@ function GapAnalysisContent() {
   }, [selectedStandard, analysisScope, selectedEvidenceIds, mutate])
 
   const handleViewReport = useCallback(async (id: string) => {
+    if (activeReport?.id === id) {
+      return activeReport
+    }
     try {
       const full = await api.getGapAnalysis(id)
       setActiveReport(full)
@@ -261,7 +278,7 @@ function GapAnalysisContent() {
       toast.error("Failed to load report")
       return null
     }
-  }, [])
+  }, [activeReport])
 
   const handleExportSnapshot = useCallback(async (reportId?: string) => {
     if (!reportId && !activeReport) {
@@ -344,25 +361,18 @@ function GapAnalysisContent() {
     const severity = getSeverity(item.priority)
     const alignment = getAlignment(item.status)
     const statusClass = severity === "High" ? "status-critical" : severity === "Medium" ? "status-warning" : "status-success"
-    // Deterministic risk score for consistent UI state and testing.
-    const riskScore = alignment === "Not Aligned" ? 90 : alignment === "Partially Aligned" ? 55 : 20
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
       severity,
       alignment,
       desc: item.recommendation ?? "No recommendation available.",
-      riskScore,
       statusClass,
     }
   }) ?? []
 
   const overallScore = activeReport?.overallScore ?? null
   const activeGapCount = gaps.filter((g) => g.severity === "High").length
-  const alignedCount = gaps.filter((g) => g.alignment === "Aligned").length
-  const partiallyAlignedCount = gaps.filter((g) => g.alignment === "Partially Aligned").length
-  const remediationRate = gaps.length > 0 ? Math.round(((alignedCount + partiallyAlignedCount) / gaps.length) * 100) : 0
-  const completedReports = reports?.filter((report) => report.status === "completed").length ?? 0
   const reportsReady = reports !== undefined
   const hasReports = (reports?.length ?? 0) > 0
   const showReportsLoadingState = !reportsReady && !reportsError && !activeReport
@@ -425,28 +435,20 @@ function GapAnalysisContent() {
                   Run Gap Analysis
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Choose the standard, choose the evidence, then run. Horus checks your evidence against each criterion and returns a score, summary, and the main gaps to fix.
+                  Choose one standard, choose the evidence you want, then run. Horus checks each criterion and gives you one report with the summary and the main gaps to fix.
                 </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
+                    1. Choose standard
+                  </span>
+                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
+                    2. Choose evidence
+                  </span>
+                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
+                    3. Run and review report
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-6 grid grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Gaps</p>
-              <p className="mt-2 text-xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Saved Runs</p>
-              <p className="mt-2 text-xl font-bold text-foreground">{completedReports}</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Coverage</p>
-              <p className="mt-2 text-xl font-bold text-[var(--status-success)]">{remediationRate}%</p>
-            </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Latest Score</p>
-              <p className="mt-2 text-xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "No report"}</p>
             </div>
           </div>
         </div>
@@ -530,7 +532,7 @@ function GapAnalysisContent() {
             <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Included Evidence</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Review Selection</p>
                   <p className="mt-1 text-sm text-foreground font-semibold">
                     {analysisScope === "linked" ? "Run on linked evidence" : "Files in this run"}
                   </p>
@@ -677,8 +679,8 @@ function GapAnalysisContent() {
           {activeReport && (
             <div className="mb-10 px-4">
               <div className="glass-panel glass-border rounded-[28px] p-5 sm:p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-3 lg:max-w-[360px]">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
                       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Latest Result</p>
@@ -702,14 +704,14 @@ function GapAnalysisContent() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-4 lg:max-w-[520px]">
+                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-4 lg:flex-1 lg:max-w-[560px]">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">AI Summary</p>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {activeReport.summary || "No summary is available for this analysis yet."}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
+                  <div className="grid grid-cols-2 gap-3 lg:min-w-[220px]">
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Score</p>
                       <p className="mt-2 text-2xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "--"}</p>
@@ -718,13 +720,9 @@ function GapAnalysisContent() {
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Gaps</p>
                       <p className="mt-2 text-2xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
                     </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Saved Runs</p>
-                      <p className="mt-2 text-2xl font-bold text-foreground">{completedReports}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Coverage</p>
-                      <p className="mt-2 text-2xl font-bold text-[var(--status-success)]">{remediationRate}%</p>
+                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 col-span-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
+                      <p className="mt-2 text-base font-bold text-foreground capitalize">{activeReport.status}</p>
                     </div>
                   </div>
                 </div>
@@ -795,7 +793,7 @@ function GapAnalysisContent() {
 
                   <div className="flex-1">
                     <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
+                      <h3 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
                       <div className="flex items-center gap-2">
                         <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.severity === "High" ? "status-critical" : gap.severity === "Medium" ? "status-warning" : "status-success")}>
                           {gap.severity}
@@ -808,35 +806,23 @@ function GapAnalysisContent() {
                     <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
                   </div>
 
-                  <div className="flex items-center gap-10">
-                    <div className="text-right hidden xl:block">
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Risk Impact</div>
-                      <div className="mono text-xl font-bold text-muted-foreground">{gap.riskScore}%</div>
-                    </div>
-                    <div className="h-10 w-px bg-[var(--border-subtle)] hidden md:block" />
-                    <div className="flex flex-col gap-2 w-full md:w-auto">
-                      <div className="flex gap-2">
-                        {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
-                          <Link
-                            href={`/platform/evidence?highlight=${gap.original.criterionId}`}
-                            className="flex-1 flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-button text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all justify-center"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Evidence
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => handleRemediateClick(gap.original)}
-                          className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl justify-center",
-                            (gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") ? "flex-1" : "w-full"
-                          )}
-                        >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          Attach Evidence
-                        </button>
-                      </div>
-                    </div>
+                  <div className="flex w-full md:w-auto flex-col gap-2 md:min-w-[180px]">
+                    {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
+                      <Link
+                        href={`/platform/evidence?highlight=${gap.original.criterionId}`}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] glass-button text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View Evidence
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => handleRemediateClick(gap.original)}
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      Attach Evidence
+                    </button>
                   </div>
                 </div>
               ))}

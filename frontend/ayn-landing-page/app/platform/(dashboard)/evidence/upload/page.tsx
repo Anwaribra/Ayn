@@ -34,10 +34,19 @@ export default function UploadEvidencePage() {
   const [selectedStandardId, setSelectedStandardId] = useState<string>("")
   const [selectedCriterionId, setSelectedCriterionId] = useState<string>("")
 
-  const { data: standards } = useSWR("standards-for-upload", () => api.getStandards())
+  const { data: standards } = useSWR("standards-for-upload", () => api.getStandards(), {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30000,
+  })
   const { data: criteria } = useSWR(
     selectedStandardId ? `criteria-for-upload-${selectedStandardId}` : null,
-    () => api.getCriteria(selectedStandardId)
+    () => api.getCriteria(selectedStandardId),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
   )
 
   // Handle files from the new FileUpload component

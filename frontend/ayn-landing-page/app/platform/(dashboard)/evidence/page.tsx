@@ -32,7 +32,12 @@ function EvidenceContent() {
   usePageTitle("Evidence Vault")
   const { data: evidenceList, isLoading, error, mutate: localMutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
-    () => api.getEvidence()
+    () => api.getEvidence(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 15000,
+    }
   )
 
   const handleDemoLoad = () => {
@@ -115,7 +120,12 @@ function EvidenceContent() {
 
   const { data: standards } = useSWR<any[]>(
     "standards",
-    () => api.getStandards()
+    () => api.getStandards(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
   )
 
   // H3: Client-side filter — fast while server result is cached

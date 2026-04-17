@@ -70,7 +70,15 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  const { data: rawStandards, isLoading } = useSWR(isOpen ? "standards" : null, () => api.getStandards())
+  const { data: rawStandards, isLoading } = useSWR(
+    isOpen ? "standards" : null,
+    () => api.getStandards(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    },
+  )
 
   const templates: Template[] = (rawStandards || []).map(std => ({
     ...std,

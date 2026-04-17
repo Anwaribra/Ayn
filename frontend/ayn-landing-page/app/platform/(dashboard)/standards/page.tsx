@@ -101,7 +101,15 @@ function formatFilterLabel(value?: string | null, fallback = "Uncategorized") {
 
 export default function StandardsPage() {
   const router = useRouter()
-  const { data: standards, isLoading, mutate } = useSWR<Standard[]>("standards", () => api.getStandards())
+  const { data: standards, isLoading, mutate } = useSWR<Standard[]>(
+    "standards",
+    () => api.getStandards(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    },
+  )
 
   const publicStandards = useMemo(
     () => (standards ?? []).filter((standard) => standard.isPublic),
@@ -139,6 +147,7 @@ export default function StandardsPage() {
       ),
     {
       revalidateOnFocus: false,
+      revalidateOnReconnect: false,
       dedupingInterval: 60_000,
     },
   )

@@ -22,7 +22,12 @@ export default function OverviewPage() {
   const { data: metrics, isLoading } = useSWR(
     user ? ["overview-metrics", user.id] : null,
     () => api.getDashboardMetrics(),
-    { refreshInterval: 30000, revalidateOnFocus: false }
+    {
+      refreshInterval: 60000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
   )
 
   if (isLoading && !metrics) {

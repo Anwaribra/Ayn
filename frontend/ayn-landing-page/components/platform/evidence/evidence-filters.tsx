@@ -30,6 +30,8 @@ export function EvidenceFilters({
 
     const { data: standards } = useSWR("standards", () => api.getStandards(), {
         revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        dedupingInterval: 30000,
     })
 
     const hasActiveFilters = activeStatus !== "" || activeStandard !== ""

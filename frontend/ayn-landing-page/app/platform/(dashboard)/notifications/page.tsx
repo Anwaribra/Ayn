@@ -19,7 +19,12 @@ export default function NotificationsPage() {
   const { data: notifications, mutate, isLoading } = useSWR<Notification[]>(
     isAuthenticated && user ? [`notifications-page`, user.id] : null,
     () => api.getNotifications(),
-    { refreshInterval: 10000 }
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 15000,
+    }
   )
 
   const handleMarkAllRead = React.useCallback(async () => {

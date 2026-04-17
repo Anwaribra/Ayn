@@ -290,11 +290,17 @@ function GapAnalysisContent() {
       return
     }
 
-    const { exportToPDF } = await import("@/lib/pdf-export")
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
-    })
-    await exportToPDF("gap-analysis-report-content", buildGapAnalysisFilename(targetReport))
+    try {
+      await api.downloadGapAnalysisReport(targetReport.id)
+      toast.success("Report exported", {
+        description: `Downloaded ${buildGapAnalysisFilename(targetReport)}`,
+      })
+    } catch (downloadError) {
+      console.error(downloadError)
+      toast.error("Failed to export report", {
+        description: "Could not download the PDF export for this report.",
+      })
+    }
   }, [activeReport, handleViewReport])
 
   const handleDelete = useCallback(async (id: string) => {

@@ -659,6 +659,23 @@ class HorusService:
                     institution_line = f" They belong to institution '{institution_name}'."
                 memory_line = ""
 
+                local_fast_response = self._local_fast_response(message, user_name)
+                if local_fast_response:
+                    full_response = local_fast_response
+                    async for piece in _yield_text_chunks(local_fast_response):
+                        yield piece
+
+                    assistant_meta = {"citations": rag_sources} if rag_sources else None
+                    if full_response and background_tasks:
+                        background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response, assistant_meta)
+                        if message:
+                            background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
+                    elif full_response:
+                        await ChatService.save_message(chat_id, user_id, "assistant", full_response, assistant_meta)
+                        if message:
+                            asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
+                    return
+
                 # RAG in Fast Path: when platform keywords present, inject document context
                 rag_fast = ""
                 compliance_kw = ["gap", "compliance", "standard", "criteria", "ncaaa", "iso", "accreditation", "analysis", "evidence", "فجوة", "امتثال", "معيار"]
@@ -1915,6 +1932,60 @@ class HorusService:
 
         word_count = len(lowered.split())
         return word_count <= 12
+
+    @staticmethod
+    def _local_fast_response(message: str | None, user_name: str | None = None) -> str | None:
+        if not message:
+            return None
+
+        msg = message.strip()
+        lowered = msg.lower()
+        safe_name = (user_name or "").strip()
+        first_name = safe_name.split()[0] if safe_name else ""
+        is_arabic = any(ch in msg for ch in "ابتثجحخدذرزسشصضطظعغفقكلمنهوي")
+
+        greetings = {"hi", "hello", "hey", "مرحبا", "اهلا", "أهلا", "صباح الخير", "مساء الخير"}
+        thanks = {"thanks", "thank you", "شكرا", "شكرًا"}
+
+        if lowered in greetings or any(lowered.startswith(f"{token} ") for token in greetings):
+            if is_arabic:
+                name_part = f" يا {first_name}" if first_name else ""
+                return (
+                    f"أهلًا{name_part}. أنا Horus، مساعدك داخل Ayn. "
+                    "أقدر أساعدك في مراجعة الأدلة، تشغيل Gap Analysis، تلخيص الملفات، أو شرح وضع الامتثال عندك."
+                )
+            name_part = f", {first_name}" if first_name else ""
+            return (
+                f"Hi{name_part}. I’m Horus, your Ayn assistant. "
+                "I can help review evidence, run gap analysis, summarize files, and explain your compliance status."
+            )
+
+        if lowered in thanks or any(lowered.startswith(f"{token} ") for token in thanks):
+            return (
+                "على الرحب والسعة. ابعت لي سؤالك أو الملف الذي تريد مراجعته."
+                if is_arabic
+                else "You’re welcome. Send me your question or a file and I’ll help."
+            )
+
+        if lowered.startswith("who are you") or lowered == "what can you do":
+            return (
+                "I’m Horus, the Ayn platform assistant. I can answer questions, summarize uploaded files, "
+                "help with standards and evidence, and guide you through gap analysis."
+            )
+
+        if msg.startswith("من انت") or msg.startswith("من أنت") or "ماذا تستطيع" in msg or "تقدر تعمل ايه" in msg or "تعمل ايه" in msg:
+            return (
+                "أنا Horus، مساعد منصة Ayn. أقدر ألخص الملفات، أراجع الأدلة، أساعدك في المعايير، "
+                "وأوجّهك في Gap Analysis وخطوات الامتثال."
+            )
+
+        if lowered.startswith("how are you"):
+            return "I’m ready to help. Ask me anything about your documents, standards, or compliance work."
+
+        if msg.startswith("كيف حالك"):
+            return "جاهز أساعدك. اسألني عن الملفات أو المعايير أو أي خطوة تخص الامتثال."
+
+        return None
 
     async def _get_active_goal(self, user_id: str, chat_id: str | None) -> str | None:
         try:

@@ -15,12 +15,10 @@ import {
   Info,
   Play,
   Loader2,
-  FileText,
-  X,
-  Check,
   ExternalLink,
+  Check,
 } from "lucide-react"
-import type { GapAnalysisListItem, GapAnalysis, GapItem, Standard, Evidence } from "@/types"
+import type { GapAnalysis, GapItem, Standard, Evidence, GapAnalysisListItem } from "@/types"
 import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
 import { GlassCard } from "@/components/ui/glass-card"
@@ -59,9 +57,9 @@ function getEvidenceLabel(evidence: Evidence) {
 }
 
 function getAnalysisScopeLabel(scope?: string) {
-  if (scope === "selected") return "Selected evidence"
+  if (scope === "selected") return "Selected files"
   if (scope === "recent") return "Recent uploads"
-  return "Full standard scan"
+  return "Linked evidence"
 }
 
 function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
@@ -69,12 +67,10 @@ function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
 
   const summary = (report.summary ?? "").toLowerCase()
 
-  // Matches both has-evidence and no-evidence fallback summaries produced by the backend
   const fallbackSummary =
     summary.includes("preliminary report was generated") &&
     summary.includes("ai provider")
 
-  // Has-evidence fallback: all gaps are partially_aligned with the standard rerun recommendation
   const fallbackGapsPartial =
     (report.gaps?.length ?? 0) > 0 &&
     report.gaps.every((gap) => {
@@ -85,7 +81,6 @@ function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
       )
     })
 
-  // No-evidence fallback: all gaps are no_evidence with the upload-and-rerun recommendation
   const fallbackGapsNoEvidence =
     (report.gaps?.length ?? 0) > 0 &&
     report.gaps.every((gap) => {
@@ -118,6 +113,7 @@ function GapAnalysisContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   usePageTitle("Gap Analysis")
+
   const [selectedStandard, setSelectedStandard] = useState("")
   const [analysisScope, setAnalysisScope] = useState<AnalysisScope>("linked")
   const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
@@ -125,14 +121,10 @@ function GapAnalysisContent() {
   const [generating, setGenerating] = useState(false)
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  // Track in-flight job ID so the SWR can poll until it's done
   const [pendingJobId, setPendingJobId] = useState<string | null>(null)
-
-  // Remediation State
   const [isRemediating, setIsRemediating] = useState(false)
   const [targetGap, setTargetGap] = useState<{ gap: GapItem, standardId: string } | null>(null)
 
-  // Auto-open report when navigating from notification (e.g. ?report=<id>)
   useEffect(() => {
     const reportId = searchParams.get("report")
     if (!reportId || !user) return
@@ -151,79 +143,55 @@ function GapAnalysisContent() {
     const scope = searchParams.get("scope") as AnalysisScope | null
     const evidenceIdsParam = searchParams.get("evidenceIds")
 
-    if (standardId) {
-      setSelectedStandard(standardId)
-    }
-
-    if (scope === "linked" || scope === "recent" || scope === "selected") {
-      setAnalysisScope(scope)
-    }
+    if (standardId) setSelectedStandard(standardId)
+    if (scope === "linked" || scope === "recent" || scope === "selected") setAnalysisScope(scope)
 
     if (evidenceIdsParam) {
-      const ids = evidenceIdsParam
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean)
-
+      const ids = evidenceIdsParam.split(",").map((id) => id.trim()).filter(Boolean)
       if (ids.length > 0) {
         setSelectedEvidenceIds(ids)
-        if (!scope) {
-          setAnalysisScope("selected")
-        }
+        if (!scope) setAnalysisScope("selected")
       }
     }
   }, [searchParams])
 
-  // ESC to close delete confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         if (deleteConfirm) setDeleteConfirm(null)
         if (isRemediating) setIsRemediating(false)
       }
     }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
   }, [deleteConfirm, isRemediating])
 
-  // 2-minute timeout for gap analysis polling
   useEffect(() => {
     if (!pendingJobId) return
     const timer = setTimeout(() => {
       setGenerating(false)
       setPendingJobId(null)
       toast.error("Analysis is taking longer than expected. Try refreshing.")
-    }, 120000)
-
+    }, 120_000)
     return () => clearTimeout(timer)
   }, [pendingJobId])
 
   const { data: standards } = useSWR<Standard[]>(
     user ? "standards" : null,
     () => api.getStandards(),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 30_000,
-    },
+    { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 30_000 },
   )
 
   const { data: evidenceList } = useSWR<Evidence[]>(
     user ? ["evidence", user.id] : null,
     () => api.getEvidence(),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 15_000,
-    },
+    { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 15_000 },
   )
 
   const { data: reports, error: reportsError, mutate } = useSWR<GapAnalysisListItem[]>(
     user ? "gap-analyses" : null,
     () => api.getGapAnalyses(),
     {
-      // Poll every 3s when there's a pending background job
-      // Once the report appears as done (status === 'completed' or 'failed'), stop polling
       refreshInterval: pendingJobId ? 3000 : 0,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -231,7 +199,6 @@ function GapAnalysisContent() {
       onSuccess: (data: GapAnalysisListItem[]) => {
         if (!pendingJobId) return
         const job = data?.find((r: GapAnalysisListItem) => r.id === pendingJobId)
-
         if (job) {
           if (job.status === "completed") {
             setPendingJobId(null)
@@ -244,15 +211,15 @@ function GapAnalysisContent() {
             toast.error("Gap analysis failed.", { description: "An error occurred during evidence analysis." })
           }
         }
-      }
-    }
+      },
+    },
   )
 
   useEffect(() => {
     if (activeReport || !reports || reports.length === 0 || searchParams.get("report")) return
     const latestCompleted = [...reports]
-      .filter((report) => report.status === "completed")
-      .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())[0]
+      .filter((r) => r.status === "completed")
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
 
     if (!latestCompleted) return
 
@@ -262,19 +229,17 @@ function GapAnalysisContent() {
     }).catch(() => {
       if (!cancelled) toast.error("Failed to load the latest report")
     })
-
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [activeReport, reports, searchParams])
 
   const handleGenerate = useCallback(async () => {
     if (!selectedStandard) return toast.error("Select a standard first")
     if ((analysisScope === "recent" || analysisScope === "selected") && selectedEvidenceIds.length === 0) {
       toast.error("Choose at least one file", {
-        description: analysisScope === "recent"
-          ? "Pick one or more recent uploads before starting the scan."
-          : "Select the evidence you want Horus to analyze.",
+        description:
+          analysisScope === "recent"
+            ? "Pick one or more recent uploads before running."
+            : "Select the evidence you want analyzed.",
       })
       return
     }
@@ -285,26 +250,22 @@ function GapAnalysisContent() {
         analysisScope,
         evidenceIds: analysisScope === "linked" ? undefined : selectedEvidenceIds,
       })
-      // 202: queued — set the pending job ID, SWR will poll until done
       setPendingJobId(job.jobId)
       toast.success("Analysis queued", {
         description:
           analysisScope === "linked"
-            ? "Horus is analyzing the evidence already linked to this standard."
-            : `Horus is analyzing ${selectedEvidenceIds.length} selected file${selectedEvidenceIds.length === 1 ? "" : "s"}.`,
+            ? "Horus is checking the evidence linked to this standard."
+            : `Analyzing ${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"}.`,
       })
-      mutate() // Immediately refresh to show the 'queued' stub in the list
+      mutate()
     } catch {
       toast.error("Failed to queue analysis")
       setGenerating(false)
     }
-    // Note: setGenerating(false) is handled in SWR onSuccess once the job completes
   }, [selectedStandard, analysisScope, selectedEvidenceIds, mutate])
 
   const handleViewReport = useCallback(async (id: string) => {
-    if (activeReport?.id === id) {
-      return activeReport
-    }
+    if (activeReport?.id === id) return activeReport
     try {
       const full = await api.getGapAnalysis(id)
       setActiveReport(full)
@@ -320,29 +281,21 @@ function GapAnalysisContent() {
       toast.error("Open a completed report first")
       return
     }
-
     const targetReport =
       !reportId || activeReport?.id === reportId
         ? activeReport
         : await handleViewReport(reportId)
 
     if (!targetReport) return
-
     if (targetReport.status !== "completed") {
-      toast.error("Only completed reports can be exported", {
-        description: "This analysis did not finish successfully, so there is no useful report to export.",
-      })
+      toast.error("Only completed reports can be exported")
       return
     }
 
     const { exportToPDF } = await import("@/lib/pdf-export")
-
     await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => resolve())
-      })
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
     })
-
     await exportToPDF("gap-analysis-report-content", buildGapAnalysisFilename(targetReport))
   }, [activeReport, handleViewReport])
 
@@ -366,23 +319,18 @@ function GapAnalysisContent() {
 
   const handleEvidenceSelected = async (evidence: Evidence) => {
     if (!targetGap) return
-
     try {
       const gapId = crypto.randomUUID()
-      // 1. Create the PlatformGap (State)
       await api.recordGapDefined(
         gapId,
         targetGap.standardId,
-        targetGap.gap.criterionTitle, // Clause/Criterion
-        targetGap.gap.gap, // Description
-        targetGap.gap.priority.toLowerCase() // Severity
+        targetGap.gap.criterionTitle,
+        targetGap.gap.gap,
+        targetGap.gap.priority.toLowerCase(),
       )
-
-      // 2. Link Evidence (Address it)
       await api.recordGapAddressed(gapId, evidence.id)
-
-      toast.success("Evidence linked to gap", {
-        description: `Linked "${evidence.title || "Evidence"}" to ${targetGap.gap.criterionTitle}`
+      toast.success("Evidence linked", {
+        description: `"${evidence.title || "Evidence"}" linked to ${targetGap.gap.criterionTitle}`,
       })
       setIsRemediating(false)
       setTargetGap(null)
@@ -395,7 +343,9 @@ function GapAnalysisContent() {
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
     const severity = getSeverity(item.priority)
     const alignment = getAlignment(item.status)
-    const statusClass = severity === "High" ? "status-critical" : severity === "Medium" ? "status-warning" : "status-success"
+    const statusClass =
+      severity === "High" ? "status-critical" :
+      severity === "Medium" ? "status-warning" : "status-success"
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
@@ -407,27 +357,25 @@ function GapAnalysisContent() {
   }) ?? []
 
   const overallScore = activeReport?.overallScore ?? null
-  const activeGapCount = gaps.filter((g) => g.severity === "High").length
+  const highGapCount = gaps.filter((g) => g.severity === "High").length
   const reportsReady = reports !== undefined
   const hasReports = (reports?.length ?? 0) > 0
   const showReportsLoadingState = !reportsReady && !reportsError && !activeReport
-  const selectedStandardObject = standards?.find((standard) => standard.id === selectedStandard) ?? null
+  const selectedStandardObject = standards?.find((s) => s.id === selectedStandard) ?? null
   const sortedEvidence = useMemo(() => sortEvidenceNewestFirst(evidenceList ?? []), [evidenceList])
   const recentEvidence = useMemo(() => sortedEvidence.slice(0, 8), [sortedEvidence])
   const evidenceOptions = useMemo(() => {
     const pool = analysisScope === "recent" ? recentEvidence : sortedEvidence
     const query = evidenceSearchQuery.trim().toLowerCase()
-
     if (!query) return pool
-
     return pool.filter((item) => {
       const haystack = `${item.title ?? ""} ${item.originalFilename ?? ""} ${item.summary ?? ""}`.toLowerCase()
       return haystack.includes(query)
     })
   }, [analysisScope, recentEvidence, sortedEvidence, evidenceSearchQuery])
+
   useEffect(() => {
     if (analysisScope !== "recent" || recentEvidence.length === 0) return
-
     setSelectedEvidenceIds((current) => {
       const recentIds = recentEvidence.map((item) => item.id)
       const stillValid = current.filter((id) => recentIds.includes(id))
@@ -443,165 +391,107 @@ function GapAnalysisContent() {
     )
   }, [])
 
-  const scopeDescription =
-    analysisScope === "linked"
-      ? "Run against all evidence already linked to this standard across your institution."
-      : analysisScope === "recent"
-        ? "Start from your latest uploads, then keep only the files you want in this run."
-        : "Choose the exact evidence files Horus should analyze for this report."
   const displayedGaps = gaps.slice(0, 5)
   const remainingGapCount = Math.max(gaps.length - displayedGaps.length, 0)
   const isFallbackReport = Boolean(activeReport?.isFallback) || looksLikeLegacyFallbackReport(activeReport)
 
   return (
-    <div className="animate-fade-in-up pb-20 relative">
+    <div className="animate-fade-in-up pb-20">
       <div id="gap-analysis-report-content">
-      <header className="mb-6 pt-6 px-4">
-        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-panel glass-border p-5 sm:p-7 lg:p-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_82%_18%,rgba(239,68,68,0.08),transparent_26%)] pointer-events-none" />
-          <div className="relative z-10 flex flex-col gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="px-2 py-0.5 rounded status-info border">
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Gap Analysis</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] relative">
-                  Run Gap Analysis
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Choose one standard, choose the evidence you want, then run. Horus checks each criterion and gives you one report with the summary and the main gaps to fix.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
-                    1. Choose standard
-                  </span>
-                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
-                    2. Choose evidence
-                  </span>
-                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5">
-                    3. Run and review report
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+
+        {/* ── Page title ── */}
+        <div className="px-4 pt-6 pb-5">
+          <h1 className="text-2xl font-bold text-foreground">Gap Analysis</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Choose a standard, choose your evidence, and run. Horus checks each criterion and shows you where you stand.
+          </p>
         </div>
-      </header>
 
-      {/* Generate Controls */}
-      <div className="px-4 mb-10">
-        <div className="glass-panel p-6 rounded-[28px] glass-border relative overflow-hidden space-y-5">
-          <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.85),transparent)] opacity-70" />
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">1. Choose Standard</p>
-                <select
-                  value={selectedStandard}
-                  onChange={(e) => setSelectedStandard(e.target.value)}
-                  disabled={!standards || standards.length === 0 || generating}
-                  className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="" className="bg-[var(--surface-modal)]">
-                    {!standards ? "Loading standards..." : standards.length === 0 ? "No standards available yet" : "Choose a standard to analyze..."}
+        {/* ── Run form ── */}
+        <div className="px-4 mb-8">
+          <div className="glass-panel glass-border rounded-[28px] p-5 sm:p-6 space-y-5 relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.8),transparent)] opacity-60" />
+
+            {/* Standard picker */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Standard
+              </label>
+              <select
+                value={selectedStandard}
+                onChange={(e) => setSelectedStandard(e.target.value)}
+                disabled={!standards || standards.length === 0 || generating}
+                className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="" className="bg-[var(--surface-modal)]">
+                  {!standards
+                    ? "Loading…"
+                    : standards.length === 0
+                    ? "No standards available"
+                    : "Choose a standard…"}
+                </option>
+                {standards?.map((s: Standard) => (
+                  <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">
+                    {s.title}
                   </option>
-                  {standards?.map((s: Standard) => (
-                    <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">{s.title}</option>
-                  ))}
-                </select>
-                {selectedStandardObject && (
-                  <p className="text-xs text-muted-foreground">
-                    Horus will check {selectedStandardObject.criteriaCount} criteria in this standard.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">2. Choose Evidence</p>
-                  {(analysisScope === "recent" || analysisScope === "selected") && (
-                    <span className="text-[11px] text-primary font-medium">
-                      {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
-                    </span>
-                  )}
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {[
-                    {
-                      id: "linked" as const,
-                      label: "Use linked evidence",
-                      description: "Run on evidence already mapped to this standard.",
-                    },
-                    {
-                      id: "recent" as const,
-                      label: "Use recent uploads",
-                      description: "Start from your latest files, then trim the list.",
-                    },
-                    {
-                      id: "selected" as const,
-                      label: "Pick files myself",
-                      description: "Choose the exact files you want in this run.",
-                    },
-                  ].map((scope) => (
-                    <button
-                      key={scope.id}
-                      type="button"
-                      onClick={() => setAnalysisScope(scope.id)}
-                      className={cn(
-                        "rounded-2xl border px-4 py-4 text-left transition-all",
-                        analysisScope === scope.id
-                          ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
-                          : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:border-primary/40 hover:bg-primary/5",
-                      )}
-                    >
-                      <p className="text-sm font-bold text-foreground">{scope.label}</p>
-                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{scope.description}</p>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">{scopeDescription}</p>
-              </div>
+                ))}
+              </select>
+              {selectedStandardObject && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedStandardObject.criteriaCount} criteria will be checked.
+                </p>
+              )}
             </div>
 
-            <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">3. Review Selection</p>
-                  <p className="mt-1 text-sm text-foreground font-semibold">
-                    {analysisScope === "linked" ? "Run on linked evidence" : "Files in this run"}
-                  </p>
-                </div>
-                {(analysisScope === "recent" || analysisScope === "selected") && (
-                  <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                    {selectedEvidenceIds.length} chosen
-                  </span>
-                )}
+            {/* Evidence scope */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Evidence
+              </label>
+              <div className="grid gap-2.5 sm:grid-cols-3">
+                {SCOPE_OPTIONS.map((scope) => (
+                  <button
+                    key={scope.id}
+                    type="button"
+                    onClick={() => setAnalysisScope(scope.id)}
+                    className={cn(
+                      "rounded-2xl border px-4 py-3.5 text-left transition-all",
+                      analysisScope === scope.id
+                        ? "border-primary bg-primary/10 shadow-sm shadow-primary/10"
+                        : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:border-primary/40 hover:bg-primary/5",
+                    )}
+                  >
+                    <p className="text-sm font-semibold text-foreground">{scope.label}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{scope.description}</p>
+                  </button>
+                ))}
               </div>
 
-              {analysisScope === "linked" ? (
-                <div className="mt-4 space-y-3">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Horus will inspect the evidence already attached to criteria inside the selected standard.
-                  </p>
-                  <div className="rounded-2xl border border-dashed border-[var(--glass-border)] bg-background/30 px-4 py-3 text-xs text-muted-foreground">
-                    If you want to control exactly which files are included, switch to <span className="text-foreground font-semibold">Use recent uploads</span> or <span className="text-foreground font-semibold">Pick files myself</span>.
+              {/* File picker — only for non-linked scopes */}
+              {analysisScope !== "linked" && (
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <input
+                      value={evidenceSearchQuery}
+                      onChange={(e) => setEvidenceSearchQuery(e.target.value)}
+                      placeholder={
+                        analysisScope === "recent"
+                          ? "Filter recent uploads…"
+                          : "Search evidence…"
+                      }
+                      className="flex-1 h-10 glass-input rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    {selectedEvidenceIds.length > 0 && (
+                      <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                        {selectedEvidenceIds.length} selected
+                      </span>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  <input
-                    value={evidenceSearchQuery}
-                    onChange={(e) => setEvidenceSearchQuery(e.target.value)}
-                    placeholder={analysisScope === "recent" ? "Filter recent uploads..." : "Search evidence by title or filename..."}
-                    className="w-full h-10 glass-input rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                  <div className="max-h-64 space-y-1.5 overflow-y-auto pr-1">
                     {evidenceOptions.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-8 text-center text-sm text-muted-foreground">
                         {analysisScope === "recent"
-                          ? "No recent uploads matched your filter."
+                          ? "No recent uploads match your filter."
                           : "No evidence matched your search."}
                       </div>
                     ) : (
@@ -619,18 +509,24 @@ function GapAnalysisContent() {
                                 : "border-[var(--glass-border)] bg-background/30 hover:border-primary/40 hover:bg-primary/5",
                             )}
                           >
-                            <div className="flex items-start gap-3">
-                              <div className={cn(
-                                "mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border",
-                                checked ? "border-primary bg-primary text-primary-foreground" : "border-[var(--glass-border)] text-transparent"
-                              )}>
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={cn(
+                                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                                  checked
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-[var(--glass-border)] text-transparent",
+                                )}
+                              >
                                 <Check className="h-3.5 w-3.5" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-foreground">{getEvidenceLabel(item)}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  Uploaded {new Date(item.createdAt).toLocaleDateString()}
-                                  {item.documentType ? ` • ${item.documentType}` : ""}
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {getEvidenceLabel(item)}
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {new Date(item.createdAt).toLocaleDateString()}
+                                  {item.documentType ? ` · ${item.documentType}` : ""}
                                 </p>
                               </div>
                             </div>
@@ -642,381 +538,410 @@ function GapAnalysisContent() {
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="flex flex-col gap-4 border-t border-[var(--glass-border)] pt-5 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
-                {analysisScope === "linked"
-                  ? `Run ${selectedStandardObject?.title || "this standard"} against all linked evidence.`
-                  : `Run ${selectedStandardObject?.title || "this standard"} against ${selectedEvidenceIds.length} selected file${selectedEvidenceIds.length === 1 ? "" : "s"}.`}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                The AI prompt runs in the background and decides for each criterion whether your evidence is aligned, partial, missing, or needs improvement.
-              </p>
+            {/* Run button */}
+            <div className="border-t border-[var(--glass-border)] pt-4">
+              <button
+                onClick={handleGenerate}
+                disabled={generating || !selectedStandard || !standards || standards.length === 0}
+                className="flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-3 bg-foreground text-background rounded-xl font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {generating ? (
+                  <>
+                    <span className="h-4 w-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
+                    Running…
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 fill-current" />
+                    Run Gap Analysis
+                  </>
+                )}
+              </button>
             </div>
+          </div>
+        </div>
 
+        {/* ── States: error / loading / empty ── */}
+        {reportsError ? (
+          <div className="mx-4 flex flex-col items-center gap-4 rounded-2xl glass-panel glass-border py-12 px-4 text-center">
+            <p className="text-sm text-muted-foreground">Failed to load gap analyses.</p>
             <button
-              onClick={handleGenerate}
-              disabled={generating || !selectedStandard || !standards || standards.length === 0}
-              className="flex items-center justify-center gap-2 px-8 py-3 min-h-[44px] bg-foreground text-background rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-foreground/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              type="button"
+              onClick={() => mutate()}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
-              {generating ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Running analysis...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 fill-current" />
-                  Run Gap Analysis
-                </>
-              )}
+              Retry
             </button>
           </div>
-        </div>
-      </div>
-
-      {reportsError ? (
-        <div className="mt-10 flex flex-col items-center justify-center py-16 px-4 rounded-2xl glass-panel glass-border">
-          <p className="text-muted-foreground text-center mb-4">Failed to load gap analyses.</p>
-          <button
-            type="button"
-            onClick={() => mutate()}
-            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      ) : showReportsLoadingState ? (
-        <div className="mt-10 px-4">
-          <div className="glass-panel glass-border rounded-[28px] p-6 sm:p-8">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Syncing analyses...
-            </div>
-            <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="glass-panel glass-border animate-pulse rounded-[24px] p-6">
-                  <div className="mb-4 h-4 w-40 rounded bg-[var(--surface)]/60" />
-                  <div className="mb-2 h-4 w-3/4 rounded bg-[var(--surface)]/50" />
-                  <div className="h-4 w-1/2 rounded bg-[var(--surface)]/40" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : !hasReports && !activeReport ? (
-        <div className="mt-10">
-          <EmptyState type="gap-analysis" />
-        </div>
-      ) : (
-        <>
-          {activeReport && (
-            <div className="mb-10 px-4">
-              <div className="glass-panel glass-border rounded-[28px] p-5 sm:p-6">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-3 lg:max-w-[360px]">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Latest Result</p>
-                    </div>
-                    <h2 className="text-xl font-bold text-foreground">{activeReport.standardTitle ?? "Gap Analysis Report"}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {activeReport.createdAt ? new Date(activeReport.createdAt).toLocaleString() : "Latest completed analysis"}
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                        {getAnalysisScopeLabel(activeReport.analysisScope)}
-                      </span>
-                      {isFallbackReport ? (
-                        <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300">
-                          Preliminary
-                        </span>
-                      ) : null}
-                      {activeReport.evidenceCount ? (
-                        <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-foreground">
-                          {activeReport.evidenceCount} file{activeReport.evidenceCount === 1 ? "" : "s"}
-                        </span>
-                      ) : null}
-                      <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-foreground">
-                        {activeReport.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-4 lg:flex-1 lg:max-w-[560px]">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">AI Summary</p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {activeReport.summary || "No summary is available for this analysis yet."}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 lg:min-w-[220px]">
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Score</p>
-                      <p className="mt-2 text-2xl font-bold text-primary">{overallScore !== null ? `${Math.round(overallScore)}%` : "--"}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">High Gaps</p>
-                      <p className="mt-2 text-2xl font-bold text-[var(--status-critical)]">{activeGapCount}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 col-span-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
-                      <p className="mt-2 text-base font-bold text-foreground capitalize">{activeReport.status}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => handleExportSnapshot(activeReport.id)}
-                    data-html2canvas-ignore="true"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    Export PDF
-                  </button>
-                  <button
-                    onClick={() => setActiveReport(null)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-background/40"
-                  >
-                    Close report
-                  </button>
-                </div>
+        ) : showReportsLoadingState ? (
+          <div className="px-4">
+            <div className="glass-panel glass-border rounded-[28px] p-6">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading analyses…
               </div>
-            </div>
-          )}
-
-          {/* Gap List / Generating Skeleton */}
-          <div className="space-y-4 px-4">
-            {generating ? (
-              <div className="space-y-4">
-                <div className="text-center py-6">
-                  <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20">
-                    <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <span className="text-sm font-bold text-primary">Horus is analyzing your evidence against the standard...</span>
-                  </div>
-                </div>
-                {Array(3).fill(0).map((_, i) => (
-                  <div key={i} className="glass-panel p-8 rounded-[36px] animate-pulse glass-border">
-                    <div className="flex gap-8">
-                      <div className="w-14 h-14 rounded-2xl glass-input" />
-                      <div className="flex-1 space-y-3">
-                        <div className="h-5 bg-[var(--surface)] rounded-lg w-1/2" />
-                        <div className="h-4 bg-[var(--surface)] rounded-lg w-3/4" />
-                        <div className="h-4 bg-[var(--surface)] rounded-lg w-2/3" />
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="glass-panel glass-border animate-pulse rounded-[20px] p-5">
+                    <div className="mb-3 h-4 w-36 rounded bg-[var(--surface)]/60" />
+                    <div className="h-3 w-3/4 rounded bg-[var(--surface)]/50" />
                   </div>
                 ))}
               </div>
-            ) : isFallbackReport ? (
-              <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 px-5 py-5">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Preliminary report only</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      The AI provider was unavailable during this run, so Horus returned a simple preliminary review instead of full criterion-by-criterion findings.
-                    </p>
-                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                      You can still verify the selected evidence, attach more evidence if needed, then rerun later for a full AI report.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : gaps.length === 0 ? (
-              <div className="text-center py-16">
-                <CheckCircle2 className="w-10 h-10 text-[var(--status-success)] opacity-50 mx-auto mb-4" />
-                <p className="text-sm text-muted-foreground italic">No findings are showing for the current report yet.</p>
-              </div>
-            ) : (
-              <>
-                <div className="mb-2">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Findings</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    These are the main gaps from the current report. Attach evidence where needed, then rerun.
-                  </p>
-                </div>
-                {displayedGaps.map((gap, i) => (
-                <div key={i} className="glass-panel p-6 sm:p-8 rounded-[30px] flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-8 group hover:bg-[var(--surface)] transition-all glass-border relative overflow-hidden animate-fade-in-up opacity-0" style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: 'forwards' }}>
-                  <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.75),transparent)] opacity-0 transition-opacity duration-300 group-hover:opacity-70" />
-                  <div className={cn("w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center border border-[var(--border-subtle)]", gap.statusClass)}>
-                    {gap.severity === "High" ? <AlertTriangle className="w-5 h-5" /> :
-                      gap.severity === "Medium" ? <Info className="w-5 h-5" /> :
-                        <CheckCircle2 className="w-5 h-5" />}
-                  </div>
+            </div>
+          </div>
+        ) : !hasReports && !activeReport ? (
+          <div className="mt-6">
+            <EmptyState type="gap-analysis" />
+          </div>
+        ) : (
+          <>
+            {/* ── Active report ── */}
+            {activeReport && (
+              <div className="mb-8 px-4">
+                <div className="glass-panel glass-border rounded-[28px] p-5 sm:p-6 space-y-4">
 
-                  <div className="flex-1">
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">{gap.title}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.severity === "High" ? "status-critical" : gap.severity === "Medium" ? "status-warning" : "status-success")}>
-                          {gap.severity}
+                  {/* Report header */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1.5">
+                      <h2 className="text-xl font-bold text-foreground">
+                        {activeReport.standardTitle ?? "Gap Analysis Report"}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>
+                          {activeReport.createdAt
+                            ? new Date(activeReport.createdAt).toLocaleDateString(undefined, {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Latest analysis"}
                         </span>
-                        <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border", gap.alignment === "Not Aligned" ? "status-critical" : gap.alignment === "Partially Aligned" ? "status-warning" : "status-success")}>
-                          {gap.alignment}
-                        </span>
+                        <span className="opacity-40">·</span>
+                        <span>{getAnalysisScopeLabel(activeReport.analysisScope)}</span>
+                        {activeReport.evidenceCount ? (
+                          <>
+                            <span className="opacity-40">·</span>
+                            <span>{activeReport.evidenceCount} file{activeReport.evidenceCount === 1 ? "" : "s"}</span>
+                          </>
+                        ) : null}
+                        {isFallbackReport && (
+                          <>
+                            <span className="opacity-40">·</span>
+                            <span className="text-amber-400 font-medium">Preliminary</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl">{gap.desc}</p>
+
+                    {/* Score */}
+                    <div className="flex items-center gap-4 sm:text-right">
+                      {overallScore !== null && (
+                        <div>
+                          <p className="text-3xl font-black text-primary tabular-nums">
+                            {Math.round(overallScore)}%
+                          </p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                            Score
+                          </p>
+                        </div>
+                      )}
+                      {highGapCount > 0 && (
+                        <div>
+                          <p className="text-3xl font-black text-[var(--status-critical)] tabular-nums">
+                            {highGapCount}
+                          </p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                            High priority
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex w-full md:w-auto flex-col gap-2 md:min-w-[180px]">
-                    {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
-                      <Link
-                        href={`/platform/evidence?highlight=${gap.original.criterionId}`}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] glass-button text-foreground rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View Evidence
-                      </Link>
-                    )}
+                  {/* Summary */}
+                  {activeReport.summary && (
+                    <p className="text-sm leading-relaxed text-muted-foreground border-t border-[var(--glass-border)] pt-4">
+                      {activeReport.summary}
+                    </p>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2.5 border-t border-[var(--glass-border)] pt-4">
                     <button
-                      onClick={() => handleRemediateClick(gap.original)}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-xl"
+                      onClick={() => handleExportSnapshot(activeReport.id)}
+                      data-html2canvas-ignore="true"
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
                     >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      Attach Evidence
+                      Export PDF
+                    </button>
+                    <button
+                      onClick={() => setActiveReport(null)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                    >
+                      Close
                     </button>
                   </div>
                 </div>
-              ))}
-              {remainingGapCount > 0 && (
-                <div className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-4 text-center text-sm text-muted-foreground">
-                  {remainingGapCount} more gap{remainingGapCount === 1 ? "" : "s"} exist in this report. The export includes the full report.
-                </div>
-              )}
-              </>
+              </div>
             )}
-          </div>
 
-          {/* Previous Reports */}
-          {reports && reports.length > 0 && (
-            <section className="mt-16 px-4">
-              <details className="glass-panel glass-border rounded-[24px] p-5">
-                <summary className="cursor-pointer list-none">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-lg font-bold text-[var(--text-primary)]">Previous Analyses</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Open this only if you want to revisit older runs.
+            {/* ── Findings ── */}
+            <div className="space-y-3 px-4">
+              {generating ? (
+                <div className="space-y-3">
+                  <div className="flex justify-center py-5">
+                    <div className="inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-5 py-3">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                      <span className="text-sm font-semibold text-primary">
+                        Analyzing your evidence…
+                      </span>
+                    </div>
+                  </div>
+                  {Array(3).fill(0).map((_, i) => (
+                    <div key={i} className="glass-panel glass-border animate-pulse rounded-[28px] p-6">
+                      <div className="flex gap-6">
+                        <div className="h-12 w-12 rounded-2xl glass-input" />
+                        <div className="flex-1 space-y-3">
+                          <div className="h-4 w-1/2 rounded-lg bg-[var(--surface)]" />
+                          <div className="h-3 w-3/4 rounded-lg bg-[var(--surface)]" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : isFallbackReport ? (
+                <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/8 px-5 py-5">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-semibold text-foreground">Preliminary report</p>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        The AI provider was unavailable during this run. Horus produced a basic structure review instead of full criterion findings. Verify your evidence, add more if needed, then rerun when the provider is available.
                       </p>
                     </div>
-                    <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-foreground">
-                      {reports.length}
-                    </span>
                   </div>
-                </summary>
-                <div className="mt-5 space-y-3">
-                  {reports
-                  .filter((report: GapAnalysisListItem) => report.status !== "pending" && report.status !== "running" || report.id === pendingJobId)
-                  .map((report: GapAnalysisListItem) => {
-                    const isQueued = report.status === "pending" || report.status === "running" || report.id === pendingJobId
-                    const isFailed = report.status === "failed"
-                    return (
-                      <GlassCard
-                        key={report.id}
-                        variant={2}
-                        hoverEffect={!isQueued}
-                        shine={!isQueued}
-                        className={cn(
-                          "group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-0 justify-between p-5 rounded-[24px]",
-                          isQueued ? "opacity-70 cursor-wait" : isFailed ? "border-destructive/50 opacity-80" : "cursor-pointer"
-                        )}
-                        onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}
-                      >
-                        <div className="flex items-center gap-5">
-                        <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
-                            {isQueued ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                            ) : isFailed ? (
-                              <AlertTriangle className="w-4 h-4 text-destructive" />
-                            ) : (
-                              <span className="mono text-[10px] font-bold text-muted-foreground">{Math.round(report.overallScore)}%</span>
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-foreground">{report.standardTitle}</h4>
-                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                              {isQueued ? "Analyzing..." : isFailed ? "Analysis Failed" : new Date(report.createdAt).toLocaleDateString()}
-                            </p>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                                {getAnalysisScopeLabel(report.analysisScope)}
-                              </span>
-                              {report.evidenceCount ? (
-                                <span className="rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
-                                  {report.evidenceCount} file{report.evidenceCount === 1 ? "" : "s"}
-                                </span>
-                              ) : null}
-                              {report.isFallback ? (
-                                <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-300">
-                                  Preliminary
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 self-end sm:self-auto">
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleExportSnapshot(report.id)
-                            }}
-                            className={cn(
-                              "text-[10px] font-bold transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100",
-                              isFailed || isQueued
-                                ? "text-muted-foreground/50 cursor-not-allowed pointer-events-none"
-                                : "text-primary hover:underline"
-                            )}
-                            title={isFailed || isQueued ? "Only completed reports can be exported" : "Export snapshot PDF"}
-                          >
-                            Export PDF
-                          </a>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(report.id) }}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                          >
-                            Delete
-                          </button>
-                          <Play className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
-                      </GlassCard>
-                    )
-                  })}
                 </div>
-              </details>
-            </section>
-          )}
-        </>
-      )}
+              ) : gaps.length === 0 ? (
+                <div className="py-14 text-center">
+                  <CheckCircle2 className="mx-auto mb-3 h-9 w-9 text-[var(--status-success)] opacity-40" />
+                  <p className="text-sm text-muted-foreground">No findings for the current report.</p>
+                </div>
+              ) : (
+                <>
+                  {displayedGaps.map((gap, i) => (
+                    <div
+                      key={i}
+                      className="glass-panel glass-border rounded-[24px] p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5 group hover:bg-[var(--surface)] transition-all animate-fade-in-up opacity-0 relative overflow-hidden"
+                      style={{ animationDelay: `${(i + 4) * 60}ms`, animationFillMode: "forwards" }}
+                    >
+                      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.7),transparent)] opacity-0 transition-opacity group-hover:opacity-60" />
+
+                      <div className={cn(
+                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--border-subtle)]",
+                        gap.statusClass,
+                      )}>
+                        {gap.severity === "High" ? (
+                          <AlertTriangle className="h-5 w-5" />
+                        ) : gap.severity === "Medium" ? (
+                          <Info className="h-5 w-5" />
+                        ) : (
+                          <CheckCircle2 className="h-5 w-5" />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <h3 className="text-base font-bold text-foreground">{gap.title}</h3>
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border",
+                            gap.severity === "High" ? "status-critical" :
+                            gap.severity === "Medium" ? "status-warning" : "status-success",
+                          )}>
+                            {gap.severity}
+                          </span>
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border",
+                            gap.alignment === "Not Aligned" ? "status-critical" :
+                            gap.alignment === "Partially Aligned" ? "status-warning" : "status-success",
+                          )}>
+                            {gap.alignment}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-muted-foreground">{gap.desc}</p>
+                      </div>
+
+                      <div className="flex shrink-0 flex-col gap-2 sm:min-w-[160px]">
+                        {(gap.alignment === "Aligned" || gap.alignment === "Partially Aligned") && (
+                          <Link
+                            href={`/platform/evidence?highlight=${gap.original.criterionId}`}
+                            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-xs font-semibold text-foreground transition hover:bg-background/40"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            View Evidence
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => handleRemediateClick(gap.original)}
+                          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                        >
+                          Link Evidence
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {remainingGapCount > 0 && (
+                    <p className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-4 text-center text-sm text-muted-foreground">
+                      {remainingGapCount} more gap{remainingGapCount === 1 ? "" : "s"} — all included in the PDF export.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* ── Previous reports ── */}
+            {reports && reports.length > 0 && (
+              <section className="mt-12 px-4">
+                <details className="glass-panel glass-border rounded-[24px] p-5">
+                  <summary className="cursor-pointer list-none select-none">
+                    <div className="flex items-center justify-between gap-4">
+                      <h2 className="text-base font-semibold text-foreground">Previous runs</h2>
+                      <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                        {reports.length}
+                      </span>
+                    </div>
+                  </summary>
+
+                  <div className="mt-4 space-y-2.5">
+                    {reports
+                      .filter(
+                        (r: GapAnalysisListItem) =>
+                          r.status !== "pending" && r.status !== "running" || r.id === pendingJobId,
+                      )
+                      .map((report: GapAnalysisListItem) => {
+                        const isQueued =
+                          report.status === "pending" ||
+                          report.status === "running" ||
+                          report.id === pendingJobId
+                        const isFailed = report.status === "failed"
+
+                        return (
+                          <GlassCard
+                            key={report.id}
+                            variant={2}
+                            hoverEffect={!isQueued}
+                            shine={!isQueued}
+                            className={cn(
+                              "group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-[20px]",
+                              isQueued
+                                ? "opacity-60 cursor-wait"
+                                : isFailed
+                                ? "border-destructive/40 opacity-75"
+                                : "cursor-pointer",
+                            )}
+                            onClick={isQueued || isFailed ? undefined : () => handleViewReport(report.id)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl glass-input">
+                                {isQueued ? (
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : isFailed ? (
+                                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                                ) : (
+                                  <span className="font-mono text-[10px] font-bold text-muted-foreground">
+                                    {Math.round(report.overallScore)}%
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">{report.standardTitle}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                  <span>
+                                    {isQueued
+                                      ? "Analyzing…"
+                                      : isFailed
+                                      ? "Failed"
+                                      : new Date(report.createdAt).toLocaleDateString()}
+                                  </span>
+                                  <span className="opacity-40">·</span>
+                                  <span>{getAnalysisScopeLabel(report.analysisScope)}</span>
+                                  {report.evidenceCount ? (
+                                    <>
+                                      <span className="opacity-40">·</span>
+                                      <span>{report.evidenceCount} file{report.evidenceCount === 1 ? "" : "s"}</span>
+                                    </>
+                                  ) : null}
+                                  {report.isFallback && (
+                                    <>
+                                      <span className="opacity-40">·</span>
+                                      <span className="text-amber-400 font-medium">Preliminary</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 self-end sm:self-auto">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handleExportSnapshot(report.id)
+                                }}
+                                disabled={isFailed || isQueued}
+                                className="text-[11px] font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity disabled:text-muted-foreground/40 disabled:pointer-events-none"
+                              >
+                                Export PDF
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteConfirm(report.id)
+                                }}
+                                className="text-[11px] font-semibold text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                              >
+                                Delete
+                              </button>
+                              <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                          </GlassCard>
+                        )
+                      })}
+                  </div>
+                </details>
+              </section>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setDeleteConfirm(null)}
+        >
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Confirm deletion"
-            className="glass-panel rounded-2xl p-8 max-w-sm w-full glass-border shadow-2xl"
+            className="glass-panel glass-border rounded-2xl p-7 max-w-sm w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Delete Report?</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6">This gap analysis report will be permanently removed.</p>
+            <h3 className="text-base font-bold text-foreground mb-1">Delete this report?</h3>
+            <p className="text-sm text-muted-foreground mb-6">This cannot be undone.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-lg glass-button text-[var(--text-secondary)] text-sm font-medium transition-all"
+                className="flex-1 rounded-xl border border-[var(--glass-border)] py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-all"
+                className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-medium text-destructive-foreground transition hover:bg-destructive/90"
               >
                 Delete
               </button>
@@ -1025,7 +950,7 @@ function GapAnalysisContent() {
         </div>
       )}
 
-      {/* Evidence Selector Modal */}
+      {/* Evidence selector */}
       <EvidenceSelector
         open={isRemediating}
         onOpenChange={setIsRemediating}
@@ -1034,3 +959,21 @@ function GapAnalysisContent() {
     </div>
   )
 }
+
+const SCOPE_OPTIONS: { id: AnalysisScope; label: string; description: string }[] = [
+  {
+    id: "linked",
+    label: "Linked evidence",
+    description: "Use evidence already mapped to this standard.",
+  },
+  {
+    id: "recent",
+    label: "Recent uploads",
+    description: "Start from your latest files, then trim the list.",
+  },
+  {
+    id: "selected",
+    label: "Pick files",
+    description: "Choose the exact files you want in this run.",
+  },
+]

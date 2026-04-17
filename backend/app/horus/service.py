@@ -1470,7 +1470,26 @@ class HorusService:
                         full_response = "The connection was interrupted. Please try sending your message again."
                         yield full_response
 
-        # 4. Save Assistant Response in Background to release the generator faster
+        # 4. Emit contextual next-step suggestions if the response was substantive
+        if full_response.strip() and not full_response.startswith("My AI provider"):
+            try:
+                if file_results:
+                    primary = file_results[0] if file_results else {}
+                    sug = self._get_file_suggestions(
+                        filename=primary.get("filename", "file"),
+                        message=message,
+                        file_type=primary.get("mime_type", ""),
+                    )
+                elif self._needs_compliance_analysis(message) or self._has_explicit_platform_action_intent(message):
+                    sug = self._get_chat_suggestions(message, full_response)
+                else:
+                    sug = []
+                if sug:
+                    yield f"__AGENT_SUGGESTIONS__:{json.dumps(sug)}\n"
+            except Exception as _sug_err:
+                logger.debug(f"Suggestion generation skipped: {_sug_err}")
+
+        # 5. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:
             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
             if message:
@@ -1947,6 +1966,142 @@ Behavioral rules:
             return "جاهز أساعدك. اسألني عن الملفات أو المعايير أو أي خطوة تخص الامتثال."
 
         return None
+
+
+    @staticmethod
+    def _get_file_suggestions(filename: str, message: str | None, file_type: str) -> list[dict]:
+        """Return contextual next-step action suggestions after file analysis.
+        Suggestions are classified by file characteristics and message intent."""
+        fname = filename.lower()
+        msg = (message or "").lower()
+
+        is_image = file_type.startswith("image/")
+
+        is_policy = any(kw in fname or kw in msg for kw in [
+            "policy", "accreditation", "ncaaa", "iso", "standard", "procedure", "manual",
+            "quality", "governance", "framework", "regulation", "compliance", "charter",
+            "سياسة", "معيار", "امتثال", "جودة", "اعتماد",
+        ])
+        is_evidence = any(kw in fname or kw in msg for kw in [
+            "evidence", "survey", "data", "results", "performance", "outcome",
+            "student", "faculty", "enrollment", "أدلة", "بيانات", "نتائج",
+        ])
+        is_report = any(kw in fname or kw in msg for kw in [
+            "report", "audit", "review", "assessment", "evaluation",
+            "تقرير", "تدقيق", "مراجعة", "تقييم",
+        ])
+        already_summarizing = any(kw in msg for kw in [
+            "summarize", "summary", "ملخص", "لخص",
+        ])
+
+        suggestions: list[dict] = []
+
+        if is_image:
+            suggestions.append({
+                "id": "extract_text",
+                "label": "Extract visible text",
+                "prompt": "Extract and organize all visible text from this image",
+                "icon": "type",
+            })
+            suggestions.append({
+                "id": "identify_issues",
+                "label": "Identify issues",
+                "prompt": "Identify any compliance-relevant issues or concerns visible in this image",
+                "icon": "alert-triangle",
+            })
+            return suggestions[:4]
+
+        if not already_summarizing:
+            suggestions.append({
+                "id": "summarize",
+                "label": "Summarize key points",
+                "prompt": "Summarize the key points of this document clearly and concisely",
+                "icon": "file-text",
+            })
+
+        if is_policy or fname.endswith(".pdf"):
+            suggestions.append({
+                "id": "extract_risks",
+                "label": "Extract compliance risks",
+                "prompt": "Identify and list any compliance risks or gaps in this document, prioritized by severity",
+                "icon": "alert-triangle",
+            })
+            suggestions.append({
+                "id": "map_standards",
+                "label": "Map to standards",
+                "prompt": "Map the content of this document to relevant accreditation criteria (NCAAA, ISO 21001, or the applicable framework)",
+                "icon": "git-merge",
+            })
+
+        if is_evidence:
+            suggestions.append({
+                "id": "link_criteria",
+                "label": "Link to criteria",
+                "prompt": "Which accreditation criteria does this evidence best support? List the most relevant ones.",
+                "icon": "link",
+            })
+            suggestions.append({
+                "id": "assess_completeness",
+                "label": "Assess evidence quality",
+                "prompt": "Is this evidence sufficient to demonstrate compliance? What is still missing?",
+                "icon": "shield-check",
+            })
+
+        if is_report or is_policy:
+            suggestions.append({
+                "id": "remediation",
+                "label": "Build remediation checklist",
+                "prompt": "Create a prioritized remediation checklist for the gaps and issues in this document",
+                "icon": "list-checks",
+            })
+
+        suggestions.append({
+            "id": "gap_analysis",
+            "label": "Run gap analysis",
+            "prompt": "Run a gap analysis using this document as evidence and show which criteria are covered vs still missing",
+            "icon": "bar-chart-2",
+        })
+
+        return suggestions[:4]
+
+    @staticmethod
+    def _get_chat_suggestions(message: str | None, response: str | None) -> list[dict]:
+        """Return follow-up suggestions after a compliance discussion in text mode."""
+        resp = (response or "").lower()
+        suggestions: list[dict] = []
+
+        if any(kw in resp for kw in ["gap", "missing", "not covered", "no evidence", "criterion"]):
+            suggestions.append({
+                "id": "remediation",
+                "label": "Create remediation plan",
+                "prompt": "Create a detailed remediation plan with specific steps and priorities based on these gaps",
+                "icon": "list-checks",
+            })
+
+        if any(kw in resp for kw in ["score", "compliance", "percentage", "aligned", "readiness"]):
+            suggestions.append({
+                "id": "gap_analysis",
+                "label": "Run full gap analysis",
+                "prompt": "Run a full gap analysis against our active standards and show detailed findings",
+                "icon": "bar-chart-2",
+            })
+
+        if any(kw in resp for kw in ["evidence", "document", "criteria", "standard", "upload"]):
+            suggestions.append({
+                "id": "review_evidence",
+                "label": "Review evidence coverage",
+                "prompt": "Show me which criteria have evidence mapped and which ones still need documentation",
+                "icon": "shield-check",
+            })
+
+        suggestions.append({
+            "id": "next_steps",
+            "label": "What should I prioritize?",
+            "prompt": "Based on our current compliance situation, what should I focus on first?",
+            "icon": "arrow-right",
+        })
+
+        return suggestions[:3]
 
     async def _get_active_goal(self, user_id: str, chat_id: str | None) -> str | None:
         try:

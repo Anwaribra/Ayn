@@ -45,6 +45,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus, type CitationSource, type ToolStep, type FileStatus, type Message as HorusMessage, type AgentRunMeta } from "@/lib/horus-context"
+import { SuggestedActionsPanel, StarterScenarioCard, STARTER_SCENARIOS } from "./suggested-actions"
 import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -253,12 +254,81 @@ function AgentRunHeader({
   meta?: AgentRunMeta | null
   isArabic: boolean
 }) {
+  const [planExpanded, setPlanExpanded] = useState(false)
   if (!meta) return null
+
   const routeLabel = formatAgentRoute(meta, isArabic)
   const intentLabel = formatAgentIntent(meta, isArabic)
-  const stepCountLabel = meta.step_count && meta.step_count > 1
+  const isPlan = meta.route === "plan" || meta.route === "planner"
+  const hasMultipleSteps = (meta.step_count ?? 0) > 1
+  const stepCountLabel = hasMultipleSteps
     ? (isArabic ? `${meta.step_count} خطوات` : `${meta.step_count} steps`)
     : null
+
+  // Plan card — shown for multi-step workflows
+  if (isPlan && meta.goal) {
+    const planSteps: string[] = meta.tools?.length
+      ? meta.tools
+      : meta.step_count
+        ? Array.from({ length: meta.step_count }, (_, i) => `Step ${i + 1}`)
+        : []
+
+    return (
+      <div className="mb-2 overflow-hidden rounded-2xl border border-emerald-500/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.10),rgba(16,185,129,0.04))] shadow-[0_16px_44px_-32px_rgba(16,185,129,0.45)]">
+        <div className="flex items-start justify-between gap-2 px-3.5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300">
+              {isArabic ? "خطة الوكيل" : "Agent plan"}
+            </span>
+            {stepCountLabel && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                {stepCountLabel}
+              </span>
+            )}
+            {intentLabel && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                {intentLabel}
+              </span>
+            )}
+          </div>
+          {planSteps.length > 0 && (
+            <button
+              onClick={() => setPlanExpanded(p => !p)}
+              className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={planExpanded ? "Collapse plan" : "Expand plan"}
+            >
+              {planExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
+
+        <div className="border-t border-white/8 px-3.5 py-3">
+          <p className="text-[12px] font-semibold text-foreground/90">
+            {meta.goal}
+          </p>
+          {meta.reason && (
+            <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{meta.reason}</p>
+          )}
+        </div>
+
+        {planExpanded && planSteps.length > 0 && (
+          <div className="border-t border-white/8 px-3.5 py-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/60">
+              {isArabic ? "خطوات التنفيذ" : "Execution steps"}
+            </p>
+            {planSteps.map((step, i) => (
+              <div key={i} className="flex items-center gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[9px] font-bold text-emerald-300">
+                  {i + 1}
+                </span>
+                <span className="text-[12px] text-foreground/80">{step}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="mb-2 rounded-2xl border border-emerald-500/12 bg-[linear-gradient(180deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03))] p-3 shadow-[0_16px_40px_-32px_rgba(16,185,129,0.5)]">
@@ -549,6 +619,7 @@ export default function HorusAIChat() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const starterFileInputRef = useRef<HTMLInputElement>(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const userRequestedScrollRef = useRef(false)
   const fallbackQueueRef = useRef<string[]>([])
@@ -1200,7 +1271,15 @@ export default function HorusAIChat() {
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
-                <div className="flex flex-col items-center justify-center gap-8 md:gap-10 w-full min-h-0 max-h-full py-2">
+                {/* Hidden file input for starter card "Analyze a document" */}
+                <input
+                  ref={starterFileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,image/*"
+                  onChange={handleFileSelect}
+                />
+                <div className="flex flex-col items-center justify-center gap-6 md:gap-8 w-full min-h-0 max-h-full py-2">
                   {/* Classic Orb Loader */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
@@ -1208,22 +1287,33 @@ export default function HorusAIChat() {
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center justify-center"
                   >
-                    <AiLoader size={220} text="Horus AI" />
+                    <AiLoader size={200} text="Horus AI" />
                   </motion.div>
-                  <div className="text-center max-w-[620px]">
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Ask Horus about anything</h1>
-                    <p className="mt-2 text-sm text-muted-foreground md:text-base">
-                      <span className="sm:hidden">Run analysis or get your next best action.</span>
-                      <span className="hidden sm:inline">Upload evidence, run gap analysis, or get a prioritized remediation plan in seconds.</span>
+                  <div className="text-center max-w-[560px]">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Your compliance agent</h1>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Upload documents, run analysis, or ask anything about your accreditation programme.
                     </p>
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <span className="glass-pill glass-text-secondary px-3 py-1 text-[11px] font-medium">
-                        Deep Research {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "ready" : "offline"}
-                      </span>
-                    </div>
                   </div>
 
-                  {/* Quick prompts moved to slash command palette */}
+                  {/* Starter scenario cards */}
+                  <div className="grid grid-cols-2 gap-2.5 w-full max-w-[480px] sm:max-w-[520px]">
+                    {STARTER_SCENARIOS.map((scenario, i) => (
+                      <StarterScenarioCard
+                        key={scenario.id}
+                        scenario={scenario}
+                        index={i}
+                        onSelect={(prompt) => handleSendMessage(prompt)}
+                        onFileMode={() => starterFileInputRef.current?.click()}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="glass-pill glass-text-secondary px-3 py-1 text-[11px] font-medium">
+                      Deep Research {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "ready" : "offline"}
+                    </span>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1502,6 +1592,18 @@ export default function HorusAIChat() {
                                 ))}
                               </div>
                             </div>
+                          )}
+
+                          {/* Suggested next-step actions — shown after last assistant message when idle */}
+                          {msg.role === "assistant" &&
+                            msg.id === lastAssistantMsgId &&
+                            status === "idle" &&
+                            !!(msg as any).agentSuggestions?.length && (
+                            <SuggestedActionsPanel
+                              suggestions={(msg as any).agentSuggestions}
+                              onSelect={(prompt) => handleSendMessage(prompt)}
+                              isArabic={isArabicMessage}
+                            />
                           )}
 
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}

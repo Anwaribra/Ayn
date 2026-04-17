@@ -32,6 +32,13 @@ export type AgentRunMeta = {
     step_count?: number
 }
 
+export type AgentSuggestion = {
+    id: string
+    label: string
+    prompt: string
+    icon: string
+}
+
 export interface Message {
     id: string
     role: "user" | "assistant" | "system"
@@ -59,6 +66,8 @@ export interface Message {
     citations?: CitationSource[]
     /** Agent route/goal metadata (from __AGENT_RUN__ protocol) */
     agentRun?: AgentRunMeta | null
+    /** Contextual next-step suggestions (from __AGENT_SUGGESTIONS__ protocol) */
+    agentSuggestions?: AgentSuggestion[]
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
@@ -426,6 +435,21 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                                 ))
                             } catch (e) {
                                 console.error("[Horus] Failed to parse action result:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__AGENT_SUGGESTIONS__:")) {
+                            try {
+                                const jsonStr = line.slice("__AGENT_SUGGESTIONS__:".length).trim()
+                                const parsed = JSON.parse(jsonStr) as AgentSuggestion[]
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    setMessages(prev => prev.map(m =>
+                                        m.id === assistantMsgId ? { ...m, agentSuggestions: parsed } : m
+                                    ))
+                                }
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse agent suggestions:", e)
                             }
                             return true
                         }

@@ -50,29 +50,6 @@ function getAlignment(value?: string): UiAlignment {
   return "Not Aligned"
 }
 
-function getGapAction(item: GapItem) {
-  const status = (item.status ?? "").toLowerCase()
-  if (status === "no_evidence" || status === "not_aligned" || status === "missing") {
-    return {
-      label: "Link Evidence",
-      helper: "No matching evidence is linked to this criterion yet.",
-      showButton: true,
-    }
-  }
-  if (status === "partially_aligned" || status === "partially_met") {
-    return {
-      label: "",
-      helper: "Evidence is already linked here. Review its coverage, then rerun the analysis.",
-      showButton: false,
-    }
-  }
-  return {
-    label: "",
-    helper: "This criterion does not need a new evidence link right now.",
-    showButton: false,
-  }
-}
-
 function getEvidenceLabel(evidence: Evidence) {
   return evidence.title || evidence.originalFilename || "Untitled evidence"
 }
@@ -143,8 +120,6 @@ function GapAnalysisContent() {
   const [activeReport, setActiveReport] = useState<GapAnalysis | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [pendingJobId, setPendingJobId] = useState<string | null>(null)
-  const [isRemediating, setIsRemediating] = useState(false)
-  const [targetGap, setTargetGap] = useState<{ gap: GapItem, standardId: string } | null>(null)
 
   useEffect(() => {
     const reportId = searchParams.get("report")
@@ -180,12 +155,11 @@ function GapAnalysisContent() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (deleteConfirm) setDeleteConfirm(null)
-        if (isRemediating) setIsRemediating(false)
       }
     }
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [deleteConfirm, isRemediating])
+  }, [deleteConfirm])
 
   useEffect(() => {
     if (!pendingJobId) return
@@ -338,42 +312,12 @@ function GapAnalysisContent() {
     }
   }, [mutate, activeReport])
 
-  const handleRemediateClick = (gapItem: GapItem) => {
-    if (!activeReport) return
-    setTargetGap({ gap: gapItem, standardId: activeReport.standardId })
-    setIsRemediating(true)
-  }
-
-  const handleEvidenceSelected = async (evidence: Evidence) => {
-    if (!targetGap) return
-    try {
-      const gapId = crypto.randomUUID()
-      await api.recordGapDefined(
-        gapId,
-        targetGap.standardId,
-        targetGap.gap.criterionTitle,
-        targetGap.gap.gap,
-        targetGap.gap.priority.toLowerCase(),
-      )
-      await api.recordGapAddressed(gapId, evidence.id)
-      toast.success("Evidence linked", {
-        description: `"${evidence.title || "Evidence"}" linked to ${targetGap.gap.criterionTitle}`,
-      })
-      setIsRemediating(false)
-      setTargetGap(null)
-    } catch (error) {
-      console.error(error)
-      toast.error("Failed to link evidence")
-    }
-  }
-
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
     const severity = getSeverity(item.priority)
     const alignment = getAlignment(item.status)
     const statusClass =
       severity === "High" ? "status-critical" :
       severity === "Medium" ? "status-warning" : "status-success"
-    const action = getGapAction(item)
     return {
       original: item,
       title: item.criterionTitle ?? "Unnamed Criterion",
@@ -381,7 +325,6 @@ function GapAnalysisContent() {
       alignment,
       desc: item.recommendation ?? "No recommendation available.",
       statusClass,
-      action,
     }
   }) ?? []
 
@@ -801,19 +744,6 @@ function GapAnalysisContent() {
                         <p className="text-sm leading-relaxed text-muted-foreground">{gap.desc}</p>
                       </div>
 
-                      <div className="shrink-0 self-stretch sm:self-center flex flex-col items-end justify-center gap-2 min-w-[220px]">
-                        {gap.action.showButton ? (
-                          <button
-                            onClick={() => handleRemediateClick(gap.original)}
-                            className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
-                          >
-                            {gap.action.label}
-                          </button>
-                        ) : null}
-                        <p className="max-w-[220px] text-right text-xs leading-relaxed text-muted-foreground">
-                          {gap.action.helper}
-                        </p>
-                      </div>
                     </div>
                   ))}
 
@@ -974,13 +904,6 @@ function GapAnalysisContent() {
           </div>
         </div>
       )}
-
-      {/* Evidence selector */}
-      <EvidenceSelector
-        open={isRemediating}
-        onOpenChange={setIsRemediating}
-        onSelect={handleEvidenceSelected}
-      />
     </div>
   )
 }

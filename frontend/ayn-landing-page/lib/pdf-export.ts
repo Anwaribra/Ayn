@@ -23,6 +23,83 @@ const downloadFallbackSnapshot = (dataUrl: string, filename: string) => {
   anchor.click();
 };
 
+const UNSUPPORTED_COLOR_FN = /\b(?:oklab|oklch|lab|lch|color-mix)\(/i;
+
+const COLOR_STYLE_PROPERTIES = [
+  "color",
+  "backgroundColor",
+  "borderColor",
+  "borderTopColor",
+  "borderRightColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "outlineColor",
+  "textDecorationColor",
+  "caretColor",
+  "fill",
+  "stroke",
+] as const;
+
+const resolveSafeCssValue = (
+  sandbox: HTMLDivElement,
+  property: string,
+  value: string,
+) => {
+  if (!value || !UNSUPPORTED_COLOR_FN.test(value)) return value;
+
+  const previous = sandbox.style.getPropertyValue(property);
+  sandbox.style.setProperty(property, value);
+  const resolved = window.getComputedStyle(sandbox).getPropertyValue(property).trim();
+  sandbox.style.setProperty(property, previous);
+
+  if (!resolved || UNSUPPORTED_COLOR_FN.test(resolved)) return "";
+  return resolved;
+};
+
+const sanitizeExportColors = (root: HTMLElement) => {
+  const sandbox = document.createElement("div");
+  sandbox.setAttribute("aria-hidden", "true");
+  sandbox.style.position = "fixed";
+  sandbox.style.left = "-30000px";
+  sandbox.style.top = "0";
+  sandbox.style.pointerEvents = "none";
+  sandbox.style.opacity = "0";
+  document.body.appendChild(sandbox);
+
+  const nodes = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+
+  nodes.forEach((node) => {
+    const computed = window.getComputedStyle(node);
+
+    COLOR_STYLE_PROPERTIES.forEach((property) => {
+      const value = computed[property];
+      if (!value || !UNSUPPORTED_COLOR_FN.test(value)) return;
+
+      const safeValue = resolveSafeCssValue(sandbox, property, value);
+      if (safeValue) {
+        node.style.setProperty(property, safeValue);
+      }
+    });
+
+    const boxShadow = computed.boxShadow;
+    if (boxShadow && UNSUPPORTED_COLOR_FN.test(boxShadow)) {
+      node.style.boxShadow = "none";
+    }
+
+    const textShadow = computed.textShadow;
+    if (textShadow && UNSUPPORTED_COLOR_FN.test(textShadow)) {
+      node.style.textShadow = "none";
+    }
+
+    const backgroundImage = computed.backgroundImage;
+    if (backgroundImage && UNSUPPORTED_COLOR_FN.test(backgroundImage)) {
+      node.style.backgroundImage = "none";
+    }
+  });
+
+  sandbox.remove();
+};
+
 export interface ExportPDFOptions {
   backgroundColor?: string;
   toastLabel?: string;
@@ -78,6 +155,7 @@ export const exportToPDF = async (
     document.body.appendChild(exportHost);
 
     try {
+      sanitizeExportColors(clone);
       await waitForImages(clone);
       await waitForNextFrame();
       await waitForNextFrame();

@@ -178,28 +178,51 @@ interface DonutProps {
 }
 
 export function DonutChart({ data, title, subtitle }: DonutProps) {
+  const { isArabic } = useUiLanguage()
+  const hasData = data.length > 0 && data.some((d) => d.value > 0)
+
   return (
-    <ChartCardShell title={title} subtitle={subtitle} accentColor="#0d9668" className="flex flex-col">
-      <div className="flex-1 min-h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={55}
-              outerRadius={85}
-              paddingAngle={3}
-              dataKey="value"
-              strokeWidth={0}
-            >
-              {data.map((_, i) => (<Cell key={i} fill={PALETTE[i % PALETTE.length]} />))}
-            </Pie>
-            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} />
-            <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ color: "var(--text-secondary)", fontSize: "11px", fontWeight: 600 }}>{v}</span>} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#0d9668">
+      {!hasData ? (
+        <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+          {isArabic ? "لا توجد بيانات بعد" : "No data yet"}
+        </div>
+      ) : (
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={data.length > 1 ? 3 : 0}
+                dataKey="value"
+                strokeWidth={0}
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={tooltipStyle}
+                itemStyle={itemStyle}
+                formatter={(v, name) => [v, name]}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={8}
+                formatter={(v) => (
+                  <span style={{ color: "var(--text-secondary)", fontSize: "11px", fontWeight: 600 }}>
+                    {v}
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </ChartCardShell>
   )
 }

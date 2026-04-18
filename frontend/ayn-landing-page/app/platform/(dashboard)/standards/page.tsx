@@ -406,15 +406,7 @@ export default function StandardsPage() {
               { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
               { label: isArabic ? "المعايير" : "Standards Hub" },
             ]}
-            actions={
-              <Button
-                onClick={() => setIsPDFModalOpen(true)}
-                className="min-h-[44px] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
-              >
-                <FileUp className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
-                {isArabic ? "استيراد إطار" : "Import Framework"}
-              </Button>
-            }
+            actions={undefined}
           />
 
           <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8", isArabic && "font-arabic")}>

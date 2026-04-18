@@ -1,7 +1,7 @@
 import type { Standard } from "@/types"
 
 /** Public standards omitted from hub, sidebar, and gap-analysis pickers. */
-const EXCLUDED_FROM_NAV_STANDARD_IDS = new Set<string>(["naqaa", "ncaaa"])
+const EXCLUDED_FROM_NAV_STANDARD_IDS = new Set<string>(["naqaa", "ncaaa", "iso21001", "advanced", "moe", "qaa"])
 
 export function isStandardHiddenFromNavigation(standardId: string): boolean {
   return EXCLUDED_FROM_NAV_STANDARD_IDS.has(standardId)

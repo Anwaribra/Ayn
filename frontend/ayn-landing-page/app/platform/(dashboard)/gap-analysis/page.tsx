@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/platform/empty-state"
 import { GlassCard } from "@/components/ui/glass-card"
 import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
+import { isStandardHiddenFromNavigation } from "@/lib/standard-display"
 
 type AnalysisScope = "linked" | "recent" | "selected"
 
@@ -237,6 +238,12 @@ function GapAnalysisContent() {
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [deleteConfirm])
+
+  useEffect(() => {
+    if (selectedStandard && isStandardHiddenFromNavigation(selectedStandard)) {
+      setSelectedStandard("")
+    }
+  }, [selectedStandard])
 
   useEffect(() => {
     if (!pendingJobId) return
@@ -479,7 +486,9 @@ function GapAnalysisContent() {
                     ? copy.noStandards
                     : copy.chooseStandard}
                 </option>
-                {standards?.map((s: Standard) => (
+                {standards
+                  ?.filter((s: Standard) => !isStandardHiddenFromNavigation(s.id))
+                  .map((s: Standard) => (
                   <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">
                     {s.title}
                   </option>

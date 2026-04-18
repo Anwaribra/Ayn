@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import type { Standard } from "@/types"
-import { getStandardDisplayTitle } from "@/lib/standard-display"
+import { getStandardDisplayTitle, isStandardHiddenFromNavigation } from "@/lib/standard-display"
 import { AynLogo } from "@/components/ayn-logo"
 import {
   Tooltip,
@@ -206,7 +206,7 @@ const StandardsFrameworkLinks = memo(function StandardsFrameworkLinks({
   if (isCollapsed || !standards?.length) return null
 
   const publicStandards = standards
-    .filter((s) => s.isPublic && s.id)
+    .filter((s) => s.isPublic && s.id && !isStandardHiddenFromNavigation(s.id))
     .sort((a, b) => getStandardDisplayTitle(a, isArabic).localeCompare(getStandardDisplayTitle(b, isArabic)))
 
   if (!publicStandards.length) return null

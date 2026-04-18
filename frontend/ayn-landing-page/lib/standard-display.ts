@@ -1,5 +1,12 @@
 import type { Standard } from "@/types"
 
+/** Public standards omitted from hub, sidebar, and gap-analysis pickers. */
+const EXCLUDED_FROM_NAV_STANDARD_IDS = new Set<string>(["naqaa"])
+
+export function isStandardHiddenFromNavigation(standardId: string): boolean {
+  return EXCLUDED_FROM_NAV_STANDARD_IDS.has(standardId)
+}
+
 /**
  * Arabic display titles for seeded / known public standards (ids match backend seed_standards.py).
  * Falls back to API `title` when no mapping exists.

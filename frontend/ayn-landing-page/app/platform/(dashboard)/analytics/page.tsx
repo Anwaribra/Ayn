@@ -18,7 +18,7 @@ import { AnalyticsKpiCards, type KpiCardData } from "@/components/platform/analy
 import { AnalyticsInsights, type Insight } from "@/components/platform/analytics/analytics-insights"
 import {
   TrendAreaChart, DistributionBarChart, DonutChart,
-  ComplianceRadar, ScoreHeatmap,
+  ScoreHeatmap,
 } from "@/components/platform/analytics/analytics-charts"
 import { useUiLanguage } from "@/lib/ui-language-context"
 
@@ -847,11 +847,8 @@ function AnalyticsContent() {
             <DonutChart data={statusBreakdown} title={copy.reportStatus} subtitle={copy.reportStatusSub} />
           </div>
 
-          {/* ─── Row 2: Bar + Radar ─── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DistributionBarChart data={standardDistribution} title={copy.standardsPerformance} subtitle={copy.standardsPerformanceSub} />
-            <ComplianceRadar data={radarData} title={copy.coverageRadar} subtitle={copy.coverageRadarSub} />
-          </div>
+          {/* ─── Row 2: Bar ─── */}
+          <DistributionBarChart data={standardDistribution} title={copy.standardsPerformance} subtitle={copy.standardsPerformanceSub} />
 
           {/* ─── Row 3: Score Heatmap + Insights ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import {
   Zap,
@@ -12,7 +12,6 @@ import {
   Clock,
   Activity,
   ArrowRight,
-  Sparkles,
   Layers,
   Shield,
   BarChart3,
@@ -20,10 +19,10 @@ import {
   Timer,
   BadgeCheck,
   ArrowUpRight,
-  SlidersHorizontal,
   X,
   CheckCircle2,
   AlertTriangle,
+  ChevronRight,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import useSWR from "swr"
@@ -37,6 +36,28 @@ const ICON_MAP: Record<string, any> = {
   Clock,
 }
 
+/* ── The trigger → default step flow displayed in the builder ── */
+const TRIGGER_STEPS: Record<string, { label: string; detail: string }[]> = {
+  "On Upload": [
+    { label: "Trigger", detail: "Evidence uploaded" },
+    { label: "Analyze", detail: "Horus scans content" },
+    { label: "Tag", detail: "Apply standard labels" },
+    { label: "Notify", detail: "Alert document owner" },
+  ],
+  "On Evidence Update": [
+    { label: "Trigger", detail: "Evidence record changed" },
+    { label: "Review", detail: "Flag for human review" },
+    { label: "Link", detail: "Re-link to criteria" },
+    { label: "Log", detail: "Update coverage score" },
+  ],
+  "On Analysis Request": [
+    { label: "Trigger", detail: "Analysis requested" },
+    { label: "Scan", detail: "Run gap analysis" },
+    { label: "Report", detail: "Generate summary" },
+    { label: "Store", detail: "Save results" },
+  ],
+}
+const DEFAULT_STEPS = TRIGGER_STEPS["On Upload"]
 
 interface WorkflowData {
   id: string
@@ -57,6 +78,7 @@ interface WorkflowTemplate {
   category: "Evidence" | "Reporting" | "Gaps"
   icon: typeof Shield
   glow: string
+  steps: { label: string; detail: string }[]
 }
 
 interface WorkflowRunItem {
@@ -85,30 +107,34 @@ export default function WorkflowsPage() {
   const [builderTrigger, setBuilderTrigger] = useState("On Upload")
   const [templatePreview, setTemplatePreview] = useState<WorkflowTemplate | null>(null)
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowData | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
   const [selectedRun, setSelectedRun] = useState<WorkflowRunItem | null>(null)
   const [localWorkflows, setLocalWorkflows] = useState<WorkflowData[] | null>(null)
   const [runBusyId, setRunBusyId] = useState<string | null>(null)
+
   const { data: workflows, isLoading, error, mutate } = useSWR<WorkflowData[]>(
     "workflows",
-    () => api.getWorkflows()
+    () => api.getWorkflows(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30_000,
+    }
   )
   const { data: workflowRuns, isLoading: runsLoading, error: runsError, mutate: mutateRuns } = useSWR<WorkflowRunItem[]>(
     "workflow-runs",
-    () => api.getWorkflowRuns()
-  )
-
-  useEffect(() => {
-    if (workflows) {
-      setLocalWorkflows(workflows)
+    () => api.getWorkflowRuns(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30_000,
     }
-  }, [workflows])
+  )
 
   const workflowsList = localWorkflows ?? workflows ?? []
 
-  const activeCount = workflowsList.filter((w: WorkflowData) => w.status === "active").length ?? 0
-  const pausedCount = workflowsList.filter((w: WorkflowData) => w.status === "paused").length ?? 0
-  const totalCount = workflowsList.length ?? 0
+  const activeCount = workflowsList.filter((w: WorkflowData) => w.status === "active").length
+  const pausedCount = workflowsList.filter((w: WorkflowData) => w.status === "paused").length
+  const totalCount = workflowsList.length
 
   const templates = useMemo<WorkflowTemplate[]>(
     () => [
@@ -119,6 +145,12 @@ export default function WorkflowsPage() {
         category: "Evidence",
         icon: Shield,
         glow: "from-emerald-500/20 to-cyan-500/5",
+        steps: [
+          { label: "Trigger", detail: "New evidence uploaded" },
+          { label: "Analyze", detail: "Horus scans content against standards" },
+          { label: "Tag", detail: "Apply matching standard labels" },
+          { label: "Notify", detail: "Alert document owner" },
+        ],
       },
       {
         id: "weekly-summary",
@@ -127,6 +159,12 @@ export default function WorkflowsPage() {
         category: "Reporting",
         icon: BarChart3,
         glow: "from-blue-500/20 to-purple-500/10",
+        steps: [
+          { label: "Schedule", detail: "Every Monday at 09:00" },
+          { label: "Collect", detail: "Aggregate scores and gaps" },
+          { label: "Summarize", detail: "Generate digest report" },
+          { label: "Send", detail: "Deliver to stakeholders" },
+        ],
       },
       {
         id: "gap-watch",
@@ -135,6 +173,12 @@ export default function WorkflowsPage() {
         category: "Gaps",
         icon: FileText,
         glow: "from-amber-500/20 to-orange-500/10",
+        steps: [
+          { label: "Trigger", detail: "Gap analysis completed" },
+          { label: "Detect", detail: "Identify new or worsened gaps" },
+          { label: "Route", detail: "Assign gaps to owners" },
+          { label: "Track", detail: "Monitor remediation progress" },
+        ],
       },
     ],
     []
@@ -180,8 +224,7 @@ export default function WorkflowsPage() {
   })()
 
   const filteredWorkflows = useMemo(() => {
-    const list = workflowsList
-    return list.filter((w) => {
+    return workflowsList.filter((w) => {
       const matchesQuery =
         !query.trim() ||
         w.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -201,6 +244,12 @@ export default function WorkflowsPage() {
     const triggers = Array.from(new Set(workflowsList.map((w) => w.trigger))).filter(Boolean)
     return triggers.length ? triggers : ["On Upload", "On Evidence Update", "On Analysis Request"]
   }, [workflowsList])
+
+  // Runs for the currently selected workflow (used in details drawer)
+  const selectedWorkflowRuns = useMemo(() => {
+    if (!selectedWorkflow) return []
+    return runsList.filter((r) => r.workflowName === selectedWorkflow.name).slice(0, 5)
+  }, [selectedWorkflow, runsList])
 
   const closeBuilder = () => {
     setBuilderOpen(false)
@@ -244,14 +293,32 @@ export default function WorkflowsPage() {
   }
 
   const handleExportLogs = () => {
-    const payload = workflowRuns ?? []
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+    if (!workflowRuns?.length) {
+      toast.info("No run history to export")
+      return
+    }
+    // Export as CSV instead of raw JSON for usability
+    const headers = ["Workflow", "Status", "Trigger", "Started", "Ended", "Duration", "Started By"]
+    const rows = workflowRuns.map((run) => [
+      run.workflowName,
+      run.status,
+      run.trigger,
+      formatTime(run.startedAt),
+      run.endedAt ? formatTime(run.endedAt) : "—",
+      formatDuration(run),
+      run.startedBy,
+    ])
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = "workflow-runs.json"
+    link.download = `workflow-runs-${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
     URL.revokeObjectURL(url)
+    toast.success("Run history exported")
   }
 
   const handleStartRun = async (workflow: WorkflowData) => {
@@ -265,6 +332,9 @@ export default function WorkflowsPage() {
       })
       mutateRuns((prev) => [run, ...(prev ?? [])], { revalidate: false })
       handleStatusUpdate(workflow.id, "active")
+      toast.success(`"${workflow.name}" started`)
+    } catch {
+      toast.error("Failed to start workflow")
     } finally {
       setRunBusyId(null)
     }
@@ -312,42 +382,58 @@ export default function WorkflowsPage() {
     }
   }
 
+  const statusBadgeClass = (status: WorkflowData["status"]) => {
+    if (status === "active") return "status-success border"
+    if (status === "paused") return "status-warning border"
+    return "glass-button text-muted-foreground border border-[var(--glass-border)]"
+  }
+
+  const statusLabel = (status: WorkflowData["status"]) =>
+    status === "active" ? "Active" : status === "paused" ? "Paused" : "Draft"
+
+  const runStatusClass = (status: WorkflowRunItem["status"]) => {
+    if (status === "success") return "status-success border"
+    if (status === "failed") return "status-critical border"
+    if (status === "running") return "status-info border"
+    if (status === "queued") return "status-warning border"
+    return "glass-button text-muted-foreground"
+  }
+
+  const builderSteps = TRIGGER_STEPS[builderTrigger] ?? DEFAULT_STEPS
+
   return (
     <ProtectedRoute>
       <div className="animate-fade-in-up pb-24">
+
+        {/* ─── Header ─── */}
         <div className="px-4 pb-4 pt-6 md:px-6">
           <div className="glass-panel rounded-[32px] p-6 md:p-8 relative overflow-hidden">
             <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-[120px]" />
             <div className="absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-[140px]" />
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-pill text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                    <Sparkles className="w-3 h-3" />
-                    Automation Layer
-                  </div>
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] text-destructive border border-destructive/30 bg-destructive/10">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
                     Beta
                   </span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--text-primary)]">
-                  Workflow Engine
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                  Workflows
                 </h1>
-                <p className="text-sm md:text-base text-muted-foreground max-w-xl">
-                  Orchestrate evidence, standards, and compliance actions with auditable, AI-assisted pipelines.
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  Automate evidence intake, gap detection, and compliance actions with auditable pipelines.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary/10 text-primary rounded-xl font-bold text-xs border border-primary/20 hover:bg-primary/15 transition-colors"
-                  title="Workflow builder (beta)"
+                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary text-primary-foreground rounded-xl font-bold text-xs shadow-[0_10px_24px_-10px_rgba(37,99,235,0.45)] hover:bg-primary/90 transition-colors"
                   onClick={() => openBuilder()}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Create Workflow
+                  New Workflow
                 </button>
                 <button
-                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-button text-muted-foreground rounded-xl font-bold text-xs hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] glass-button text-muted-foreground rounded-xl font-bold text-xs hover:text-foreground transition-colors border border-[var(--glass-border)]"
                   onClick={() => setTab("templates")}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -358,30 +444,34 @@ export default function WorkflowsPage() {
           </div>
         </div>
 
-        <div className="px-4 md:px-6 space-y-8">
+        <div className="px-4 md:px-6 space-y-6">
+
+          {/* ─── Stat Cards ─── */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Active Pipelines", value: isLoading ? "..." : String(activeCount), icon: Play, color: "text-[var(--status-success)]" },
-              { label: "Paused Workflows", value: isLoading ? "..." : String(pausedCount), icon: Pause, color: "text-[var(--status-warning)]" },
-              { label: "Total Defined", value: isLoading ? "..." : String(totalCount), icon: Workflow, color: "text-primary" },
-            ].map((stat, i) => (
-              <div key={i} className="glass-panel p-5 rounded-2xl flex items-center gap-4 glass-border">
-                <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
+              { label: "Active", value: isLoading ? "…" : String(activeCount), icon: Play, color: "text-[var(--status-success)]", note: "running now" },
+              { label: "Paused", value: isLoading ? "…" : String(pausedCount), icon: Pause, color: "text-[var(--status-warning)]", note: "temporarily stopped" },
+              { label: "Total", value: isLoading ? "…" : String(totalCount), icon: Workflow, color: "text-primary", note: "workflows defined" },
+            ].map((stat) => (
+              <div key={stat.label} className="glass-panel p-5 rounded-2xl flex items-center gap-4 glass-border">
+                <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center shrink-0">
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 <div>
-                  <div className="mono text-2xl font-bold text-[var(--text-primary)]">{stat.value}</div>
+                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{stat.note}</div>
                 </div>
               </div>
             ))}
           </div>
 
+          {/* ─── Tab Bar ─── */}
           <div className="glass-panel rounded-2xl p-2 flex flex-wrap gap-2 glass-border">
             {[
               { key: "workflows", label: "My Workflows", icon: Workflow },
               { key: "templates", label: "Templates", icon: Layers },
-              { key: "runs", label: "Runs", icon: Activity },
+              { key: "runs", label: "Run History", icon: Activity },
             ].map((item) => (
               <button
                 key={item.key}
@@ -395,340 +485,247 @@ export default function WorkflowsPage() {
                 {item.label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                className={cn(
-                  "px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
-                  showFilters ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"
-                )}
-                onClick={() => {
-                  if (tab !== "workflows") setTab("workflows")
-                  setShowFilters((prev) => !prev)
-                }}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                Filters
-              </button>
-            </div>
           </div>
 
+          {/* ══════════════════════════════════════════════════════
+              MY WORKFLOWS TAB
+              ══════════════════════════════════════════════════════ */}
           {tab === "workflows" && (
-            <div className="space-y-6">
-              <div className="glass-panel rounded-2xl p-4 glass-border flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+            <div className="space-y-4">
+
+              {/* Search + Status filter */}
+              <div className="glass-panel rounded-2xl p-4 glass-border flex flex-col lg:flex-row lg:items-center gap-3">
                 <div className="flex-1">
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search workflows..."
-                    className="w-full h-11 glass-input rounded-xl px-4 text-sm text-foreground"
+                    placeholder="Search workflows…"
+                    className="w-full h-10 glass-input rounded-xl px-4 text-sm text-foreground"
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {(["all", "active", "paused", "draft"] as const).map((status) => (
+                  {(["all", "active", "paused", "draft"] as const).map((s) => (
                     <button
-                      key={status}
-                      onClick={() => setStatusFilter(status)}
+                      key={s}
+                      onClick={() => setStatusFilter(s)}
                       className={cn(
-                        "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                        statusFilter === status ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                        "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all capitalize",
+                        statusFilter === s ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"
                       )}
                     >
-                      {status}
+                      {s === "all" ? "All" : s}
                     </button>
                   ))}
                 </div>
+                {triggerFilter !== "all" && (
+                  <button
+                    className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap"
+                    onClick={() => setTriggerFilter("all")}
+                  >
+                    Clear trigger filter
+                  </button>
+                )}
               </div>
 
-              {showFilters && (
-                <div className="glass-panel rounded-2xl p-4 glass-border">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger</div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        className={cn(
-                          "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                          triggerFilter === "all" ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
-                        )}
-                        onClick={() => setTriggerFilter("all")}
-                      >
-                        All
-                      </button>
-                      {availableTriggers.map((trigger) => (
-                        <button
-                          key={trigger}
-                          className={cn(
-                            "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                            triggerFilter === trigger ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
-                          )}
-                          onClick={() => setTriggerFilter(trigger)}
-                        >
-                          {trigger}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="ml-auto flex items-center gap-2">
-                      <button
-                        className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
-                        onClick={() => {
-                          setTriggerFilter("all")
-                          setStatusFilter("all")
-                          setQuery("")
-                        }}
-                      >
-                        Clear Filters
-                      </button>
-                    </div>
-                  </div>
+              {/* Trigger filter pills (visible when there are >1 trigger types) */}
+              {availableTriggers.length > 1 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger:</span>
+                  <button
+                    className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", triggerFilter === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
+                    onClick={() => setTriggerFilter("all")}
+                  >
+                    All
+                  </button>
+                  {availableTriggers.map((trigger) => (
+                    <button
+                      key={trigger}
+                      className={cn("px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", triggerFilter === trigger ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground")}
+                      onClick={() => setTriggerFilter(trigger)}
+                    >
+                      {trigger}
+                    </button>
+                  ))}
                 </div>
               )}
 
-              <div className="grid gap-4 lg:grid-cols-3">
-                {[
-                  { title: "Automation Builder", body: "Design workflows with drag-and-drop blocks and AI-assisted recommendations.", icon: Layers },
-                  { title: "Policy Gate", body: "Enforce approval gates before any compliance action is executed.", icon: Shield },
-                  { title: "Run Intelligence", body: "Track performance, latency, and failures across every pipeline.", icon: BarChart3 },
-                ].map((card, i) => (
-                  <div key={i} className="glass-panel rounded-2xl p-5 glass-border">
-                    <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center mb-4">
-                      <card.icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="text-base font-bold text-foreground">{card.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-2">{card.body}</p>
+              {/* Workflow list */}
+              <div className="grid gap-3">
+                {isLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse glass-border" />
+                  ))
+                ) : error ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                    <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
+                    <h4 className="text-sm font-bold text-foreground">Failed to load workflows</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Try refreshing the page.</p>
+                    <button
+                      className="mt-4 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
+                      onClick={() => mutate()}
+                    >
+                      Retry
+                    </button>
                   </div>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">System Pipelines</h3>
-                  <div className="h-px flex-1 bg-[var(--border-subtle)]" />
-                </div>
-
-                <div className="grid gap-3">
-                  {isLoading ? (
-                    [1, 2, 3].map((i) => (
-                      <div key={i} className="glass-panel p-6 rounded-2xl h-24 animate-pulse glass-border" />
-                    ))
-                  ) : error ? (
-                    <div className="glass-panel rounded-2xl p-10 glass-border text-center">
-                      <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                        <AlertTriangle className="w-6 h-6 text-destructive" />
-                      </div>
-                      <h4 className="text-sm font-bold text-foreground">Failed to load workflows</h4>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Try refreshing the page or check back in a moment.
-                      </p>
+                ) : filteredWorkflows.length === 0 ? (
+                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
+                    <Workflow className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <h4 className="text-sm font-bold text-foreground">No workflows yet</h4>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">
+                      Create your first workflow or start from a template.
+                    </p>
+                    <button
+                      className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                      onClick={() => openBuilder()}
+                    >
+                      New Workflow
+                    </button>
+                  </div>
+                ) : (
+                  filteredWorkflows.map((workflow: WorkflowData) => {
+                    const Icon = ICON_MAP[workflow.icon] || Workflow
+                    const isRunning = runBusyId === workflow.id
+                    return (
                       <button
-                        className="mt-4 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
-                        onClick={() => mutate()}
+                        key={workflow.id}
+                        className="glass-panel p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 group hover:bg-[var(--surface)] transition-all glass-border text-left w-full"
+                        onClick={() => setSelectedWorkflow(workflow)}
                       >
-                        Retry
-                      </button>
-                    </div>
-                  ) : filteredWorkflows.length === 0 ? (
-                    <div className="glass-panel rounded-2xl p-10 glass-border text-center">
-                      <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                        <Workflow className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                      <h4 className="text-sm font-bold text-foreground">No workflows yet</h4>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Create your first automation to start orchestrating compliance tasks.
-                      </p>
-                    </div>
-                  ) : (
-                    filteredWorkflows.map((workflow: WorkflowData) => {
-                      const Icon = ICON_MAP[workflow.icon] || Workflow
-                      return (
-                        <div
-                          key={workflow.id}
-                          className="glass-panel p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 group hover:bg-[var(--surface)] transition-all glass-border"
-                        >
-                          <div className="flex items-start gap-5">
-                            <div className={`w-12 h-12 rounded-xl ${workflow.bg} flex items-center justify-center flex-shrink-0 border border-white/5`}>
-                              <Icon className={`h-5 w-5 ${workflow.color}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3 mb-1">
-                                <h4 className="text-base font-bold text-[var(--text-primary)]">{workflow.name}</h4>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${workflow.status === "active" ? "status-success" : workflow.status === "paused" ? "status-warning" : "glass-button text-muted-foreground"}`}>
-                                  {workflow.status}
-                                </span>
-                              </div>
-                              <p className="text-sm text-[var(--text-secondary)] font-medium">{workflow.description}</p>
-                              <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                <Timer className="w-3.5 h-3.5" />
-                                Next run in 4 hours
-                              </div>
-                            </div>
+                        <div className="flex items-start gap-4">
+                          <div className={`w-11 h-11 rounded-xl ${workflow.bg} flex items-center justify-center shrink-0 border border-white/5`}>
+                            <Icon className={`h-5 w-5 ${workflow.color}`} />
                           </div>
-
-                          <div className="flex flex-wrap items-center gap-4 lg:gap-8">
-                            <div className="flex flex-col lg:items-end gap-1 min-w-0 lg:min-w-[120px]">
-                              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trigger</div>
-                              <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.trigger}</div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                              <h4 className="text-sm font-bold text-foreground">{workflow.name}</h4>
+                              <span className={cn("px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest", statusBadgeClass(workflow.status))}>
+                                {statusLabel(workflow.status)}
+                              </span>
                             </div>
-                            <div className="flex flex-col lg:items-end gap-1 min-w-0 lg:min-w-[120px]">
-                              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Last Run</div>
-                              <div className="text-xs font-bold text-[var(--text-secondary)]">{workflow.lastRun}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
-                                onClick={() => handleStartRun(workflow)}
-                              >
-                                <Play className="w-3.5 h-3.5" />
-                                {runBusyId === workflow.id ? "Running..." : "Run"}
-                              </button>
-                              <button
-                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
-                                onClick={() => handleStatusUpdate(workflow.id, "paused")}
-                              >
-                                <Pause className="w-3.5 h-3.5" />
-                                Pause
-                              </button>
-                              <button
-                                className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2"
-                                onClick={() => openBuilderForWorkflow(workflow)}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => setSelectedWorkflow(workflow)}
-                                className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2"
-                              >
-                                View Details
-                                <ArrowUpRight className="w-3.5 h-3.5" />
-                              </button>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{workflow.description}</p>
+                            <div className="mt-2 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                              <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> {workflow.trigger}</span>
+                              {workflow.lastRun && (
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {workflow.lastRun}</span>
+                              )}
                             </div>
                           </div>
                         </div>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
 
-              <div className="glass-panel rounded-3xl p-6 glass-border">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
-                    <Layers className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Workflow Builder Preview</h3>
-                    <p className="text-sm text-muted-foreground">Visualize the pipeline before activation.</p>
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-5">
-                  {[
-                    { label: "Trigger", sub: "Evidence Intake" },
-                    { label: "Analyze", sub: "Horus Match" },
-                    { label: "Gate", sub: "Approval" },
-                    { label: "Notify", sub: "Owner Alert" },
-                    { label: "Publish", sub: "Compliance Log" },
-                  ].map((node, idx) => (
-                    <div key={node.label} className="relative">
-                      <div className="glass-panel rounded-2xl p-4 glass-border text-center">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{node.label}</div>
-                        <div className="text-sm font-semibold text-foreground mt-1">{node.sub}</div>
-                      </div>
-                      {idx < 4 && (
-                        <div className="hidden md:block absolute right-[-14px] top-1/2 h-px w-7 bg-[var(--border-subtle)]" />
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className={cn(
+                              "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5",
+                              isRunning
+                                ? "glass-button text-muted-foreground opacity-60 pointer-events-none"
+                                : "glass-button text-muted-foreground hover:text-foreground"
+                            )}
+                            onClick={() => handleStartRun(workflow)}
+                          >
+                            <Play className="w-3 h-3" />
+                            {isRunning ? "Running…" : "Run"}
+                          </button>
+                          <button
+                            className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:text-foreground transition-all flex items-center gap-1.5"
+                            onClick={() => openBuilderForWorkflow(workflow)}
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit
+                          </button>
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-primary">
+                            <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })
+                )}
               </div>
             </div>
           )}
 
+          {/* ══════════════════════════════════════════════════════
+              TEMPLATES TAB
+              ══════════════════════════════════════════════════════ */}
           {tab === "templates" && (
             <div className="space-y-6">
-              <div className="glass-panel rounded-2xl p-3 glass-border flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["all", "Evidence", "Reporting", "Gaps"] as const).map((category) => (
                   <button
                     key={category}
                     onClick={() => setTemplateFilter(category)}
                     className={cn(
                       "px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                      templateFilter === category ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground"
+                      templateFilter === category ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"
                     )}
                   >
                     {category}
                   </button>
                 ))}
               </div>
+
               <div className="grid gap-4 md:grid-cols-3">
                 {filteredTemplates.length === 0 ? (
                   <div className="glass-panel rounded-2xl p-10 glass-border text-center md:col-span-3">
-                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                      <Layers className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <h4 className="text-sm font-bold text-foreground">No templates found</h4>
-                    <p className="text-xs text-muted-foreground mt-2">Try another category.</p>
+                    <Layers className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <h4 className="text-sm font-bold text-foreground">No templates in this category</h4>
                   </div>
                 ) : (
                   filteredTemplates.map((tpl) => (
-                    <div key={tpl.id} className="glass-panel rounded-3xl p-6 glass-border relative overflow-hidden">
-                      <div className={`absolute inset-0 bg-gradient-to-br ${tpl.glow} opacity-60`} />
-                      <div className="relative z-10">
-                        <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mb-4">
-                          <tpl.icon className="w-6 h-6 text-primary" />
+                    <div key={tpl.id} className="glass-panel rounded-3xl p-6 glass-border relative overflow-hidden flex flex-col">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${tpl.glow} opacity-60 pointer-events-none`} />
+                      <div className="relative z-10 flex-1">
+                        <div className="w-11 h-11 rounded-2xl glass-input flex items-center justify-center mb-4">
+                          <tpl.icon className="w-5 h-5 text-primary" />
                         </div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{tpl.category}</div>
-                        <h3 className="text-lg font-bold text-foreground">{tpl.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-2">{tpl.description}</p>
-                        <div className="mt-5 flex items-center gap-2">
-                          <button
-                            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
-                            onClick={() => openBuilder(tpl)}
-                          >
-                            Use Template
-                          </button>
-                          <button
-                            className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
-                            onClick={() => setTemplatePreview(tpl)}
-                          >
-                            Preview
-                          </button>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{tpl.category}</div>
+                        <h3 className="text-base font-bold text-foreground">{tpl.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1 mb-4">{tpl.description}</p>
+                        {/* Step summary */}
+                        <div className="space-y-1.5 mb-5">
+                          {tpl.steps.map((step, i) => (
+                            <div key={step.label} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="w-4 h-4 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] flex items-center justify-center text-[8px] font-bold shrink-0">{i + 1}</span>
+                              <span className="font-semibold text-foreground">{step.label}</span>
+                              <span className="text-muted-foreground">— {step.detail}</span>
+                            </div>
+                          ))}
                         </div>
+                      </div>
+                      <div className="relative z-10 flex items-center gap-2">
+                        <button
+                          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
+                          onClick={() => openBuilder(tpl)}
+                        >
+                          Use Template
+                        </button>
+                        <button
+                          className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
+                          onClick={() => setTemplatePreview(tpl)}
+                        >
+                          Preview
+                        </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
-
-              <div className="glass-panel rounded-3xl p-6 glass-border">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
-                    <BadgeCheck className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Governance-Ready Templates</h3>
-                    <p className="text-sm text-muted-foreground">Pre-approved blocks that match accreditation workflows.</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {["Evidence Intake", "Gap Review", "Remediation Approval", "Audit Snapshot"].map((tag) => (
-                    <span key={tag} className="px-3 py-1 rounded-full glass-pill text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
+          {/* ══════════════════════════════════════════════════════
+              RUN HISTORY TAB
+              ══════════════════════════════════════════════════════ */}
           {tab === "runs" && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-3">
                 {[
                   { label: "Success Rate", value: successRate, icon: BadgeCheck, color: "text-[var(--status-success)]" },
                   { label: "Avg Duration", value: avgDuration, icon: Timer, color: "text-primary" },
-                  { label: "Failed Runs", value: runsList.length ? String(failedCount) : "—", icon: Shield, color: "text-[var(--status-critical)]" },
+                  { label: "Failed Runs", value: runsList.length ? String(failedCount) : "—", icon: AlertTriangle, color: "text-[var(--status-critical)]" },
                 ].map((stat) => (
                   <div key={stat.label} className="glass-panel rounded-2xl p-5 glass-border flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center shrink-0">
                       <stat.icon className={`w-5 h-5 ${stat.color}`} />
                     </div>
                     <div>
@@ -738,80 +735,62 @@ export default function WorkflowsPage() {
                   </div>
                 ))}
               </div>
-              <div className="glass-panel rounded-2xl p-5 glass-border flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Run History</h3>
-                  <p className="text-sm text-muted-foreground">Audit every pipeline execution with searchable logs.</p>
+                  <h3 className="text-base font-bold text-foreground">Run History</h3>
+                  <p className="text-sm text-muted-foreground">All workflow executions, most recent first.</p>
                 </div>
                 <button
-                  className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[11px] font-bold uppercase tracking-widest flex items-center gap-2"
+                  className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 hover:text-foreground transition-colors border border-[var(--glass-border)]"
                   onClick={handleExportLogs}
                 >
-                  Export Logs
-                  <ArrowRight className="w-4 h-4" />
+                  Export CSV
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {runsLoading ? (
-                  <div className="glass-panel rounded-2xl p-10 glass-border text-center">
-                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                      <Activity className="w-6 h-6 text-muted-foreground animate-pulse" />
-                    </div>
-                    <h4 className="text-sm font-bold text-foreground">Loading runs</h4>
-                    <p className="text-xs text-muted-foreground mt-2">Pulling the latest workflow activity.</p>
-                  </div>
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="glass-panel rounded-2xl h-16 animate-pulse glass-border" />
+                  ))
                 ) : runsError ? (
                   <div className="glass-panel rounded-2xl p-10 glass-border text-center">
-                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                      <AlertTriangle className="w-6 h-6 text-destructive" />
-                    </div>
+                    <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
                     <h4 className="text-sm font-bold text-foreground">Failed to load runs</h4>
-                    <p className="text-xs text-muted-foreground mt-2">Try refreshing in a moment.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Try refreshing in a moment.</p>
                   </div>
                 ) : !workflowRuns || workflowRuns.length === 0 ? (
                   <div className="glass-panel rounded-2xl p-10 glass-border text-center">
-                    <div className="w-12 h-12 rounded-2xl glass-input flex items-center justify-center mx-auto mb-4">
-                      <Activity className="w-6 h-6 text-muted-foreground" />
-                    </div>
+                    <Activity className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                     <h4 className="text-sm font-bold text-foreground">No runs yet</h4>
-                    <p className="text-xs text-muted-foreground mt-2">Runs will appear once workflows start executing.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Runs appear once workflows start executing.</p>
                   </div>
                 ) : (
                   workflowRuns.map((run) => (
-                    <div key={run.id} className="glass-panel rounded-2xl p-5 glass-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl glass-input flex items-center justify-center">
-                          <Activity className="w-5 h-5 text-primary" />
+                    <button
+                      key={run.id}
+                      className="glass-panel rounded-2xl p-4 glass-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left hover:bg-[var(--surface)] transition-all w-full group"
+                      onClick={() => setSelectedRun(run)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl glass-input flex items-center justify-center shrink-0">
+                          <Activity className="w-4 h-4 text-primary" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-foreground">{run.workflowName}</h4>
-                          <p className="text-[11px] text-muted-foreground">{formatTime(run.startedAt)}</p>
+                          <div className="text-sm font-bold text-foreground">{run.workflowName}</div>
+                          <div className="text-[10px] text-muted-foreground">{formatTime(run.startedAt)} · via {run.trigger}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={cn(
-                            "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                            run.status === "success" && "status-success border",
-                            run.status === "failed" && "status-critical border",
-                            run.status === "queued" && "status-warning border",
-                            run.status === "running" && "status-info border",
-                            run.status === "canceled" && "glass-button text-muted-foreground"
-                          )}
-                        >
+                      <div className="flex items-center gap-3">
+                        <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest", runStatusClass(run.status))}>
                           {run.status}
                         </span>
-                        <div className="text-[11px] font-bold text-muted-foreground">Duration</div>
-                        <div className="text-[11px] font-bold text-foreground">{formatDuration(run)}</div>
-                        <button
-                          className="px-3 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
-                          onClick={() => setSelectedRun(run)}
-                        >
-                          View Logs
-                        </button>
+                        <span className="text-[11px] font-bold text-muted-foreground">{formatDuration(run)}</span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                       </div>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -820,7 +799,9 @@ export default function WorkflowsPage() {
         </div>
       </div>
 
-      {/* Workflow Details Drawer */}
+      {/* ══════════════════════════════════════════════════════════
+          WORKFLOW DETAILS DRAWER
+          ══════════════════════════════════════════════════════════ */}
       {selectedWorkflow && (
         <div className="fixed inset-0 z-[70] flex items-center justify-end">
           <button
@@ -828,73 +809,112 @@ export default function WorkflowsPage() {
             onClick={() => setSelectedWorkflow(null)}
             aria-label="Close workflow details"
           />
-          <div className="relative w-full max-w-[520px] h-full glass-panel glass-border p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
+          <div className="relative w-full max-w-[520px] h-full glass-panel glass-border p-6 overflow-y-auto flex flex-col gap-5">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-bold text-foreground">{selectedWorkflow.name}</h3>
-                <p className="text-sm text-muted-foreground">{selectedWorkflow.description}</p>
+                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest mb-2", statusBadgeClass(selectedWorkflow.status))}>
+                  {statusLabel(selectedWorkflow.status)}
+                </span>
+                <h3 className="text-lg font-bold text-foreground">{selectedWorkflow.name}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{selectedWorkflow.description}</p>
               </div>
-              <button className="p-2 rounded-lg glass-button" onClick={() => setSelectedWorkflow(null)}>
+              <button className="p-2 rounded-lg glass-button shrink-0" onClick={() => setSelectedWorkflow(null)}>
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="glass-panel p-4 rounded-2xl glass-border">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</div>
-                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full status-success border text-[10px] font-bold uppercase tracking-widest">
-                  {selectedWorkflow.status}
-                </div>
+            {/* Trigger info */}
+            <div className="glass-panel p-4 rounded-2xl glass-border">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Trigger</div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Zap className="w-4 h-4 text-primary" />
+                {selectedWorkflow.trigger}
               </div>
+              {selectedWorkflow.lastRun && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  Last run: {selectedWorkflow.lastRun}
+                </div>
+              )}
+            </div>
 
-              <div className="glass-panel p-4 rounded-2xl glass-border">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Recent Activity</div>
-                <div className="mt-4 space-y-3">
-                  {[
-                    { label: "Run completed", time: "2 min ago", icon: CheckCircle2, color: "text-[var(--status-success)]" },
-                    { label: "Evidence linked", time: "Yesterday 19:44", icon: Activity, color: "text-primary" },
-                    { label: "Approval pending", time: "Yesterday 09:12", icon: AlertTriangle, color: "text-[var(--status-warning)]" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <item.icon className={`w-4 h-4 ${item.color}`} />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-foreground">{item.label}</div>
-                        <div className="text-[10px] text-muted-foreground">{item.time}</div>
+            {/* Recent runs for this workflow */}
+            <div className="glass-panel p-4 rounded-2xl glass-border">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                Recent Runs
+              </div>
+              {selectedWorkflowRuns.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No runs recorded for this workflow yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedWorkflowRuns.map((run) => (
+                    <button
+                      key={run.id}
+                      className="w-full flex items-center justify-between gap-3 p-2.5 rounded-xl glass-button hover:bg-[var(--surface)] transition-all text-left"
+                      onClick={() => { setSelectedRun(run); setSelectedWorkflow(null) }}
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-foreground">{formatTime(run.startedAt)}</div>
+                        <div className="text-[10px] text-muted-foreground">{run.trigger} · {formatDuration(run)}</div>
                       </div>
-                    </div>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0", runStatusClass(run.status))}>
+                        {run.status}
+                      </span>
+                    </button>
                   ))}
+                  {runsList.filter((r) => r.workflowName === selectedWorkflow.name).length > 5 && (
+                    <button
+                      className="text-[10px] font-bold text-primary hover:underline w-full text-left pt-1"
+                      onClick={() => { setSelectedWorkflow(null); setTab("runs") }}
+                    >
+                      View all runs →
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div className="glass-panel p-4 rounded-2xl glass-border">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</div>
-                <div className="mt-3 flex flex-wrap gap-2">
+            {/* Actions */}
+            <div className="glass-panel p-4 rounded-2xl glass-border">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Actions</div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                  onClick={() => { handleStartRun(selectedWorkflow); setSelectedWorkflow(null) }}
+                >
+                  <Play className="w-3 h-3" /> Run Now
+                </button>
+                {selectedWorkflow.status === "active" ? (
                   <button
-                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
-                    onClick={() => handleStartRun(selectedWorkflow)}
-                  >
-                    Run Now
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
+                    className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:text-foreground flex items-center gap-1.5"
                     onClick={() => handleStatusUpdate(selectedWorkflow.id, "paused")}
                   >
-                    Pause
+                    <Pause className="w-3 h-3" /> Pause
                   </button>
+                ) : (
                   <button
-                    className="px-4 py-2 rounded-xl glass-button text-foreground text-[10px] font-bold uppercase tracking-widest"
-                    onClick={() => openBuilderForWorkflow(selectedWorkflow)}
+                    className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:text-foreground flex items-center gap-1.5"
+                    onClick={() => handleStatusUpdate(selectedWorkflow.id, "active")}
                   >
-                    Edit
+                    <Play className="w-3 h-3" /> Enable
                   </button>
-                </div>
+                )}
+                <button
+                  className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:text-foreground flex items-center gap-1.5"
+                  onClick={() => { openBuilderForWorkflow(selectedWorkflow); setSelectedWorkflow(null) }}
+                >
+                  <Pencil className="w-3 h-3" /> Edit
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Template Preview Modal */}
+      {/* ══════════════════════════════════════════════════════════
+          TEMPLATE PREVIEW MODAL
+          ══════════════════════════════════════════════════════════ */}
       {templatePreview && (
         <div className="fixed inset-0 z-[75] flex items-center justify-center p-6">
           <button
@@ -902,37 +922,55 @@ export default function WorkflowsPage() {
             onClick={() => setTemplatePreview(null)}
             aria-label="Close template preview"
           />
-          <div className="relative w-full max-w-xl glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
-            <div className={`absolute inset-0 bg-gradient-to-br ${templatePreview.glow} opacity-40`} />
+          <div className="relative w-full max-w-lg glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-br ${templatePreview.glow} opacity-40 pointer-events-none`} />
             <div className="relative z-10">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4 mb-5">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
                     {templatePreview.category}
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mt-1">{templatePreview.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-2">{templatePreview.description}</p>
+                  <h3 className="text-xl font-bold text-foreground">{templatePreview.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{templatePreview.description}</p>
                 </div>
-                <button className="p-2 rounded-lg glass-button" onClick={() => setTemplatePreview(null)}>
+                <button className="p-2 rounded-lg glass-button shrink-0" onClick={() => setTemplatePreview(null)}>
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
-              <div className="mt-6 grid gap-3 md:grid-cols-3">
-                {["Trigger", "Action", "Gate"].map((step) => (
-                  <div key={step} className="glass-panel glass-border rounded-xl p-3 text-center">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{step}</div>
-                    <div className="text-sm font-semibold text-foreground mt-1">Configured</div>
+
+              {/* Actual steps */}
+              <div className="space-y-2 mb-6">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Pipeline Steps</div>
+                {templatePreview.steps.map((step, i) => (
+                  <div key={step.label} className="flex items-center gap-3 glass-panel glass-border rounded-xl p-3">
+                    <div className="w-7 h-7 rounded-full border border-[var(--glass-border)] bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-foreground">{step.label}</div>
+                      <div className="text-[10px] text-muted-foreground">{step.detail}</div>
+                    </div>
+                    {i < templatePreview.steps.length - 1 && (
+                      <ArrowRight className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
+                    )}
+                    {i === templatePreview.steps.length - 1 && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[var(--status-success)] ml-auto shrink-0" />
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="mt-6 flex items-center gap-3">
+
+              <div className="flex items-center gap-3">
                 <button
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
                   onClick={() => { openBuilder(templatePreview); setTemplatePreview(null) }}
                 >
                   Use Template
                 </button>
-                <button className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest" onClick={() => setTemplatePreview(null)}>
+                <button
+                  className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest"
+                  onClick={() => setTemplatePreview(null)}
+                >
                   Close
                 </button>
               </div>
@@ -941,7 +979,9 @@ export default function WorkflowsPage() {
         </div>
       )}
 
-      {/* Run Details Modal */}
+      {/* ══════════════════════════════════════════════════════════
+          RUN DETAILS MODAL
+          ══════════════════════════════════════════════════════════ */}
       {selectedRun && (
         <div className="fixed inset-0 z-[78] flex items-center justify-center p-6">
           <button
@@ -949,120 +989,155 @@ export default function WorkflowsPage() {
             onClick={() => setSelectedRun(null)}
             aria-label="Close run details"
           />
-          <div className="relative w-full max-w-2xl glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
-            <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="relative w-full max-w-lg glass-panel glass-border rounded-[28px] p-6 overflow-hidden">
+            <div className="flex items-start justify-between gap-4 mb-5">
               <div>
-                <h3 className="text-xl font-bold text-foreground">{selectedRun.workflowName}</h3>
-                <p className="text-sm text-muted-foreground mt-1">Trigger: {selectedRun.trigger}</p>
+                <h3 className="text-lg font-bold text-foreground">{selectedRun.workflowName}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">Run details</p>
               </div>
-              <button className="p-2 rounded-lg glass-button" onClick={() => setSelectedRun(null)}>
+              <button className="p-2 rounded-lg glass-button shrink-0" onClick={() => setSelectedRun(null)}>
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-            <div className="grid gap-3 md:grid-cols-3 mb-4">
+
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="glass-panel glass-border rounded-xl p-3">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</div>
-                <div className="text-sm font-semibold text-foreground mt-1">{selectedRun.status}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Status</div>
+                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest", runStatusClass(selectedRun.status))}>
+                  {selectedRun.status}
+                </span>
               </div>
               <div className="glass-panel glass-border rounded-xl p-3">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Started</div>
-                <div className="text-sm font-semibold text-foreground mt-1">{formatTime(selectedRun.startedAt)}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Trigger</div>
+                <div className="text-sm font-semibold text-foreground">{selectedRun.trigger}</div>
               </div>
               <div className="glass-panel glass-border rounded-xl p-3">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Duration</div>
-                <div className="text-sm font-semibold text-foreground mt-1">{formatDuration(selectedRun)}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Started</div>
+                <div className="text-sm font-semibold text-foreground">{formatTime(selectedRun.startedAt)}</div>
               </div>
+              <div className="glass-panel glass-border rounded-xl p-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Duration</div>
+                <div className="text-sm font-semibold text-foreground">{formatDuration(selectedRun)}</div>
+              </div>
+              {selectedRun.startedBy && (
+                <div className="glass-panel glass-border rounded-xl p-3 sm:col-span-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Started By</div>
+                  <div className="text-sm font-semibold text-foreground">{selectedRun.startedBy}</div>
+                </div>
+              )}
             </div>
-            <div className="glass-panel glass-border rounded-xl p-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Message</div>
-              <p className="text-sm text-foreground">
-                {selectedRun.message || "No message provided."}
-              </p>
-            </div>
-            <div className="glass-panel glass-border rounded-xl p-4 mt-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Metadata</div>
-              <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                {JSON.stringify(selectedRun.metadata ?? {}, null, 2)}
-              </pre>
-            </div>
+
+            {selectedRun.message && (
+              <div className="glass-panel glass-border rounded-xl p-4 mt-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Message</div>
+                <p className="text-sm text-foreground leading-relaxed">{selectedRun.message}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Builder Modal */}
+      {/* ══════════════════════════════════════════════════════════
+          WORKFLOW BUILDER MODAL
+          A focused, honest form — no fake canvas.
+          ══════════════════════════════════════════════════════════ */}
       {builderOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
           <button
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeBuilder}
             aria-label="Close workflow builder"
           />
-          <div className="relative glass-panel glass-border w-full max-w-5xl h-[80vh] rounded-[32px] overflow-hidden flex">
-            <div className="w-64 border-r border-[var(--border-subtle)] p-5 space-y-4">
-              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Blocks</div>
-              {["Trigger", "Action", "Gate", "Notify"].map((b) => (
-                <div key={b} className="glass-panel glass-border rounded-xl p-3 text-sm font-semibold text-foreground">
-                  {b}
-                </div>
-              ))}
+          <div className="relative glass-panel glass-border w-full max-w-2xl rounded-[28px] overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between gap-4 p-6 border-b border-[var(--border-subtle)]">
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  {builderWorkflowId ? "Edit Workflow" : builderTemplate ? `New from "${builderTemplate}"` : "New Workflow"}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Configure your workflow definition and trigger.
+                </p>
+              </div>
+              <button className="p-2 rounded-lg glass-button shrink-0" onClick={closeBuilder}>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
-            <div className="flex-1 p-6 relative">
-              <div className="absolute top-4 right-4">
-                <button className="p-2 rounded-lg glass-button" onClick={closeBuilder}>
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </div>
-              <div className="h-full rounded-2xl glass-panel glass-border flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-foreground">Workflow Builder</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {builderTemplate ? `Based on “${builderTemplate}”.` : "Drag blocks to create a pipeline."}
-                  </p>
+
+            {/* Two-column layout: form + step preview */}
+            <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
+              {/* Left: Config form */}
+              <div className="p-6 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name</label>
+                  <input
+                    value={builderName}
+                    onChange={(e) => setBuilderName(e.target.value)}
+                    placeholder="e.g. Evidence Intake Pipeline"
+                    className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</label>
+                  <textarea
+                    value={builderDescription}
+                    onChange={(e) => setBuilderDescription(e.target.value)}
+                    placeholder="What does this workflow do?"
+                    rows={3}
+                    className="w-full glass-input rounded-xl px-3 py-2 text-sm text-foreground resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger</label>
+                  <select
+                    value={builderTrigger}
+                    onChange={(e) => setBuilderTrigger(e.target.value)}
+                    className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
+                  >
+                    {["On Upload", "On Evidence Update", "On Analysis Request"].map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
-            <div className="w-64 border-l border-[var(--border-subtle)] p-5 space-y-4">
-              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Config</div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name</label>
-                <input
-                  value={builderName}
-                  onChange={(e) => setBuilderName(e.target.value)}
-                  placeholder="Workflow name"
-                  className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</label>
-                <textarea
-                  value={builderDescription}
-                  onChange={(e) => setBuilderDescription(e.target.value)}
-                  placeholder="Describe this workflow"
-                  className="w-full min-h-[88px] glass-input rounded-xl px-3 py-2 text-sm text-foreground resize-none"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trigger</label>
-                <select
-                  value={builderTrigger}
-                  onChange={(e) => setBuilderTrigger(e.target.value)}
-                  className="w-full h-10 glass-input rounded-xl px-3 text-sm text-foreground"
-                >
-                  {availableTriggers.map((trigger) => (
-                    <option key={trigger} value={trigger}>
-                      {trigger}
-                    </option>
+
+              {/* Right: Step preview (updates with trigger selection) */}
+              <div className="p-6">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                  Default Pipeline Steps
+                </div>
+                <div className="space-y-2">
+                  {builderSteps.map((step, i) => (
+                    <div key={step.label} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full border border-[var(--glass-border)] bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 mt-0.5">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-foreground">{step.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{step.detail}</div>
+                      </div>
+                    </div>
                   ))}
-                </select>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+                  Steps are preconfigured for this trigger type. Full step customization is coming in a future release.
+                </p>
               </div>
-              <div className="glass-panel glass-border rounded-xl p-3 text-sm text-muted-foreground">
-                {builderTemplate ? "Template settings loaded. Adjust and save." : "Configure and save your workflow."}
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-[var(--border-subtle)]">
               <button
-                className="w-full px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest"
+                className="px-4 py-2 rounded-xl glass-button text-muted-foreground text-[10px] font-bold uppercase tracking-widest hover:text-foreground"
+                onClick={closeBuilder}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
                 onClick={handleSaveWorkflow}
               >
-                Save Workflow
+                {builderWorkflowId ? "Save Changes" : "Save Workflow"}
               </button>
             </div>
           </div>

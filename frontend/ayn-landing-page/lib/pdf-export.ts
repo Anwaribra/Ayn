@@ -23,11 +23,19 @@ const downloadFallbackSnapshot = (dataUrl: string, filename: string) => {
   anchor.click();
 };
 
+export interface ExportPDFOptions {
+  backgroundColor?: string;
+  toastLabel?: string;
+}
+
 export const exportToPDF = async (
   elementId: string,
   filename: string = "audit-report.pdf",
+  options: ExportPDFOptions = {},
 ) => {
   const toastId = "gap-analysis-export";
+  const bgColor = options.backgroundColor ?? "#050810";
+  const toastLabel = options.toastLabel ?? "report";
   let exportedFallbackSnapshot = false;
 
   try {
@@ -39,9 +47,9 @@ export const exportToPDF = async (
       import("jspdf"),
     ]);
 
-    toast.loading("Preparing report export...", {
+    toast.loading(`Preparing ${toastLabel} export…`, {
       id: toastId,
-      description: "Capturing a clean snapshot of the report.",
+      description: "Capturing a snapshot of the current view.",
     });
 
     if ("fonts" in document) {
@@ -77,7 +85,7 @@ export const exportToPDF = async (
       const canvas = await html2canvas(clone, {
         scale: Math.min(window.devicePixelRatio || 1, 2),
         useCORS: true,
-        backgroundColor: "#050810",
+        backgroundColor: bgColor,
         logging: false,
         width: clone.scrollWidth,
         height: clone.scrollHeight,
@@ -132,13 +140,13 @@ export const exportToPDF = async (
 
       toast.success("Report exported", {
         id: toastId,
-        description: "Saved a screenshot-style PDF of the current report.",
+        description: "Your PDF report has been saved.",
       });
     } catch (error) {
       const fallbackCanvas = await html2canvas(clone, {
         scale: 1.5,
         useCORS: true,
-        backgroundColor: "#050810",
+        backgroundColor: bgColor,
         logging: false,
       });
 

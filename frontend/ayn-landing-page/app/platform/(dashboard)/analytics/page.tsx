@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 import { EmptyState } from "@/components/platform/empty-state"
 import { cn } from "@/lib/utils"
 
+import { exportToPDF } from "@/lib/pdf-export"
 import { AnalyticsKpiCards, type KpiCardData } from "@/components/platform/analytics/analytics-kpi-cards"
 import { AnalyticsInsights, type Insight } from "@/components/platform/analytics/analytics-insights"
 import {
@@ -226,6 +227,18 @@ function AnalyticsContent() {
     toast.success("Analytics data exported")
   }
 
+  const handleExportReport = async () => {
+    if (!analytics || analytics.totalReports === 0) {
+      toast.info("No data to export for this period")
+      return
+    }
+    await exportToPDF(
+      "analytics-export-report",
+      `ayn-analytics-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`,
+      { backgroundColor: "#ffffff", toastLabel: "analytics report" }
+    )
+  }
+
   const hasData = analytics && analytics.totalReports > 0
 
   const standardPerformance = useMemo(() => analytics?.standardPerformance ?? [], [analytics])
@@ -324,7 +337,21 @@ function AnalyticsContent() {
                   </span>
                 )}
               </div>
-              <button onClick={handleExportData} className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95"><Download className="w-3 h-3" /> Export Data</button>
+              <button
+                onClick={handleExportReport}
+                disabled={!analytics || (analytics.totalReports ?? 0) === 0}
+                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <Download className="w-3 h-3" /> Export Report
+              </button>
+              <button
+                onClick={handleExportData}
+                disabled={!analytics || (analytics.totalReports ?? 0) === 0}
+                className="flex min-h-[44px] items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
+                title="Download raw data as CSV"
+              >
+                CSV
+              </button>
             </div>
           </div>
 
@@ -509,6 +536,193 @@ function AnalyticsContent() {
           )}
         </div>
       )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          OFF-SCREEN EXPORT REPORT PANEL
+          Captured by html2canvas when user clicks "Export Report".
+          Uses inline styles for reliable rendering outside of CSS scope.
+          ───────────────────────────────────────────────────────────── */}
+      <div
+        id="analytics-export-report"
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: 0,
+          width: "1024px",
+          backgroundColor: "#ffffff",
+          fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+          color: "#0f172a",
+        }}
+      >
+        {/* ── Report Header ── */}
+        <div style={{ padding: "48px 56px 36px", borderBottom: "2px solid #e2e8f0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#2563eb", margin: "0 0 10px" }}>
+                Ayn Compliance Platform
+              </p>
+              <h1 style={{ fontSize: "32px", fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.1 }}>
+                Analytics Report
+              </h1>
+              <p style={{ fontSize: "14px", color: "#64748b", margin: "10px 0 0" }}>
+                {PERIOD_OPTIONS.find((o) => o.key === period)?.label} period
+                {" · "}
+                Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </p>
+            </div>
+            <div style={{ width: "52px", height: "52px", backgroundColor: "#2563eb", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "white", fontSize: "22px", fontWeight: 900 }}>A</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Executive Summary ── */}
+        <div style={{ padding: "28px 56px", backgroundColor: "#eff6ff", borderBottom: "1px solid #e2e8f0" }}>
+          <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#2563eb", margin: "0 0 10px" }}>
+            Summary
+          </p>
+          <p style={{ fontSize: "15px", color: "#1e293b", lineHeight: 1.7, margin: 0 }}>
+            {executiveSummary}
+          </p>
+        </div>
+
+        {/* ── Key Metrics ── */}
+        <div style={{ padding: "36px 56px", borderBottom: "1px solid #e2e8f0" }}>
+          <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", margin: "0 0 24px" }}>
+            Key Metrics
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+            {[
+              {
+                label: "Avg Score",
+                value: `${Math.round(analytics?.avgScore ?? 0)}%`,
+                color: (analytics?.avgScore ?? 0) >= 70 ? "#0d9668" : (analytics?.avgScore ?? 0) >= 40 ? "#b45309" : "#c9424a",
+              },
+              { label: "Reports", value: String(analytics?.totalReports ?? 0), color: "#2563eb" },
+              {
+                label: "Growth",
+                value: `${(analytics?.growth?.growthPercent ?? 0) >= 0 ? "+" : ""}${analytics?.growth?.growthPercent ?? 0}%`,
+                color: (analytics?.growth?.growthPercent ?? 0) >= 0 ? "#0d9668" : "#c9424a",
+              },
+              { label: "Evidence Files", value: String(analytics?.totalEvidence ?? 0), color: "#7c5ce0" },
+            ].map((m) => (
+              <div key={m.label} style={{ backgroundColor: "#f8fafc", borderRadius: "12px", padding: "20px 16px", textAlign: "center", border: "1px solid #e2e8f0" }}>
+                <p style={{ fontSize: "30px", fontWeight: 800, color: m.color, margin: 0, lineHeight: 1 }}>{m.value}</p>
+                <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", margin: "8px 0 0" }}>{m.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Performance Highlights ── */}
+        {(strongestStandard || weakestStandard) && (
+          <div style={{ padding: "36px 56px", borderBottom: "1px solid #e2e8f0" }}>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", margin: "0 0 20px" }}>
+              Performance Highlights
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              {strongestStandard && (
+                <div style={{ backgroundColor: "#f0fdf4", borderRadius: "12px", padding: "22px 24px", border: "1px solid #bbf7d0" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0d9668", margin: "0 0 10px" }}>Leading</p>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px", lineHeight: 1.3 }}>{strongestStandard.standardTitle}</p>
+                  <p style={{ fontSize: "28px", fontWeight: 800, color: "#0d9668", margin: 0 }}>{Math.round(strongestStandard.avgScore)}%</p>
+                  <p style={{ fontSize: "12px", color: "#4b5563", margin: "6px 0 0" }}>{strongestStandard.reportCount} report{strongestStandard.reportCount !== 1 ? "s" : ""} this period</p>
+                </div>
+              )}
+              {weakestStandard && (
+                <div style={{ backgroundColor: "#fff7ed", borderRadius: "12px", padding: "22px 24px", border: "1px solid #fed7aa" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#b45309", margin: "0 0 10px" }}>Needs Attention</p>
+                  <p style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px", lineHeight: 1.3 }}>{weakestStandard.standardTitle}</p>
+                  <p style={{ fontSize: "28px", fontWeight: 800, color: "#b45309", margin: 0 }}>{Math.round(weakestStandard.avgScore)}%</p>
+                  <p style={{ fontSize: "12px", color: "#4b5563", margin: "6px 0 0" }}>{weakestStandard.reportCount} report{weakestStandard.reportCount !== 1 ? "s" : ""} this period</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Standards Overview Table ── */}
+        {(analytics?.standardPerformance?.length ?? 0) > 0 && (
+          <div style={{ padding: "36px 56px", borderBottom: "1px solid #e2e8f0" }}>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", margin: "0 0 20px" }}>
+              Standards Overview
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f8fafc" }}>
+                  {["Standard", "Avg Score", "Min", "Max", "Reports", "Trend"].map((h) => (
+                    <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#94a3b8", borderBottom: "2px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(analytics?.standardPerformance ?? []).map((s: any, i: number) => {
+                  const scoreColor = Math.round(s.avgScore) >= 70 ? "#0d9668" : Math.round(s.avgScore) >= 40 ? "#b45309" : "#c9424a"
+                  return (
+                    <tr key={s.standardTitle} style={{ backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", fontWeight: 600, color: "#1e293b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{s.standardTitle}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", fontWeight: 700, color: scoreColor, borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{Math.round(s.avgScore)}%</td>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{Math.round(s.minScore)}%</td>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{Math.round(s.maxScore)}%</td>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>{s.reportCount}</td>
+                      <td style={{ padding: "11px 14px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>{s.trend ?? "—"}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Insights & Recommendations ── */}
+        {insights.length > 0 && (
+          <div style={{ padding: "36px 56px", borderBottom: "1px solid #e2e8f0" }}>
+            <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#94a3b8", margin: "0 0 20px" }}>
+              Insights & Recommendations
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {insights.map((insight) => {
+                const severityColor =
+                  insight.severity === "positive" ? "#0d9668"
+                  : insight.severity === "critical" ? "#c9424a"
+                  : insight.severity === "warning" ? "#b45309"
+                  : "#2563eb"
+                const severityBg =
+                  insight.severity === "positive" ? "#f0fdf4"
+                  : insight.severity === "critical" ? "#fff1f2"
+                  : insight.severity === "warning" ? "#fff7ed"
+                  : "#eff6ff"
+                return (
+                  <div key={insight.id} style={{ backgroundColor: severityBg, borderRadius: "10px", padding: "18px 20px", border: `1px solid ${severityColor}33` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: severityColor }}>
+                        {insight.severity === "positive" ? "Positive" : insight.severity === "critical" ? "Critical" : insight.severity === "warning" ? "Attention" : "Insight"}
+                      </span>
+                      {insight.metric && (
+                        <span style={{ fontSize: "10px", color: "#94a3b8", backgroundColor: "#f1f5f9", borderRadius: "6px", padding: "2px 6px" }}>{insight.metric}</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b", margin: "0 0 5px" }}>{insight.title}</p>
+                    <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: 1.6 }}>{insight.description}</p>
+                    {insight.action && (
+                      <p style={{ fontSize: "11px", fontWeight: 700, color: severityColor, margin: "10px 0 0", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                        → {insight.action}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        <div style={{ padding: "24px 56px", backgroundColor: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>Generated by Ayn Compliance Platform</p>
+          <p style={{ fontSize: "11px", color: "#cbd5e1", margin: 0 }}>{new Date().toISOString().slice(0, 10)}</p>
+        </div>
+      </div>
     </div>
   )
 }

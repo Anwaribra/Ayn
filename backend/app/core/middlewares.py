@@ -77,7 +77,7 @@ async def get_current_user(
         "id": user_id,
         "name": user_name or "User",
         "email": user_email,
-        "role": user_role,
+        "role": user_role or "USER",
         "institutionId": user_institution,
     }
 

@@ -156,6 +156,48 @@ class HorusService:
         return False
 
     @staticmethod
+    def _format_prior_messages_for_file_model(
+        messages: List[Any] | None,
+        *,
+        current_user_message: Optional[str],
+        max_messages: int = 14,
+        max_chars_per_message: int = 12000,
+    ) -> str:
+        """
+        Text-only transcript of prior turns for multimodal (file) requests.
+
+        stream_chat_with_files sends only the current user turn + attachments to Gemini,
+        so follow-ups (e.g. 'summarize again') must inject earlier USER/ASSISTANT text here.
+        """
+        if not messages:
+            return ""
+        msgs = list(messages)[-max_messages:]
+        cur = (current_user_message or "").strip()
+        if cur and msgs and (getattr(msgs[-1], "role", None) or "").strip().lower() == "user":
+            last_content = (getattr(msgs[-1], "content", None) or "").strip()
+            if last_content == cur:
+                msgs = msgs[:-1]
+        lines: list[str] = []
+        for m in msgs:
+            role = (getattr(m, "role", None) or "").strip().upper()
+            if role not in ("USER", "ASSISTANT"):
+                continue
+            body = (getattr(m, "content", None) or "").strip()
+            if not body:
+                continue
+            if len(body) > max_chars_per_message:
+                body = body[:max_chars_per_message] + "\n[...truncated for length...]"
+            lines.append(f"{role}: {body}")
+        if not lines:
+            return ""
+        return (
+            "[Prior conversation in this chat — use it for follow-up questions. "
+            "The user's CURRENT request and any newly attached files are in the main prompt below. "
+            "Answer the current request using this history; do not ignore prior assistant answers.]\n\n"
+            + "\n\n".join(lines)
+        )
+
+    @staticmethod
     def _needs_compliance_analysis(message: str | None) -> bool:
         if not message:
             return False
@@ -1246,6 +1288,20 @@ class HorusService:
         history_task = asyncio.create_task(ChatService.get_chat(chat_id, user_id, message_limit=10))
 
         if file_results:
+            # Multimodal path only sends the current turn + files to Gemini — inject prior
+            # chat text so follow-ups (e.g. summarize) still see the last assistant answer.
+            try:
+                history_for_files = await history_task
+            except Exception as hist_err:
+                logger.warning("Horus: could not load chat history for file follow-up: %s", hist_err)
+                history_for_files = None
+            prior_transcript = self._format_prior_messages_for_file_model(
+                getattr(history_for_files, "messages", None) if history_for_files else None,
+                current_user_message=message,
+            )
+            if prior_transcript:
+                context = prior_transcript + "\n\n---\n" + context
+
             if request_mode == "agent":
                 yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'file_analysis'), 'route': 'file_analysis', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'Agent mode stayed on direct file analysis because the attached document is the main source of truth.', 'step_count': 1})}\n"
                 await asyncio.sleep(0)

@@ -33,6 +33,7 @@ import { api } from "@/lib/api";
 import { useCommandPaletteContext } from "@/components/platform/command-palette-provider";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useFocusMode } from "@/lib/focus-mode-context";
+import { useUiLanguage } from "@/lib/ui-language-context";
 import type { Notification } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -48,11 +49,33 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext();
   const { focusMode } = useFocusMode();
+  const { isArabic } = useUiLanguage();
   const { resolvedTheme } = useTheme();
   // Enable global keyboard shortcuts (⌘K to open command palette)
   useCommandPalette();
 
   const platformTheme = resolvedTheme ?? "dark";
+  const shellText = useMemo(
+    () => ({
+      openSidebar: isArabic ? "فتح الشريط الجانبي" : "Open sidebar",
+      search: isArabic ? "ابحث..." : "Search…",
+      quickPages: isArabic ? "صفحات سريعة" : "Quick Pages",
+      activity: isArabic ? "النشاط" : "Activity",
+      markAllRead: isArabic ? "تعيين الكل كمقروء" : "Mark all read",
+      quiet: isArabic ? "لا جديد الآن." : "Quiet for now.",
+      viewAllActivity: isArabic ? "عرض كل النشاط" : "View All Activity",
+      view: isArabic ? "عرض" : "View",
+      overview: isArabic ? "نظرة عامة" : "Overview",
+      overviewNote: isArabic ? "ملخص تنفيذي" : "Executive snapshot",
+      calendar: isArabic ? "التقويم" : "Calendar",
+      calendarNote: isArabic ? "المراجعات القادمة" : "Upcoming audits",
+      aiTools: isArabic ? "أدوات الذكاء" : "AI Tools",
+      aiToolsNote: isArabic ? "مختبر الأتمتة" : "Automation lab",
+      failedMarkRead: isArabic ? "تعذر تعيين الكل كمقروء" : "Failed to mark all as read",
+      failedSingleRead: isArabic ? "تعذر تعيين الإشعار كمقروء" : "Failed to mark as read",
+    }),
+    [isArabic],
+  );
 
   // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
@@ -144,7 +167,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         toast(latest.title, {
           description: latest.message,
           action: {
-            label: "View",
+            label: shellText.view,
             onClick: () => {
               if (latest.relatedEntityType === "evidence")
                 router.push("/platform/evidence");
@@ -156,7 +179,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         });
       }
     }
-  }, [notifications, router]);
+  }, [notifications, router, shellText.view]);
 
   const handleClearNotifications = useCallback(async () => {
     try {
@@ -166,9 +189,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         { revalidate: false },
       );
     } catch {
-      toast.error("Failed to mark all as read");
+      toast.error(shellText.failedMarkRead);
     }
-  }, [mutateNotifications, notifications]);
+  }, [mutateNotifications, notifications, shellText.failedMarkRead]);
 
   useEffect(() => {
     if (
@@ -205,7 +228,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         );
       }
     } catch {
-      toast.error("Failed to mark as read");
+      toast.error(shellText.failedSingleRead);
     }
   };
 
@@ -282,7 +305,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <button
                   onClick={() => setSidebarOpen(true)}
                   className="glass-button glass-text-secondary lg:hidden min-h-[44px] min-w-[44px] rounded-xl p-2 transition-colors hover:text-[var(--glass-text-primary)]"
-                  aria-label="Open sidebar"
+                  aria-label={shellText.openSidebar}
                 >
                   <PanelLeft className="w-4 h-4" />
                 </button>
@@ -292,7 +315,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                   className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl glass-button text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
                 >
                   <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
-                  <span className="hidden sm:inline font-medium">Search…</span>
+                  <span className={cn("hidden sm:inline font-medium", isArabic && "font-arabic")}>{shellText.search}</span>
                   <kbd className="glass-pill glass-text-secondary ml-auto hidden items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold sm:flex">
                     <span className="text-xs">⌘</span>K
                   </kbd>
@@ -322,7 +345,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-5">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                          Quick Pages
+                          {shellText.quickPages}
                         </h3>
                         <button
                           onClick={() => setShowQuickPages(false)}
@@ -336,21 +359,24 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                         {[
                           {
                             label: "Overview",
+                            translatedLabel: shellText.overview,
                             href: "/platform/overview",
                             icon: LayoutGrid,
-                            note: "Executive snapshot",
+                            note: shellText.overviewNote,
                           },
                           {
                             label: "Calendar",
+                            translatedLabel: shellText.calendar,
                             href: "/platform/calendar",
                             icon: CalendarDays,
-                            note: "Upcoming audits",
+                            note: shellText.calendarNote,
                           },
                           {
                             label: "AI Tools",
+                            translatedLabel: shellText.aiTools,
                             href: "/platform/ai-tools",
                             icon: Sparkles,
-                            note: "Automation lab",
+                            note: shellText.aiToolsNote,
                           },
                         ].map((item) => (
                           <button
@@ -366,7 +392,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                             </span>
                             <span className="flex-1 text-left">
                               <span className="text-sm font-semibold text-foreground block">
-                                {item.label}
+                                {item.translatedLabel}
                               </span>
                               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
                                 {item.note}
@@ -402,14 +428,14 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                     <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                          Activity
+                          {shellText.activity}
                         </h3>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={handleClearNotifications}
                             className="text-[10px] text-primary font-bold hover:underline min-h-[32px] px-1"
                           >
-                            Mark all read
+                            {shellText.markAllRead}
                           </button>
                           <button
                             onClick={() => setShowNotifications(false)}
@@ -425,7 +451,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                           <div className="flex flex-col items-center justify-center py-10 opacity-60">
                             <Bell className="w-8 h-8 text-muted-foreground mb-3" />
                             <p className="text-center text-muted-foreground italic text-sm">
-                              Quiet for now.
+                              {shellText.quiet}
                             </p>
                           </div>
                         ) : (
@@ -498,7 +524,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                           }}
                           className="glass-button glass-text-secondary mt-4 w-full rounded-2xl py-3 text-center text-[10px] font-bold uppercase tracking-widest transition-colors hover:text-[var(--glass-text-primary)]"
                         >
-                          View All Activity
+                          {shellText.viewAllActivity}
                         </button>
                       )}
                     </div>
@@ -510,7 +536,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-2xl glass-panel glass-border text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Open sidebar"
+                aria-label={shellText.openSidebar}
               >
                 <PanelLeft className="w-5 h-5" />
               </button>

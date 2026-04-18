@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Lightbulb, AlertTriangle, TrendingUp, ShieldCheck, ArrowRight, Sparkles, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 export type InsightSeverity = "positive" | "warning" | "critical" | "info"
 
@@ -27,6 +28,7 @@ const SEVERITY_CONFIG: Record<InsightSeverity, { icon: LucideIcon; className: st
 }
 
 export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
+  const { isArabic } = useUiLanguage()
   if (insights.length === 0) return null
 
   return (
@@ -39,8 +41,10 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)]">Insights</h3>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Patterns and recommendations from your data</p>
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">{isArabic ? "الرؤى" : "Insights"}</h3>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">
+              {isArabic ? "أنماط وتوصيات من بياناتك" : "Patterns and recommendations from your data"}
+            </p>
           </div>
         </div>
 
@@ -65,7 +69,15 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <h4 className="text-sm font-bold text-foreground">{insight.title}</h4>
                     <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]", config.className)}>
-                      {config.label}
+                      {isArabic
+                        ? config.label === "Positive"
+                          ? "إيجابي"
+                          : config.label === "Attention"
+                          ? "تنبيه"
+                          : config.label === "Critical"
+                          ? "حرج"
+                          : "رؤية"
+                        : config.label}
                     </span>
                     {insight.metric && (
                       <span className="glass-pill glass-text-secondary px-2 py-0.5 text-[10px] font-bold">{insight.metric}</span>

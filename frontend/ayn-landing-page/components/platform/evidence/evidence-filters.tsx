@@ -5,6 +5,7 @@ import { Search, Filter, SlidersHorizontal, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import useSWR from "swr"
 import { api } from "@/lib/api"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 const STATUSES = ["pending", "processing", "analyzed", "linked", "failed"] as const
 type Status = typeof STATUSES[number]
@@ -32,6 +33,7 @@ export function EvidenceFilters({
     activeStatus,
     activeStandard,
 }: EvidenceFiltersProps) {
+    const { isArabic } = useUiLanguage()
     const [query, setQuery] = useState("")
     const [showStatusMenu, setShowStatusMenu] = useState(false)
     const [showStandardMenu, setShowStandardMenu] = useState(false)
@@ -43,6 +45,13 @@ export function EvidenceFilters({
     })
 
     const hasActiveFilters = activeStatus !== "" || activeStandard !== ""
+    const statusLabels: Record<Status, string> = {
+        pending: isArabic ? "قيد الانتظار" : "Pending",
+        processing: isArabic ? "قيد المعالجة" : "Processing",
+        analyzed: isArabic ? "تم التحليل" : "Analyzed",
+        linked: isArabic ? "مرتبط" : "Linked",
+        failed: isArabic ? "فشل" : "Failed",
+    }
 
     const handleSearch = (v: string) => {
         setQuery(v)
@@ -66,14 +75,14 @@ export function EvidenceFilters({
                     type="text"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="Search by title or filename…"
+                    placeholder={isArabic ? "ابحث بالعنوان أو اسم الملف…" : "Search by title or filename…"}
                     className="w-full pl-11 pr-4 py-3 border border-white/8 bg-white/[0.04] rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
                 />
                 {query && (
                     <button
                         onClick={() => handleSearch("")}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Clear search"
+                        aria-label={isArabic ? "مسح البحث" : "Clear search"}
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
@@ -93,7 +102,7 @@ export function EvidenceFilters({
                         )}
                     >
                         <SlidersHorizontal className="w-4 h-4" />
-                        {activeStatus ? <span>{STATUS_LABELS[activeStatus] ?? activeStatus}</span> : "Status"}
+                        {activeStatus ? <span>{statusLabels[activeStatus] ?? activeStatus}</span> : isArabic ? "الحالة" : "Status"}
                         {activeStatus && (
                             <span
                                 onClick={(e) => { e.stopPropagation(); onStatusChange("") }}
@@ -114,7 +123,7 @@ export function EvidenceFilters({
                                         activeStatus === s ? "text-primary font-bold" : "text-foreground"
                                     )}
                                 >
-                                    {STATUS_LABELS[s]}
+                                    {statusLabels[s]}
                                 </button>
                             ))}
                         </div>
@@ -134,8 +143,8 @@ export function EvidenceFilters({
                     >
                         <Filter className="w-4 h-4" />
                         {activeStandard && standards
-                            ? (standards.find((s: any) => s.id === activeStandard)?.code ?? "Standard")
-                            : "By Standard"}
+                            ? (standards.find((s: any) => s.id === activeStandard)?.code ?? (isArabic ? "المعيار" : "Standard"))
+                            : isArabic ? "حسب المعيار" : "By Standard"}
                         {activeStandard && (
                             <span
                                 onClick={(e) => { e.stopPropagation(); onStandardChange("") }}
@@ -148,7 +157,7 @@ export function EvidenceFilters({
                     {showStandardMenu && (
                         <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 z-30 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-modal)]/95 shadow-2xl min-w-[220px] max-w-[calc(100vw-2rem)] py-1.5 animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-xl">
                             {!standards || standards.length === 0 ? (
-                                <p className="px-5 py-4 text-sm text-muted-foreground text-center">No standards configured</p>
+                                <p className="px-5 py-4 text-sm text-muted-foreground text-center">{isArabic ? "لا توجد معايير مهيأة" : "No standards configured"}</p>
                             ) : (
                                 standards.map((s: any) => (
                                     <button
@@ -175,7 +184,7 @@ export function EvidenceFilters({
                         className="flex items-center gap-1.5 px-4 py-3 min-h-[44px] rounded-full text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
-                        Clear
+                        {isArabic ? "مسح" : "Clear"}
                     </button>
                 )}
             </div>

@@ -16,6 +16,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 
 export default function EvidencePage() {
@@ -28,8 +29,9 @@ export default function EvidencePage() {
 
 function EvidenceContent() {
   const { user } = useAuth()
+  const { isArabic } = useUiLanguage()
   const router = useRouter()
-  usePageTitle("Evidence Vault")
+  usePageTitle(isArabic ? "مخزن الأدلة" : "Evidence Vault")
   const { data: evidenceList, isLoading, error, mutate: localMutate } = useSWR<Evidence[]>(
     user ? [`evidence`, user.id] : null,
     () => api.getEvidence(),
@@ -43,7 +45,7 @@ function EvidenceContent() {
   const handleDemoLoad = () => {
     if (!user) return;
     
-    toast.info("Initializing Live Demo Mode...", { duration: 1500 });
+    toast.info(isArabic ? "جارٍ تشغيل العرض التجريبي..." : "Initializing Live Demo Mode...", { duration: 1500 });
     
     const demoEvidenceId = "demo-iso-21001";
     const demoGapAnalysisId = "demo-gap-report-1";
@@ -99,11 +101,58 @@ function EvidenceContent() {
     globalMutate([`dashboard-metrics`, user.id], mockMetrics, false);
 
     setTimeout(() => {
-      toast.success("Demo Data Loaded", {
-        description: "Evidence added and gap analysis generated at 82%.",
+      toast.success(isArabic ? "تم تحميل بيانات العرض" : "Demo Data Loaded", {
+        description: isArabic ? "تمت إضافة دليل وإنشاء تحليل فجوات بنتيجة 82٪." : "Evidence added and gap analysis generated at 82%.",
       });
     }, 1500);
   };
+  const copy = useMemo(() => ({
+    title: isArabic ? "الأدلة" : "Evidence",
+    subtitle: isArabic ? "مستنداتك المرفوعة، مربوطة بمعايير الامتثال وجاهزة للتحليل." : "Your uploaded documents, mapped to compliance criteria and ready for analysis.",
+    uploading: isArabic ? "جارٍ الرفع…" : "Uploading…",
+    uploadEvidence: isArabic ? "رفع دليل" : "Upload Evidence",
+    total: isArabic ? "الإجمالي" : "Total",
+    analyzed: isArabic ? "تم التحليل" : "Analyzed",
+    linked: isArabic ? "مرتبط" : "Linked",
+    confidence: isArabic ? "الثقة" : "Confidence",
+    failedLoad: isArabic ? "فشل تحميل الأدلة." : "Failed to load evidence.",
+    retry: isArabic ? "إعادة المحاولة" : "Retry",
+    selectAll: isArabic ? "تحديد الكل" : "Select all",
+    clear: isArabic ? "مسح" : "Clear",
+    gapAnalysis: isArabic ? "تحليل الفجوات" : "Gap Analysis",
+    noMatches: isArabic ? "لا توجد أدلة تطابق الفلاتر." : "No evidence matches your filters.",
+    clearFilters: isArabic ? "مسح الفلاتر" : "Clear filters",
+    selected: isArabic ? "محدد" : "Selected",
+    selectEvidence: isArabic ? "تحديد الدليل" : "Select evidence",
+    deselectEvidence: isArabic ? "إلغاء تحديد الدليل" : "Deselect evidence",
+    dropUpload: isArabic ? "أفلت الملف لرفعه" : "Drop to upload evidence",
+    close: isArabic ? "إغلاق" : "Close",
+    docPreview: isArabic ? "معاينة المستند" : "Document preview",
+    untitled: isArabic ? "مستند بلا عنوان" : "Untitled Document",
+    summary: isArabic ? "الملخص" : "Summary",
+    openOriginal: isArabic ? "فتح الملف الأصلي" : "Open original file",
+    noPreview: isArabic ? "لا توجد معاينة متاحة لهذا المستند." : "No preview available for this document.",
+    horusAnalysis: isArabic ? "تحليل حورس" : "Horus Analysis",
+    alignmentScore: isArabic ? "درجة المواءمة" : "Alignment score",
+    linkedCriteria: isArabic ? "المعايير المرتبطة" : "Linked Criteria",
+    standard: isArabic ? "المعيار" : "Standard",
+    noCriteria: isArabic ? "لا توجد معايير مرتبطة بعد." : "No criteria linked yet.",
+    runAnalysisMap: isArabic ? "شغّل التحليل لربط هذا الملف بمعاييرك." : "Run an analysis to map this file against your standards.",
+    bulkTitle: isArabic ? "تشغيل تحليل الفجوات على الملفات المحددة" : "Run Gap Analysis on Selected Files",
+    bulkSubtitle: isArabic ? "اختر معيارًا الآن، أو اتركه فارغًا وحدده داخل صفحة تحليل الفجوات." : "Choose a standard now, or leave it blank and pick the standard inside Gap Analysis.",
+    targetStandard: isArabic ? "المعيار المستهدف" : "Target Standard",
+    chooseLater: isArabic ? "اختر لاحقًا داخل تحليل الفجوات" : "Choose later in Gap Analysis",
+    detectedOne: isArabic ? "اكتشفنا معيارًا مرتبطًا واحدًا لهذه الملفات ويمكننا تعبئته تلقائيًا." : "We detected one matching linked standard for these files and can prefill it automatically.",
+    cancel: isArabic ? "إلغاء" : "Cancel",
+    openGapAnalysis: isArabic ? "فتح تحليل الفجوات" : "Open Gap Analysis",
+    analyzeEvidence: isArabic ? "تحليل الدليل" : "Analyze Evidence",
+    selectFramework: isArabic ? "اختر الإطار الذي تريد المطابقة عليه." : "Select framework to map against.",
+    allStandards: isArabic ? "كل المعايير المتاحة" : "All Available Standards",
+    processing: isArabic ? "جارٍ التنفيذ..." : "Processing...",
+    runAnalysis: isArabic ? "تشغيل التحليل" : "Run Analysis",
+    deleteEvidence: isArabic ? "حذف الدليل" : "Delete Evidence",
+    confirmDelete: isArabic ? "تأكيد الحذف" : "Confirm Delete",
+  }), [isArabic])
  
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
@@ -220,10 +269,10 @@ function EvidenceContent() {
       } else {
         await api.analyzeStandard(selectedStandardId, [selectedEvidence.id], true)
       }
-      toast.success("Analysis started!", { description: "Horus is mapping this evidence against the selected standards." })
+      toast.success(isArabic ? "بدأ التحليل!" : "Analysis started!", { description: isArabic ? "يقوم حورس بربط هذا الدليل بالمعايير المحددة." : "Horus is mapping this evidence against the selected standards." })
       setIsAnalyzeModalOpen(false)
     } catch (err: any) {
-      toast.error(err.message || "Failed to start analysis")
+      toast.error(err.message || (isArabic ? "فشل بدء التحليل" : "Failed to start analysis"))
     } finally {
       setIsAnalyzing(false)
     }
@@ -237,13 +286,13 @@ function EvidenceContent() {
     if (!evidenceToDelete) return
     try {
       await api.deleteEvidence(evidenceToDelete.id)
-      toast.success("Evidence deleted")
+      toast.success(isArabic ? "تم حذف الدليل" : "Evidence deleted")
       if (selectedEvidence?.id === evidenceToDelete.id) {
         setSelectedEvidence(null)
       }
       localMutate()
     } catch (error) {
-      toast.error("Failed to delete evidence", { description: "Please try again." })
+      toast.error(isArabic ? "فشل حذف الدليل" : "Failed to delete evidence", { description: isArabic ? "حاول مرة أخرى." : "Please try again." })
     } finally {
       setEvidenceToDelete(null)
     }
@@ -257,12 +306,12 @@ function EvidenceContent() {
 
     try {
       await api.uploadEvidence(file)
-      toast.success("Evidence uploaded successfully", {
-        description: "Horus is analyzing the document for compliance standards."
+      toast.success(isArabic ? "تم رفع الدليل بنجاح" : "Evidence uploaded successfully", {
+        description: isArabic ? "يقوم حورس بتحليل المستند وفق معايير الامتثال." : "Horus is analyzing the document for compliance standards."
       })
       localMutate()
     } catch (error) {
-      toast.error("Upload failed", { description: "Please try again." })
+      toast.error(isArabic ? "فشل الرفع" : "Upload failed", { description: isArabic ? "حاول مرة أخرى." : "Please try again." })
     } finally {
       setIsUploading(false)
     }
@@ -277,12 +326,12 @@ function EvidenceContent() {
     setIsUploading(true)
     try {
       await api.uploadEvidence(file)
-      toast.success("Evidence uploaded successfully", {
-        description: "Horus is analyzing the document for compliance standards."
+      toast.success(isArabic ? "تم رفع الدليل بنجاح" : "Evidence uploaded successfully", {
+        description: isArabic ? "يقوم حورس بتحليل المستند وفق معايير الامتثال." : "Horus is analyzing the document for compliance standards."
       })
       localMutate()
     } catch {
-      toast.error("Upload failed", { description: "Please try again." })
+      toast.error(isArabic ? "فشل الرفع" : "Upload failed", { description: isArabic ? "حاول مرة أخرى." : "Please try again." })
     } finally {
       setIsUploading(false)
     }
@@ -394,7 +443,7 @@ function EvidenceContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary/40 rounded-none pointer-events-none">
           <div className="text-center">
             <UploadCloud className="w-16 h-16 text-primary mx-auto mb-3" />
-            <p className="text-xl font-bold text-primary">Drop to upload evidence</p>
+            <p className="text-xl font-bold text-primary">{copy.dropUpload}</p>
           </div>
         </div>
       )}
@@ -404,10 +453,10 @@ function EvidenceContent() {
           <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Evidence
+                {copy.title}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your uploaded documents, mapped to compliance criteria and ready for analysis.
+                {copy.subtitle}
               </p>
             </div>
 
@@ -425,12 +474,12 @@ function EvidenceContent() {
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Uploading…</span>
+                  <span>{copy.uploading}</span>
                 </>
               ) : (
                 <>
                   <UploadCloud className="w-4 h-4" />
-                  <span>Upload Evidence</span>
+                  <span>{copy.uploadEvidence}</span>
                 </>
               )}
             </label>
@@ -438,19 +487,19 @@ function EvidenceContent() {
 
           <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.total}</p>
               <p className="mt-1.5 text-xl font-bold text-foreground">{vaultSummary.total}</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Analyzed</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.analyzed}</p>
               <p className="mt-1.5 text-xl font-bold text-[var(--status-success)]">{vaultSummary.analyzed}</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Linked</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.linked}</p>
               <p className="mt-1.5 text-xl font-bold text-primary">{vaultSummary.linked}</p>
             </div>
             <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Confidence</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.confidence}</p>
               <p className="mt-1.5 text-xl font-bold text-foreground">
                 {vaultSummary.avgConfidence > 0 ? `${vaultSummary.avgConfidence}%` : "—"}
               </p>
@@ -469,13 +518,13 @@ function EvidenceContent() {
 
       {error ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl glass-panel glass-border">
-          <p className="text-muted-foreground text-center mb-4">Failed to load evidence.</p>
+          <p className="text-muted-foreground text-center mb-4">{copy.failedLoad}</p>
           <button
             type="button"
             onClick={() => localMutate()}
             className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
           >
-            Retry
+            {copy.retry}
           </button>
         </div>
       ) : isLoading ? (
@@ -510,8 +559,8 @@ function EvidenceContent() {
           {/* H3: Result count */}
           {(searchQuery || statusFilter || standardFilter) && (
             <p className="text-sm text-muted-foreground font-medium mb-4">
-              {filteredEvidence.length} result{filteredEvidence.length !== 1 ? "s" : ""}
-              {searchQuery && <span> for <span className="text-foreground font-bold">"{searchQuery}"</span></span>}
+              {filteredEvidence.length} {isArabic ? (filteredEvidence.length === 1 ? "نتيجة" : "نتائج") : `result${filteredEvidence.length !== 1 ? "s" : ""}`}
+              {searchQuery && <span> {isArabic ? "للبحث" : "for"} <span className="text-foreground font-bold">"{searchQuery}"</span></span>}
             </p>
           )}
           {filteredEvidence.length > 0 && (
@@ -521,7 +570,7 @@ function EvidenceContent() {
                 onClick={selectAllVisible}
                 className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
               >
-                Select all
+                {copy.selectAll}
               </button>
               {selectedEvidenceIds.length > 0 && (
                 <>
@@ -530,7 +579,7 @@ function EvidenceContent() {
                     onClick={clearSelection}
                     className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    Clear ({selectedEvidenceIds.length})
+                    {copy.clear} ({selectedEvidenceIds.length})
                   </button>
                   <button
                     type="button"
@@ -538,7 +587,7 @@ function EvidenceContent() {
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    Gap Analysis
+                    {copy.gapAnalysis}
                   </button>
                 </>
               )}
@@ -547,12 +596,12 @@ function EvidenceContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredEvidence.length === 0 ? (
               <div className="col-span-full py-20 text-center">
-                <p className="text-muted-foreground font-medium">No evidence matches your filters.</p>
+                <p className="text-muted-foreground font-medium">{copy.noMatches}</p>
                 <button
                   onClick={() => { setSearchQuery(""); setStatusFilter(""); setStandardFilter("") }}
                   className="mt-3 text-xs font-bold text-primary hover:underline"
                 >
-                  Clear filters
+                  {copy.clearFilters}
                 </button>
               </div>
             ) : filteredEvidence.map((evidence: Evidence) => (
@@ -580,13 +629,13 @@ function EvidenceContent() {
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-[var(--glass-border)] bg-[var(--surface-modal)]/80 text-transparent hover:border-primary/40",
                   )}
-                  aria-label={selectedEvidenceIds.includes(evidence.id) ? "Deselect evidence" : "Select evidence"}
+                  aria-label={selectedEvidenceIds.includes(evidence.id) ? copy.deselectEvidence : copy.selectEvidence}
                 >
                   <Check className={cn("h-3.5 w-3.5", selectedEvidenceIds.includes(evidence.id) ? "opacity-100" : "opacity-0")} />
                 </button>
                 {selectedEvidenceIds.includes(evidence.id) && (
                   <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-                    Selected
+                    {copy.selected}
                   </div>
                 )}
                 <EvidenceCard
@@ -619,9 +668,9 @@ function EvidenceContent() {
                     ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
                     : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
                 )}>
-                  {selectedEvidence.status === "analyzed" ? "Analyzed"
-                    : selectedEvidence.status === "linked" ? "Linked"
-                    : selectedEvidence.status === "pending" ? "Pending"
+                    {selectedEvidence.status === "analyzed" ? copy.analyzed
+                    : selectedEvidence.status === "linked" ? copy.linked
+                    : selectedEvidence.status === "pending" ? (isArabic ? "قيد الانتظار" : "Pending")
                     : selectedEvidence.status}
                 </span>
               </div>
@@ -632,26 +681,26 @@ function EvidenceContent() {
                 onClick={handleOpenGapAnalysisForEvidence}
                 className="hidden sm:flex px-3 py-2 text-xs font-semibold glass-button text-foreground rounded-lg transition-colors items-center gap-1.5"
               >
-                <ExternalLink className="w-3.5 h-3.5" /> Gap Analysis
+                <ExternalLink className="w-3.5 h-3.5" /> {copy.gapAnalysis}
               </button>
               <button
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(true)}
                 className="px-3 py-2 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Analyze
+                <Sparkles className="w-3.5 h-3.5" /> {isArabic ? "تحليل" : "Analyze"}
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(selectedEvidence)}
                 className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
+                <Trash2 className="w-3.5 h-3.5" /> {isArabic ? "حذف" : "Delete"}
               </button>
               <button
                 onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null) }}
                 className="p-2 rounded-lg glass-button text-muted-foreground transition-colors"
-                aria-label="Close"
+                aria-label={copy.close}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -661,18 +710,18 @@ function EvidenceContent() {
           {/* LEFT PANE: Document Viewer */}
           <div className="w-1/2 h-full pt-16 border-r border-[var(--border-subtle)] flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
             {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && selectedEvidence.originalFilename?.toLowerCase().endsWith(".pdf") ? (
-              <iframe src={selectedEvidence.fileUrl} className="w-full h-full" title={selectedEvidence.title || "Document preview"} />
+              <iframe src={selectedEvidence.fileUrl} className="w-full h-full" title={selectedEvidence.title || copy.docPreview} />
             ) : (
               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
                 <div className="max-w-3xl mx-auto rounded-xl glass-panel glass-border shadow-2xl p-8 lg:p-12 min-h-full">
                   <div className="mb-8 pb-6 border-b border-[var(--border-subtle)]">
-                    <h1 className="text-2xl font-bold text-foreground mb-2">{selectedEvidence.title || "Untitled Document"}</h1>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">{selectedEvidence.title || copy.untitled}</h1>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       {selectedEvidence.documentType && (
                         <span className="uppercase font-medium">{selectedEvidence.documentType}</span>
                       )}
                       {selectedEvidence.confidenceScore != null && selectedEvidence.confidenceScore > 0 && (
-                        <span className="text-emerald-500 font-semibold">{selectedEvidence.confidenceScore}% match</span>
+                        <span className="text-emerald-500 font-semibold">{selectedEvidence.confidenceScore}% {isArabic ? "تطابق" : "match"}</span>
                       )}
                     </div>
                   </div>
@@ -680,7 +729,7 @@ function EvidenceContent() {
                   {selectedEvidence.summary ? (
                     <div className="space-y-5">
                       <div>
-                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Summary</h3>
+                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{copy.summary}</h3>
                         <p className="text-sm text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
                       </div>
                       {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
@@ -690,14 +739,14 @@ function EvidenceContent() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
                         >
-                          <ExternalLink className="w-4 h-4" /> Open original file
+                          <ExternalLink className="w-4 h-4" /> {copy.openOriginal}
                         </a>
                       )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-14 text-center">
                       <FileText className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground">No preview available for this document.</p>
+                      <p className="text-sm text-muted-foreground">{copy.noPreview}</p>
                       {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
                         <a
                           href={selectedEvidence.fileUrl}
@@ -705,7 +754,7 @@ function EvidenceContent() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-primary hover:underline"
                         >
-                          <ExternalLink className="w-4 h-4" /> Open original file
+                          <ExternalLink className="w-4 h-4" /> {copy.openOriginal}
                         </a>
                       )}
                     </div>
@@ -722,7 +771,7 @@ function EvidenceContent() {
               
               <div className="mb-6 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                <h2 className="text-base font-bold text-foreground">Horus Analysis</h2>
+                <h2 className="text-base font-bold text-foreground">{copy.horusAnalysis}</h2>
               </div>
 
               {/* Confidence Score — only show when a real score exists */}
@@ -743,14 +792,14 @@ function EvidenceContent() {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-foreground">{selectedEvidence.confidenceScore}%</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Alignment score</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{copy.alignmentScore}</div>
                   </div>
                 </div>
               )}
 
               {/* Linked Criteria */}
               <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Linked Criteria
+                {copy.linkedCriteria}
               </h3>
               <div className="space-y-2.5">
                 {selectedEvidence.criteria && selectedEvidence.criteria.length > 0 ? (
@@ -771,7 +820,7 @@ function EvidenceContent() {
                         </h4>
                         {criterion.standardId && (
                           <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border status-info">
-                            Standard
+                            {copy.standard}
                           </span>
                         )}
                       </div>
@@ -785,9 +834,9 @@ function EvidenceContent() {
                 ) : (
                   <div className="rounded-2xl border border-dashed glass-border px-5 py-8 text-center glass-panel">
                     <FileText className="w-7 h-7 text-muted-foreground/30 mx-auto mb-2.5" />
-                    <p className="text-sm text-muted-foreground">No criteria linked yet.</p>
+                    <p className="text-sm text-muted-foreground">{copy.noCriteria}</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
-                      Run an analysis to map this file against your standards.
+                      {copy.runAnalysisMap}
                     </p>
                   </div>
                 )}
@@ -811,9 +860,9 @@ function EvidenceContent() {
             aria-modal="true"
             aria-labelledby="bulk-gap-modal-title"
           >
-            <h3 id="bulk-gap-modal-title" className="text-xl font-black text-foreground mb-1">Run Gap Analysis on Selected Files</h3>
+            <h3 id="bulk-gap-modal-title" className="text-xl font-black text-foreground mb-1">{copy.bulkTitle}</h3>
             <p className="text-sm font-medium text-muted-foreground mb-6">
-              Choose a standard now, or leave it blank and pick the standard inside Gap Analysis.
+              {copy.bulkSubtitle}
             </p>
 
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 mb-5">
@@ -821,20 +870,20 @@ function EvidenceContent() {
                 {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {selectedItems.slice(0, 3).map((item) => item.title || item.originalFilename || "Untitled evidence").join(" • ") || "Selected files will be sent to Gap Analysis."}
+                {selectedItems.slice(0, 3).map((item) => item.title || item.originalFilename || (isArabic ? "دليل بلا عنوان" : "Untitled evidence")).join(" • ") || (isArabic ? "سيتم إرسال الملفات المحددة إلى تحليل الفجوات." : "Selected files will be sent to Gap Analysis.")}
               </p>
             </div>
 
             <div className="space-y-3 mb-8">
               <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Target Standard
+                {copy.targetStandard}
               </label>
               <select
                 value={bulkStandardId}
                 onChange={(event) => setBulkStandardId(event.target.value)}
                 className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="">Choose later in Gap Analysis</option>
+                <option value="">{copy.chooseLater}</option>
                 {standards?.map((standard: any) => (
                   <option key={standard.id} value={standard.id}>
                     {standard.title}
@@ -843,7 +892,7 @@ function EvidenceContent() {
               </select>
               {selectedStandardCandidates.length === 1 && !bulkStandardId && (
                 <p className="text-xs text-primary">
-                  We detected one matching linked standard for these files and can prefill it automatically.
+                  {copy.detectedOne}
                 </p>
               )}
             </div>
@@ -854,14 +903,14 @@ function EvidenceContent() {
                 onClick={() => setIsBulkGapModalOpen(false)}
                 className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 type="button"
                 onClick={handleOpenGapAnalysisForSelected}
                 className="flex-[2] px-4 py-3 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-primary/20"
               >
-                Open Gap Analysis <Sparkles className="w-4 h-4 ml-1" />
+                {copy.openGapAnalysis} <Sparkles className="w-4 h-4 ml-1" />
               </button>
             </div>
           </div>
@@ -882,8 +931,8 @@ function EvidenceContent() {
             aria-modal="true"
             aria-labelledby="analyze-modal-title"
           >
-            <h3 id="analyze-modal-title" className="text-xl font-black text-foreground mb-1">Analyze Evidence</h3>
-            <p className="text-sm font-medium text-muted-foreground mb-6">Select framework to map against.</p>
+            <h3 id="analyze-modal-title" className="text-xl font-black text-foreground mb-1">{copy.analyzeEvidence}</h3>
+            <p className="text-sm font-medium text-muted-foreground mb-6">{copy.selectFramework}</p>
 
             <div className="space-y-3 mb-8">
               <label className="flex items-center gap-3 p-3 rounded-xl glass-button cursor-pointer transition-colors">
@@ -895,7 +944,7 @@ function EvidenceContent() {
                   onChange={() => setSelectedStandardId("all")}
                   className="accent-primary"
                 />
-                <span className="text-sm font-bold">All Available Standards</span>
+                <span className="text-sm font-bold">{copy.allStandards}</span>
               </label>
 
               {standards?.map((s: any) => (
@@ -923,7 +972,7 @@ function EvidenceContent() {
                 disabled={isAnalyzing}
                 className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors disabled:opacity-50"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 type="button"
@@ -932,9 +981,9 @@ function EvidenceContent() {
                 className="flex-[2] px-4 py-3 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-primary/20 disabled:opacity-50"
               >
                 {isAnalyzing ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {copy.processing}</>
                 ) : (
-                  <>Run Analysis <Sparkles className="w-4 h-4 ml-1" /></>
+                  <>{copy.runAnalysis} <Sparkles className="w-4 h-4 ml-1" /></>
                 )}
               </button>
             </div>
@@ -956,22 +1005,22 @@ function EvidenceContent() {
             aria-modal="true"
             aria-labelledby="delete-modal-title"
           >
-            <h3 id="delete-modal-title" className="text-xl font-black text-foreground mb-1">Delete Evidence</h3>
-            <p className="text-sm font-medium text-muted-foreground mb-6">Are you sure you want to delete &quot;{evidenceToDelete.title}&quot;? This action cannot be undone.</p>
+            <h3 id="delete-modal-title" className="text-xl font-black text-foreground mb-1">{copy.deleteEvidence}</h3>
+            <p className="text-sm font-medium text-muted-foreground mb-6">{isArabic ? `هل أنت متأكد أنك تريد حذف "${evidenceToDelete.title}"؟ لا يمكن التراجع عن هذا الإجراء.` : `Are you sure you want to delete "${evidenceToDelete.title}"? This action cannot be undone.`}</p>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setEvidenceToDelete(null)}
                 className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 type="button"
                 onClick={confirmDelete}
                 className="flex-[2] px-4 py-3 text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-destructive/20"
               >
-                <Trash2 className="w-4 h-4 ml-1" /> Confirm Delete
+                <Trash2 className="w-4 h-4 ml-1" /> {copy.confirmDelete}
               </button>
             </div>
           </div>

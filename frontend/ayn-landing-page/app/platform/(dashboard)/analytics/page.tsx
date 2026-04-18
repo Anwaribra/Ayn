@@ -20,15 +20,16 @@ import {
   TrendAreaChart, DistributionBarChart, DonutChart,
   ComplianceRadar, ScoreHeatmap,
 } from "@/components/platform/analytics/analytics-charts"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 /* ─── Types & Constants ──────────────────────────────────────── */
 type PeriodKey = "7d" | "30d" | "90d" | "all"
 
-const PERIOD_OPTIONS: { key: PeriodKey; label: string; days: number | null }[] = [
-  { key: "7d", label: "7 Days", days: 7 },
-  { key: "30d", label: "30 Days", days: 30 },
-  { key: "90d", label: "90 Days", days: 90 },
-  { key: "all", label: "All Time", days: null },
+const PERIOD_OPTIONS: { key: PeriodKey; days: number | null }[] = [
+  { key: "7d", days: 7 },
+  { key: "30d", days: 30 },
+  { key: "90d", days: 90 },
+  { key: "all", days: null },
 ]
 
 /* ─── CSV Export ──────────────────────────────────────────────── */
@@ -350,9 +351,73 @@ export default function AnalyticsPage() {
 /* ─── Content — consumes backend /api/analytics endpoint ──── */
 function AnalyticsContent() {
   const { user } = useAuth()
+  const { isArabic } = useUiLanguage()
   const router = useRouter()
   const [period, setPeriod] = useState<PeriodKey>("30d")
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const copy = useMemo(() => ({
+    title: isArabic ? "التحليلات" : "Analytics",
+    refresh: isArabic ? "تحديث" : "Refresh",
+    updated: isArabic ? "آخر تحديث" : "Updated",
+    exportReport: isArabic ? "تصدير تقرير" : "Export Report",
+    csvTitle: isArabic ? "تنزيل البيانات الخام بصيغة CSV" : "Download raw data as CSV",
+    noDataExport: isArabic ? "لا توجد بيانات للتصدير في هذه الفترة" : "No data to export for this period",
+    exportedData: isArabic ? "تم تصدير بيانات التحليلات" : "Analytics data exported",
+    preparingReport: isArabic ? "جارٍ إعداد تقرير التحليلات…" : "Preparing analytics report…",
+    preparingDesc: isArabic ? "يتم إنشاء ملف PDF من أحدث بيانات التحليلات." : "Building a PDF from your latest analytics data.",
+    exportedReport: isArabic ? "تم تصدير تقرير التحليلات" : "Analytics report exported",
+    exportedReportDesc: isArabic ? "تم حفظ تقرير الـ PDF." : "Your PDF report has been saved.",
+    failedExport: isArabic ? "فشل تصدير التقرير" : "Failed to export report",
+    failedLoad: isArabic ? "فشل تحميل بيانات التحليلات." : "Failed to load analytics data.",
+    retry: isArabic ? "إعادة المحاولة" : "Retry",
+    totalReports: isArabic ? "إجمالي التقارير" : "Total Reports",
+    hasData: isArabic ? "توجد بيانات" : "Has data",
+    noDataYet: isArabic ? "لا توجد بيانات بعد" : "No data yet",
+    avgCompliance: isArabic ? "متوسط الامتثال" : "Avg Compliance Score",
+    healthy: isArabic ? "جيد" : "Healthy",
+    needsWork: isArabic ? "يحتاج عملًا" : "Needs work",
+    atRisk: isArabic ? "معرّض للخطر" : "At risk",
+    periodGrowth: isArabic ? "النمو خلال الفترة" : "Period Growth",
+    improving: isArabic ? "يتحسن" : "Improving",
+    declining: isArabic ? "يتراجع" : "Declining",
+    stable: isArabic ? "مستقر" : "Stable",
+    evidenceCollected: isArabic ? "الأدلة المجمعة" : "Evidence Collected",
+    aligned: isArabic ? "متوافق" : "aligned",
+    readiness: isArabic ? "الجاهزية" : "Readiness",
+    needsAttention: isArabic ? "يحتاج انتباهًا" : "Needs Attention",
+    anomalies: isArabic ? "الشذوذ" : "Anomalies",
+    flagged: isArabic ? "تم تمييزها" : "flagged",
+    none: isArabic ? "لا يوجد" : "None",
+    scoreTrend: isArabic ? "اتجاه النتيجة" : "Score Trend",
+    thisPeriod: isArabic ? "هذه الفترة" : "this period",
+    loadingSummary: isArabic ? "جارٍ تحميل بيانات الامتثال…" : "Loading your compliance data…",
+    noReportsSummary: isArabic ? "شغّل تحليلات الفجوات لبدء تتبع الاتجاهات والنتائج والتغطية بمرور الوقت." : "Run gap analyses to start tracking compliance trends, scores, and coverage over time.",
+    strongestStandard: isArabic ? "أقوى معيار" : "Strongest Standard",
+    strongestDesc: (score: number, count: number) => isArabic ? `أفضل أداء في هذه الفترة بمتوسط ${score}٪ عبر ${count} ${count === 1 ? "تقرير" : "تقارير"}.` : `Leading performance this period with an average score of ${score}% across ${count} reports.`,
+    weakestDesc: (score: number) => isArabic ? `أقل متوسط نتيجة في النافذة المحددة هو ${score}٪. هذا أفضل مكان للتركيز في دورة الأدلة أو التحليل التالية.` : `Lowest average score in the selected window at ${score}%. This is the best place to focus your next evidence or analysis cycle.`,
+    runAnalysis: isArabic ? "تشغيل التحليل" : "Run Analysis",
+    scoreOverTime: isArabic ? "النتيجة بمرور الوقت" : "Score Over Time",
+    scoreOverTimeSub: isArabic ? "متوسط درجة الامتثال عبر جميع التقارير" : "Average compliance score across all reports",
+    reportStatus: isArabic ? "حالة التقارير" : "Report Status",
+    reportStatusSub: isArabic ? "نتائج التحليل حسب حالة الإكمال" : "Analysis results by completion state",
+    standardsPerformance: isArabic ? "أداء المعايير" : "Standards Performance",
+    standardsPerformanceSub: isArabic ? "متوسط النتيجة لكل معيار في هذه الفترة" : "Average score per standard this period",
+    coverageRadar: isArabic ? "رادار التغطية" : "Coverage Radar",
+    coverageRadarSub: isArabic ? "نتائج أعلى المعايير لديك بنظرة سريعة" : "Scores across your top standards at a glance",
+    coverageByStandard: isArabic ? "التغطية حسب المعيار" : "Coverage by Standard",
+    coverageByStandardSub: isArabic ? "أحدث نتيجة وعدد التقارير لكل معيار" : "Latest score and report count per standard",
+    unusualReports: isArabic ? "تقارير غير معتادة" : "Unusual Reports",
+    unusualReportsSub: isArabic ? "العناصر التي خرجت عن النمط المعتاد في هذا الإطار الزمني" : "Items that deviated from the normal pattern in this time window",
+    noAnomalies: isArabic ? "لا توجد شذوذات في هذه الفترة." : "No anomalies detected in this period.",
+    scoreDistribution: isArabic ? "توزيع النتائج" : "Score Distribution",
+    scoreDistributionSub: isArabic ? "عدد التقارير داخل كل نطاق نتيجة" : "How many reports fall into each score band",
+  }), [isArabic])
+  const periodLabels: Record<PeriodKey, string> = useMemo(() => ({
+    "7d": isArabic ? "7 أيام" : "7 Days",
+    "30d": isArabic ? "30 يومًا" : "30 Days",
+    "90d": isArabic ? "90 يومًا" : "90 Days",
+    "all": isArabic ? "كل الوقت" : "All Time",
+  }), [isArabic])
 
   const periodDays = PERIOD_OPTIONS.find((o) => o.key === period)?.days ?? null
 
@@ -387,48 +452,48 @@ function AnalyticsContent() {
     return [
       {
         id: "total-reports",
-        label: "Total Reports",
+        label: copy.totalReports,
         value: analytics.totalReports ?? 0,
         icon: Microscope,
         color: "#2563eb",
         trend: (analytics.totalReports ?? 0) > 0 ? "up" as const : "neutral" as const,
-        trendValue: (analytics.totalReports ?? 0) > 0 ? "Has data" : "No data yet",
-        description: "Gap analysis reports in this period",
+        trendValue: (analytics.totalReports ?? 0) > 0 ? copy.hasData : copy.noDataYet,
+        description: isArabic ? "تقارير تحليل الفجوات في هذه الفترة" : "Gap analysis reports in this period",
       },
       {
         id: "avg-score",
-        label: "Avg Compliance Score",
+        label: copy.avgCompliance,
         value: avg,
         suffix: "%",
         icon: Target,
         color: avg >= 70 ? "#0d9668" : avg >= 40 ? "#b45309" : "#c9424a",
         trend: avg >= 70 ? "up" as const : avg >= 40 ? "neutral" as const : "down" as const,
-        trendValue: avg >= 70 ? "Healthy" : avg >= 40 ? "Needs work" : "At risk",
-        description: `Score spread: ±${analytics.stdDeviation ?? 0}% across reports`,
+        trendValue: avg >= 70 ? copy.healthy : avg >= 40 ? copy.needsWork : copy.atRisk,
+        description: isArabic ? `تفاوت النتائج: ±${analytics.stdDeviation ?? 0}٪ عبر التقارير` : `Score spread: ±${analytics.stdDeviation ?? 0}% across reports`,
       },
       {
         id: "growth",
-        label: "Period Growth",
+        label: copy.periodGrowth,
         value: `${growth >= 0 ? "+" : ""}${growth}`,
         suffix: "%",
         icon: TrendingUp,
         color: growth >= 0 ? "#0d9668" : "#c9424a",
         trend: growth >= 0 ? "up" as const : "down" as const,
-        trendValue: analytics.growth?.direction === "up" ? "Improving" : analytics.growth?.direction === "down" ? "Declining" : "Stable",
+        trendValue: analytics.growth?.direction === "up" ? copy.improving : analytics.growth?.direction === "down" ? copy.declining : copy.stable,
         description: `${analytics.growth?.previousPeriodAvg ?? 0}% → ${analytics.growth?.currentPeriodAvg ?? 0}%`,
       },
       {
         id: "evidence",
-        label: "Evidence Collected",
+        label: copy.evidenceCollected,
         value: analytics.totalEvidence ?? 0,
         icon: FileText,
         color: "#7c5ce0",
         trend: (analytics.totalEvidence ?? 0) > 0 ? "up" as const : "neutral" as const,
-        trendValue: `${analytics.alignmentPercentage ?? 0}% aligned`,
-        description: `${analytics.alignedCriteria ?? 0}/${analytics.totalCriteria ?? 0} criteria covered`,
+        trendValue: `${analytics.alignmentPercentage ?? 0}% ${copy.aligned}`,
+        description: isArabic ? `${analytics.alignedCriteria ?? 0}/${analytics.totalCriteria ?? 0} معايير مغطاة` : `${analytics.alignedCriteria ?? 0}/${analytics.totalCriteria ?? 0} criteria covered`,
       },
     ]
-  }, [analytics])
+  }, [analytics, copy, isArabic])
 
   /* ════════════════════════════════════════════════════════════
      CHART DATA (from backend — no client-side computation)
@@ -490,10 +555,10 @@ function AnalyticsContent() {
      ════════════════════════════════════════════════════════════ */
   const handleExportData = () => {
     if (!analytics || analytics.totalReports === 0) {
-      toast.info("No data to export for this period")
+      toast.info(copy.noDataExport)
       return
     }
-    const periodLabel = PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? "All Time"
+    const periodLabel = periodLabels[period] ?? (isArabic ? "كل الوقت" : "All Time")
     const growth = analytics.growth?.growthPercent ?? 0
     const rows: string[][] = [
       // Summary section
@@ -519,25 +584,25 @@ function AnalyticsContent() {
       ]),
     ]
     downloadCsv(`ayn-analytics-${period}-${new Date().toISOString().slice(0, 10)}.csv`, rows)
-    toast.success("Analytics data exported")
+    toast.success(copy.exportedData)
   }
 
   const handleExportReport = async () => {
     if (!analytics || analytics.totalReports === 0) {
-      toast.info("No data to export for this period")
+      toast.info(copy.noDataExport)
       return
     }
     const filename = `ayn-analytics-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`
 
     try {
-      toast.loading("Preparing analytics report…", {
+      toast.loading(copy.preparingReport, {
         id: "analytics-export",
-        description: "Building a PDF from your latest analytics data.",
+        description: copy.preparingDesc,
       })
 
       await exportAnalyticsReportPdf({
         analytics,
-        periodLabel: PERIOD_OPTIONS.find((option) => option.key === period)?.label ?? "All Time",
+        periodLabel: periodLabels[period] ?? (isArabic ? "كل الوقت" : "All Time"),
         executiveSummary,
         strongestStandard,
         weakestStandard,
@@ -545,13 +610,13 @@ function AnalyticsContent() {
         filename,
       })
 
-      toast.success("Analytics report exported", {
+      toast.success(copy.exportedReport, {
         id: "analytics-export",
-        description: "Your PDF report has been saved.",
+        description: copy.exportedReportDesc,
       })
     } catch (error) {
       console.error(error)
-      toast.error("Failed to export report", {
+      toast.error(copy.failedExport, {
         id: "analytics-export",
         description: error instanceof Error ? error.message : "Unknown export error",
       })
@@ -577,34 +642,34 @@ function AnalyticsContent() {
     const growth = analytics.growth?.growthPercent ?? 0
     return [
       {
-        label: "Readiness",
+        label: copy.readiness,
         value: `${Math.round(analytics.avgScore ?? 0)}%`,
         tone: (analytics.avgScore ?? 0) >= 70 ? "text-[var(--status-success)]" : (analytics.avgScore ?? 0) >= 40 ? "text-[var(--status-warning)]" : "text-[var(--status-critical)]",
         icon: ShieldCheck,
       },
       {
-        label: "Needs Attention",
+        label: copy.needsAttention,
         value: weakestStandard?.standardTitle ?? "—",
         tone: "text-foreground",
         icon: AlertTriangle,
       },
       {
-        label: "Anomalies",
-        value: (analytics.anomalies?.length ?? 0) > 0 ? `${analytics.anomalies.length} flagged` : "None",
+        label: copy.anomalies,
+        value: (analytics.anomalies?.length ?? 0) > 0 ? `${analytics.anomalies.length} ${copy.flagged}` : copy.none,
         tone: (analytics.anomalies?.length ?? 0) > 0 ? "text-[var(--status-warning)]" : "text-[var(--status-success)]",
         icon: Activity,
       },
       {
-        label: "Score Trend",
-        value: growth > 0 ? `+${growth}% this period` : growth < 0 ? `${growth}% this period` : "Stable",
+        label: copy.scoreTrend,
+        value: growth > 0 ? `+${growth}% ${copy.thisPeriod}` : growth < 0 ? `${growth}% ${copy.thisPeriod}` : copy.stable,
         tone: growth > 0 ? "text-[var(--status-success)]" : growth < 0 ? "text-[var(--status-critical)]" : "text-muted-foreground",
         icon: TrendingUp,
       },
     ]
-  }, [analytics, weakestStandard])
+  }, [analytics, weakestStandard, copy])
 
   const executiveSummary = useMemo(() => {
-    if (!analytics) return "Loading your compliance data…"
+    if (!analytics) return copy.loadingSummary
 
     const avg = Math.round(analytics.avgScore ?? 0)
     const reportCount = analytics.totalReports ?? 0
@@ -612,11 +677,13 @@ function AnalyticsContent() {
     const strongest = strongestStandard?.standardTitle ?? "your best-performing standard"
 
     if (reportCount === 0) {
-      return "Run gap analyses to start tracking compliance trends, scores, and coverage over time."
+      return copy.noReportsSummary
     }
 
-    return `Across ${reportCount} reports, your average compliance score is ${avg}%. ${strongest} is leading, while ${weakest} needs the most attention.`
-  }, [analytics, strongestStandard, weakestStandard])
+    return isArabic
+      ? `عبر ${reportCount} ${reportCount === 1 ? "تقرير" : "تقارير"}، متوسط درجة الامتثال لديك هو ${avg}٪. يتصدر ${strongest} الأداء، بينما يحتاج ${weakest} إلى أكبر قدر من الانتباه.`
+      : `Across ${reportCount} reports, your average compliance score is ${avg}%. ${strongest} is leading, while ${weakest} needs the most attention.`
+  }, [analytics, strongestStandard, weakestStandard, copy, isArabic])
 
   /* ════════════════════════════════════════════════════════════
      RENDER
@@ -630,9 +697,7 @@ function AnalyticsContent() {
           <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="space-y-2 max-w-3xl">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-                Analytics
-              </h1>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{copy.title}</h1>
               <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
                 {executiveSummary}
               </p>
@@ -642,17 +707,17 @@ function AnalyticsContent() {
               <div className="p-1 glass-panel rounded-xl glass-border flex items-center gap-1">
                 {PERIOD_OPTIONS.map((option) => (
                   <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
-                    {option.label}
+                    {periodLabels[option.key]}
                   </button>
                 ))}
               </div>
               <div className="flex flex-col items-end gap-0.5">
                 <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground">
-                  <RefreshCw className="w-3 h-3" /> Refresh
+                  <RefreshCw className="w-3 h-3" /> {copy.refresh}
                 </button>
                 {lastUpdated && (
                   <span className="text-[9px] text-muted-foreground px-1">
-                    Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 )}
               </div>
@@ -661,13 +726,13 @@ function AnalyticsContent() {
                 disabled={!analytics || (analytics.totalReports ?? 0) === 0}
                 className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
               >
-                <Download className="w-3 h-3" /> Export Report
+                <Download className="w-3 h-3" /> {copy.exportReport}
               </button>
               <button
                 onClick={handleExportData}
                 disabled={!analytics || (analytics.totalReports ?? 0) === 0}
                 className="flex min-h-[44px] items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
-                title="Download raw data as CSV"
+                title={copy.csvTitle}
               >
                 CSV
               </button>
@@ -714,8 +779,8 @@ function AnalyticsContent() {
         <div className="mt-10 px-4">
           <div className="flex flex-col items-center justify-center py-16 rounded-2xl glass-panel glass-border">
             <AlertTriangle className="w-10 h-10 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-center mb-4">Failed to load analytics data.</p>
-            <button type="button" onClick={() => mutate()} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">Retry</button>
+            <p className="text-muted-foreground text-center mb-4">{copy.failedLoad}</p>
+            <button type="button" onClick={() => mutate()} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">{copy.retry}</button>
           </div>
         </div>
       ) : !hasData ? (
@@ -732,10 +797,10 @@ function AnalyticsContent() {
                   <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12),transparent_70%)] pointer-events-none" />
                   <div className="relative z-10 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-success)]">Strongest Standard</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-success)]">{copy.strongestStandard}</p>
                       <h3 className="mt-2 text-xl font-bold text-foreground">{strongestStandard.standardTitle}</h3>
                       <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                        Leading performance this period with an average score of {Math.round(strongestStandard.avgScore)}% across {strongestStandard.reportCount} reports.
+                        {copy.strongestDesc(Math.round(strongestStandard.avgScore), strongestStandard.reportCount)}
                       </p>
                     </div>
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
@@ -750,10 +815,10 @@ function AnalyticsContent() {
                   <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(201,66,74,0.12),transparent_70%)] pointer-events-none" />
                   <div className="relative z-10 flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-critical)]">Needs Attention</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--status-critical)]">{copy.needsAttention}</p>
                       <h3 className="mt-2 text-xl font-bold text-foreground">{weakestStandard.standardTitle}</h3>
                       <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                        Lowest average score in the selected window at {Math.round(weakestStandard.avgScore)}%. This is the best place to focus your next evidence or analysis cycle.
+                        {copy.weakestDesc(Math.round(weakestStandard.avgScore))}
                       </p>
                     </div>
                     <button
@@ -765,7 +830,7 @@ function AnalyticsContent() {
                       )}
                       className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
                     >
-                      Run Analysis
+                      {copy.runAnalysis}
                       <ArrowUpRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -777,20 +842,20 @@ function AnalyticsContent() {
           {/* ─── Row 1: Trend + Donut ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <TrendAreaChart data={trendData} title="Score Over Time" subtitle="Average compliance score across all reports" />
+              <TrendAreaChart data={trendData} title={copy.scoreOverTime} subtitle={copy.scoreOverTimeSub} />
             </div>
-            <DonutChart data={statusBreakdown} title="Report Status" subtitle="Analysis results by completion state" />
+            <DonutChart data={statusBreakdown} title={copy.reportStatus} subtitle={copy.reportStatusSub} />
           </div>
 
           {/* ─── Row 2: Bar + Radar ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DistributionBarChart data={standardDistribution} title="Standards Performance" subtitle="Average score per standard this period" />
-            <ComplianceRadar data={radarData} title="Coverage Radar" subtitle="Scores across your top standards at a glance" />
+            <DistributionBarChart data={standardDistribution} title={copy.standardsPerformance} subtitle={copy.standardsPerformanceSub} />
+            <ComplianceRadar data={radarData} title={copy.coverageRadar} subtitle={copy.coverageRadarSub} />
           </div>
 
           {/* ─── Row 3: Score Heatmap + Insights ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ScoreHeatmap data={heatmapData} title="Coverage by Standard" subtitle="Latest score and report count per standard" />
+            <ScoreHeatmap data={heatmapData} title={copy.coverageByStandard} subtitle={copy.coverageByStandardSub} />
             <AnalyticsInsights insights={insights} />
           </div>
 
@@ -804,8 +869,8 @@ function AnalyticsContent() {
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Unusual Reports</h3>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Scores that deviate significantly from your average</p>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">{copy.unusualReports}</h3>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">{copy.unusualReportsSub}</p>
                 </div>
               </div>
               <div className="relative z-10 space-y-3">
@@ -832,8 +897,8 @@ function AnalyticsContent() {
               <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(124,92,224,0.85),transparent)] opacity-70" />
               <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
               <div className="relative z-10">
-                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">How your reports are spread across score ranges</p>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{copy.scoreDistribution}</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">{copy.scoreDistributionSub}</p>
               </div>
               <div className="relative z-10 grid grid-cols-2 md:grid-cols-5 gap-3">
                 {analytics.scoreDistribution.map((bucket: any) => {
@@ -885,7 +950,7 @@ function AnalyticsContent() {
                 Analytics Report
               </h1>
               <p style={{ fontSize: "14px", color: "#64748b", margin: "10px 0 0" }}>
-                {PERIOD_OPTIONS.find((o) => o.key === period)?.label} period
+                {periodLabels[period]} {isArabic ? "فترة" : "period"}
                 {" · "}
                 Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
               </p>

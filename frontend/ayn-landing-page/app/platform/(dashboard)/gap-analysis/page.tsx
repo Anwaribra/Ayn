@@ -21,9 +21,8 @@ import { EvidenceSelector } from "@/components/platform/evidence-selector"
 import { EmptyState } from "@/components/platform/empty-state"
 import { GlassCard } from "@/components/ui/glass-card"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
-type UiSeverity = "High" | "Medium" | "Low"
-type UiAlignment = "Aligned" | "Partially Aligned" | "Not Aligned"
 type AnalysisScope = "linked" | "recent" | "selected"
 
 function buildGapAnalysisFilename(report: { standardTitle?: string; id: string }) {
@@ -36,28 +35,28 @@ function buildGapAnalysisFilename(report: { standardTitle?: string; id: string }
   return `${safeTitle}-${report.id.slice(0, 8)}.pdf`
 }
 
-function getSeverity(value?: string): UiSeverity {
+function getSeverity(value?: string, isArabic = false) {
   const normalized = (value ?? "").toLowerCase()
-  if (normalized === "high") return "High"
-  if (normalized === "low") return "Low"
-  return "Medium"
+  if (normalized === "high") return isArabic ? "عالي" : "High"
+  if (normalized === "low") return isArabic ? "منخفض" : "Low"
+  return isArabic ? "متوسط" : "Medium"
 }
 
-function getAlignment(value?: string): UiAlignment {
+function getAlignment(value?: string, isArabic = false) {
   const normalized = (value ?? "").toLowerCase()
-  if (normalized === "aligned" || normalized === "met") return "Aligned"
-  if (normalized === "partially_aligned" || normalized === "partially_met") return "Partially Aligned"
-  return "Not Aligned"
+  if (normalized === "aligned" || normalized === "met") return isArabic ? "متوافق" : "Aligned"
+  if (normalized === "partially_aligned" || normalized === "partially_met") return isArabic ? "متوافق جزئيًا" : "Partially Aligned"
+  return isArabic ? "غير متوافق" : "Not Aligned"
 }
 
-function getEvidenceLabel(evidence: Evidence) {
-  return evidence.title || evidence.originalFilename || "Untitled evidence"
+function getEvidenceLabel(evidence: Evidence, isArabic = false) {
+  return evidence.title || evidence.originalFilename || (isArabic ? "دليل بلا عنوان" : "Untitled evidence")
 }
 
-function getAnalysisScopeLabel(scope?: string) {
-  if (scope === "selected") return "Selected files"
-  if (scope === "recent") return "Recent uploads"
-  return "Linked evidence"
+function getAnalysisScopeLabel(scope?: string, isArabic = false) {
+  if (scope === "selected") return isArabic ? "ملفات محددة" : "Selected files"
+  if (scope === "recent") return isArabic ? "الملفات الحديثة" : "Recent uploads"
+  return isArabic ? "الأدلة المرتبطة" : "Linked evidence"
 }
 
 function looksLikeLegacyFallbackReport(report: GapAnalysis | null) {
@@ -109,8 +108,86 @@ export default function GapAnalysisPage() {
 
 function GapAnalysisContent() {
   const { user } = useAuth()
+  const { isArabic } = useUiLanguage()
   const searchParams = useSearchParams()
-  usePageTitle("Gap Analysis")
+  usePageTitle(isArabic ? "تحليل الفجوات" : "Gap Analysis")
+  const copy = useMemo(() => ({
+    failedLoadReport: isArabic ? "فشل تحميل التقرير" : "Failed to load report",
+    analysisSlow: isArabic ? "التحليل يستغرق وقتًا أطول من المتوقع. جرّب التحديث." : "Analysis is taking longer than expected. Try refreshing.",
+    ready: isArabic ? "تحليل الفجوات جاهز!" : "Gap analysis is ready!",
+    failed: isArabic ? "فشل تحليل الفجوات." : "Gap analysis failed.",
+    failedDesc: isArabic ? "حدث خطأ أثناء تحليل الأدلة." : "An error occurred during evidence analysis.",
+    selectStandard: isArabic ? "اختر معيارًا أولًا" : "Select a standard first",
+    chooseAtLeastOne: isArabic ? "اختر ملفًا واحدًا على الأقل" : "Choose at least one file",
+    pickRecent: isArabic ? "اختر ملفًا أو أكثر من الملفات الحديثة قبل التشغيل." : "Pick one or more recent uploads before running.",
+    selectEvidenceWanted: isArabic ? "اختر الأدلة التي تريد تحليلها." : "Select the evidence you want analyzed.",
+    queued: isArabic ? "تمت جدولة التحليل" : "Analysis queued",
+    linkedDesc: isArabic ? "يقوم حورس بمراجعة الأدلة المرتبطة بهذا المعيار." : "Horus is checking the evidence linked to this standard.",
+    analyzingFiles: (n: number) => isArabic ? `جارٍ تحليل ${n} ${n === 1 ? "ملف" : "ملفات"}.` : `Analyzing ${n} file${n === 1 ? "" : "s"}.`,
+    failedQueue: isArabic ? "فشل جدولة التحليل" : "Failed to queue analysis",
+    openCompletedFirst: isArabic ? "افتح تقريرًا مكتملًا أولًا" : "Open a completed report first",
+    onlyCompleted: isArabic ? "يمكن تصدير التقارير المكتملة فقط" : "Only completed reports can be exported",
+    exported: isArabic ? "تم تصدير التقرير" : "Report exported",
+    failedExport: isArabic ? "فشل تصدير التقرير" : "Failed to export report",
+    failedExportDesc: isArabic ? "تعذر تنزيل نسخة PDF لهذا التقرير." : "Could not download the PDF export for this report.",
+    deleted: isArabic ? "تم حذف التقرير" : "Report deleted",
+    deletionFailed: isArabic ? "فشل الحذف" : "Deletion failed",
+    latestLoadFailed: isArabic ? "فشل تحميل آخر تقرير" : "Failed to load the latest report",
+    pageTitle: isArabic ? "تحليل الفجوات" : "Gap Analysis",
+    pageSubtitle: isArabic ? "اختر معيارًا، ثم الأدلة، ثم شغّل التحليل. يفحص حورس كل معيار فرعي ويعرض وضعك الحالي." : "Choose a standard, choose your evidence, and run. Horus checks each criterion and shows you where you stand.",
+    standard: isArabic ? "المعيار" : "Standard",
+    loading: isArabic ? "جارٍ التحميل…" : "Loading…",
+    noStandards: isArabic ? "لا توجد معايير متاحة" : "No standards available",
+    chooseStandard: isArabic ? "اختر معيارًا…" : "Choose a standard…",
+    criteriaChecked: (n: number) => isArabic ? `سيتم فحص ${n} معيارًا فرعيًا.` : `${n} criteria will be checked.`,
+    evidence: isArabic ? "الأدلة" : "Evidence",
+    filterRecent: isArabic ? "فلترة الملفات الحديثة…" : "Filter recent uploads…",
+    searchEvidence: isArabic ? "ابحث في الأدلة…" : "Search evidence…",
+    selected: isArabic ? "محدد" : "selected",
+    noRecentMatch: isArabic ? "لا توجد ملفات حديثة تطابق الفلترة." : "No recent uploads match your filter.",
+    noEvidenceMatch: isArabic ? "لا توجد أدلة تطابق البحث." : "No evidence matched your search.",
+    run: isArabic ? "تشغيل تحليل الفجوات" : "Run Gap Analysis",
+    running: isArabic ? "جارٍ التشغيل…" : "Running…",
+    analysesFailedLoad: isArabic ? "فشل تحميل تحليلات الفجوات." : "Failed to load gap analyses.",
+    retry: isArabic ? "إعادة المحاولة" : "Retry",
+    loadingAnalyses: isArabic ? "جارٍ تحميل التحليلات…" : "Loading analyses…",
+    latestAnalysis: isArabic ? "أحدث تحليل" : "Latest analysis",
+    file: isArabic ? "ملف" : "file",
+    files: isArabic ? "ملفات" : "files",
+    preliminary: isArabic ? "أولي" : "Preliminary",
+    score: isArabic ? "النتيجة" : "Score",
+    highPriority: isArabic ? "أولوية عالية" : "High priority",
+    exportPdf: isArabic ? "تصدير PDF" : "Export PDF",
+    close: isArabic ? "إغلاق" : "Close",
+    preliminaryTitle: isArabic ? "تقرير أولي" : "Preliminary report",
+    preliminaryDesc: isArabic ? "كان مزود الذكاء الاصطناعي غير متاح أثناء هذا التشغيل. أنشأ حورس مراجعة هيكلية أولية بدل النتائج التفصيلية. راجع الأدلة وأضف المزيد إذا لزم، ثم أعد التشغيل عند توفر المزود." : "The AI provider was unavailable during this run. Horus produced a basic structure review instead of full criterion findings. Verify your evidence, add more if needed, then rerun when the provider is available.",
+    noFindings: isArabic ? "لا توجد نتائج في التقرير الحالي." : "No findings for the current report.",
+    analyzingEvidence: isArabic ? "جارٍ تحليل أدلتك…" : "Analyzing your evidence…",
+    noRecommendation: isArabic ? "لا توجد توصية متاحة." : "No recommendation available.",
+    unnamedCriterion: isArabic ? "معيار بلا اسم" : "Unnamed Criterion",
+    moreGaps: (n: number) => isArabic ? `${n} فجوات إضافية — كلها مضمنة في تصدير الـ PDF.` : `${n} more gap${n === 1 ? "" : "s"} — all included in the PDF export.`,
+    previousRuns: isArabic ? "التشغيلات السابقة" : "Previous runs",
+    analyzing: isArabic ? "جارٍ التحليل…" : "Analyzing…",
+    failedShort: isArabic ? "فشل" : "Failed",
+    deletePrompt: isArabic ? "هل تريد حذف هذا التقرير؟" : "Delete this report?",
+    cannotUndo: isArabic ? "لا يمكن التراجع عن هذا الإجراء." : "This cannot be undone.",
+    cancel: isArabic ? "إلغاء" : "Cancel",
+    delete: isArabic ? "حذف" : "Delete",
+    scopeLinkedLabel: isArabic ? "الأدلة المرتبطة" : "Linked evidence",
+    scopeLinkedDesc: isArabic ? "استخدم الأدلة المرتبطة بالفعل بهذا المعيار." : "Use evidence already mapped to this standard.",
+    scopeRecentLabel: isArabic ? "الملفات الحديثة" : "Recent uploads",
+    scopeRecentDesc: isArabic ? "ابدأ بأحدث ملفاتك ثم قلّص القائمة." : "Start from your latest files, then trim the list.",
+    scopeSelectedLabel: isArabic ? "اختر ملفات" : "Pick files",
+    scopeSelectedDesc: isArabic ? "اختر الملفات التي تريدها بالضبط في هذا التشغيل." : "Choose the exact files you want in this run.",
+  }), [isArabic])
+  const scopeOptions = useMemo(
+    () => [
+      { id: "linked" as AnalysisScope, label: copy.scopeLinkedLabel, description: copy.scopeLinkedDesc },
+      { id: "recent" as AnalysisScope, label: copy.scopeRecentLabel, description: copy.scopeRecentDesc },
+      { id: "selected" as AnalysisScope, label: copy.scopeSelectedLabel, description: copy.scopeSelectedDesc },
+    ],
+    [copy],
+  )
 
   const [selectedStandard, setSelectedStandard] = useState("")
   const [analysisScope, setAnalysisScope] = useState<AnalysisScope>("linked")
@@ -129,7 +206,7 @@ function GapAnalysisContent() {
     api.getGapAnalysis(reportId).then((full) => {
       if (!cancelled) setActiveReport(full)
     }).catch(() => {
-      if (!cancelled) toast.error("Failed to load report")
+      if (!cancelled) toast.error(copy.failedLoadReport)
     })
     return () => { cancelled = true }
   }, [searchParams, user, activeReport?.id])
@@ -166,7 +243,7 @@ function GapAnalysisContent() {
     const timer = setTimeout(() => {
       setGenerating(false)
       setPendingJobId(null)
-      toast.error("Analysis is taking longer than expected. Try refreshing.")
+      toast.error(copy.analysisSlow)
     }, 120_000)
     return () => clearTimeout(timer)
   }, [pendingJobId])
@@ -198,12 +275,12 @@ function GapAnalysisContent() {
           if (job.status === "completed") {
             setPendingJobId(null)
             setGenerating(false)
-            toast.success("Gap analysis is ready!", { description: job.standardTitle })
+            toast.success(copy.ready, { description: job.standardTitle })
             handleViewReport(job.id)
           } else if (job.status === "failed") {
             setPendingJobId(null)
             setGenerating(false)
-            toast.error("Gap analysis failed.", { description: "An error occurred during evidence analysis." })
+            toast.error(copy.failed, { description: copy.failedDesc })
           }
         }
       },
@@ -222,19 +299,19 @@ function GapAnalysisContent() {
     api.getGapAnalysis(latestCompleted.id).then((full) => {
       if (!cancelled) setActiveReport(full)
     }).catch(() => {
-      if (!cancelled) toast.error("Failed to load the latest report")
+      if (!cancelled) toast.error(copy.latestLoadFailed)
     })
     return () => { cancelled = true }
   }, [activeReport, reports, searchParams])
 
   const handleGenerate = useCallback(async () => {
-    if (!selectedStandard) return toast.error("Select a standard first")
+    if (!selectedStandard) return toast.error(copy.selectStandard)
     if ((analysisScope === "recent" || analysisScope === "selected") && selectedEvidenceIds.length === 0) {
-      toast.error("Choose at least one file", {
+      toast.error(copy.chooseAtLeastOne, {
         description:
           analysisScope === "recent"
-            ? "Pick one or more recent uploads before running."
-            : "Select the evidence you want analyzed.",
+            ? copy.pickRecent
+            : copy.selectEvidenceWanted,
       })
       return
     }
@@ -246,15 +323,15 @@ function GapAnalysisContent() {
         evidenceIds: analysisScope === "linked" ? undefined : selectedEvidenceIds,
       })
       setPendingJobId(job.jobId)
-      toast.success("Analysis queued", {
+      toast.success(copy.queued, {
         description:
           analysisScope === "linked"
-            ? "Horus is checking the evidence linked to this standard."
-            : `Analyzing ${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"}.`,
+            ? copy.linkedDesc
+            : copy.analyzingFiles(selectedEvidenceIds.length),
       })
       mutate()
     } catch {
-      toast.error("Failed to queue analysis")
+      toast.error(copy.failedQueue)
       setGenerating(false)
     }
   }, [selectedStandard, analysisScope, selectedEvidenceIds, mutate])
@@ -266,14 +343,14 @@ function GapAnalysisContent() {
       setActiveReport(full)
       return full
     } catch {
-      toast.error("Failed to load report")
+      toast.error(copy.failedLoadReport)
       return null
     }
   }, [activeReport])
 
   const handleExportSnapshot = useCallback(async (reportId?: string) => {
     if (!reportId && !activeReport) {
-      toast.error("Open a completed report first")
+      toast.error(copy.openCompletedFirst)
       return
     }
     const targetReport =
@@ -283,19 +360,19 @@ function GapAnalysisContent() {
 
     if (!targetReport) return
     if (targetReport.status !== "completed") {
-      toast.error("Only completed reports can be exported")
+      toast.error(copy.onlyCompleted)
       return
     }
 
     try {
       await api.downloadGapAnalysisReport(targetReport.id)
-      toast.success("Report exported", {
+      toast.success(copy.exported, {
         description: `Downloaded ${buildGapAnalysisFilename(targetReport)}`,
       })
     } catch (downloadError) {
       console.error(downloadError)
-      toast.error("Failed to export report", {
-        description: "Could not download the PDF export for this report.",
+      toast.error(copy.failedExport, {
+        description: copy.failedExportDesc,
       })
     }
   }, [activeReport, handleViewReport])
@@ -303,27 +380,27 @@ function GapAnalysisContent() {
   const handleDelete = useCallback(async (id: string) => {
     try {
       await api.deleteGapAnalysis(id)
-      toast.success("Report deleted")
+      toast.success(copy.deleted)
       setDeleteConfirm(null)
       if (activeReport?.id === id) setActiveReport(null)
       mutate()
     } catch {
-      toast.error("Deletion failed")
+      toast.error(copy.deletionFailed)
     }
   }, [mutate, activeReport])
 
   const gaps = activeReport?.gaps?.map((item: GapItem) => {
-    const severity = getSeverity(item.priority)
-    const alignment = getAlignment(item.status)
+    const severity = getSeverity(item.priority, isArabic)
+    const alignment = getAlignment(item.status, isArabic)
     const statusClass =
       severity === "High" ? "status-critical" :
       severity === "Medium" ? "status-warning" : "status-success"
     return {
       original: item,
-      title: item.criterionTitle ?? "Unnamed Criterion",
+      title: item.criterionTitle ?? copy.unnamedCriterion,
       severity,
       alignment,
-      desc: item.recommendation ?? "No recommendation available.",
+      desc: item.recommendation ?? copy.noRecommendation,
       statusClass,
     }
   }) ?? []
@@ -373,9 +450,9 @@ function GapAnalysisContent() {
 
         {/* ── Page title ── */}
         <div className="px-4 pt-6 pb-5">
-          <h1 className="text-2xl font-bold text-foreground">Gap Analysis</h1>
+          <h1 className="text-2xl font-bold text-foreground">{copy.pageTitle}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose a standard, choose your evidence, and run. Horus checks each criterion and shows you where you stand.
+            {copy.pageSubtitle}
           </p>
         </div>
 
@@ -387,7 +464,7 @@ function GapAnalysisContent() {
             {/* Standard picker */}
             <div className="space-y-2">
               <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Standard
+                {copy.standard}
               </label>
               <select
                 value={selectedStandard}
@@ -397,10 +474,10 @@ function GapAnalysisContent() {
               >
                 <option value="" className="bg-[var(--surface-modal)]">
                   {!standards
-                    ? "Loading…"
+                    ? copy.loading
                     : standards.length === 0
-                    ? "No standards available"
-                    : "Choose a standard…"}
+                    ? copy.noStandards
+                    : copy.chooseStandard}
                 </option>
                 {standards?.map((s: Standard) => (
                   <option key={s.id} value={s.id} className="bg-[var(--surface-modal)]">
@@ -410,7 +487,7 @@ function GapAnalysisContent() {
               </select>
               {selectedStandardObject && (
                 <p className="text-xs text-muted-foreground">
-                  {selectedStandardObject.criteriaCount} criteria will be checked.
+                  {copy.criteriaChecked(selectedStandardObject.criteriaCount)}
                 </p>
               )}
             </div>
@@ -418,10 +495,10 @@ function GapAnalysisContent() {
             {/* Evidence scope */}
             <div className="space-y-3">
               <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Evidence
+                {copy.evidence}
               </label>
               <div className="grid gap-2.5 sm:grid-cols-3">
-                {SCOPE_OPTIONS.map((scope) => (
+                {scopeOptions.map((scope) => (
                   <button
                     key={scope.id}
                     type="button"
@@ -448,14 +525,14 @@ function GapAnalysisContent() {
                       onChange={(e) => setEvidenceSearchQuery(e.target.value)}
                       placeholder={
                         analysisScope === "recent"
-                          ? "Filter recent uploads…"
-                          : "Search evidence…"
+                          ? copy.filterRecent
+                          : copy.searchEvidence
                       }
                       className="flex-1 h-10 glass-input rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     {selectedEvidenceIds.length > 0 && (
                       <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                        {selectedEvidenceIds.length} selected
+                        {selectedEvidenceIds.length} {copy.selected}
                       </span>
                     )}
                   </div>
@@ -463,8 +540,8 @@ function GapAnalysisContent() {
                     {evidenceOptions.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-8 text-center text-sm text-muted-foreground">
                         {analysisScope === "recent"
-                          ? "No recent uploads match your filter."
-                          : "No evidence matched your search."}
+                          ? copy.noRecentMatch
+                          : copy.noEvidenceMatch}
                       </div>
                     ) : (
                       evidenceOptions.map((item) => {
@@ -494,7 +571,7 @@ function GapAnalysisContent() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium text-foreground">
-                                  {getEvidenceLabel(item)}
+                                  {getEvidenceLabel(item, isArabic)}
                                 </p>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
                                   {new Date(item.createdAt).toLocaleDateString()}
@@ -521,12 +598,12 @@ function GapAnalysisContent() {
                 {generating ? (
                   <>
                     <span className="h-4 w-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                    Running…
+                    {copy.running}
                   </>
                 ) : (
                   <>
                     <Play className="h-4 w-4 fill-current" />
-                    Run Gap Analysis
+                    {copy.run}
                   </>
                 )}
               </button>
@@ -537,13 +614,13 @@ function GapAnalysisContent() {
         {/* ── States: error / loading / empty ── */}
         {reportsError ? (
           <div className="mx-4 flex flex-col items-center gap-4 rounded-2xl glass-panel glass-border py-12 px-4 text-center">
-            <p className="text-sm text-muted-foreground">Failed to load gap analyses.</p>
+            <p className="text-sm text-muted-foreground">{copy.analysesFailedLoad}</p>
             <button
               type="button"
               onClick={() => mutate()}
               className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
-              Retry
+              {copy.retry}
             </button>
           </div>
         ) : showReportsLoadingState ? (
@@ -578,7 +655,7 @@ function GapAnalysisContent() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-1.5">
                       <h2 className="text-xl font-bold text-foreground">
-                        {activeReport.standardTitle ?? "Gap Analysis Report"}
+                        {activeReport.standardTitle ?? copy.pageTitle}
                       </h2>
                       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                         <span>
@@ -588,20 +665,20 @@ function GapAnalysisContent() {
                                 month: "short",
                                 year: "numeric",
                               })
-                            : "Latest analysis"}
+                            : copy.latestAnalysis}
                         </span>
                         <span className="opacity-40">·</span>
-                        <span>{getAnalysisScopeLabel(activeReport.analysisScope)}</span>
+                        <span>{getAnalysisScopeLabel(activeReport.analysisScope, isArabic)}</span>
                         {activeReport.evidenceCount ? (
                           <>
                             <span className="opacity-40">·</span>
-                            <span>{activeReport.evidenceCount} file{activeReport.evidenceCount === 1 ? "" : "s"}</span>
+                            <span>{activeReport.evidenceCount} {activeReport.evidenceCount === 1 ? copy.file : copy.files}</span>
                           </>
                         ) : null}
                         {isFallbackReport && (
                           <>
                             <span className="opacity-40">·</span>
-                            <span className="text-amber-400 font-medium">Preliminary</span>
+                            <span className="text-amber-400 font-medium">{copy.preliminary}</span>
                           </>
                         )}
                       </div>
@@ -615,7 +692,7 @@ function GapAnalysisContent() {
                             {Math.round(overallScore)}%
                           </p>
                           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                            Score
+                            {copy.score}
                           </p>
                         </div>
                       )}
@@ -625,7 +702,7 @@ function GapAnalysisContent() {
                             {highGapCount}
                           </p>
                           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                            High priority
+                            {copy.highPriority}
                           </p>
                         </div>
                       )}
@@ -646,13 +723,13 @@ function GapAnalysisContent() {
                       data-html2canvas-ignore="true"
                       className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
                     >
-                      Export PDF
+                      {copy.exportPdf}
                     </button>
                     <button
                       onClick={() => setActiveReport(null)}
                       className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                     >
-                      Close
+                      {copy.close}
                     </button>
                   </div>
                 </div>
@@ -667,7 +744,7 @@ function GapAnalysisContent() {
                     <div className="inline-flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 px-5 py-3">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                       <span className="text-sm font-semibold text-primary">
-                        Analyzing your evidence…
+                        {copy.analyzingEvidence}
                       </span>
                     </div>
                   </div>
@@ -688,9 +765,9 @@ function GapAnalysisContent() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
                     <div className="space-y-1.5">
-                      <p className="text-sm font-semibold text-foreground">Preliminary report</p>
+                      <p className="text-sm font-semibold text-foreground">{copy.preliminaryTitle}</p>
                       <p className="text-sm leading-relaxed text-muted-foreground">
-                        The AI provider was unavailable during this run. Horus produced a basic structure review instead of full criterion findings. Verify your evidence, add more if needed, then rerun when the provider is available.
+                        {copy.preliminaryDesc}
                       </p>
                     </div>
                   </div>
@@ -698,7 +775,7 @@ function GapAnalysisContent() {
               ) : gaps.length === 0 ? (
                 <div className="py-14 text-center">
                   <CheckCircle2 className="mx-auto mb-3 h-9 w-9 text-[var(--status-success)] opacity-40" />
-                  <p className="text-sm text-muted-foreground">No findings for the current report.</p>
+                  <p className="text-sm text-muted-foreground">{copy.noFindings}</p>
                 </div>
               ) : (
                 <>
@@ -735,8 +812,8 @@ function GapAnalysisContent() {
                           </span>
                           <span className={cn(
                             "text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border",
-                            gap.alignment === "Not Aligned" ? "status-critical" :
-                            gap.alignment === "Partially Aligned" ? "status-warning" : "status-success",
+                            gap.alignment === (isArabic ? "غير متوافق" : "Not Aligned") ? "status-critical" :
+                            gap.alignment === (isArabic ? "متوافق جزئيًا" : "Partially Aligned") ? "status-warning" : "status-success",
                           )}>
                             {gap.alignment}
                           </span>
@@ -749,7 +826,7 @@ function GapAnalysisContent() {
 
                   {remainingGapCount > 0 && (
                     <p className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-4 text-center text-sm text-muted-foreground">
-                      {remainingGapCount} more gap{remainingGapCount === 1 ? "" : "s"} — all included in the PDF export.
+                      {copy.moreGaps(remainingGapCount)}
                     </p>
                   )}
                 </>
@@ -762,7 +839,7 @@ function GapAnalysisContent() {
                 <details className="glass-panel glass-border rounded-[24px] p-5">
                   <summary className="cursor-pointer list-none select-none">
                     <div className="flex items-center justify-between gap-4">
-                      <h2 className="text-base font-semibold text-foreground">Previous runs</h2>
+                      <h2 className="text-base font-semibold text-foreground">{copy.previousRuns}</h2>
                       <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                         {reports.length}
                       </span>
@@ -815,23 +892,23 @@ function GapAnalysisContent() {
                                 <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                   <span>
                                     {isQueued
-                                      ? "Analyzing…"
+                                      ? copy.analyzing
                                       : isFailed
-                                      ? "Failed"
+                                      ? copy.failedShort
                                       : new Date(report.createdAt).toLocaleDateString()}
                                   </span>
                                   <span className="opacity-40">·</span>
-                                  <span>{getAnalysisScopeLabel(report.analysisScope)}</span>
+                                  <span>{getAnalysisScopeLabel(report.analysisScope, isArabic)}</span>
                                   {report.evidenceCount ? (
                                     <>
                                       <span className="opacity-40">·</span>
-                                      <span>{report.evidenceCount} file{report.evidenceCount === 1 ? "" : "s"}</span>
+                                      <span>{report.evidenceCount} {report.evidenceCount === 1 ? copy.file : copy.files}</span>
                                     </>
                                   ) : null}
                                   {report.isFallback && (
                                     <>
                                       <span className="opacity-40">·</span>
-                                      <span className="text-amber-400 font-medium">Preliminary</span>
+                                      <span className="text-amber-400 font-medium">{copy.preliminary}</span>
                                     </>
                                   )}
                                 </div>
@@ -848,7 +925,7 @@ function GapAnalysisContent() {
                                 disabled={isFailed || isQueued}
                                 className="text-[11px] font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity disabled:text-muted-foreground/40 disabled:pointer-events-none"
                               >
-                                Export PDF
+                                {copy.exportPdf}
                               </button>
                               <button
                                 onClick={(e) => {
@@ -857,7 +934,7 @@ function GapAnalysisContent() {
                                 }}
                                 className="text-[11px] font-semibold text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
                               >
-                                Delete
+                                {copy.delete}
                               </button>
                               <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
@@ -881,24 +958,24 @@ function GapAnalysisContent() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Confirm deletion"
+            aria-label={copy.deletePrompt}
             className="glass-panel glass-border rounded-2xl p-7 max-w-sm w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-foreground mb-1">Delete this report?</h3>
-            <p className="text-sm text-muted-foreground mb-6">This cannot be undone.</p>
+            <h3 className="text-base font-bold text-foreground mb-1">{copy.deletePrompt}</h3>
+            <p className="text-sm text-muted-foreground mb-6">{copy.cannotUndo}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 rounded-xl border border-[var(--glass-border)] py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
                 className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-medium text-destructive-foreground transition hover:bg-destructive/90"
               >
-                Delete
+                {copy.delete}
               </button>
             </div>
           </div>
@@ -907,21 +984,3 @@ function GapAnalysisContent() {
     </div>
   )
 }
-
-const SCOPE_OPTIONS: { id: AnalysisScope; label: string; description: string }[] = [
-  {
-    id: "linked",
-    label: "Linked evidence",
-    description: "Use evidence already mapped to this standard.",
-  },
-  {
-    id: "recent",
-    label: "Recent uploads",
-    description: "Start from your latest files, then trim the list.",
-  },
-  {
-    id: "selected",
-    label: "Pick files",
-    description: "Choose the exact files you want in this run.",
-  },
-]

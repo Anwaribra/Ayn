@@ -1,51 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Languages } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-type UiLanguage = "en" | "ar"
-
-const STORAGE_KEY = "ayn-ui-language"
-
-function applyLanguage(language: UiLanguage) {
-  document.documentElement.lang = language
-  document.documentElement.dir = language === "ar" ? "rtl" : "ltr"
-  document.documentElement.setAttribute("data-ui-language", language)
-}
-
-function getPreferredLanguage(): UiLanguage {
-  if (typeof window === "undefined") return "en"
-
-  const saved = window.localStorage.getItem(STORAGE_KEY)
-  if (saved === "ar" || saved === "en") return saved
-
-  const currentLang = document.documentElement.lang
-  if (currentLang === "ar" || currentLang === "en") return currentLang
-
-  return (window.navigator.language || "").toLowerCase().startsWith("ar") ? "ar" : "en"
-}
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 export function LanguageToggle({ className }: { className?: string }) {
-  const [language, setLanguage] = useState<UiLanguage>("en")
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    const initial = getPreferredLanguage()
-    setLanguage(initial)
-    applyLanguage(initial)
-    setMounted(true)
-  }, [])
-
-  const toggleLanguage = () => {
-    const nextLanguage: UiLanguage = language === "en" ? "ar" : "en"
-    setLanguage(nextLanguage)
-    applyLanguage(nextLanguage)
-    window.localStorage.setItem(STORAGE_KEY, nextLanguage)
-  }
-
-  const activeLanguage = mounted ? language : "en"
-  const isArabic = activeLanguage === "ar"
+  const { language, toggleLanguage, isArabic } = useUiLanguage()
 
   return (
     <button
@@ -63,7 +23,7 @@ export function LanguageToggle({ className }: { className?: string }) {
     >
       <Languages className="h-[16px] w-[16px]" strokeWidth={2.05} />
       <span className={cn("text-[10px] font-bold uppercase tracking-[0.14em]", isArabic && "font-arabic")}>
-        {isArabic ? "AR" : "EN"}
+        {language.toUpperCase()}
       </span>
     </button>
   )

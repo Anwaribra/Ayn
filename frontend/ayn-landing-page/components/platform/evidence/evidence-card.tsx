@@ -1,6 +1,7 @@
 import { FileText, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlatformEvidence, Evidence } from "@/types"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 interface EvidenceCardProps {
     evidence: PlatformEvidence | Evidence
@@ -41,8 +42,9 @@ function getStatusStyle(status: string) {
 }
 
 export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps) {
+    const { isArabic } = useUiLanguage()
     const status = evidence.status
-    const title = evidence.title || "Untitled Document"
+    const title = evidence.title || (isArabic ? "مستند بلا عنوان" : "Untitled Document")
 
     const dateStr =
         "created_at" in evidence
@@ -61,9 +63,18 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
         null
     const docTypeLabel = rawDocType
         ? rawDocType.toUpperCase().replace("VND.OPENXMLFORMATS-OFFICEDOCUMENT.WORDPROCESSINGML.DOCUMENT", "DOCX")
-        : "Document"
+        : isArabic ? "مستند" : "Document"
 
     const { label, badgeClass, dotClass, animate } = getStatusStyle(status)
+    const localizedLabel = {
+        Pending: isArabic ? "قيد الانتظار" : "Pending",
+        Processing: isArabic ? "قيد المعالجة" : "Processing",
+        Analyzed: isArabic ? "تم التحليل" : "Analyzed",
+        Linked: isArabic ? "مرتبط" : "Linked",
+        Failed: isArabic ? "فشل" : "Failed",
+        Complete: isArabic ? "مكتمل" : "Complete",
+        Voided: isArabic ? "ملغي" : "Voided",
+    }[label] ?? label
 
     return (
         <div
@@ -78,7 +89,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                         onDelete()
                     }}
                     className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm transition-all hover:border-destructive/25 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                    aria-label="Delete evidence"
+                    aria-label={isArabic ? "حذف الدليل" : "Delete evidence"}
                 >
                     <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -101,7 +112,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                             animate && "animate-pulse",
                         )}
                     />
-                    {label}
+                    {localizedLabel}
                 </span>
                 <span className="text-[10px] text-muted-foreground tabular-nums">
                     {new Date(dateStr).toLocaleDateString(undefined, {
@@ -122,7 +133,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                 {confidence != null && confidence > 0 && (
                     <>
                         <span className="opacity-30">·</span>
-                        <span>{Math.round(confidence)}% match</span>
+                        <span>{Math.round(confidence)}% {isArabic ? "تطابق" : "match"}</span>
                     </>
                 )}
             </div>
@@ -133,10 +144,10 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                     <FileText className="h-3.5 w-3.5 shrink-0 opacity-50" />
                     {criteriaCount > 0 ? (
                         <span>
-                            {criteriaCount} {criteriaCount === 1 ? "criterion" : "criteria"} linked
+                            {criteriaCount} {isArabic ? (criteriaCount === 1 ? "معيار مرتبط" : "معايير مرتبطة") : `${criteriaCount === 1 ? "criterion" : "criteria"} linked`}
                         </span>
                     ) : (
-                        <span className="italic opacity-60">Not analyzed</span>
+                        <span className="italic opacity-60">{isArabic ? "لم يُحلل بعد" : "Not analyzed"}</span>
                     )}
                 </div>
             </div>

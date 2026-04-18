@@ -8,6 +8,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from "recharts"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 /* ─── Shared Tooltip Style ────────────────────────────────────── */
 const tooltipStyle = {
@@ -66,6 +67,7 @@ interface TrendChartProps {
 }
 
 export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
+  const { isArabic } = useUiLanguage()
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#2563eb">
       <div className="h-72 w-full -ml-4">
@@ -80,7 +82,7 @@ export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} dy={10} />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} domain={[0, 100]} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, "Score"]} />
+            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]} />
             <Area type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#gradientTrend)" />
           </AreaChart>
         </ResponsiveContainer>
@@ -97,6 +99,7 @@ interface DistBarProps {
 }
 
 export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
+  const { isArabic } = useUiLanguage()
   const colored = data.map((d, i) => ({ ...d, fill: d.fill ?? PALETTE[i % PALETTE.length] }))
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#7c5ce0">
@@ -106,7 +109,7 @@ export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--text-secondary)", fontWeight: 700 }} dy={8} />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} domain={[0, 100]} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, "Score"]} />
+            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]} />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
               {colored.map((entry, i) => (<Cell key={i} fill={entry.fill} />))}
             </Bar>
@@ -159,6 +162,7 @@ interface RadarProps {
 }
 
 export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
+  const { isArabic } = useUiLanguage()
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#06b6d4" className="flex flex-col">
       <div className="flex-1 min-h-[260px]">
@@ -167,7 +171,7 @@ export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
             <PolarGrid stroke="var(--border-subtle)" />
             <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} />
             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-            <Radar name="Score" dataKey="score" stroke="#2563eb" fill="#2563eb" fillOpacity={0.2} strokeWidth={2} />
+            <Radar name={isArabic ? "النتيجة" : "Score"} dataKey="score" stroke="#2563eb" fill="#2563eb" fillOpacity={0.2} strokeWidth={2} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
@@ -189,6 +193,7 @@ interface ScoreHeatmapProps {
 }
 
 export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
+  const { isArabic } = useUiLanguage()
   const getColor = (score: number) => {
     if (score >= 80) return "#0d9668"
     if (score >= 60) return "#2563eb"
@@ -204,7 +209,9 @@ export function ScoreHeatmap({ data, title, subtitle }: ScoreHeatmapProps) {
             <div className="flex justify-between items-end mb-2">
               <span className="text-xs font-bold text-foreground truncate max-w-[180px] group-hover:text-primary transition-colors">{item.label}</span>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-muted-foreground">{item.count} report{item.count !== 1 ? "s" : ""}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {item.count} {isArabic ? (item.count === 1 ? "تقرير" : "تقارير") : `report${item.count !== 1 ? "s" : ""}`}
+                </span>
                 <span className="mono text-sm font-bold" style={{ color: getColor(item.score) }}>{item.score}%</span>
               </div>
             </div>

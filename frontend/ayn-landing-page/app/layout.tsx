@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
+import { UiLanguageProvider } from "@/lib/ui-language-context"
 import "./globals.css"
 
 const geist = Geist({
@@ -84,8 +85,10 @@ export default function RootLayout({
       <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${sora.variable}`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange storageKey="ayn-theme">
-            {children}
-            <Toaster richColors position="top-right" />
+            <UiLanguageProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </UiLanguageProvider>
           </ThemeProvider>
         </AuthProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}

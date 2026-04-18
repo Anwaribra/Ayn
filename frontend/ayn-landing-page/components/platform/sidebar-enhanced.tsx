@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
+import { useUiLanguage } from "@/lib/ui-language-context"
 import { cn } from "@/lib/utils"
 import { AynLogo } from "@/components/ayn-logo"
 import {
@@ -36,7 +37,10 @@ interface SidebarProps {
 type NavItemConfig = {
   id: string
   icon: LucideIcon
-  label: string
+  label: {
+    en: string
+    ar: string
+  }
   href: string
 }
 
@@ -66,19 +70,19 @@ function SidebarSection({
 
 // Grouped Menu Items for better visual hierarchy
 const MAIN_MENU: NavItemConfig[] = [
-  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/platform/dashboard" },
-  { id: "horus-ai", icon: Brain, label: "Horus AI", href: "/platform/horus-ai" },
+  { id: "dashboard", icon: LayoutDashboard, label: { en: "Dashboard", ar: "لوحة التحكم" }, href: "/platform/dashboard" },
+  { id: "horus-ai", icon: Brain, label: { en: "Horus AI", ar: "حورس" }, href: "/platform/horus-ai" },
 ]
 
 const COMPLIANCE_WORKFLOW: NavItemConfig[] = [
-  { id: "evidence", icon: FileCheck, label: "Evidence Vault", href: "/platform/evidence" },
-  { id: "standards", icon: Scale, label: "Standards Hub", href: "/platform/standards" },
-  { id: "gap-analysis", icon: Microscope, label: "Gap Analysis", href: "/platform/gap-analysis" },
+  { id: "evidence", icon: FileCheck, label: { en: "Evidence Vault", ar: "مخزن الأدلة" }, href: "/platform/evidence" },
+  { id: "standards", icon: Scale, label: { en: "Standards Hub", ar: "المعايير" }, href: "/platform/standards" },
+  { id: "gap-analysis", icon: Microscope, label: { en: "Gap Analysis", ar: "تحليل الفجوات" }, href: "/platform/gap-analysis" },
 ]
 
 const INSIGHTS_TOOLS: NavItemConfig[] = [
-  { id: "workflows", icon: GitGraph, label: "Workflows", href: "/platform/workflows" },
-  { id: "reports", icon: BarChart4, label: "Analytics", href: "/platform/analytics" },
+  { id: "workflows", icon: GitGraph, label: { en: "Workflows", ar: "سير العمل" }, href: "/platform/workflows" },
+  { id: "reports", icon: BarChart4, label: { en: "Analytics", ar: "التحليلات" }, href: "/platform/analytics" },
 ]
 
 import React, { useCallback, useMemo, memo } from "react"
@@ -94,8 +98,11 @@ export const SidebarItem = memo(function SidebarItem({
   pathname: string
   onNavClick: () => void
 }) {
+  const { isArabic } = useUiLanguage()
   const active =
     pathname.includes(item.id) || (item.id === "reports" && pathname.includes("analytics"))
+  const label = isArabic ? item.label.ar : item.label.en
+  const betaLabel = isArabic ? "تجريبي" : "Beta"
 
   const content = (
     <Link
@@ -129,11 +136,11 @@ export const SidebarItem = memo(function SidebarItem({
 
       {!isCollapsed && (
         <span className="truncate flex-1 font-medium tracking-wide flex justify-between items-center pr-1">
-          <span className="flex items-center gap-2 min-w-0">
-            <span className="truncate">{item.label}</span>
+            <span className="flex items-center gap-2 min-w-0">
+            <span className={cn("truncate", isArabic && "font-arabic")}>{label}</span>
             {item.id === "workflows" && (
               <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.22em] text-red-400">
-                Beta
+                {betaLabel}
               </span>
             )}
           </span>
@@ -155,10 +162,10 @@ export const SidebarItem = memo(function SidebarItem({
       <Tooltip>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
         <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
-          {item.label}
+          <span className={cn(isArabic && "font-arabic")}>{label}</span>
           {item.id === "workflows" && (
             <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.22em] text-red-400">
-              Beta
+              {betaLabel}
             </span>
           )}
           {item.id === "horus-ai" && (
@@ -178,8 +185,26 @@ export const SidebarItem = memo(function SidebarItem({
 function PlatformSidebarComponent({ open, onToggle, notificationCount }: SidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { isArabic } = useUiLanguage()
 
   const isCollapsed = !open
+  const copy = useMemo(
+    () => ({
+      overview: isArabic ? "نظرة عامة" : "Overview",
+      complianceCore: isArabic ? "جوهر الامتثال" : "Compliance Core",
+      reportingAutomation: isArabic ? "التقارير والأتمتة" : "Reporting & Automation",
+      archive: isArabic ? "الأرشيف" : "Archive",
+      settings: isArabic ? "الإعدادات" : "Settings",
+      user: isArabic ? "مستخدم" : "User",
+      noEmail: isArabic ? "بدون بريد" : "No email",
+      goHome: isArabic ? "العودة للرئيسية" : "Go to homepage",
+      collapseSidebar: isArabic ? "طي الشريط الجانبي" : "Collapse sidebar",
+      expandSidebar: isArabic ? "توسيع الشريط الجانبي" : "Expand sidebar",
+      goProfile: isArabic ? "الانتقال إلى الملف الشخصي" : "Go to profile",
+      signOut: isArabic ? "تسجيل الخروج" : "Sign out",
+    }),
+    [isArabic],
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -221,7 +246,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       >
         {!isCollapsed && (
           <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-            <Link href="/" className="inline-flex min-w-0 items-center gap-3" title="Go to homepage">
+            <Link href="/" className="inline-flex min-w-0 items-center gap-3" title={copy.goHome}>
               <AynLogo size="sm" withGlow={false} heroStyle />
             </Link>
           </div>
@@ -230,7 +255,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
           onClick={onToggle}
           type="button"
           className="glass-button glass-text-secondary inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border-subtle)] transition-all hover:bg-[var(--glass-soft-bg)] hover:text-[var(--glass-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:h-9 lg:w-9"
-          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+          aria-label={open ? copy.collapseSidebar : copy.expandSidebar}
         >
           <PanelLeft
             className={cn(
@@ -243,19 +268,19 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
 
       {/* Navigation */}
       <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2 pt-1" : "px-3 pt-1")}>
-        <SidebarSection title="Overview" isCollapsed={isCollapsed}>
+        <SidebarSection title={copy.overview} isCollapsed={isCollapsed}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
         </SidebarSection>
 
-        <SidebarSection title="Compliance Core" isCollapsed={isCollapsed}>
+        <SidebarSection title={copy.complianceCore} isCollapsed={isCollapsed}>
           {COMPLIANCE_WORKFLOW.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
         </SidebarSection>
 
-        <SidebarSection title="Reporting & Automation" isCollapsed={isCollapsed}>
+        <SidebarSection title={copy.reportingAutomation} isCollapsed={isCollapsed}>
           {INSIGHTS_TOOLS.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
@@ -270,7 +295,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             item={{
               id: "archive",
               icon: ArchiveIcon,
-              label: "Archive",
+              label: { en: copy.archive, ar: copy.archive },
               href: "/platform/archive",
             }}
             isCollapsed={isCollapsed}
@@ -281,7 +306,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             item={{
               id: "settings",
               icon: Settings,
-              label: "Settings",
+              label: { en: copy.settings, ar: copy.settings },
               href: "/platform/settings",
             }}
             isCollapsed={isCollapsed}
@@ -304,17 +329,17 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
               "flex items-center gap-3 flex-1 min-w-0",
               isCollapsed && "justify-center"
             )}
-            title="Go to profile"
+            title={copy.goProfile}
           >
             <UserCircle2 className="glass-text-secondary h-6 w-6 shrink-0 transition-colors" />
 
             {!isCollapsed && (
               <div className="flex flex-col justify-center min-w-0 leading-tight">
                 <p className="glass-text-primary truncate text-sm font-semibold">
-                  {user?.name ?? "User"}
+                  {user?.name ?? copy.user}
                 </p>
                 <p className="glass-text-secondary truncate text-[11px]">
-                  {user?.email ?? "No email"}
+                  {user?.email ?? copy.noEmail}
                 </p>
               </div>
             )}
@@ -328,7 +353,7 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
                 handleLogout()
               }}
               className="glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-[var(--glass-soft-bg)] hover:text-red-400 lg:h-8 lg:w-8"
-              aria-label="Sign out"
+              aria-label={copy.signOut}
             >
               <LogOut className="h-4 w-4" />
             </button>

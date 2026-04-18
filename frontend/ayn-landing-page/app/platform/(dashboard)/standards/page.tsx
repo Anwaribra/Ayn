@@ -36,7 +36,7 @@ import {
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
 import { useUiLanguage } from "@/lib/ui-language-context"
-import { getStandardDisplayTitle, isStandardHiddenFromNavigation } from "@/lib/standard-display"
+import { getStandardDisplayTitle } from "@/lib/standard-display"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
@@ -148,10 +148,7 @@ export default function StandardsPage() {
   )
 
   const publicStandards = useMemo(
-    () =>
-      (standards ?? []).filter(
-        (standard) => standard.isPublic && !isStandardHiddenFromNavigation(standard.id),
-      ),
+    () => (standards ?? []).filter((standard) => standard.isPublic),
     [standards],
   )
 

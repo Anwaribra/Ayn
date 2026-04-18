@@ -1,10 +1,11 @@
-import { FileText } from "lucide-react"
+import { FileText, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlatformEvidence, Evidence } from "@/types"
 
 interface EvidenceCardProps {
     evidence: PlatformEvidence | Evidence
     onClick?: () => void
+    onDelete?: () => void
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,7 +40,7 @@ function getStatusStyle(status: string) {
     }
 }
 
-export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
+export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps) {
     const status = evidence.status
     const title = evidence.title || "Untitled Document"
 
@@ -69,6 +70,19 @@ export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
             onClick={onClick}
             className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5"
         >
+            {onDelete && (
+                <button
+                    type="button"
+                    onClick={(event) => {
+                        event.stopPropagation()
+                        onDelete()
+                    }}
+                    className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm transition-all hover:border-destructive/25 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                    aria-label="Delete evidence"
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                </button>
+            )}
             {/* Top accent line */}
             <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.5),transparent)] opacity-0 transition-opacity group-hover:opacity-100" />
 

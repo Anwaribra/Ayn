@@ -589,7 +589,11 @@ function EvidenceContent() {
                     Selected
                   </div>
                 )}
-                <EvidenceCard evidence={evidence} onClick={() => setSelectedEvidence(evidence)} />
+                <EvidenceCard
+                  evidence={evidence}
+                  onClick={() => setSelectedEvidence(evidence)}
+                  onDelete={() => handleDelete(evidence)}
+                />
               </GlassCard>
             ))}
           </div>
@@ -636,6 +640,13 @@ function EvidenceContent() {
                 className="px-3 py-2 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" /> Analyze
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(selectedEvidence)}
+                className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
               <button
                 onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null) }}

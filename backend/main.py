@@ -39,12 +39,152 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def seed_missing_standards() -> None:
+    """Ensure all built-in public standards exist in the database (idempotent)."""
+    from app.core.db import get_db
+
+    BUILT_IN_STANDARDS = [
+        {
+            "id": "ncaaa",
+            "title": "NCAAA Institutional Standards",
+            "code": "NCAAA-2024",
+            "category": "Higher Education",
+            "description": "National Commission for Academic Accreditation and Assessment standards for Saudi Arabian universities and colleges.",
+            "region": "Saudi Arabia",
+            "icon": "GraduationCap",
+            "color": "from-emerald-600 to-teal-600",
+            "estimatedSetup": "2-3 days",
+            "criteria": [
+                ("Standard 1", "Mission, Vision, and Strategic Planning"),
+                ("Standard 2", "Governance, Leadership, and Management"),
+                ("Standard 3", "Teaching and Learning"),
+                ("Standard 4", "Students"),
+                ("Standard 5", "Faculty and Staff"),
+                ("Standard 6", "Institutional Resources"),
+                ("Standard 7", "Research and Innovation"),
+                ("Standard 8", "Community Partnership"),
+                ("Standard 9", "Quality Assurance"),
+                ("Standard 10", "Scientific Integrity and Ethics"),
+                ("Standard 11", "Financial Management"),
+            ],
+        },
+        {
+            "id": "iso21001",
+            "title": "ISO 21001:2018",
+            "code": "ISO-21001",
+            "category": "International",
+            "description": "Educational organizations management systems — international standard for educational management excellence.",
+            "region": "International",
+            "icon": "Globe",
+            "color": "from-blue-600 to-indigo-600",
+            "estimatedSetup": "5-7 days",
+            "criteria": [
+                ("Clause 4", "Context of the organization"),
+                ("Clause 5", "Leadership and commitment"),
+                ("Clause 6", "Planning"),
+                ("Clause 7", "Support: Resources, competence, awareness"),
+                ("Clause 8", "Operation: planning and control"),
+                ("Clause 9", "Performance evaluation"),
+                ("Clause 10", "Improvement"),
+            ],
+        },
+        {
+            "id": "advanced",
+            "title": "AdvancED Standards",
+            "code": "ADV-ED",
+            "category": "K-12 Education",
+            "description": "Comprehensive K-12 accreditation standards used by 40,000+ institutions across 80 countries.",
+            "region": "Global",
+            "icon": "Building2",
+            "color": "from-amber-600 to-orange-600",
+            "estimatedSetup": "3-5 days",
+            "criteria": [(f"Standard {i}", f"AdvancED Criterion {i}") for i in range(1, 32)],
+        },
+        {
+            "id": "moe",
+            "title": "Ministry of Education UAE",
+            "code": "MOE-UAE",
+            "category": "Government Framework",
+            "description": "United Arab Emirates Ministry of Education standards for institutional licensing and accreditation.",
+            "region": "UAE",
+            "icon": "Shield",
+            "color": "from-rose-600 to-pink-600",
+            "estimatedSetup": "2-4 days",
+            "criteria": [(f"Standard {i}", f"MOE UAE Criterion {i}") for i in range(1, 19)],
+        },
+        {
+            "id": "qaa",
+            "title": "QAA UK Standards",
+            "code": "QAA-UK",
+            "category": "Higher Education",
+            "description": "Quality Assurance Agency for Higher Education standards used across UK universities.",
+            "region": "United Kingdom",
+            "icon": "Award",
+            "color": "from-purple-600 to-violet-600",
+            "estimatedSetup": "4-6 days",
+            "criteria": [(f"Expectation {i}", f"QAA UK Expectation {i}") for i in range(1, 29)],
+        },
+        {
+            "id": "naqaa",
+            "title": "NAQAAE Egypt",
+            "code": "NAQAAE-EG",
+            "category": "National Authority",
+            "description": "National Authority for Quality Assurance and Accreditation of Education framework for Egyptian institutions.",
+            "region": "Egypt",
+            "icon": "FileCheck",
+            "color": "from-cyan-600 to-blue-600",
+            "estimatedSetup": "3-4 days",
+            "criteria": [
+                ("Domain 1", "Strategic Planning"),
+                ("Domain 2", "Governance and Leadership"),
+                ("Domain 3", "Management of Quality Assurance"),
+                ("Domain 4", "Academic Programs"),
+                ("Domain 5", "Students and Graduates"),
+                ("Domain 6", "Faculty Members"),
+                ("Domain 7", "Scientific Research and Other Scholarly Activities"),
+                ("Domain 8", "Community Involvement"),
+                ("Domain 9", "Educational Resources"),
+            ],
+        },
+    ]
+
+    try:
+        db = get_db()
+        for std in BUILT_IN_STANDARDS:
+            existing = await db.standard.find_unique(where={"id": std["id"]})
+            if existing:
+                continue  # already seeded
+            logger.info(f"Seeding missing standard: {std['id']}")
+            created = await db.standard.create(
+                data={
+                    "id": std["id"],
+                    "title": std["title"],
+                    "code": std["code"],
+                    "category": std["category"],
+                    "description": std["description"],
+                    "region": std["region"],
+                    "icon": std["icon"],
+                    "color": std["color"],
+                    "estimatedSetup": std["estimatedSetup"],
+                    "isPublic": True,
+                }
+            )
+            for title, description in std["criteria"]:
+                await db.criterion.create(
+                    data={"standardId": created.id, "title": title, "description": description}
+                )
+            logger.info(f"Seeded standard {std['id']} with {len(std['criteria'])} criteria")
+    except Exception as e:
+        logger.warning(f"Standard seeding skipped due to error: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup
     logger.info("Starting Ayn Platform API...")
     await connect_db()
+    await seed_missing_standards()
     yield
     # Shutdown
     logger.info("Shutting down Ayn Platform API...")

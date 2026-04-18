@@ -36,6 +36,18 @@ from app.core.redis import redis_client
 
 logger = logging.getLogger(__name__)
 
+# ── Platform identity constant ────────────────────────────────────────────────
+AYN_PLATFORM_DESCRIPTION = (
+    "Ayn (عين) is an academic accreditation and quality-assurance management platform "
+    "designed for educational institutions (schools, universities, and training centres). "
+    "It helps institutions prepare for and achieve accreditation against international "
+    "frameworks such as NCAAA (Saudi Arabia), ISO 21001, QAA (UK), AdvancED, and UAE MoE standards. "
+    "Core features include: Gap Analysis (identifying compliance gaps against accreditation criteria), "
+    "Evidence Vault (storing and linking supporting documents), Standards Hub (browsing frameworks), "
+    "Analytics (tracking compliance scores over time), and Horus AI (this assistant). "
+    "Horus is the built-in AI compliance advisor — not a general AI chatbot."
+)
+
 # Pending confirmations: Redis (persistent, survives restarts) or in-memory fallback.
 # Scope check (user_id/chat_id) prevents cross-user execution.
 PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
@@ -700,7 +712,8 @@ class HorusService:
                 gen = client.stream_chat(
                     messages=fast_messages,
                     context=(
-                        f"You are Horus, the AI assistant for the Ayn platform. "
+                        f"You are Horus, the AI compliance advisor built into the Ayn platform. "
+                        f"{AYN_PLATFORM_DESCRIPTION} "
                         f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
                         f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                         f"Answer conversational and general questions immediately and clearly. Stream your response token-by-token; do not buffer. "
@@ -719,8 +732,9 @@ class HorusService:
                 if first is None:
                     try:
                         fallback = await asyncio.wait_for(
-                            client.chat(messages=fast_messages, context=( 
-                                f"You are Horus, the AI assistant for the Ayn platform. "
+                            client.chat(messages=fast_messages, context=(
+                                f"You are Horus, the AI compliance advisor built into the Ayn platform. "
+                                f"{AYN_PLATFORM_DESCRIPTION} "
                                 f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
                                 f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                                 f"Answer conversational and general questions immediately and clearly. "
@@ -755,7 +769,8 @@ class HorusService:
                             client.chat(
                                 messages=fast_messages,
                                 context=(
-                                    f"You are Horus, the AI assistant for the Ayn platform. "
+                                    f"You are Horus, the AI compliance advisor built into the Ayn platform. "
+                                    f"{AYN_PLATFORM_DESCRIPTION} "
                                     f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
                                     f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                                     f"Answer conversational and general questions immediately and clearly. "
@@ -1317,7 +1332,8 @@ class HorusService:
                     language_hint = "Respond in English."
 
             domain_hint = (
-                "You are Horus, the AI assistant for the Ayn platform. "
+                f"You are Horus, the AI compliance advisor built into the Ayn platform. "
+                f"{AYN_PLATFORM_DESCRIPTION} "
                 "Always analyze the attached file(s) and answer in a normal chat style."
             )
             if not needs_analysis:
@@ -1770,6 +1786,7 @@ class HorusService:
         goal_line = f"Active session goal: {goal}" if goal else ""
 
         instructions = f"""You are Horus (حورس), the AI compliance advisor built into the Ayn platform.
+{AYN_PLATFORM_DESCRIPTION}
 Your role: answer questions, analyze documents, and help the user navigate their compliance programme.
 
 {user_line}

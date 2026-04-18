@@ -7,13 +7,19 @@ import { useAuth } from "@/lib/auth-context"
 import { Header } from "@/components/platform/header"
 import { Bell, Check, Loader2, AlertTriangle, CheckCircle, Info, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { ar as arLocale } from "date-fns/locale"
 import type { Notification } from "@/types"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { cn } from "@/lib/utils"
 
 export default function NotificationsPage() {
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
+  const { isArabic } = useUiLanguage()
+  usePageTitle(isArabic ? "الإشعارات" : "Notifications")
   const [filter, setFilter] = useState<"all" | "unread">("all")
 
   const { data: notifications, mutate, isLoading } = useSWR<Notification[]>(
@@ -35,9 +41,9 @@ export default function NotificationsPage() {
         { revalidate: false }
       )
     } catch {
-      toast.error("Failed to mark all as read")
+      toast.error(isArabic ? "تعذر تعيين الكل كمقروء" : "Failed to mark all as read")
     }
-  }, [mutate, notifications])
+  }, [mutate, notifications, isArabic])
 
   const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -48,7 +54,7 @@ export default function NotificationsPage() {
         { revalidate: false }
       )
     } catch {
-      toast.error("Failed to mark as read")
+      toast.error(isArabic ? "تعذر تعيين الإشعار كمقروء" : "Failed to mark as read")
     }
   }
 
@@ -81,30 +87,37 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className={cn("space-y-6 animate-in fade-in duration-500", isArabic && "font-arabic")}>
       <Header
-        title="Notifications"
-        description="Stay updated with system activities and alerts."
+        title={isArabic ? "الإشعارات" : "Notifications"}
+        description={
+          isArabic
+            ? "تابع نشاط المنصة والتنبيهات."
+            : "Stay updated with system activities and alerts."
+        }
         actions={
-          <div className="flex gap-2">
+          <div className={cn("flex gap-2", isArabic && "flex-row-reverse")}>
             <button
               onClick={() => setFilter("all")}
               className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
-              All
+              {isArabic ? "الكل" : "All"}
             </button>
             <button
               onClick={() => setFilter("unread")}
               className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${filter === "unread" ? "bg-primary text-primary-foreground" : "glass-button text-muted-foreground"}`}
             >
-              Unread
+              {isArabic ? "غير مقروء" : "Unread"}
             </button>
             <button
               onClick={handleMarkAllRead}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium text-primary glass-button transition-colors ml-2 flex items-center gap-1"
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-sm font-medium text-primary glass-button transition-colors flex items-center gap-1",
+                isArabic ? "mr-2 flex-row-reverse" : "ml-2",
+              )}
             >
               <Check className="w-4 h-4" />
-              Mark all read
+              {isArabic ? "تعيين الكل كمقروء" : "Mark all read"}
             </button>
           </div>
         }
@@ -120,9 +133,13 @@ export default function NotificationsPage() {
             <div className="w-16 h-16 rounded-full glass-input flex items-center justify-center mx-auto mb-4">
               <Bell className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">No notifications</h3>
+            <h3 className="text-lg font-bold text-foreground mb-2">
+              {isArabic ? "لا توجد إشعارات" : "No notifications"}
+            </h3>
             <p className="text-muted-foreground max-w-sm mx-auto text-sm">
-              You're all caught up! When system events occur, they'll appear here.
+              {isArabic
+                ? "لا جديد حالياً. عند حدوث أحداث في المنصة ستظهر هنا."
+                : "You're all caught up! When system events occur, they'll appear here."}
             </p>
           </div>
         ) : (
@@ -138,8 +155,11 @@ export default function NotificationsPage() {
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <h4 className={`text-base font-bold ${!n.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</h4>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                                   <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                    {formatDistanceToNow(new Date(n.createdAt), {
+                      addSuffix: true,
+                      locale: isArabic ? arLocale : undefined,
+                    })}
                   </span>
                 </div>
                 <p className={`text-sm mt-1 leading-relaxed ${!n.isRead ? 'text-foreground/80' : 'text-muted-foreground'}`}>
@@ -152,7 +172,7 @@ export default function NotificationsPage() {
               <button
                 onClick={(e) => handleMarkRead(n.id, e)}
                 className="absolute top-2 right-2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
-                title="Mark as read"
+                title={isArabic ? "تعيين كمقروء" : "Mark as read"}
               >
               </button>
             </div>

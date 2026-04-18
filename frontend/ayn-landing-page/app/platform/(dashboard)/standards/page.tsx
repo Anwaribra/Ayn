@@ -35,6 +35,8 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
 import { CoverageBar } from "@/components/platform/coverage-bar"
@@ -61,35 +63,35 @@ function deriveStatus(coveragePct: number, mappingState: string | undefined, map
   return "critical"
 }
 
-function getStatusBadge(status: DerivedStatus) {
+function getStatusBadge(status: DerivedStatus, isArabic: boolean) {
   switch (status) {
     case "strong":
       return {
-        label: "Strong",
+        label: isArabic ? "قوي" : "Strong",
         className:
           "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]",
       }
     case "partial":
       return {
-        label: "Partial",
+        label: isArabic ? "جزئي" : "Partial",
         className:
           "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]",
       }
     case "critical":
       return {
-        label: "Critical",
+        label: isArabic ? "حرج" : "Critical",
         className:
           "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
       }
     case "analyzing":
       return {
-        label: "Analyzing",
+        label: isArabic ? "قيد التحليل" : "Analyzing",
         className:
           "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-[var(--status-info)]",
       }
     default:
       return {
-        label: "Not Started",
+        label: isArabic ? "لم يبدأ" : "Not Started",
         className: "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground",
       }
   }
@@ -99,27 +101,31 @@ function formatFilterLabel(value?: string | null, fallback = "Uncategorized") {
   return value?.trim() || fallback
 }
 
-const MAPPING_STATUS_META: Record<string, { label: string; Icon: LucideIcon; iconClass: string; badgeClass: string }> = {
+const MAPPING_STATUS_META: Record<string, { label: string; labelAr: string; Icon: LucideIcon; iconClass: string; badgeClass: string }> = {
   met: {
     label: "Covered",
+    labelAr: "مغطى",
     Icon: CheckCircle,
     iconClass: "text-green-500",
     badgeClass: "bg-green-500/10 text-green-500",
   },
   partial: {
     label: "Partial",
+    labelAr: "جزئي",
     Icon: AlertCircle,
     iconClass: "text-yellow-500",
     badgeClass: "bg-yellow-500/10 text-yellow-500",
   },
   gap: {
     label: "Gap",
+    labelAr: "فجوة",
     Icon: XCircle,
     iconClass: "text-red-500",
     badgeClass: "bg-red-500/10 text-red-500",
   },
   not_analyzed: {
     label: "Pending",
+    labelAr: "قيد الانتظار",
     Icon: Circle,
     iconClass: "text-muted-foreground",
     badgeClass: "glass-button text-muted-foreground",
@@ -128,6 +134,8 @@ const MAPPING_STATUS_META: Record<string, { label: string; Icon: LucideIcon; ico
 
 export default function StandardsPage() {
   const router = useRouter()
+  const { isArabic } = useUiLanguage()
+  usePageTitle(isArabic ? "المعايير" : "Standards Hub")
   const { data: standards, isLoading, mutate } = useSWR<Standard[]>(
     "standards",
     () => api.getStandards(),
@@ -384,66 +392,74 @@ export default function StandardsPage() {
       <div className="min-h-screen relative overflow-hidden">
         <div className="relative z-10">
           <Header
-            title="Standards Hub"
-            description="Audit frameworks, coverage signals, and analysis readiness in one workspace."
+            title={isArabic ? "مركز المعايير" : "Standards Hub"}
+            description={
+              isArabic
+                ? "أطر الاعتماد، مؤشرات التغطية، وجاهزية التحليل في مساحة واحدة."
+                : "Audit frameworks, coverage signals, and analysis readiness in one workspace."
+            }
             breadcrumbs={[
-              { label: "Dashboard", href: "/platform/dashboard" },
-              { label: "Standards Hub" },
+              { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
+              { label: isArabic ? "المعايير" : "Standards Hub" },
             ]}
             actions={
               <Button
                 onClick={() => setIsPDFModalOpen(true)}
                 className="min-h-[44px] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
               >
-                <FileUp className="mr-2 h-4 w-4" />
-                Import Framework
+                <FileUp className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
+                {isArabic ? "استيراد إطار" : "Import Framework"}
               </Button>
             }
           />
 
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+          <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8", isArabic && "font-arabic")}>
             <section className="glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-7 lg:p-8">
               <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.16),transparent_70%)] blur-3xl" />
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.45),transparent)]" />
 
               <div className="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_440px]">
                 <div className="space-y-5">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  <div className={cn("inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary", isArabic && "flex-row-reverse")}>
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    Standards Intelligence
+                    {isArabic ? "ذكاء المعايير" : "Standards Intelligence"}
                   </div>
 
                   <div className="space-y-3">
                     <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                      Global frameworks with live readiness signals.
+                      {isArabic
+                        ? "أطر عالمية مع مؤشرات جاهزية مباشرة."
+                        : "Global frameworks with live readiness signals."}
                     </h1>
                     <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                      Review your standards library, see which frameworks are actually mapped, and jump straight into the weakest coverage areas first.
+                      {isArabic
+                        ? "راجع مكتبة المعايير، اطلع على الأطر المربوطة فعلياً، وانتقل أولاً لأضعف مناطق التغطية."
+                        : "Review your standards library, see which frameworks are actually mapped, and jump straight into the weakest coverage areas first."}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                        Active Standards
+                        {isArabic ? "معايير نشطة" : "Active Standards"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-foreground">{publicStandards.length}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                        Criteria Points
+                        {isArabic ? "نقاط المعايير" : "Criteria Points"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-foreground">{totalCriteria}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                        Analyzed
+                        {isArabic ? "تم تحليلها" : "Analyzed"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-[var(--status-success)]">{analyzedFrameworks}</p>
                     </div>
                     <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                        Avg Coverage
+                        {isArabic ? "متوسط التغطية" : "Avg Coverage"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-primary">{averageCoverage}%</p>
                     </div>
@@ -455,15 +471,20 @@ export default function StandardsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                          Weakest Framework
+                          {isArabic ? "أضعف إطار" : "Weakest Framework"}
                         </p>
                         <h3 className="mt-2 text-xl font-bold text-foreground">
-                          {weakestStandard?.title ?? "No mapped frameworks yet"}
+                          {weakestStandard?.title ??
+                            (isArabic ? "لا توجد أطر مربوطة بعد" : "No mapped frameworks yet")}
                         </h3>
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                           {weakestStandard
-                            ? "Best candidate for your next evidence and analysis cycle."
-                            : "Import a framework or start analysis to surface readiness signals."}
+                            ? isArabic
+                              ? "أفضل نقطة لبدء دورة الأدلة والتحليل التالية."
+                              : "Best candidate for your next evidence and analysis cycle."
+                            : isArabic
+                              ? "استورد إطاراً أو ابدأ التحليل لإظهار مؤشرات الجاهزية."
+                              : "Import a framework or start analysis to surface readiness signals."}
                         </p>
                       </div>
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)]">
@@ -473,14 +494,15 @@ export default function StandardsPage() {
                     {weakestStandard && (
                       <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
                         <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          {Math.round(insightsById.get(weakestStandard.id)?.coveragePct ?? 0)}% coverage
+                          {Math.round(insightsById.get(weakestStandard.id)?.coveragePct ?? 0)}%
+                          {isArabic ? " تغطية" : " coverage"}
                         </span>
                         <button
                           type="button"
                           onClick={() => router.push(`/platform/gap-analysis?standardId=${weakestStandard.id}`)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-primary"
+                          className={cn("inline-flex items-center gap-1 text-xs font-bold text-primary", isArabic && "flex-row-reverse")}
                         >
-                          Analyze <ArrowUpRight className="h-3.5 w-3.5" />
+                          {isArabic ? "تحليل" : "Analyze"} <ArrowUpRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     )}
@@ -493,10 +515,12 @@ export default function StandardsPage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                          Library Snapshot
+                          {isArabic ? "لمحة المكتبة" : "Library Snapshot"}
                         </p>
                         <p className="mt-1 text-sm font-medium text-muted-foreground">
-                          {categories.length} categories • {regions.length} regions
+                          {isArabic
+                            ? `${categories.length} فئات • ${regions.length} مناطق`
+                            : `${categories.length} categories • ${regions.length} regions`}
                         </p>
                       </div>
                     </div>
@@ -518,13 +542,25 @@ export default function StandardsPage() {
             <section className="glass-panel rounded-[28px] border-[var(--glass-border)] p-4 sm:p-5">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,180px))]">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Search
+                    className={cn(
+                      "absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+                      isArabic ? "right-4" : "left-4",
+                    )}
+                  />
                   <input
                     type="text"
-                    placeholder="Search by framework, code, category, or region..."
+                    placeholder={
+                      isArabic
+                        ? "ابحث بالإطار، الرمز، الفئة، أو المنطقة..."
+                        : "Search by framework, code, category, or region..."
+                    }
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="glass-input h-12 w-full rounded-2xl pl-11 pr-4 text-sm"
+                    className={cn(
+                      "glass-input h-12 w-full rounded-2xl text-sm",
+                      isArabic ? "pr-11 pl-4" : "pl-11 pr-4",
+                    )}
                   />
                 </div>
 
@@ -614,7 +650,7 @@ export default function StandardsPage() {
               ) : filteredStandards.length > 0 ? (
                 filteredStandards.map((standard) => {
                   const insight = insightsById.get(standard.id)
-                  const badge = getStatusBadge(insight?.derivedStatus ?? "unmapped")
+                  const badge = getStatusBadge(insight?.derivedStatus ?? "unmapped", isArabic)
 
                   return (
                     <GlassCard
@@ -938,7 +974,7 @@ export default function StandardsPage() {
                         </p>
                       </div>
                       {(() => {
-                        const badge = getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped")
+                        const badge = getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped", isArabic)
                         return (
                           <span className={cn("rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]", badge.className)}>
                             {badge.label}
@@ -1023,7 +1059,7 @@ export default function StandardsPage() {
                                 </div>
                               </div>
                               <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", statusMeta.badgeClass)}>
-                                {statusMeta.label}
+                                {isArabic ? statusMeta.labelAr : statusMeta.label}
                               </span>
                             </div>
                           </div>

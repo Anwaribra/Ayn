@@ -7,6 +7,10 @@ from app.activity.service import ActivityService
 from app.notifications.service import NotificationService
 from app.evidence.models import EvidenceResponse
 from app.core.redis import redis_client
+from app.compliance.alignment_metrics import (
+    count_distinct_criteria_with_evidence,
+    institution_evidence_visibility_filter,
+)
 import logging
 from datetime import datetime
 import json
@@ -44,8 +48,10 @@ class DashboardService:
                 if is_admin:
                     evidence_count = await db.evidence.count()
                     total_gap_analyses = await db.gapanalysis.count()
-                    aligned_criteria_count = await db.evidence.count(where={"criteria": {"some": {}}})
                     total_criteria = await db.criterion.count()
+                    aligned_criteria_count = await count_distinct_criteria_with_evidence(
+                        db, evidence_where=None
+                    )
                 else:
                     evidence_count = await db.evidence.count(where={"uploadedById": user_id})
                     total_gap_analyses = await db.gapanalysis.count(where={"institutionId": institution_id}) if institution_id else 0
@@ -59,9 +65,16 @@ class DashboardService:
                         else:
                             total_criteria = 0
 
-                        # Criteria that have evidence from this institution
-                        aligned_criteria_count = await db.evidencecriterion.count(
-                            where={"evidence": {"ownerId": institution_id}}
+                        inst_members = await db.user.find_many(
+                            where={"institutionId": institution_id},
+                            select={"id": True},
+                        )
+                        member_ids = [u.id for u in inst_members]
+                        ev_scope = institution_evidence_visibility_filter(
+                            institution_id, user_id, member_ids
+                        )
+                        aligned_criteria_count = await count_distinct_criteria_with_evidence(
+                            db, evidence_where=ev_scope
                         )
                     else:
                         total_criteria = 0
@@ -83,7 +96,27 @@ class DashboardService:
                         pass
 
             alignment_percentage = round((aligned_criteria_count / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
-            
+
+            # If criterion links are missing but gap analyses exist, surface avg report score
+            # so active workspaces don't show a misleading 0%.
+            if (
+                alignment_percentage == 0.0
+                and total_criteria > 0
+                and not is_admin
+                and institution_id
+                and total_gap_analyses > 0
+            ):
+                recent_ga = await db.gapanalysis.find_many(
+                    where={"institutionId": institution_id},
+                    order={"createdAt": "desc"},
+                    take=10,
+                )
+                if recent_ga:
+                    alignment_percentage = round(
+                        sum(float(r.overallScore) for r in recent_ga) / len(recent_ga),
+                        2,
+                    )
+
             # Record in platform state for Horus and other consumers
             try:
                 from app.platform_state.service import StateService

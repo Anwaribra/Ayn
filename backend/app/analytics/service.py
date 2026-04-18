@@ -18,6 +18,10 @@ from app.analytics.models import (
     AnomalyItem,
     EvidenceTrend,
 )
+from app.compliance.alignment_metrics import (
+    count_distinct_criteria_with_evidence,
+    institution_evidence_visibility_filter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +72,7 @@ class AnalyticsService:
                 ),
                 db.evidence.count(where=ev_where),
                 db.criterion.count(),
-                db.evidence.count(where={"criteria": {"some": {}}}),
+                count_distinct_criteria_with_evidence(db, ev_where if ev_where else None),
                 db.evidence.find_many(where=ev_where, order={"createdAt": "asc"}),
             )
         else:
@@ -94,11 +98,25 @@ class AnalyticsService:
             # ── Round 2: Criteria counts depend on std_ids from Round 1 ──
             std_ids = [s.standardId for s in inst_standards]
             if std_ids:
+                inst_members = await db.user.find_many(
+                    where={"institutionId": institution_id},
+                    select={"id": True},
+                )
+                member_ids = [u.id for u in inst_members]
+                scope = institution_evidence_visibility_filter(
+                    institution_id, user_id, member_ids
+                )
+                if period_days is not None:
+                    cutoff_ev = now - timedelta(days=period_days)
+                    ev_scope: Dict[str, Any] = {
+                        "AND": [scope, {"createdAt": {"gte": cutoff_ev}}],
+                    }
+                else:
+                    ev_scope = scope
+
                 total_criteria, aligned_criteria = await asyncio.gather(
                     db.criterion.count(where={"standardId": {"in": std_ids}}),
-                    db.evidencecriterion.count(
-                        where={"evidence": {"ownerId": institution_id}}
-                    ),
+                    count_distinct_criteria_with_evidence(db, ev_scope),
                 )
             else:
                 total_criteria = 0
@@ -128,6 +146,13 @@ class AnalyticsService:
             if total_criteria > 0
             else 0.0
         )
+        if (
+            alignment_pct == 0.0
+            and total_criteria > 0
+            and not is_admin
+            and total_reports > 0
+        ):
+            alignment_pct = round(sum(scores) / total_reports, 2)
 
         # ── Score Trend (time-series) ────────────────────────────────────
         sorted_reports = sorted(reports, key=lambda r: r.createdAt)

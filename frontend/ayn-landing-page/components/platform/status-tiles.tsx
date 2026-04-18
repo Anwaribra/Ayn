@@ -8,6 +8,8 @@ interface StatTile {
     value: string
     icon: LucideIcon
     status?: "neutral" | "success" | "warning" | "critical"
+    /** Localized status badge (e.g. Arabic). Falls back to raw `status` if omitted. */
+    statusLabel?: string
     trend?: string
 }
 
@@ -47,7 +49,7 @@ export function StatusTiles({ stats = [] }: StatusTilesProps) {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.22em]">
-                                        {tile.status || "status"}
+                                        {tile.statusLabel ?? tile.status ?? "status"}
                                     </div>
                                     {tile.trend && (
                                         <div className="mt-1 text-[11px] font-medium text-muted-foreground">

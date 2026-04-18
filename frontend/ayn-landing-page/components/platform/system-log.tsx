@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 import {
   Activity,
   Cpu,
@@ -45,36 +46,39 @@ export function SystemLog({
   logs = [],
   isLoading = false,
 }: SystemLogProps) {
+  const { isArabic } = useUiLanguage()
   const visibleLogs = logs.slice(0, maxEntries)
 
   const getRelativeTime = (dateStr: string) => {
     const date = new Date(dateStr)
     const diff = Date.now() - date.getTime()
     const minutes = Math.floor(diff / (1000 * 60))
-    if (minutes < 1) return "Just now"
-    if (minutes < 60) return `${minutes}m ago`
+    if (minutes < 1) return isArabic ? "الآن" : "Just now"
+    if (minutes < 60) return isArabic ? `منذ ${minutes} د` : `${minutes}m ago`
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h ago`
-    return date.toLocaleDateString()
+    if (hours < 24) return isArabic ? `منذ ${hours} س` : `${hours}h ago`
+    return date.toLocaleDateString(isArabic ? "ar-EG" : undefined)
   }
 
   return (
     <div className={cn("glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-6", className)}>
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
       {showHeader && (
-        <div className="relative z-10 flex items-center justify-between mb-5 sm:mb-6">
-          <div className="flex items-center gap-3">
+        <div className={cn("relative z-10 flex items-center justify-between mb-5 sm:mb-6", isArabic && "flex-row-reverse")}>
+          <div className={cn("flex items-center gap-3", isArabic && "flex-row-reverse text-right")}>
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] shadow-[0_18px_40px_-28px_rgba(59,130,246,0.5)]">
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">Neural Stream</h3>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">Live Platform Activity</p>
+              <h3 className="text-sm font-bold text-foreground">{isArabic ? "التدفق العصبي" : "Neural Stream"}</h3>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
+                {isArabic ? "نشاط المنصة المباشر" : "Live Platform Activity"}
+              </p>
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title="Live" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--status-success)]">Live</span>
+          <div className={cn("inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1", isArabic && "flex-row-reverse")}>
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title={isArabic ? "مباشر" : "Live"} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--status-success)]">{isArabic ? "مباشر" : "Live"}</span>
           </div>
         </div>
       )}
@@ -88,7 +92,9 @@ export function SystemLog({
           </div>
         ) : visibleLogs.length === 0 ? (
           <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-10 text-center">
-            <p className="text-muted-foreground italic text-sm">No activity recorded.</p>
+            <p className="text-muted-foreground italic text-sm">
+              {isArabic ? "لا يوجد نشاط مسجّل." : "No activity recorded."}
+            </p>
           </div>
         ) : (
           visibleLogs.map((log: any) => {
@@ -116,7 +122,7 @@ export function SystemLog({
                     </span>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-                    {log.description || "Activity detected in platform core."}
+                    {log.description || (isArabic ? "تم رصد نشاط في نواة المنصة." : "Activity detected in platform core.")}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 mt-3 text-muted-foreground/60 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
@@ -126,12 +132,14 @@ export function SystemLog({
         )}
       </div>
 
-      <div className="relative z-10 mt-5 flex items-center justify-between border-t border-[var(--glass-border-subtle)] pt-4 sm:mt-6">
-        <div className="flex items-center gap-2">
+      <div className={cn("relative z-10 mt-5 flex items-center justify-between border-t border-[var(--glass-border-subtle)] pt-4 sm:mt-6", isArabic && "flex-row-reverse")}>
+        <div className={cn("flex items-center gap-2", isArabic && "flex-row-reverse")}>
           <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.18em]">Ayn Neural Core</span>
+          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.18em]">
+            {isArabic ? "نواة عين العصبية" : "Ayn Neural Core"}
+          </span>
         </div>
-        <span className="text-[9px] text-muted-foreground font-mono">256-BIT SECURE</span>
+        <span className="text-[9px] text-muted-foreground font-mono">{isArabic ? "تشفير 256 بت" : "256-BIT SECURE"}</span>
       </div>
     </div>
   )

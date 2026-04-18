@@ -17,7 +17,9 @@ const UiLanguageContext = createContext<UiLanguageContextValue | null>(null)
 
 function applyLanguage(language: UiLanguage) {
   document.documentElement.lang = language
-  document.documentElement.dir = language === "ar" ? "rtl" : "ltr"
+  // Keep document LTR so shell layout (sidebar, grids, toolbars) does not mirror.
+  // Arabic copy uses text alignment + optional local `dir="rtl"` where needed.
+  document.documentElement.dir = "ltr"
   document.documentElement.setAttribute("data-ui-language", language)
 }
 

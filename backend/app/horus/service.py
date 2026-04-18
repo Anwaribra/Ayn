@@ -328,9 +328,10 @@ class HorusService:
         """
         Non-streaming chat interface with persistence.
         """
-        # 1. Ensure Chat exists
+        # 1. Ensure Chat exists (strip __MODE__: prefix before using message as title)
+        _, clean_message_for_title = self._extract_mode_token(message)
         if not chat_id:
-            chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
+            chat = await ChatService.create_chat(user_id, title=clean_message_for_title[:50] if clean_message_for_title else "New Conversation")
             chat_id = chat.id
         active_goal = await self._get_active_goal(user_id, chat_id)
         
@@ -588,12 +589,11 @@ class HorusService:
                 files = buffered_parts
 
         # 1. Start Chat Creation or Fetch in Parallel with State
+        request_mode, message = self._extract_mode_token(message)
         if not chat_id:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
-
-        request_mode, message = self._extract_mode_token(message)
         user_metadata = {"responseMode": request_mode} if request_mode else {}
         attachment_metadata = self._build_attachment_metadata(files)
         if attachment_metadata:

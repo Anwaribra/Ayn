@@ -1,4 +1,5 @@
 """Analytics service — all computations from real database data via Prisma."""
+import asyncio
 import math
 import logging
 from datetime import datetime, timedelta, timezone
@@ -35,11 +36,10 @@ class AnalyticsService:
         user_id = current_user["id"]
         institution_id = current_user.get("institutionId")
 
-        # ── 1. Fetch gap analysis reports (scoped) ──────────────────────
+        # ── Build query filters upfront (pure Python, no I/O) ──────────
         ga_where: Dict[str, Any] = {}
         if not is_admin:
             if not institution_id:
-                # User has no institution — return empty analytics
                 return AnalyticsService._empty_response(period_days, now)
             ga_where["institutionId"] = institution_id
 
@@ -47,18 +47,70 @@ class AnalyticsService:
             cutoff = now - timedelta(days=period_days)
             ga_where["createdAt"] = {"gte": cutoff}
 
-        reports = await db.gapanalysis.find_many(
-            where=ga_where,
-            order={"createdAt": "desc"},
-            include={"standard": True},
-        )
+        # Evidence filter is the same for count and find_many
+        ev_where: Dict[str, Any] = {} if is_admin else {"uploadedById": user_id}
+        if period_days is not None:
+            ev_where["createdAt"] = {"gte": now - timedelta(days=period_days)}
 
-        # ── 2. Basic KPIs ───────────────────────────────────────────────
+        # ── Round 1: Parallelise all queries whose inputs are already known ──
+        if is_admin:
+            (
+                reports,
+                total_evidence,
+                total_criteria,
+                aligned_criteria,
+                all_evidence,
+            ) = await asyncio.gather(
+                db.gapanalysis.find_many(
+                    where=ga_where,
+                    order={"createdAt": "desc"},
+                    include={"standard": True},
+                ),
+                db.evidence.count(where=ev_where),
+                db.criterion.count(),
+                db.evidence.count(where={"criteria": {"some": {}}}),
+                db.evidence.find_many(where=ev_where, order={"createdAt": "asc"}),
+            )
+        else:
+            # Non-admin: we need institution standards before we can count criteria
+            (
+                reports,
+                total_evidence,
+                inst_standards,
+                all_evidence,
+            ) = await asyncio.gather(
+                db.gapanalysis.find_many(
+                    where=ga_where,
+                    order={"createdAt": "desc"},
+                    include={"standard": True},
+                ),
+                db.evidence.count(where=ev_where),
+                db.institutionstandard.find_many(
+                    where={"institutionId": institution_id}
+                ),
+                db.evidence.find_many(where=ev_where, order={"createdAt": "asc"}),
+            )
+
+            # ── Round 2: Criteria counts depend on std_ids from Round 1 ──
+            std_ids = [s.standardId for s in inst_standards]
+            if std_ids:
+                total_criteria, aligned_criteria = await asyncio.gather(
+                    db.criterion.count(where={"standardId": {"in": std_ids}}),
+                    db.evidencecriterion.count(
+                        where={"evidence": {"ownerId": institution_id}}
+                    ),
+                )
+            else:
+                total_criteria = 0
+                aligned_criteria = 0
+
+        # ── Everything below is pure-Python computation (no more DB I/O) ──
+
+        # ── Basic KPIs ──────────────────────────────────────────────────
         total_reports = len(reports)
         scores = [r.overallScore for r in reports]
         avg_score = round(sum(scores) / total_reports, 2) if total_reports > 0 else 0.0
 
-        # Standard deviation
         variance = (
             sum((s - avg_score) ** 2 for s in scores) / total_reports
             if total_reports > 1
@@ -71,41 +123,13 @@ class AnalyticsService:
         delta = round(latest_score - previous_score, 2)
         unique_standards = len({r.standardId for r in reports if r.standardId})
 
-        # ── 3. Evidence & alignment counts (scoped) ─────────────────────
-        ev_where: Dict[str, Any] = {} if is_admin else {"uploadedById": user_id}
-        if period_days is not None:
-            ev_where["createdAt"] = {"gte": now - timedelta(days=period_days)}
-
-        total_evidence = await db.evidence.count(where=ev_where)
-
-        # Total criteria & aligned criteria
-        if is_admin:
-            total_criteria = await db.criterion.count()
-            aligned_criteria = await db.evidence.count(where={"criteria": {"some": {}}})
-        elif institution_id:
-            inst_standards = await db.institutionstandard.find_many(
-                where={"institutionId": institution_id}
-            )
-            std_ids = [s.standardId for s in inst_standards]
-            total_criteria = await db.criterion.count(
-                where={"standardId": {"in": std_ids}} if std_ids else {}
-            )
-            aligned_criteria = (
-                await db.evidencecriterion.count(
-                    where={"evidence": {"ownerId": institution_id}}
-                )
-                if std_ids
-                else 0
-            )
-        else:
-            total_criteria = 0
-            aligned_criteria = 0
-
         alignment_pct = (
-            round((aligned_criteria / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
+            round((aligned_criteria / total_criteria) * 100, 2)
+            if total_criteria > 0
+            else 0.0
         )
 
-        # ── 4. Score Trend (time-series) ────────────────────────────────
+        # ── Score Trend (time-series) ────────────────────────────────────
         sorted_reports = sorted(reports, key=lambda r: r.createdAt)
         score_trend = [
             TimeSeriesPoint(
@@ -116,17 +140,7 @@ class AnalyticsService:
             for r in sorted_reports
         ]
 
-        # ── 5. Evidence Trend ───────────────────────────────────────────
-        ev_where_all: Dict[str, Any] = {} if is_admin else {"uploadedById": user_id}
-        if period_days is not None:
-            ev_where_all["createdAt"] = {"gte": now - timedelta(days=period_days)}
-
-        all_evidence = await db.evidence.find_many(
-            where=ev_where_all,
-            order={"createdAt": "asc"},
-        )
-
-        # Group by date
+        # ── Evidence Trend ───────────────────────────────────────────────
         ev_by_date: Dict[str, int] = defaultdict(int)
         for ev in all_evidence:
             date_key = ev.createdAt.strftime("%b %d")
@@ -140,33 +154,38 @@ class AnalyticsService:
                 EvidenceTrend(date=date_key, count=count, cumulativeCount=cumulative)
             )
 
-        # ── 6. Standard Performance (aggregated per standard) ───────────
+        # ── Standard Performance (aggregated per standard) ───────────────
         std_groups: Dict[str, List[float]] = defaultdict(list)
         std_titles: Dict[str, str] = {}
         std_latest: Dict[str, float] = {}
+        std_ids_map: Dict[str, Optional[str]] = {}
 
         for r in sorted_reports:
             key = r.standardId or "unknown"
             title = r.standard.title if r.standard else "Unknown"
             std_groups[key].append(r.overallScore)
             std_titles[key] = title
-            std_latest[key] = r.overallScore  # last wins (sorted asc)
+            std_latest[key] = r.overallScore
+            std_ids_map[key] = r.standardId
 
         standard_performance: List[StandardPerformance] = []
         for std_id, group_scores in std_groups.items():
             avg = sum(group_scores) / len(group_scores)
-            # Trend: compare first half vs second half
             mid = len(group_scores) // 2
             if mid > 0:
                 first_avg = sum(group_scores[:mid]) / mid
                 second_avg = sum(group_scores[mid:]) / len(group_scores[mid:])
-                trend = "up" if second_avg > first_avg + 2 else ("down" if second_avg < first_avg - 2 else "stable")
+                trend = (
+                    "up"
+                    if second_avg > first_avg + 2
+                    else ("down" if second_avg < first_avg - 2 else "stable")
+                )
             else:
                 trend = "stable"
 
             standard_performance.append(
                 StandardPerformance(
-                    standardId=std_id if std_id != "unknown" else None,
+                    standardId=std_ids_map[std_id],
                     standardTitle=std_titles[std_id],
                     avgScore=round(avg, 1),
                     minScore=round(min(group_scores), 1),
@@ -179,7 +198,7 @@ class AnalyticsService:
 
         standard_performance.sort(key=lambda x: x.reportCount, reverse=True)
 
-        # ── 7. Status Breakdown ─────────────────────────────────────────
+        # ── Status Breakdown ─────────────────────────────────────────────
         status_counts: Dict[str, int] = defaultdict(int)
         for r in reports:
             s = (r.status or "completed").lower()
@@ -196,7 +215,7 @@ class AnalyticsService:
             if count > 0
         ]
 
-        # ── 8. Score Distribution (histogram) ───────────────────────────
+        # ── Score Distribution (histogram) ───────────────────────────────
         buckets = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
         for s in scores:
             if s <= 20:
@@ -212,10 +231,10 @@ class AnalyticsService:
 
         score_distribution = [{"range": k, "count": v} for k, v in buckets.items()]
 
-        # ── 9. Growth Metrics ───────────────────────────────────────────
+        # ── Growth Metrics ───────────────────────────────────────────────
         mid_idx = total_reports // 2
-        first_half = scores[mid_idx:]  # older half (reports are desc)
-        second_half = scores[:mid_idx]  # newer half
+        first_half = scores[mid_idx:]   # older (reports are desc)
+        second_half = scores[:mid_idx]  # newer
         first_avg = sum(first_half) / len(first_half) if first_half else 0
         second_avg = sum(second_half) / len(second_half) if second_half else 0
         growth_pct = (
@@ -230,7 +249,7 @@ class AnalyticsService:
             direction="up" if growth_pct > 2 else ("down" if growth_pct < -2 else "stable"),
         )
 
-        # ── 10. Anomaly Detection (z-score > 2) ────────────────────────
+        # ── Anomaly Detection ────────────────────────────────────────────
         anomalies: List[AnomalyItem] = []
         if std_dev > 0 and total_reports > 2:
             for r in reports:
@@ -246,7 +265,7 @@ class AnalyticsService:
                         )
                     )
 
-        # ── 11. Auto-Generated Insights ─────────────────────────────────
+        # ── Auto-Generated Insights ──────────────────────────────────────
         insights = AnalyticsService._generate_insights(
             avg_score=avg_score,
             std_dev=std_dev,
@@ -260,7 +279,6 @@ class AnalyticsService:
             unique_standards=unique_standards,
         )
 
-        # ── 12. Assemble Response ───────────────────────────────────────
         return AnalyticsResponse(
             totalReports=total_reports,
             avgScore=avg_score,
@@ -364,25 +382,25 @@ class AnalyticsService:
             insights.append(InsightItem(
                 id="high-variance",
                 title="High Score Variability",
-                description=f"Standard deviation of {std_dev}% indicates inconsistent compliance across analyses. Standardize your preparation approach.",
+                description=f"Score spread of {std_dev}% indicates inconsistent compliance across analyses. Standardise your preparation approach.",
                 severity="warning",
-                metric=f"σ={std_dev}%",
+                metric=f"±{std_dev}%",
             ))
         elif std_dev < 5 and total_reports > 3:
             insights.append(InsightItem(
                 id="consistent-scores",
                 title="Highly Consistent Scores",
-                description=f"Standard deviation of only {std_dev}% — your compliance performance is remarkably stable across all analyses.",
+                description=f"Score spread of only {std_dev}% — your compliance performance is remarkably stable across all analyses.",
                 severity="positive",
-                metric=f"σ={std_dev}%",
+                metric=f"±{std_dev}%",
             ))
 
         # 4. Anomalies
         if anomalies:
             insights.append(InsightItem(
                 id="anomalies-detected",
-                title=f"{len(anomalies)} Anomalous Report{'s' if len(anomalies) > 1 else ''} Detected",
-                description=f"{'These reports score' if len(anomalies) > 1 else 'This report scores'} more than 2 standard deviations from the mean. Review for data quality or exceptional circumstances.",
+                title=f"{len(anomalies)} Unusual Report{'s' if len(anomalies) > 1 else ''} Detected",
+                description=f"{'These reports score' if len(anomalies) > 1 else 'This report scores'} significantly outside your normal range. Review for data quality issues or exceptional circumstances.",
                 severity="warning",
                 metric=f"{len(anomalies)} outlier{'s' if len(anomalies) > 1 else ''}",
                 action="Review anomalies",
@@ -414,7 +432,7 @@ class AnalyticsService:
 
             insights.append(InsightItem(
                 id="top-performer",
-                title=f"Top: {top.standardTitle}",
+                title=f"Leading: {top.standardTitle}",
                 description=f"Highest average score of {top.avgScore}% across {top.reportCount} report{'s' if top.reportCount > 1 else ''}. Use this as a benchmark for other standards.",
                 severity="positive",
                 metric=f"{top.avgScore}%",
@@ -423,8 +441,8 @@ class AnalyticsService:
             if bottom.avgScore < 60:
                 insights.append(InsightItem(
                     id="bottom-performer",
-                    title=f"Needs Work: {bottom.standardTitle}",
-                    description=f"Lowest average score of {bottom.avgScore}% across {bottom.reportCount} report{'s' if bottom.reportCount > 1 else ''}. Prioritize gap remediation here.",
+                    title=f"Needs Focus: {bottom.standardTitle}",
+                    description=f"Lowest average score of {bottom.avgScore}% across {bottom.reportCount} report{'s' if bottom.reportCount > 1 else ''}. Prioritise gap remediation here.",
                     severity="critical" if bottom.avgScore < 40 else "warning",
                     metric=f"{bottom.avgScore}%",
                     action="Focus remediation",

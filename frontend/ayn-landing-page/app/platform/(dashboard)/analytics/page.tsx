@@ -71,11 +71,21 @@ function AnalyticsContent() {
 
   const periodDays = PERIOD_OPTIONS.find((o) => o.key === period)?.days ?? null
 
-  // Single backend call — all computation done server-side
+  // Single backend call — all computation done server-side.
+  // Key includes user.id so different users never share a cache entry.
+  // revalidateOnFocus and revalidateOnReconnect are off because analytics
+  // data changes only when users run analyses — not on every tab switch.
+  // refreshInterval is 5 minutes; manual Refresh button covers urgent cases.
   const { data: analytics, isLoading, error, mutate } = useSWR(
-    user ? [`analytics`, periodDays] : null,
+    user ? [`analytics`, user.id, periodDays] : null,
     () => api.getAnalytics(periodDays),
-    { refreshInterval: 60000 }
+    {
+      refreshInterval: 300_000,        // 5-minute background refresh
+      revalidateOnFocus: false,        // no refetch on window focus (primary fix for repeated requests)
+      revalidateOnReconnect: false,    // no refetch on network reconnect
+      dedupingInterval: 60_000,        // deduplicate within 1-minute window
+      revalidateIfStale: false,        // don't auto-refetch on mount when data is cached
+    }
   )
 
   useEffect(() => {

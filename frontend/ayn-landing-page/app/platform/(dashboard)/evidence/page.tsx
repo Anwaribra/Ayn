@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR, { mutate as globalMutate } from "swr"
 import { Evidence } from "@/types"
-import { UploadCloud, Plus, X, FileText, ExternalLink, Trash2, Search, Filter, Loader2, Eye, MoreVertical, Sparkles, AlertCircle, Check } from "lucide-react"
+import { UploadCloud, X, FileText, ExternalLink, Trash2, Loader2, Sparkles, Check } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { DocumentEditor } from "@/components/platform/document-editor"
@@ -399,67 +399,61 @@ function EvidenceContent() {
         </div>
       )}
       <div className="pt-6">
-        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 sm:p-7 lg:p-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(16,185,129,0.1),transparent_24%)] pointer-events-none" />
-          <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.10),transparent_36%)] pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="px-2 py-0.5 rounded-full status-success border flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Vault Secure</span>
-                </div>
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground">
-                Evidence <span className="text-muted-foreground font-light">Vault</span>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Evidence
               </h1>
-              <p className="text-muted-foreground font-medium mt-3 max-w-2xl leading-relaxed">
-                Centralized repository for institutional compliance assets, mapped criteria, and AI-ready documentation across your workspace.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Your uploaded documents, mapped to compliance criteria and ready for analysis.
               </p>
             </div>
 
             <label className={cn(
-          "group relative overflow-hidden rounded-2xl bg-primary text-primary-foreground px-8 py-4 font-bold text-sm cursor-pointer shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 active:scale-95 glass-border",
-          isUploading && "opacity-70 cursor-not-allowed"
-        )}>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-          <input
-            type="file"
-            className="hidden"
-            onChange={handleUpload}
-            accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
-            disabled={isUploading}
-          />
-          {isUploading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Securing Asset...</span>
-            </>
-          ) : (
-            <>
-              <UploadCloud className="w-4 h-4" />
-              <span>Upload New Evidence</span>
-            </>
-          )}
+              "group relative shrink-0 overflow-hidden rounded-2xl bg-primary text-primary-foreground px-6 py-3 font-semibold text-sm cursor-pointer hover:bg-primary/90 transition-all flex items-center gap-2 active:scale-95 self-start",
+              isUploading && "opacity-70 cursor-not-allowed"
+            )}>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleUpload}
+                accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                disabled={isUploading}
+              />
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Uploading…</span>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Upload Evidence</span>
+                </>
+              )}
             </label>
           </div>
 
-          <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total Assets</p>
-              <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.total}</p>
+          <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Total</p>
+              <p className="mt-1.5 text-xl font-bold text-foreground">{vaultSummary.total}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Analyzed</p>
-              <p className="mt-2 text-xl font-bold text-[var(--status-success)]">{vaultSummary.analyzed}</p>
+              <p className="mt-1.5 text-xl font-bold text-[var(--status-success)]">{vaultSummary.analyzed}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Linked</p>
-              <p className="mt-2 text-xl font-bold text-primary">{vaultSummary.linked}</p>
+              <p className="mt-1.5 text-xl font-bold text-primary">{vaultSummary.linked}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Avg Confidence</p>
-              <p className="mt-2 text-xl font-bold text-foreground">{vaultSummary.avgConfidence}%</p>
+            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Confidence</p>
+              <p className="mt-1.5 text-xl font-bold text-foreground">
+                {vaultSummary.avgConfidence > 0 ? `${vaultSummary.avgConfidence}%` : "—"}
+              </p>
             </div>
           </div>
         </div>
@@ -521,43 +515,33 @@ function EvidenceContent() {
             </p>
           )}
           {filteredEvidence.length > 0 && (
-            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {selectedEvidenceIds.length > 0
-                    ? `${selectedEvidenceIds.length} file${selectedEvidenceIds.length === 1 ? "" : "s"} selected`
-                    : "Select one or more files to send them directly into Gap Analysis"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Multi-select is best when you want to test recent uploads together before doing a full standard scan.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={selectAllVisible}
-                  className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  Select all visible
-                </button>
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  disabled={selectedEvidenceIds.length === 0}
-                  className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsBulkGapModalOpen(true)}
-                  disabled={selectedEvidenceIds.length === 0}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Run Gap Analysis on Selected
-                </button>
-              </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={selectAllVisible}
+                className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                Select all
+              </button>
+              {selectedEvidenceIds.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Clear ({selectedEvidenceIds.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkGapModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Gap Analysis
+                  </button>
+                </>
+              )}
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -615,46 +599,50 @@ function EvidenceContent() {
       {/* Full-Screen Split-View Evidence Analysis Overlay */}
       {selectedEvidence && (
         <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-[var(--surface-modal)]/95 backdrop-blur-xl" style={{ margin: 0 }}>
-          {/* Top Bar Navigation for the Split View */}
-          <div className="absolute top-0 left-0 right-0 h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 backdrop-blur-md flex items-center justify-between px-6 z-20">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 text-foreground" />
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 right-0 h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/80 backdrop-blur-md flex items-center justify-between px-5 z-20 gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
+                <FileText className="w-4 h-4 text-muted-foreground" />
               </div>
-              <div>
-                <h3 className="font-bold text-foreground leading-tight">{selectedEvidence.title || selectedEvidence.originalFilename}</h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={cn(
-                    "px-2 py-px rounded text-[10px] font-bold uppercase tracking-wider border",
-                    ['linked', 'analyzed'].includes(selectedEvidence.status) ? "status-success" : "glass-button text-muted-foreground"
-                  )}>
-                    {selectedEvidence.status}
-                  </span>
-                  <span className="text-xs text-muted-foreground">• Analysis Mode</span>
-                </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-foreground truncate leading-tight">
+                  {selectedEvidence.title || selectedEvidence.originalFilename}
+                </h3>
+                <span className={cn(
+                  "mt-0.5 inline-block rounded px-1.5 py-px text-[10px] font-semibold capitalize border",
+                  ["linked", "analyzed", "complete"].includes(selectedEvidence.status)
+                    ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
+                    : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
+                )}>
+                  {selectedEvidence.status === "analyzed" ? "Analyzed"
+                    : selectedEvidence.status === "linked" ? "Linked"
+                    : selectedEvidence.status === "pending" ? "Pending"
+                    : selectedEvidence.status}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={handleOpenGapAnalysisForEvidence}
-                className="px-4 py-2 text-xs font-bold glass-button text-foreground rounded-lg transition-colors flex items-center gap-2"
+                className="hidden sm:flex px-3 py-2 text-xs font-semibold glass-button text-foreground rounded-lg transition-colors items-center gap-1.5"
               >
-                <Sparkles className="w-4 h-4" /> Open in Gap Analysis
+                <ExternalLink className="w-3.5 h-3.5" /> Gap Analysis
               </button>
               <button
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(true)}
-                className="px-4 py-2 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-primary/20"
+                className="px-3 py-2 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5"
               >
-                <Sparkles className="w-4 h-4" /> Run Horus Scan
+                <Sparkles className="w-3.5 h-3.5" /> Analyze
               </button>
               <button
-                onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null); }}
-                className="p-2 rounded-full glass-button text-muted-foreground transition-colors"
+                onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null) }}
+                className="p-2 rounded-lg glass-button text-muted-foreground transition-colors"
                 aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -666,46 +654,45 @@ function EvidenceContent() {
             ) : (
               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
                 <div className="max-w-3xl mx-auto rounded-xl glass-panel glass-border shadow-2xl p-8 lg:p-12 min-h-full">
-                  <div className="mb-10 pb-6 border-b border-[var(--border-subtle)] text-center">
-                    <h1 className="text-3xl font-serif font-black text-foreground mb-4">{selectedEvidence.title || "Untitled Document"}</h1>
-                    <div className="flex items-center justify-center gap-3 flex-wrap">
-                      <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">ID: {selectedEvidence.id.slice(0, 8)}</span>
+                  <div className="mb-8 pb-6 border-b border-[var(--border-subtle)]">
+                    <h1 className="text-2xl font-bold text-foreground mb-2">{selectedEvidence.title || "Untitled Document"}</h1>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       {selectedEvidence.documentType && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider glass-pill text-muted-foreground">{selectedEvidence.documentType}</span>
+                        <span className="uppercase font-medium">{selectedEvidence.documentType}</span>
                       )}
-                      {selectedEvidence.confidenceScore != null && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider status-success border">{selectedEvidence.confidenceScore}% confidence</span>
+                      {selectedEvidence.confidenceScore != null && selectedEvidence.confidenceScore > 0 && (
+                        <span className="text-emerald-500 font-semibold">{selectedEvidence.confidenceScore}% match</span>
                       )}
                     </div>
                   </div>
 
                   {selectedEvidence.summary ? (
-                    <div className="space-y-6 font-serif text-lg leading-relaxed text-foreground/80">
-                      <div className="mb-6">
-                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Summary</h3>
-                        <p className="text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
+                    <div className="space-y-5">
+                      <div>
+                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Summary</h3>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
                       </div>
                       {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
                         <a
                           href={selectedEvidence.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
                         >
                           <ExternalLink className="w-4 h-4" /> Open original file
                         </a>
                       )}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <FileText className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                      <p className="text-muted-foreground font-medium">No preview available for this document.</p>
+                    <div className="flex flex-col items-center justify-center py-14 text-center">
+                      <FileText className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground">No preview available for this document.</p>
                       {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
                         <a
                           href={selectedEvidence.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 mt-4 text-sm font-bold text-primary hover:underline"
+                          className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-primary hover:underline"
                         >
                           <ExternalLink className="w-4 h-4" /> Open original file
                         </a>
@@ -722,79 +709,75 @@ function EvidenceContent() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
               
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <h2 className="text-xl font-black text-foreground">Horus AI Analysis</h2>
-                </div>
-                <p className="text-sm text-muted-foreground font-medium">Compliance verification and gap detection.</p>
+              <div className="mb-6 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                <h2 className="text-base font-bold text-foreground">Horus Analysis</h2>
               </div>
 
-              {/* Confidence Score Card */}
-              <div className="p-6 rounded-3xl glass-panel glass-border mb-8 flex items-center gap-6">
-                <div className="w-16 h-16 shrink-0">
-                  {/* Mock Circular Progress */}
-                  <svg viewBox="0 0 36 36" className="w-full h-full text-primary -rotate-90">
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="4"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray={`${selectedEvidence.confidenceScore || 85}, 100`}
-                    />
-                  </svg>
+              {/* Confidence Score — only show when a real score exists */}
+              {selectedEvidence.confidenceScore != null && selectedEvidence.confidenceScore > 0 && (
+                <div className="mb-6 flex items-center gap-5 rounded-2xl glass-panel glass-border px-5 py-4">
+                  <div className="w-14 h-14 shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-full h-full text-primary -rotate-90">
+                      <path
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="4"
+                      />
+                      <path
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none" stroke="currentColor" strokeWidth="4"
+                        strokeDasharray={`${selectedEvidence.confidenceScore}, 100`}
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black text-foreground">{selectedEvidence.confidenceScore}%</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Alignment score</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-black text-foreground">{selectedEvidence.confidenceScore || 85}%</div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Overall Alignment Score</div>
-                </div>
-              </div>
+              )}
 
               {/* Linked Criteria */}
-              <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">Linked Criteria</h3>
-              <div className="space-y-4">
+              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                Linked Criteria
+              </h3>
+              <div className="space-y-2.5">
                 {selectedEvidence.criteria && selectedEvidence.criteria.length > 0 ? (
                   selectedEvidence.criteria.map((criterion: any, idx: number) => (
                     <div
                       key={criterion.id || idx}
                       className={cn(
-                        "p-5 rounded-2xl border transition-all cursor-pointer group hover:bg-[var(--surface)]",
-                        activeHighlightId === criterion.id ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "glass-panel glass-border"
+                        "p-4 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--surface)]",
+                        activeHighlightId === criterion.id
+                          ? "border-primary bg-primary/5"
+                          : "glass-panel glass-border"
                       )}
                       onClick={() => setActiveHighlightId(criterion.id)}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-primary" />
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <h4 className="font-semibold text-sm text-foreground leading-snug">
                           {criterion.title}
                         </h4>
                         {criterion.standardId && (
-                          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border status-info">
+                          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border status-info">
                             Standard
                           </span>
                         )}
                       </div>
                       {criterion.description && (
-                        <p className="text-[13px] font-medium text-muted-foreground leading-relaxed mb-4">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
                           {criterion.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between mt-4">
-                        <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                          View criterion →
-                        </span>
-                        <button className="px-3 py-1.5 rounded-lg glass-button text-[10px] font-bold uppercase transition-colors text-foreground">
-                          Draft AI Fix
-                        </button>
-                      </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 rounded-2xl border border-dashed glass-border text-center glass-panel">
-                    <AlertCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-muted-foreground">No criteria linked yet.</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Run a Horus Scan to map this evidence against standards.</p>
+                  <div className="rounded-2xl border border-dashed glass-border px-5 py-8 text-center glass-panel">
+                    <FileText className="w-7 h-7 text-muted-foreground/30 mx-auto mb-2.5" />
+                    <p className="text-sm text-muted-foreground">No criteria linked yet.</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      Run an analysis to map this file against your standards.
+                    </p>
                   </div>
                 )}
               </div>

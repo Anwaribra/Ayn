@@ -4,11 +4,11 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR from "swr"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import {
-  Filter, Target, Download, RefreshCw,
+  Target, Download, RefreshCw,
   TrendingUp, Activity, FileText, AlertTriangle,
-  Microscope, ArrowUpRight, ShieldCheck, Clock3
+  Microscope, ArrowUpRight, ShieldCheck,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -35,7 +35,11 @@ const PERIOD_OPTIONS: { key: PeriodKey; label: string; days: number | null }[] =
 /* ─── CSV Export ──────────────────────────────────────────────── */
 function downloadCsv(filename: string, rows: string[][]) {
   const csv = rows
-    .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+    .map((row) =>
+      row.length === 0
+        ? ""
+        : row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+    )
     .join("\n")
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
   const url = window.URL.createObjectURL(blob)
@@ -62,6 +66,7 @@ function AnalyticsContent() {
   const { user } = useAuth()
   const router = useRouter()
   const [period, setPeriod] = useState<PeriodKey>("30d")
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const periodDays = PERIOD_OPTIONS.find((o) => o.key === period)?.days ?? null
 
@@ -71,6 +76,10 @@ function AnalyticsContent() {
     () => api.getAnalytics(periodDays),
     { refreshInterval: 60000 }
   )
+
+  useEffect(() => {
+    if (analytics) setLastUpdated(new Date())
+  }, [analytics])
 
   /* ════════════════════════════════════════════════════════════
      KPI CARDS (from backend-computed data)
@@ -87,7 +96,7 @@ function AnalyticsContent() {
         icon: Microscope,
         color: "#2563eb",
         trend: (analytics.totalReports ?? 0) > 0 ? "up" as const : "neutral" as const,
-        trendValue: `${analytics.totalReports ?? 0} analyzed`,
+        trendValue: (analytics.totalReports ?? 0) > 0 ? "Has data" : "No data yet",
         description: "Gap analysis reports in this period",
       },
       {
@@ -99,7 +108,7 @@ function AnalyticsContent() {
         color: avg >= 70 ? "#0d9668" : avg >= 40 ? "#b45309" : "#c9424a",
         trend: avg >= 70 ? "up" as const : avg >= 40 ? "neutral" as const : "down" as const,
         trendValue: avg >= 70 ? "Healthy" : avg >= 40 ? "Needs work" : "At risk",
-        description: `Std deviation: ±${analytics.stdDeviation ?? 0}%`,
+        description: `Score spread: ±${analytics.stdDeviation ?? 0}% across reports`,
       },
       {
         id: "growth",
@@ -181,26 +190,40 @@ function AnalyticsContent() {
   )
 
   /* ════════════════════════════════════════════════════════════
-     CSV EXPORT
+     EXPORT
      ════════════════════════════════════════════════════════════ */
-  const handleExportCsv = () => {
+  const handleExportData = () => {
     if (!analytics || analytics.totalReports === 0) {
-      toast.info("No reports in selected period")
+      toast.info("No data to export for this period")
       return
     }
+    const periodLabel = PERIOD_OPTIONS.find((o) => o.key === period)?.label ?? "All Time"
+    const growth = analytics.growth?.growthPercent ?? 0
     const rows: string[][] = [
-      ["Standard", "Avg Score", "Min Score", "Max Score", "Report Count", "Trend"],
+      // Summary section
+      ["Summary", ""],
+      ["Period", periodLabel],
+      ["Average Score", `${Math.round(analytics.avgScore ?? 0)}%`],
+      ["Total Reports", String(analytics.totalReports ?? 0)],
+      ["Score Growth", `${growth >= 0 ? "+" : ""}${growth}%`],
+      ["Evidence Files", String(analytics.totalEvidence ?? 0)],
+      ["Aligned Criteria", `${analytics.alignedCriteria ?? 0} / ${analytics.totalCriteria ?? 0}`],
+      ["Anomalies Flagged", String(analytics.anomalies?.length ?? 0)],
+      // Blank separator
+      [],
+      // Standards section
+      ["Standard", "Avg Score", "Min Score", "Max Score", "Reports", "Trend"],
       ...(analytics.standardPerformance ?? []).map((s: any) => [
         s.standardTitle,
-        String(Math.round(s.avgScore)),
-        String(Math.round(s.minScore)),
-        String(Math.round(s.maxScore)),
+        `${Math.round(s.avgScore)}%`,
+        `${Math.round(s.minScore)}%`,
+        `${Math.round(s.maxScore)}%`,
         String(s.reportCount),
-        s.trend,
+        s.trend ?? "—",
       ]),
     ]
     downloadCsv(`ayn-analytics-${period}-${new Date().toISOString().slice(0, 10)}.csv`, rows)
-    toast.success("Analytics report exported")
+    toast.success("Analytics data exported")
   }
 
   const hasData = analytics && analytics.totalReports > 0
@@ -219,7 +242,7 @@ function AnalyticsContent() {
 
   const executiveNotes = useMemo(() => {
     if (!analytics) return []
-
+    const growth = analytics.growth?.growthPercent ?? 0
     return [
       {
         label: "Readiness",
@@ -228,28 +251,28 @@ function AnalyticsContent() {
         icon: ShieldCheck,
       },
       {
-        label: "Weakest Standard",
-        value: weakestStandard?.standardTitle ?? "None yet",
+        label: "Needs Attention",
+        value: weakestStandard?.standardTitle ?? "—",
         tone: "text-foreground",
         icon: AlertTriangle,
       },
       {
         label: "Anomalies",
-        value: `${analytics.anomalies?.length ?? 0} flagged`,
+        value: (analytics.anomalies?.length ?? 0) > 0 ? `${analytics.anomalies.length} flagged` : "None",
         tone: (analytics.anomalies?.length ?? 0) > 0 ? "text-[var(--status-warning)]" : "text-[var(--status-success)]",
         icon: Activity,
       },
       {
-        label: "Window",
-        value: PERIOD_OPTIONS.find((option) => option.key === period)?.label ?? "All Time",
-        tone: "text-foreground",
-        icon: Clock3,
+        label: "Score Trend",
+        value: growth > 0 ? `+${growth}% this period` : growth < 0 ? `${growth}% this period` : "Stable",
+        tone: growth > 0 ? "text-[var(--status-success)]" : growth < 0 ? "text-[var(--status-critical)]" : "text-muted-foreground",
+        icon: TrendingUp,
       },
     ]
-  }, [analytics, period, weakestStandard])
+  }, [analytics, weakestStandard])
 
   const executiveSummary = useMemo(() => {
-    if (!analytics) return "Your analytics workspace is syncing the latest reporting signals."
+    if (!analytics) return "Loading your compliance data…"
 
     const avg = Math.round(analytics.avgScore ?? 0)
     const reportCount = analytics.totalReports ?? 0
@@ -257,10 +280,10 @@ function AnalyticsContent() {
     const strongest = strongestStandard?.standardTitle ?? "your best-performing standard"
 
     if (reportCount === 0) {
-      return "Run more gap analyses to unlock trend intelligence, benchmarking, and anomaly detection."
+      return "Run gap analyses to start tracking compliance trends, scores, and coverage over time."
     }
 
-    return `Across ${reportCount} reports, your average compliance score is ${avg}%. ${strongest} is leading performance, while ${weakest} needs the next evidence push.`
+    return `Across ${reportCount} reports, your average compliance score is ${avg}%. ${strongest} is leading, while ${weakest} needs the most attention.`
   }, [analytics, strongestStandard, weakestStandard])
 
   /* ════════════════════════════════════════════════════════════
@@ -274,35 +297,34 @@ function AnalyticsContent() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_78%_18%,rgba(16,185,129,0.10),transparent_26%)] pointer-events-none" />
           <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-4 max-w-3xl">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="px-2 py-0.5 rounded glass-pill">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Analytics Engine</span>
-                </div>
-                <div className="h-px w-6 bg-border" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Compliance Intelligence</span>
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--text-primary)]">
-                  Analytics <span className="text-[var(--text-tertiary)] font-light">& Intelligence</span>
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {executiveSummary}
-                </p>
-              </div>
+            <div className="space-y-2 max-w-3xl">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                Analytics
+              </h1>
+              <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
+                {executiveSummary}
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="p-1 glass-panel rounded-xl glass-border flex flex-wrap items-center gap-1">
-                <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5"><Filter className="w-3 h-3" /> Period</span>
+              <div className="p-1 glass-panel rounded-xl glass-border flex items-center gap-1">
                 {PERIOD_OPTIONS.map((option) => (
                   <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
                     {option.label}
                   </button>
                 ))}
               </div>
-              <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground"><RefreshCw className="w-3 h-3" /> Refresh</button>
-              <button onClick={handleExportCsv} className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95"><Download className="w-3 h-3" /> Export CSV</button>
+              <div className="flex flex-col items-end gap-0.5">
+                <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground">
+                  <RefreshCw className="w-3 h-3" /> Refresh
+                </button>
+                {lastUpdated && (
+                  <span className="text-[9px] text-muted-foreground px-1">
+                    Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </div>
+              <button onClick={handleExportData} className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95"><Download className="w-3 h-3" /> Export Data</button>
             </div>
           </div>
 
@@ -390,7 +412,11 @@ function AnalyticsContent() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => router.push("/platform/gap-analysis")}
+                      onClick={() => router.push(
+                        weakestStandard.standardId
+                          ? `/platform/gap-analysis?standardId=${weakestStandard.standardId}`
+                          : "/platform/gap-analysis"
+                      )}
                       className="inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
                     >
                       Run Analysis
@@ -405,20 +431,20 @@ function AnalyticsContent() {
           {/* ─── Row 1: Trend + Donut ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <TrendAreaChart data={trendData} title="Compliance Score Trend" subtitle="Score evolution over time" />
+              <TrendAreaChart data={trendData} title="Score Over Time" subtitle="Average compliance score across all reports" />
             </div>
-            <DonutChart data={statusBreakdown} title="Report Status" subtitle="Breakdown by completion status" />
+            <DonutChart data={statusBreakdown} title="Report Status" subtitle="Analysis results by completion state" />
           </div>
 
           {/* ─── Row 2: Bar + Radar ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DistributionBarChart data={standardDistribution} title="Standards Performance" subtitle="Average score by standard" />
-            <ComplianceRadar data={radarData} title="Compliance Radar" subtitle="Multi-dimensional compliance view" />
+            <DistributionBarChart data={standardDistribution} title="Standards Performance" subtitle="Average score per standard this period" />
+            <ComplianceRadar data={radarData} title="Coverage Radar" subtitle="Scores across your top standards at a glance" />
           </div>
 
           {/* ─── Row 3: Score Heatmap + Insights ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ScoreHeatmap data={heatmapData} title="Score Breakdown" subtitle="Detailed performance by standard" />
+            <ScoreHeatmap data={heatmapData} title="Coverage by Standard" subtitle="Latest score and report count per standard" />
             <AnalyticsInsights insights={insights} />
           </div>
 
@@ -432,8 +458,8 @@ function AnalyticsContent() {
                   <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Anomaly Detection</h3>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Reports with z-score &gt; 2 (±{Math.round(analytics.stdDeviation * 2)}% from mean)</p>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">Unusual Reports</h3>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Scores that deviate significantly from your average</p>
                 </div>
               </div>
               <div className="relative z-10 space-y-3">
@@ -444,7 +470,9 @@ function AnalyticsContent() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-foreground">{anomaly.standardTitle}</h4>
-                      <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-[0.12em]">z-score: {anomaly.deviation} • {new Date(anomaly.createdAt).toLocaleDateString()}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-[0.12em]">
+                        {Math.abs(Math.round(anomaly.score) - Math.round(analytics.avgScore ?? 0))} points from average · {new Date(anomaly.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -459,7 +487,7 @@ function AnalyticsContent() {
               <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
               <div className="relative z-10">
                 <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Score Distribution</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">Histogram of all report scores</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">How your reports are spread across score ranges</p>
               </div>
               <div className="relative z-10 grid grid-cols-2 md:grid-cols-5 gap-3">
                 {analytics.scoreDistribution.map((bucket: any) => {

@@ -1,4 +1,4 @@
-import { FileText, MoreVertical, ShieldAlert, CheckCircle2, AlertCircle, Sparkles } from "lucide-react"
+import { FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlatformEvidence, Evidence } from "@/types"
 
@@ -7,99 +7,123 @@ interface EvidenceCardProps {
     onClick?: () => void
 }
 
+const STATUS_LABELS: Record<string, string> = {
+    pending: "Pending",
+    processing: "Processing",
+    analyzed: "Analyzed",
+    linked: "Linked",
+    failed: "Failed",
+    complete: "Complete",
+    void: "Voided",
+}
+
+function getStatusStyle(status: string) {
+    const isSuccess = ["complete", "analyzed", "linked"].includes(status)
+    const isError = ["void", "failed"].includes(status)
+    const isActive = ["pending", "processing"].includes(status)
+
+    return {
+        label: STATUS_LABELS[status] ?? status,
+        badgeClass: isSuccess
+            ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
+            : isError
+            ? "text-destructive bg-destructive/10 border-destructive/25"
+            : "text-amber-500 bg-amber-500/10 border-amber-500/25",
+        dotClass: isSuccess
+            ? "bg-emerald-500"
+            : isError
+            ? "bg-destructive"
+            : "bg-amber-500",
+        // Only animate for states that are genuinely in progress
+        animate: isActive,
+    }
+}
+
 export function EvidenceCard({ evidence, onClick }: EvidenceCardProps) {
     const status = evidence.status
     const title = evidence.title || "Untitled Document"
 
-    // Handle different date formats
-    const dateStr = 'created_at' in evidence
-        ? evidence.created_at
-        : (evidence as any).createdAt || new Date().toISOString()
+    const dateStr =
+        "created_at" in evidence
+            ? evidence.created_at
+            : (evidence as any).createdAt || new Date().toISOString()
 
-    // Handle criteria counts
-    const criteriaCount = 'criteria_refs' in evidence
-        ? evidence.criteria_refs.length
-        : (evidence as any).criteria?.length || 0
+    const criteriaCount =
+        "criteria_refs" in evidence
+            ? evidence.criteria_refs.length
+            : (evidence as any).criteria?.length || 0
 
-    const sourceFileCount = 'source_file_ids' in evidence
-        ? evidence.source_file_ids.length
-        : 0
-
-    const isSuccess = ['complete', 'analyzed', 'linked'].includes(status)
-    const isError = ['void', 'failed'].includes(status)
     const confidence = (evidence as any).confidenceScore
-    const documentType = (evidence as any).documentType || (evidence as any).mimeType?.split("/")?.[1] || "Document"
-    
-    const dotColor = isSuccess ? "bg-emerald-500" : isError ? "bg-destructive" : "bg-amber-500"
-    const badgeStyle = isSuccess 
-      ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" 
-      : isError 
-        ? "text-destructive bg-destructive/10 border-destructive/20" 
-        : "text-amber-500 bg-amber-500/10 border-amber-500/20"
+    const rawDocType =
+        (evidence as any).documentType ||
+        (evidence as any).mimeType?.split("/")?.[1] ||
+        null
+    const docTypeLabel = rawDocType
+        ? rawDocType.toUpperCase().replace("VND.OPENXMLFORMATS-OFFICEDOCUMENT.WORDPROCESSINGML.DOCUMENT", "DOCX")
+        : "Document"
+
+    const { label, badgeClass, dotClass, animate } = getStatusStyle(status)
 
     return (
         <div
             onClick={onClick}
-            className="group relative flex h-full flex-col justify-between overflow-hidden rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 transition-all duration-300 cursor-pointer hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
+            className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5"
         >
-            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.75),transparent)] opacity-60" />
-            <div className="absolute -right-6 top-0 h-20 w-20 rounded-full bg-primary/10 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="flex justify-between items-start mb-4">
-                <div className={cn(
-                    "px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-2",
-                    badgeStyle
-                )}>
-                    <div className="relative flex h-2 w-2 items-center justify-center">
-                      <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", dotColor)} />
-                      <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", dotColor)} />
-                    </div>
-                    {evidence.status}
-                </div>
-                {isSuccess && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                    <Sparkles className="w-3 h-3" />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">Ayn Verified</span>
-                  </div>
+            {/* Top accent line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.5),transparent)] opacity-0 transition-opacity group-hover:opacity-100" />
+
+            {/* Status + Date */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+                <span
+                    className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+                        badgeClass,
+                    )}
+                >
+                    <span
+                        className={cn(
+                            "h-1.5 w-1.5 shrink-0 rounded-full",
+                            dotClass,
+                            animate && "animate-pulse",
+                        )}
+                    />
+                    {label}
+                </span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {new Date(dateStr).toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "short",
+                    })}
+                </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="font-semibold text-sm text-foreground leading-snug line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                {title}
+            </h3>
+
+            {/* Doc type + confidence */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                <span>{docTypeLabel}</span>
+                {confidence != null && confidence > 0 && (
+                    <>
+                        <span className="opacity-30">·</span>
+                        <span>{Math.round(confidence)}% match</span>
+                    </>
                 )}
-                <button className="p-1.5 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
-                    <MoreVertical className="w-4 h-4" />
-                </button>
             </div>
 
-            <div className="mb-4">
-                <h3 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight mb-1 line-clamp-2">
-                    {title}
-                </h3>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                        {documentType}
-                    </span>
-                    {confidence != null && (
-                        <span className="inline-flex rounded-full border border-[var(--status-success-border)] bg-[var(--status-success-bg)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--status-success)]">
-                            {Math.round(confidence)}% confidence
+            {/* Footer */}
+            <div className="mt-auto pt-3 border-t border-[var(--glass-border)] flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    {criteriaCount > 0 ? (
+                        <span>
+                            {criteriaCount} {criteriaCount === 1 ? "criterion" : "criteria"} linked
                         </span>
+                    ) : (
+                        <span className="italic opacity-60">Not analyzed</span>
                     )}
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground line-clamp-2">
-                    {criteriaCount > 0
-                        ? `Linked to ${criteriaCount} criteria${sourceFileCount > 0 ? ` in ${sourceFileCount} files` : ''}.`
-                        : "No criteria linked yet."}
-                </p>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-                <div className="flex -space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-primary">
-                        S
-                    </div>
-                    {criteriaCount > 1 && (
-                        <div className="w-6 h-6 rounded-full glass-layer-3 border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-                            +{criteriaCount - 1}
-                        </div>
-                    )}
-                </div>
-                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.12em]">
-                    {new Date(dateStr).toLocaleDateString()}
                 </div>
             </div>
         </div>

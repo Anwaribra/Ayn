@@ -77,7 +77,7 @@ const COMPLIANCE_WORKFLOW: NavItemConfig[] = [
 ]
 
 const INSIGHTS_TOOLS: NavItemConfig[] = [
-  { id: "workflows", icon: GitGraph, label: "Workflow Engine", href: "/platform/workflows" },
+  { id: "workflows", icon: GitGraph, label: "Workflows", href: "/platform/workflows" },
   { id: "reports", icon: BarChart4, label: "Analytics", href: "/platform/analytics" },
 ]
 

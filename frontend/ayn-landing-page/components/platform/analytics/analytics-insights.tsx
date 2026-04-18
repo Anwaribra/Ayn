@@ -39,8 +39,8 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)]">AI-Powered Insights</h3>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Automated analysis of your compliance data</p>
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">Insights</h3>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">Patterns and recommendations from your data</p>
           </div>
         </div>
 

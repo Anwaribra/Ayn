@@ -9,6 +9,14 @@ import { api } from "@/lib/api"
 const STATUSES = ["pending", "processing", "analyzed", "linked", "failed"] as const
 type Status = typeof STATUSES[number]
 
+const STATUS_LABELS: Record<Status, string> = {
+    pending: "Pending",
+    processing: "Processing",
+    analyzed: "Analyzed",
+    linked: "Linked",
+    failed: "Failed",
+}
+
 interface EvidenceFiltersProps {
     onSearch: (q: string) => void
     onStatusChange: (status: Status | "") => void
@@ -58,7 +66,7 @@ export function EvidenceFilters({
                     type="text"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="Search evidence by title, content, or ID..."
+                    placeholder="Search by title or filename…"
                     className="w-full pl-11 pr-4 py-3 border border-white/8 bg-white/[0.04] rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
                 />
                 {query && (
@@ -85,7 +93,7 @@ export function EvidenceFilters({
                         )}
                     >
                         <SlidersHorizontal className="w-4 h-4" />
-                        {activeStatus ? <span className="capitalize">{activeStatus}</span> : "Status"}
+                        {activeStatus ? <span>{STATUS_LABELS[activeStatus] ?? activeStatus}</span> : "Status"}
                         {activeStatus && (
                             <span
                                 onClick={(e) => { e.stopPropagation(); onStatusChange("") }}
@@ -102,11 +110,11 @@ export function EvidenceFilters({
                                     key={s}
                                     onClick={() => { onStatusChange(s); setShowStatusMenu(false) }}
                                     className={cn(
-                                        "w-full text-left px-5 py-2.5 text-sm font-medium capitalize hover:bg-[var(--surface-modal)] transition-colors first:rounded-t-2xl last:rounded-b-2xl",
+                                        "w-full text-left px-5 py-2.5 text-sm font-medium hover:bg-[var(--surface-modal)] transition-colors first:rounded-t-2xl last:rounded-b-2xl",
                                         activeStatus === s ? "text-primary font-bold" : "text-foreground"
                                     )}
                                 >
-                                    {s}
+                                    {STATUS_LABELS[s]}
                                 </button>
                             ))}
                         </div>

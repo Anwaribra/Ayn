@@ -40,11 +40,11 @@
   --radius-scale-3xl: var(--radius-scale-xl);
 
   /* Glassmorphism System - Light Mode (Default) */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-soft-bg: rgba(255, 255, 255, 0.78);
-  --glass-strong-bg: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-border-subtle: rgba(255, 255, 255, 0.3);
+  --glass-bg: rgba(250, 252, 255, 0.78);
+  --glass-soft-bg: rgba(246, 249, 252, 0.84);
+  --glass-strong-bg: rgba(252, 253, 255, 0.9);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-border-subtle: rgba(15, 23, 42, 0.04);
   --glass-blur: 16px;
   /* Shadow includes a subtle 1px ring for contrast against light backgrounds */
   --glass-shadow:
@@ -55,8 +55,8 @@
   --shadow-glow-hover: 0 0 30px rgba(59, 111, 217, 0.5);
   --glass-shadow-soft: var(--glass-shadow);
   --glass-shadow-strong: var(--glass-shadow-hover);
-  --glass-input-bg: rgba(255, 255, 255, 0.84);
-  --glass-input-border: rgba(15, 23, 42, 0.14);
+  --glass-input-bg: rgba(248, 250, 252, 0.9);
+  --glass-input-border: rgba(15, 23, 42, 0.12);
   --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.5);
   --glass-outer: 0 12px 28px -18px rgba(15, 23, 42, 0.35);
   --glass-ring: rgba(59, 111, 217, 0.35);
@@ -73,10 +73,10 @@
   --z-modal: 50;
 
   /* Enterprise Light Theme - Layer System */
-  --layer-0: oklch(0.985 0.002 240);
-  --layer-1: oklch(0.972 0.004 240);
-  --layer-2: oklch(1 0 0);
-  --layer-3: oklch(0.995 0.002 240);
+  --layer-0: oklch(0.965 0.004 240);
+  --layer-1: oklch(0.952 0.006 240);
+  --layer-2: oklch(0.985 0.003 240);
+  --layer-3: oklch(0.975 0.004 240);
   --layer-4: oklch(0.12 0.02 240);
 
   /* Standards Redesign Semantic Tokens - Light */
@@ -104,11 +104,11 @@
   --brand-muted: #5b8fe8;
   --primary: oklch(0.4 0.18 255);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.005 240);
+  --secondary: oklch(0.93 0.008 240);
   --secondary-foreground: oklch(0.25 0.02 240);
-  --muted: oklch(0.94 0.03 240);
-  --muted-foreground: oklch(0.34 0.02 240);
-  --accent: oklch(0.96 0.01 255);
+  --muted: oklch(0.92 0.015 240);
+  --muted-foreground: oklch(0.4 0.02 240);
+  --accent: oklch(0.93 0.015 255);
   --accent-foreground: oklch(0.2 0.05 255);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
@@ -669,6 +669,17 @@
 /* ─── Typography Utils ─── */
 .font-arabic {
   font-family: "Noto Sans Arabic", "Arial", sans-serif;
+}
+
+html[data-ui-language="ar"] body {
+  font-family:
+    var(--font-arabic),
+    var(--font-inter),
+    var(--font-geist),
+    "Noto Sans Arabic",
+    "Inter",
+    "Segoe UI",
+    sans-serif;
 }
 
 /* ─── Auth Glass System ─── */

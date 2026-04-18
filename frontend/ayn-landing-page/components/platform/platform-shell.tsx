@@ -26,6 +26,7 @@ import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
 import FloatingAIBar from "@/components/platform/floating-ai-bar";
 import { AnimatedThemeToggle } from "@/components/platform/animated-theme-toggle";
+import { LanguageToggle } from "@/components/platform/language-toggle";
 import { CommandPalette } from "./command-palette";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -299,6 +300,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
 
                 <div className="flex items-center gap-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-1 shadow-[0_12px_32px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
                 <AnimatedThemeToggle />
+                <LanguageToggle />
 
                 <div className="relative quick-pages-container">
                   <button

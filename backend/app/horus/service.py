@@ -210,6 +210,64 @@ class HorusService:
         )
 
     @staticmethod
+    def _detect_language(
+        message: str | None,
+        history: List[Any] | None = None,
+        history_dicts: List[Dict[str, Any]] | None = None,
+    ) -> str:
+        """Return 'ar' if the conversation is in Arabic, else 'en'.
+
+        Priority:
+          1. Current message — if it contains enough Arabic characters, return 'ar'.
+          2. Recent history (model objects or dicts) — check last 6 turns.
+          3. Default to 'en'.
+        """
+        import re as _re
+
+        def _arabic_ratio(text: str) -> float:
+            clean = text.replace(" ", "")
+            if not clean:
+                return 0.0
+            arabic_chars = len(_re.findall(r'[\u0600-\u06FF]', clean))
+            return arabic_chars / len(clean)
+
+        # 1. Current message
+        if message:
+            ratio = _arabic_ratio(message)
+            if ratio > 0.1:
+                return "ar"
+            # If the message is clearly Latin/English (and long enough to be confident), return 'en'
+            if len(message.strip()) >= 8 and ratio == 0.0:
+                return "en"
+
+        # 2. History — model objects (have .role / .content attributes)
+        if history:
+            recent = list(history)[-6:]
+            for msg in reversed(recent):
+                role = (getattr(msg, "role", None) or "").lower()
+                content = (getattr(msg, "content", None) or "").strip()
+                if role == "user" and content:
+                    r = _arabic_ratio(content)
+                    if r > 0.1:
+                        return "ar"
+                    if r == 0.0 and len(content) >= 8:
+                        return "en"
+
+        # 2b. History — plain dicts ({"role": ..., "content": ...})
+        if history_dicts:
+            recent_d = list(history_dicts)[-6:]
+            for msg in reversed(recent_d):
+                if (msg.get("role") or "").lower() == "user":
+                    content = (msg.get("content") or "").strip()
+                    r = _arabic_ratio(content)
+                    if r > 0.1:
+                        return "ar"
+                    if r == 0.0 and len(content) >= 8:
+                        return "en"
+
+        return "en"
+
+    @staticmethod
     def _needs_compliance_analysis(message: str | None) -> bool:
         if not message:
             return False
@@ -650,17 +708,27 @@ class HorusService:
                 # Skip __THINKING__ for Ask fast path — frontend shows "Answering…" immediately; saves one round-trip
 
                 fast_messages = [{"role": "user", "content": message or ""}]
+                _fast_history_messages: List[Any] | None = None
                 try:
                     history = await asyncio.wait_for(
                         ChatService.get_chat(chat_id, user_id, message_limit=6),
                         timeout=0.2,
                     )
                     if history and getattr(history, "messages", None):
+                        _fast_history_messages = history.messages
                         fast_messages = [{"role": m.role, "content": m.content} for m in history.messages[-6:]]
                         if message and not any(m["content"] == message for m in fast_messages):
                             fast_messages.append({"role": "user", "content": message})
                 except Exception:
                     pass
+
+                # Detect language from current message + history fallback
+                _fast_lang = self._detect_language(message, history=_fast_history_messages)
+                _fast_lang_directive = (
+                    "IMPORTANT: The user is writing in Arabic. You MUST respond in Arabic throughout your entire reply. Do not switch to English."
+                    if _fast_lang == "ar"
+                    else "Respond in English. If the user writes in Arabic, switch to Arabic immediately."
+                )
 
                 # Use _resolve_user_identity so we get name from DB when current_user dict lacks it
                 user_identity = await self._resolve_user_identity(user_id, current_user)
@@ -718,7 +786,8 @@ class HorusService:
                         f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                         f"Answer conversational and general questions immediately and clearly. Stream your response token-by-token; do not buffer. "
                         f"Prefer the shortest complete useful answer. "
-                        f"Do not claim you accessed platform state unless explicitly requested."
+                        f"Do not claim you accessed platform state unless explicitly requested. "
+                        f"{_fast_lang_directive}"
                         f"{memory_line}"
                         f"{rag_fast}"
                     ),
@@ -739,7 +808,8 @@ class HorusService:
                                 f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                                 f"Answer conversational and general questions immediately and clearly. "
                                 f"Prefer the shortest complete useful answer. "
-                                f"Do not claim you accessed platform state unless explicitly requested."
+                                f"Do not claim you accessed platform state unless explicitly requested. "
+                                f"{_fast_lang_directive}"
                                 f"{memory_line}"
                                 f"{rag_fast}"
                             )),
@@ -1321,15 +1391,15 @@ class HorusService:
                 yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'file_analysis'), 'route': 'file_analysis', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'Agent mode stayed on direct file analysis because the attached document is the main source of truth.', 'step_count': 1})}\n"
                 await asyncio.sleep(0)
             visual_only = all((f.get("type") == "image") for f in file_results)
-            language_hint = ""
-            if message:
-                import re
-                msg_clean = message.replace(" ", "")
-                arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
-                if len(msg_clean) > 0 and (arabic_chars / len(msg_clean)) > 0.1:
-                    language_hint = "Respond in Arabic."
-                elif len(msg_clean) > 0:
-                    language_hint = "Respond in English."
+            _file_lang = self._detect_language(
+                message,
+                history=getattr(history_for_files, "messages", None) if history_for_files else None,
+            )
+            language_hint = (
+                "IMPORTANT: The user is writing in Arabic. You MUST respond in Arabic throughout your entire reply. Do not switch to English."
+                if _file_lang == "ar"
+                else "Respond in English. If the user writes in Arabic, switch to Arabic immediately."
+            )
 
             domain_hint = (
                 f"You are Horus, the AI compliance advisor built into the Ayn platform. "
@@ -1481,12 +1551,7 @@ class HorusService:
                         async for piece in _yield_text_chunks(full_response):
                             yield piece
                     else:
-                        msg_clean = (message or "").replace(" ", "")
-                        is_arabic = False
-                        if msg_clean:
-                            import re
-                            arabic_chars = len(re.findall(r'[\u0600-\u06FF]', msg_clean))
-                            is_arabic = (arabic_chars / len(msg_clean)) > 0.1
+                        is_arabic = self._detect_language(message) == "ar"
                         if self._is_provider_unavailable_err(file_stream_err):
                             # Provider unavailable — give intentional message; suggestions will still fire
                             full_response = (
@@ -1535,6 +1600,15 @@ class HorusService:
             messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
             if message and not any(m["content"] == message for m in messages):
                 messages.append({"role": "user", "content": message})
+
+            # Re-check language with history in case the current message was ambiguous
+            _hist_lang = self._detect_language(message, history=getattr(history, "messages", None))
+            _hist_lang_override = (
+                "\n[LANGUAGE OVERRIDE] The user is communicating in Arabic. You MUST respond in Arabic throughout. Do not switch to English."
+                if _hist_lang == "ar"
+                else "\n[LANGUAGE OVERRIDE] The user is communicating in English. Respond in English."
+            )
+            context += _hist_lang_override
             # When user refers to a file they sent earlier but no file in this request:
             # we don't have file content in history — add context so AI explains they must re-attach
             file_ref_keywords = ["بعته", "ارسلت", "اللي فوق", "السابق", "الملف", "الفايل", "file", "sent", "attached", "uploaded", "حلل", "analyze"]
@@ -1758,16 +1832,12 @@ class HorusService:
         """Build a clean, deliberate system prompt for Horus. Instructions come first so the
         model always knows who it is before reading any data."""
 
-        import re as _re
-
-        # ── Language detection ────────────────────────────────────────────────────
-        msg_clean = (message or "").replace(" ", "")
-        arabic_chars = len(_re.findall(r'[\u0600-\u06FF]', msg_clean))
-        is_arabic = (arabic_chars / len(msg_clean)) > 0.1 if msg_clean else False
+        # ── Language detection (message + history fallback) ──────────────────────
+        _lang = self._detect_language(message)
         language_directive = (
-            "Respond in Arabic throughout your entire answer."
-            if is_arabic
-            else "Respond in English unless the user wrote in Arabic."
+            "IMPORTANT: The user is writing in Arabic. You MUST respond in Arabic throughout your entire reply. Do not switch to English."
+            if _lang == "ar"
+            else "Respond in English. If the user writes in Arabic, switch to Arabic immediately."
         )
 
         # ── Identity + behavioral instructions ──────────────────────────────────
@@ -1931,11 +2001,12 @@ Behavioral rules:
                 logger.error(f"RAG Context retrieval failed during chat loop: {e}")
                 context_parts.append(f"[Note: RAG retrieval failed ({e}). Proceed without document context.]")
         
-        import re
-        message_clean = (message or "").replace(" ", "")
-        arabic_chars = len(re.findall(r'[\u0600-\u06FF]', message_clean))
-        is_arabic = (arabic_chars / len(message_clean)) > 0.1 if len(message_clean) > 0 else False
-        language_instruction = "- ALWAYS respond in Arabic because the user wrote in Arabic." if is_arabic else "- ALWAYS respond in English."
+        _lang2 = self._detect_language(message)
+        language_instruction = (
+            "- ALWAYS respond in Arabic because the user wrote in Arabic. Do not switch to English."
+            if _lang2 == "ar"
+            else "- ALWAYS respond in English. If the user writes in Arabic, switch to Arabic immediately."
+        )
 
         user_line = ""
         if user_identity:

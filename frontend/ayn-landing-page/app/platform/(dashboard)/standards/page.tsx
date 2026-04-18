@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
 import { useUiLanguage } from "@/lib/ui-language-context"
+import { getStandardDisplayTitle } from "@/lib/standard-display"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
@@ -686,7 +687,7 @@ export default function StandardsPage() {
                                 </span>
                               </div>
                               <h3 className="line-clamp-2 text-[22px] font-black leading-tight text-foreground transition-colors group-hover:text-primary">
-                                {standard.title}
+                                {getStandardDisplayTitle(standard, isArabic)}
                               </h3>
                             </div>
                           </div>
@@ -695,7 +696,7 @@ export default function StandardsPage() {
                             type="button"
                             onClick={() => openDetails(standard)}
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] text-muted-foreground transition-colors hover:text-primary"
-                            aria-label={`Quick preview ${standard.title}`}
+                            aria-label={`Quick preview ${getStandardDisplayTitle(standard, isArabic)}`}
                           >
                             <Eye className="h-4 w-4" />
                           </button>

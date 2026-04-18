@@ -22,6 +22,10 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
+import useSWR from "swr"
+import type { Standard } from "@/types"
+import { getStandardDisplayTitle } from "@/lib/standard-display"
 import { AynLogo } from "@/components/ayn-logo"
 import {
   Tooltip,
@@ -182,6 +186,75 @@ export const SidebarItem = memo(function SidebarItem({
   return content
 })
 
+const StandardsFrameworkLinks = memo(function StandardsFrameworkLinks({
+  isCollapsed,
+  pathname,
+  onNavClick,
+  isArabic,
+}: {
+  isCollapsed: boolean
+  pathname: string
+  onNavClick: () => void
+  isArabic: boolean
+}) {
+  const { data: standards } = useSWR<Standard[]>(
+    !isCollapsed ? "standards" : null,
+    () => api.getStandards(),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  )
+
+  if (isCollapsed || !standards?.length) return null
+
+  const publicStandards = standards
+    .filter((s) => s.isPublic && s.id)
+    .sort((a, b) => getStandardDisplayTitle(a, isArabic).localeCompare(getStandardDisplayTitle(b, isArabic)))
+
+  if (!publicStandards.length) return null
+
+  return (
+    <div className="space-y-1 pt-1">
+      <p
+        className={cn(
+          "px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground",
+          isArabic && "font-arabic normal-case tracking-normal text-xs",
+        )}
+      >
+        {isArabic ? "أطر الاعتماد" : "Frameworks"}
+      </p>
+      <div
+        className={cn(
+          "space-y-0.5 border-[var(--glass-border-subtle)]",
+          isArabic ? "mr-2 border-r pr-2" : "ml-2 border-l pl-2",
+        )}
+      >
+        {publicStandards.map((s) => {
+          const active =
+            pathname === `/platform/standards/${s.id}` ||
+            pathname.startsWith(`/platform/standards/${s.id}/`)
+          const label = getStandardDisplayTitle(s, isArabic)
+          return (
+            <Link
+              key={s.id}
+              href={`/platform/standards/${s.id}`}
+              onClick={onNavClick}
+              title={label}
+              className={cn(
+                "block max-w-full truncate rounded-lg px-2 py-1.5 text-[11px] font-medium leading-snug tracking-wide transition-colors",
+                active
+                  ? "bg-[var(--glass-soft-bg)] text-primary"
+                  : "text-muted-foreground hover:bg-[var(--glass-soft-bg)] hover:text-foreground",
+                isArabic && "font-arabic text-right",
+              )}
+            >
+              {label}
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+})
+
 function PlatformSidebarComponent({ open, onToggle, notificationCount }: SidebarProps) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
@@ -278,6 +351,12 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
           {COMPLIANCE_WORKFLOW.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
+          <StandardsFrameworkLinks
+            isCollapsed={isCollapsed}
+            pathname={pathname}
+            onNavClick={handleNavClick}
+            isArabic={isArabic}
+          />
         </SidebarSection>
 
         <SidebarSection title={copy.reportingAutomation} isCollapsed={isCollapsed}>

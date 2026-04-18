@@ -351,12 +351,6 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
           {COMPLIANCE_WORKFLOW.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-          <StandardsFrameworkLinks
-            isCollapsed={isCollapsed}
-            pathname={pathname}
-            onNavClick={handleNavClick}
-            isArabic={isArabic}
-          />
         </SidebarSection>
 
         <SidebarSection title={copy.reportingAutomation} isCollapsed={isCollapsed}>

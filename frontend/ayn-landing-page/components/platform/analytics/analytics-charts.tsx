@@ -61,32 +61,82 @@ function ChartCardShell({
 
 /* ─── Trend Area Chart ────────────────────────────────────────── */
 interface TrendChartProps {
-  data: { date: string; score: number; standard?: string }[]
+  data: { date: string; score: number; standard?: string; label?: string }[]
   title: string
   subtitle: string
 }
 
 export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
   const { isArabic } = useUiLanguage()
+
+  const processedData = useMemo(() => {
+    if (!data.length) return []
+    const uniqueDates = new Set(data.map((d) => d.date))
+    // Use run numbers when dates repeat (all same-day runs)
+    const useRunLabels = uniqueDates.size < data.length
+    return data.map((d, i) => ({
+      ...d,
+      xLabel: useRunLabels ? `#${i + 1}` : d.date,
+      tooltip: [d.date, d.label ?? d.standard].filter(Boolean).join(" · "),
+    }))
+  }, [data])
+
+  const maxVisible = 20
+  const displayed = processedData.slice(-maxVisible)
+
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#2563eb">
-      <div className="h-72 w-full -ml-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradientTrend" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} domain={[0, 100]} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]} />
-            <Area type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#gradientTrend)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {!displayed.length ? (
+        <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+          {isArabic ? "لا توجد بيانات كافية بعد" : "No data yet"}
+        </div>
+      ) : (
+        <div className="h-72 w-full -ml-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={displayed} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gradientTrend" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+              <XAxis
+                dataKey="xLabel"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }}
+                dy={10}
+                interval={displayed.length > 10 ? Math.floor(displayed.length / 8) : 0}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }}
+                domain={[0, 100]}
+                tickFormatter={(v) => `${v}%`}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                itemStyle={itemStyle}
+                labelStyle={labelStyle}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.tooltip ?? ""}
+                formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="score"
+                stroke="#2563eb"
+                strokeWidth={2.5}
+                fillOpacity={1}
+                fill="url(#gradientTrend)"
+                dot={{ r: 3.5, fill: "#2563eb", strokeWidth: 0 }}
+                activeDot={{ r: 5.5, fill: "#2563eb", stroke: "var(--surface-modal)", strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </ChartCardShell>
   )
 }

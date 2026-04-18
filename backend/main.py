@@ -98,7 +98,44 @@ async def seed_missing_standards() -> None:
             "icon": "Building2",
             "color": "from-amber-600 to-orange-600",
             "estimatedSetup": "3-5 days",
-            "criteria": [(f"Standard {i}", f"AdvancED Criterion {i}") for i in range(1, 32)],
+            "criteria": [
+                # Standard 1 – Purpose and Direction (3)
+                ("1.1", "The school commits to a shared purpose and direction for education."),
+                ("1.2", "The school engages all stakeholders in developing and reviewing its purpose."),
+                ("1.3", "The school's leadership promotes a culture aligned with its stated purpose."),
+                # Standard 2 – Governance and Leadership (6)
+                ("2.1", "The governing board establishes and communicates the school's purpose and direction."),
+                ("2.2", "The governing board operates responsibly and functions effectively."),
+                ("2.3", "The governing board ensures the school is fiscally responsible."),
+                ("2.4", "Leadership and staff operate as a collaborative learning organisation."),
+                ("2.5", "Leadership allocates resources to support learning and continuous improvement."),
+                ("2.6", "Leadership implements a formal structure to identify and address staffing needs."),
+                # Standard 3 – Teaching and Assessing for Learning (11)
+                ("3.1", "The school's curriculum provides equitable and challenging learning experiences."),
+                ("3.2", "Curriculum, instruction, and assessment are monitored and adjusted to improve student learning."),
+                ("3.3", "Teachers engage students in learning through varied instructional strategies."),
+                ("3.4", "School leaders monitor and support the improvement of instructional practices."),
+                ("3.5", "Teachers participate in collaborative learning communities to improve instruction."),
+                ("3.6", "Teachers implement the school's instructional process in support of student learning."),
+                ("3.7", "Mentoring, coaching, and induction support instructional improvement."),
+                ("3.8", "The school engages families in the education of their students."),
+                ("3.9", "The school has a formal structure to identify and address learning difficulties."),
+                ("3.10", "Grading and reporting are based on clearly defined criteria."),
+                ("3.11", "All staff members participate in a continuous programme of professional learning."),
+                # Standard 4 – Resources and Support Systems (6)
+                ("4.1", "The school has sufficient instructional resources to support its purpose and direction."),
+                ("4.2", "The school maintains facilities that are clean, safe, and conducive to learning."),
+                ("4.3", "The school demonstrates that instructional technology supports learning."),
+                ("4.4", "The school provides support services to meet the learning needs of all students."),
+                ("4.5", "The school provides a student support programme that addresses non-academic needs."),
+                ("4.6", "The school recruits qualified staff and provides induction for new employees."),
+                # Standard 5 – Using Results for Continuous Improvement (5)
+                ("5.1", "The school establishes a culture of evidence-based decision making."),
+                ("5.2", "The school consistently applies results from evaluations of programmes and services."),
+                ("5.3", "The school allocates resources to areas of greatest need as identified by data."),
+                ("5.4", "The school uses comparison and trend data to evaluate its performance."),
+                ("5.5", "The school engages in a continuous improvement process based on student outcomes."),
+            ],
         },
         {
             "id": "moe",
@@ -110,7 +147,32 @@ async def seed_missing_standards() -> None:
             "icon": "Shield",
             "color": "from-rose-600 to-pink-600",
             "estimatedSetup": "2-4 days",
-            "criteria": [(f"Standard {i}", f"MOE UAE Criterion {i}") for i in range(1, 19)],
+            "criteria": [
+                # Domain 1 – Leadership and Management (4)
+                ("1.1", "Leadership establishes and communicates a clear vision aligned with UAE national priorities."),
+                ("1.2", "The institution implements effective governance and accountability structures."),
+                ("1.3", "Strategic planning is evidence-based and regularly reviewed."),
+                ("1.4", "Resources are managed efficiently to support institutional objectives."),
+                # Domain 2 – Teaching and Learning (4)
+                ("2.1", "Curriculum design aligns with UAE national curriculum standards and frameworks."),
+                ("2.2", "Teaching practices are student-centred and promote active learning."),
+                ("2.3", "Assessment practices accurately measure and support student progress."),
+                ("2.4", "Learning environments are inclusive and cater to diverse learner needs."),
+                # Domain 3 – Student Progress and Achievement (3)
+                ("3.1", "Students demonstrate measurable progress in literacy and numeracy."),
+                ("3.2", "Student outcomes meet or exceed national benchmarks."),
+                ("3.3", "The institution monitors and supports the wellbeing of all students."),
+                # Domain 4 – Curriculum and Innovation (3)
+                ("4.1", "The curriculum incorporates 21st-century skills including critical thinking and creativity."),
+                ("4.2", "Technology integration supports learning across all subjects."),
+                ("4.3", "Arabic language and Islamic education are taught effectively and in accordance with requirements."),
+                # Domain 5 – Community and Partnerships (2)
+                ("5.1", "The institution maintains productive partnerships with parents and the wider community."),
+                ("5.2", "The institution engages with local and international partners to enhance learning."),
+                # Domain 6 – Professional Development (2)
+                ("6.1", "Staff professional development plans are aligned with institutional and national priorities."),
+                ("6.2", "Leadership fosters a culture of continuous professional learning and reflective practice."),
+            ],
         },
         {
             "id": "qaa",
@@ -122,7 +184,40 @@ async def seed_missing_standards() -> None:
             "icon": "Award",
             "color": "from-purple-600 to-violet-600",
             "estimatedSetup": "4-6 days",
-            "criteria": [(f"Expectation {i}", f"QAA UK Expectation {i}") for i in range(1, 29)],
+            "criteria": [
+                # Theme A – Setting and Maintaining Academic Standards (5)
+                ("A1", "The provider ensures that the awards and qualifications it offers have credibility and value."),
+                ("A2", "The provider has effective governance and accountability for academic standards."),
+                ("A3", "Academic standards are set and maintained by staff with appropriate expertise."),
+                ("A4", "The provider regularly reviews its academic standards and acts on findings."),
+                ("A5", "The provider collaborates with industry and professional bodies to maintain relevance."),
+                # Theme B – Quality of the Student Learning Experience (11)
+                ("B1", "Programmes are designed to provide students with a high-quality learning experience."),
+                ("B2", "The provider ensures fair and transparent admissions processes."),
+                ("B3", "Teaching and learning practices promote student engagement and achievement."),
+                ("B4", "The provider supports students to develop as independent learners."),
+                ("B5", "Students are effectively represented and their voice is heard in decision making."),
+                ("B6", "Assessment is valid, transparent, and supports student learning."),
+                ("B7", "External expertise is used to maintain academic standards and quality."),
+                ("B8", "Effective academic appeals and student complaints processes are in place."),
+                ("B9", "The provider responds to and acts on feedback from the student experience."),
+                ("B10", "Placement and work-based learning are effectively managed and supported."),
+                ("B11", "Postgraduate research degrees are managed and supported effectively."),
+                # Theme C – Student Engagement and Information (6)
+                ("C1", "Students are partners in the design and delivery of their educational experience."),
+                ("C2", "Students have opportunities to engage in shaping quality and standards."),
+                ("C3", "The provider creates a positive and inclusive learning community."),
+                ("C4", "Student representatives are trained and supported in their roles."),
+                ("C5", "Outcomes of student engagement are communicated and acted upon."),
+                ("C6", "The provider fosters students' sense of belonging and personal development."),
+                # Theme D – Information about Higher Education Provision (6)
+                ("D1", "The provider publishes accurate and timely information for prospective students."),
+                ("D2", "Information about programmes enables students to make informed choices."),
+                ("D3", "The provider is transparent about its performance against student outcome benchmarks."),
+                ("D4", "Information about learning support and student services is accessible and accurate."),
+                ("D5", "The provider clearly communicates the costs and financial support available."),
+                ("D6", "Public information is subject to regular review and verification."),
+            ],
         },
         {
             "id": "naqaa",
@@ -148,32 +243,57 @@ async def seed_missing_standards() -> None:
         },
     ]
 
+    def _is_placeholder(desc: str) -> bool:
+        """Detect auto-generated placeholder criterion descriptions."""
+        low = desc.lower()
+        return (
+            low.startswith("requirement for ")
+            or "criterion " in low
+            or "advancedcriterion" in low.replace(" ", "")
+            or "moeuaecriterion" in low.replace(" ", "")
+            or "qaaukexpectation" in low.replace(" ", "")
+        )
+
     try:
         db = get_db()
         for std in BUILT_IN_STANDARDS:
-            existing = await db.standard.find_unique(where={"id": std["id"]})
-            if existing:
-                continue  # already seeded
-            logger.info(f"Seeding missing standard: {std['id']}")
-            created = await db.standard.create(
-                data={
-                    "id": std["id"],
-                    "title": std["title"],
-                    "code": std["code"],
-                    "category": std["category"],
-                    "description": std["description"],
-                    "region": std["region"],
-                    "icon": std["icon"],
-                    "color": std["color"],
-                    "estimatedSetup": std["estimatedSetup"],
-                    "isPublic": True,
-                }
+            existing = await db.standard.find_unique(
+                where={"id": std["id"]},
+                include={"criteria": True},
             )
-            for title, description in std["criteria"]:
-                await db.criterion.create(
-                    data={"standardId": created.id, "title": title, "description": description}
+            if not existing:
+                logger.info(f"Seeding missing standard: {std['id']}")
+                created = await db.standard.create(
+                    data={
+                        "id": std["id"],
+                        "title": std["title"],
+                        "code": std["code"],
+                        "category": std["category"],
+                        "description": std["description"],
+                        "region": std["region"],
+                        "icon": std["icon"],
+                        "color": std["color"],
+                        "estimatedSetup": std["estimatedSetup"],
+                        "isPublic": True,
+                    }
                 )
-            logger.info(f"Seeded standard {std['id']} with {len(std['criteria'])} criteria")
+                for title, description in std["criteria"]:
+                    await db.criterion.create(
+                        data={"standardId": created.id, "title": title, "description": description}
+                    )
+                logger.info(f"Seeded standard {std['id']} with {len(std['criteria'])} criteria")
+            else:
+                # Replace placeholder criteria with real ones
+                existing_criteria = existing.criteria or []
+                has_placeholders = any(_is_placeholder(c.description or "") for c in existing_criteria)
+                if has_placeholders:
+                    logger.info(f"Replacing placeholder criteria for standard: {std['id']}")
+                    await db.criterion.delete_many(where={"standardId": existing.id})
+                    for title, description in std["criteria"]:
+                        await db.criterion.create(
+                            data={"standardId": existing.id, "title": title, "description": description}
+                        )
+                    logger.info(f"Updated {len(std['criteria'])} criteria for {std['id']}")
     except Exception as e:
         logger.warning(f"Standard seeding skipped due to error: {e}")
 

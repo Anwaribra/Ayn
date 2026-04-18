@@ -8,7 +8,7 @@ from datetime import datetime
 class UserDTO(BaseModel):
     id: str
     institutionId: Optional[str] = None
-    role: str
+    role: str = "USER"
     email: str
 
 

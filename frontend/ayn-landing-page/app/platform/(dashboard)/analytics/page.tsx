@@ -14,8 +14,6 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { EmptyState } from "@/components/platform/empty-state"
 import { cn } from "@/lib/utils"
-
-import { exportToPDF } from "@/lib/pdf-export"
 import { AnalyticsKpiCards, type KpiCardData } from "@/components/platform/analytics/analytics-kpi-cards"
 import { AnalyticsInsights, type Insight } from "@/components/platform/analytics/analytics-insights"
 import {
@@ -51,6 +49,293 @@ function downloadCsv(filename: string, rows: string[][]) {
   a.click()
   window.URL.revokeObjectURL(url)
   document.body.removeChild(a)
+}
+
+async function exportAnalyticsReportPdf(params: {
+  analytics: any
+  periodLabel: string
+  executiveSummary: string
+  strongestStandard: any
+  weakestStandard: any
+  insights: Insight[]
+  filename: string
+}) {
+  const { jsPDF } = await import("jspdf")
+  const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" })
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const marginX = 16
+  const topMargin = 18
+  const contentWidth = pageWidth - marginX * 2
+  const bottomLimit = pageHeight - 18
+  let y = topMargin
+
+  const ensureSpace = (needed = 12) => {
+    if (y + needed <= bottomLimit) return
+    doc.addPage()
+    y = topMargin
+  }
+
+  const writeWrapped = (text: string, fontSize = 11, color: [number, number, number] = [71, 85, 105], lineHeight = 6) => {
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(fontSize)
+    doc.setTextColor(...color)
+    const lines = doc.splitTextToSize(text, contentWidth)
+    lines.forEach((line: string) => {
+      ensureSpace(lineHeight)
+      doc.text(line, marginX, y)
+      y += lineHeight
+    })
+  }
+
+  const writeSectionTitle = (title: string) => {
+    ensureSpace(12)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(10)
+    doc.setTextColor(100, 116, 139)
+    doc.text(title.toUpperCase(), marginX, y)
+    y += 7
+  }
+
+  const writeMetricGrid = (items: { label: string; value: string; color: [number, number, number] }[]) => {
+    const gap = 4
+    const boxWidth = (contentWidth - gap * 3) / 4
+    const boxHeight = 24
+    ensureSpace(boxHeight + 4)
+
+    items.forEach((item, index) => {
+      const x = marginX + index * (boxWidth + gap)
+      doc.setDrawColor(226, 232, 240)
+      doc.setFillColor(248, 250, 252)
+      doc.roundedRect(x, y, boxWidth, boxHeight, 3, 3, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(17)
+      doc.setTextColor(...item.color)
+      doc.text(item.value, x + 4, y + 10)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(8)
+      doc.setTextColor(148, 163, 184)
+      doc.text(item.label.toUpperCase(), x + 4, y + 18)
+    })
+
+    y += boxHeight + 6
+  }
+
+  const writeHighlightCard = (title: string, label: string, score: string, body: string, accent: [number, number, number], fill: [number, number, number], x: number, width: number) => {
+    const startY = y
+    const height = 34
+    doc.setDrawColor(accent[0], accent[1], accent[2])
+    doc.setFillColor(fill[0], fill[1], fill[2])
+    doc.roundedRect(x, startY, width, height, 3, 3, "FD")
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(8)
+    doc.setTextColor(...accent)
+    doc.text(label.toUpperCase(), x + 4, startY + 6)
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(15, 23, 42)
+    doc.text(title, x + 4, startY + 13)
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(18)
+    doc.setTextColor(...accent)
+    doc.text(score, x + 4, startY + 22)
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    doc.setTextColor(75, 85, 99)
+    const bodyLines = doc.splitTextToSize(body, width - 8)
+    doc.text(bodyLines.slice(0, 2), x + 4, startY + 28)
+  }
+
+  const writeTableHeader = () => {
+    const columns = [
+      { label: "Standard", x: marginX, width: 70 },
+      { label: "Avg", x: marginX + 70, width: 18 },
+      { label: "Min", x: marginX + 88, width: 18 },
+      { label: "Max", x: marginX + 106, width: 18 },
+      { label: "Reports", x: marginX + 124, width: 22 },
+      { label: "Trend", x: marginX + 146, width: 48 },
+    ]
+
+    doc.setFillColor(248, 250, 252)
+    doc.setDrawColor(226, 232, 240)
+    doc.rect(marginX, y, contentWidth, 9, "FD")
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(8)
+    doc.setTextColor(148, 163, 184)
+    columns.forEach((column) => doc.text(column.label.toUpperCase(), column.x + 2, y + 5.8))
+    y += 9
+  }
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  doc.setTextColor(37, 99, 235)
+  doc.text("AYN COMPLIANCE PLATFORM", marginX, y)
+  y += 8
+
+  doc.setFontSize(24)
+  doc.setTextColor(15, 23, 42)
+  doc.text("Analytics Report", marginX, y)
+  y += 7
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(10)
+  doc.setTextColor(100, 116, 139)
+  doc.text(
+    `${params.periodLabel} · Generated ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+    marginX,
+    y,
+  )
+  y += 10
+
+  writeSectionTitle("Summary")
+  writeWrapped(params.executiveSummary, 11, [30, 41, 59], 6)
+  y += 2
+
+  writeSectionTitle("Key Metrics")
+  writeMetricGrid([
+    {
+      label: "Avg Score",
+      value: `${Math.round(params.analytics.avgScore ?? 0)}%`,
+      color: (params.analytics.avgScore ?? 0) >= 70 ? [13, 150, 104] : (params.analytics.avgScore ?? 0) >= 40 ? [180, 83, 9] : [201, 66, 74],
+    },
+    { label: "Reports", value: String(params.analytics.totalReports ?? 0), color: [37, 99, 235] },
+    {
+      label: "Growth",
+      value: `${(params.analytics.growth?.growthPercent ?? 0) >= 0 ? "+" : ""}${params.analytics.growth?.growthPercent ?? 0}%`,
+      color: (params.analytics.growth?.growthPercent ?? 0) >= 0 ? [13, 150, 104] : [201, 66, 74],
+    },
+    { label: "Evidence", value: String(params.analytics.totalEvidence ?? 0), color: [124, 92, 224] },
+  ])
+
+  if (params.strongestStandard || params.weakestStandard) {
+    writeSectionTitle("Performance Highlights")
+    ensureSpace(40)
+    const cardGap = 6
+    const cardWidth = (contentWidth - cardGap) / 2
+
+    if (params.strongestStandard) {
+      writeHighlightCard(
+        params.strongestStandard.standardTitle,
+        "Leading",
+        `${Math.round(params.strongestStandard.avgScore)}%`,
+        `${params.strongestStandard.reportCount} report${params.strongestStandard.reportCount !== 1 ? "s" : ""} this period`,
+        [13, 150, 104],
+        [240, 253, 244],
+        marginX,
+        cardWidth,
+      )
+    }
+
+    if (params.weakestStandard) {
+      writeHighlightCard(
+        params.weakestStandard.standardTitle,
+        "Needs Attention",
+        `${Math.round(params.weakestStandard.avgScore)}%`,
+        `${params.weakestStandard.reportCount} report${params.weakestStandard.reportCount !== 1 ? "s" : ""} this period`,
+        [180, 83, 9],
+        [255, 247, 237],
+        marginX + cardWidth + cardGap,
+        cardWidth,
+      )
+    }
+
+    y += 40
+  }
+
+  const standards = params.analytics.standardPerformance ?? []
+  if (standards.length > 0) {
+    writeSectionTitle("Standards Overview")
+    writeTableHeader()
+
+    standards.forEach((standard: any, index: number) => {
+      ensureSpace(8)
+      if (index > 0 && y + 8 > bottomLimit) {
+        doc.addPage()
+        y = topMargin
+        writeSectionTitle("Standards Overview")
+        writeTableHeader()
+      }
+
+      if (index % 2 === 1) {
+        doc.setFillColor(248, 250, 252)
+        doc.rect(marginX, y, contentWidth, 8, "F")
+      }
+
+      const scoreColor: [number, number, number] =
+        Math.round(standard.avgScore) >= 70 ? [13, 150, 104] : Math.round(standard.avgScore) >= 40 ? [180, 83, 9] : [201, 66, 74]
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(9)
+      doc.setTextColor(30, 41, 59)
+      doc.text(String(standard.standardTitle).slice(0, 34), marginX + 2, y + 5.3)
+
+      doc.setTextColor(...scoreColor)
+      doc.text(`${Math.round(standard.avgScore)}%`, marginX + 72, y + 5.3)
+
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(100, 116, 139)
+      doc.text(`${Math.round(standard.minScore)}%`, marginX + 90, y + 5.3)
+      doc.text(`${Math.round(standard.maxScore)}%`, marginX + 108, y + 5.3)
+      doc.text(String(standard.reportCount), marginX + 126, y + 5.3)
+      doc.text(String(standard.trend ?? "—").slice(0, 18), marginX + 148, y + 5.3)
+      y += 8
+    })
+
+    y += 2
+  }
+
+  if (params.insights.length > 0) {
+    writeSectionTitle("Insights & Recommendations")
+    params.insights.forEach((insight) => {
+      ensureSpace(20)
+      const severityColor: [number, number, number] =
+        insight.severity === "positive" ? [13, 150, 104]
+        : insight.severity === "critical" ? [201, 66, 74]
+        : insight.severity === "warning" ? [180, 83, 9]
+        : [37, 99, 235]
+      const fillColor: [number, number, number] =
+        insight.severity === "positive" ? [240, 253, 244]
+        : insight.severity === "critical" ? [255, 241, 242]
+        : insight.severity === "warning" ? [255, 247, 237]
+        : [239, 246, 255]
+
+      doc.setFillColor(...fillColor)
+      doc.setDrawColor(severityColor[0], severityColor[1], severityColor[2])
+      doc.roundedRect(marginX, y, contentWidth, 18, 3, 3, "FD")
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(8)
+      doc.setTextColor(...severityColor)
+      doc.text((insight.severity || "Insight").toUpperCase(), marginX + 4, y + 5.5)
+
+      doc.setFontSize(10)
+      doc.setTextColor(30, 41, 59)
+      doc.text(insight.title, marginX + 4, y + 10.5)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(8.5)
+      doc.setTextColor(75, 85, 99)
+      const descLines = doc.splitTextToSize(insight.description, contentWidth - 8)
+      doc.text(descLines.slice(0, 2), marginX + 4, y + 15)
+
+      if (insight.action) {
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(...severityColor)
+        doc.text(`Action: ${insight.action}`, marginX + 105, y + 15)
+      }
+
+      y += 22
+    })
+  }
+
+  doc.save(params.filename)
 }
 
 /* ─── Main Export ────────────────────────────────────────────── */
@@ -242,11 +527,35 @@ function AnalyticsContent() {
       toast.info("No data to export for this period")
       return
     }
-    await exportToPDF(
-      "analytics-export-report",
-      `ayn-analytics-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`,
-      { backgroundColor: "#ffffff", toastLabel: "analytics report" }
-    )
+    const filename = `ayn-analytics-report-${period}-${new Date().toISOString().slice(0, 10)}.pdf`
+
+    try {
+      toast.loading("Preparing analytics report…", {
+        id: "analytics-export",
+        description: "Building a PDF from your latest analytics data.",
+      })
+
+      await exportAnalyticsReportPdf({
+        analytics,
+        periodLabel: PERIOD_OPTIONS.find((option) => option.key === period)?.label ?? "All Time",
+        executiveSummary,
+        strongestStandard,
+        weakestStandard,
+        insights,
+        filename,
+      })
+
+      toast.success("Analytics report exported", {
+        id: "analytics-export",
+        description: "Your PDF report has been saved.",
+      })
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to export report", {
+        id: "analytics-export",
+        description: error instanceof Error ? error.message : "Unknown export error",
+      })
+    }
   }
 
   const hasData = analytics && analytics.totalReports > 0

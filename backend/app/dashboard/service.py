@@ -67,7 +67,6 @@ class DashboardService:
 
                         inst_members = await db.user.find_many(
                             where={"institutionId": institution_id},
-                            select={"id": True},
                         )
                         member_ids = [u.id for u in inst_members]
                         ev_scope = institution_evidence_visibility_filter(

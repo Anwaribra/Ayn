@@ -45,7 +45,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
 import useSWR from "swr"
 import { useHorus, type CitationSource, type ToolStep, type FileStatus, type Message as HorusMessage, type AgentRunMeta } from "@/lib/horus-context"
-import { SuggestedActionsPanel, StarterScenarioCard, STARTER_SCENARIOS } from "./suggested-actions"
+import { SuggestedActionsPanel } from "./suggested-actions"
 import { useFocusMode } from "@/lib/focus-mode-context"
 import { AIChatInput } from "@/components/ui/ai-chat-input"
 import { AttachedFile } from "./types"
@@ -619,7 +619,6 @@ export default function HorusAIChat() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const starterFileInputRef = useRef<HTMLInputElement>(null)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const userRequestedScrollRef = useRef(false)
   const fallbackQueueRef = useRef<string[]>([])
@@ -1271,14 +1270,6 @@ export default function HorusAIChat() {
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
               <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
-                {/* Hidden file input for starter card "Analyze a document" */}
-                <input
-                  ref={starterFileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.doc,.docx,.txt,image/*"
-                  onChange={handleFileSelect}
-                />
                 <div className="flex flex-col items-center justify-center gap-6 md:gap-8 w-full min-h-0 max-h-full py-2">
                   {/* Classic Orb Loader */}
                   <motion.div
@@ -1294,19 +1285,6 @@ export default function HorusAIChat() {
                     <p className="mt-2 text-sm text-muted-foreground">
                       Upload documents, run analysis, or ask anything about your accreditation programme.
                     </p>
-                  </div>
-
-                  {/* Starter scenario cards */}
-                  <div className="grid grid-cols-2 gap-2.5 w-full max-w-[480px] sm:max-w-[520px]">
-                    {STARTER_SCENARIOS.map((scenario, i) => (
-                      <StarterScenarioCard
-                        key={scenario.id}
-                        scenario={scenario}
-                        index={i}
-                        onSelect={(prompt) => handleSendMessage(prompt)}
-                        onFileMode={() => starterFileInputRef.current?.click()}
-                      />
-                    ))}
                   </div>
 
                   <div className="flex items-center justify-center gap-2">

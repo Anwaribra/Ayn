@@ -15,6 +15,7 @@ import { HowItWorksSection }       from "@/components/landing/HowItWorksSection"
 import { AnalysisEngineFeatures }  from "@/components/landing/AnalysisEngineFeatures"
 import { AboutSection }            from "@/components/landing/AboutSection"
 import { PricingSection }           from "@/components/landing/PricingSection"
+import { RoiEstimatorSection }     from "@/components/landing/RoiEstimatorSection"
 import { LandingFaqAccordion }     from "@/components/landing/LandingFaqAccordion"
 import { FinalCtaSection }         from "@/components/landing/FinalCtaSection"
 import { LandingFooter }           from "@/components/landing/LandingFooter"
@@ -126,6 +127,7 @@ export default function Home() {
       {/* ── Light sections ── */}
       <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
         <AboutSection />
+        <RoiEstimatorSection />
         <LandingFaqAccordion />
       </div>
 

@@ -266,16 +266,6 @@ export const actionCommands: Command[] = [
     keywords: ["reports", "analytics", "data", "insights"],
   },
   {
-    id: "automation",
-    title: "Automation Workflows",
-    description: "Manage automated processes",
-    icon: Zap,
-    category: "Actions",
-    href: "/platform/workflows",
-    keywords: ["automate", "workflow", "process", "tasks"],
-    badge: "Beta",
-  },
-  {
     id: "reset-demo",
     title: "Reset Demo",
     description: "Clear all local data and reset the platform state",

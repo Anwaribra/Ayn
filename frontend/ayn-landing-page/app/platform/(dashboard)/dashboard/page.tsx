@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
@@ -27,6 +27,21 @@ import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
 import { StatusTiles } from "@/components/platform/status-tiles"
 import { CoverageBar } from "@/components/platform/coverage-bar"
+
+function formatMetricsSynced(dataUpdatedAt: number, isArabic: boolean): string {
+  if (!dataUpdatedAt) return ""
+  const sec = Math.max(0, Math.floor((Date.now() - dataUpdatedAt) / 1000))
+  if (sec < 15) return isArabic ? "محدّث للتو" : "Updated just now"
+  const min = Math.floor(sec / 60)
+  if (min < 1) return isArabic ? "محدّث منذ لحظات" : "Updated moments ago"
+  if (min === 1) return isArabic ? "محدّث منذ دقيقة" : "Updated 1 min ago"
+  if (min < 60) return isArabic ? `محدّث منذ ${min} د` : `Updated ${min} min ago`
+  const hr = Math.floor(min / 60)
+  if (hr === 1) return isArabic ? "محدّث منذ ساعة" : "Updated 1 hour ago"
+  if (hr < 24) return isArabic ? `محدّث منذ ${hr} س` : `Updated ${hr} hours ago`
+  const d = Math.floor(hr / 24)
+  return isArabic ? `محدّث منذ ${d} يوم` : `Updated ${d}d ago`
+}
 
 interface StandardCoverageSummary {
   standard: Standard
@@ -75,6 +90,11 @@ function DashboardContent() {
     metrics && typeof metrics === "object" && !Array.isArray(metrics)
       ? metrics
       : null
+
+  const [lastMetricsSyncAt, setLastMetricsSyncAt] = useState<number | null>(null)
+  useEffect(() => {
+    if (safeMetrics) setLastMetricsSyncAt(Date.now())
+  }, [safeMetrics])
   const safeStandards = Array.isArray(standards) ? standards : []
   const recentActivities = Array.isArray(safeMetrics?.recentActivities) ? safeMetrics.recentActivities : []
 
@@ -368,6 +388,12 @@ function DashboardContent() {
                 {isArabic ? "جارٍ مزامنة لوحة التحكم" : "Syncing dashboard"}
               </div>
             )}
+            {lastMetricsSyncAt !== null && !isLoading && (
+              <p className={cn("text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90", isArabic && "text-right")}>
+                {isArabic ? "المقاييس — " : "Metrics — "}
+                {formatMetricsSynced(lastMetricsSyncAt, isArabic)}
+              </p>
+            )}
 
             <div className={cn("max-w-2xl", isArabic && "text-right ms-auto")} dir={isArabic ? "rtl" : "ltr"}>
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
@@ -446,7 +472,7 @@ function DashboardContent() {
       </section>
 
       {/* Status Tiles Grid */}
-      <section>
+      <section className={cn(isLoading && "opacity-60 transition-opacity duration-300")}>
         <StatusTiles
           stats={dashboardStats}
         />

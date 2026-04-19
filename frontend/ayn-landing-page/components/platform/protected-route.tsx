@@ -3,14 +3,14 @@
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type ReactNode } from "react"
-import { Loader2 } from "lucide-react"
+import { WorkspaceSessionLoader } from "@/components/platform/workspace-boot-screen"
 
 interface ProtectedRouteProps {
   children: ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isLoading, isAuthenticated } = useAuth()
+  const { isLoading, isAuthenticated, refreshUser } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
@@ -39,11 +39,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const hasToken =
     typeof window !== "undefined" && !!localStorage.getItem("access_token")
   if (!mounted || isLoading || (!isAuthenticated && hasToken)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <WorkspaceSessionLoader onRetry={refreshUser} />
   }
 
   if (!isAuthenticated) {

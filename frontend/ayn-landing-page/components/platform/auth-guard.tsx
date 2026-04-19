@@ -5,9 +5,10 @@ import { useRouter, usePathname } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
+import { WorkspaceAuthLoader } from "@/components/platform/workspace-boot-screen"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, refreshUser } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
@@ -52,12 +53,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!mounted || isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg-deep,#07090E)]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verifying access...</p>
-        </div>
-      </div>
+      <WorkspaceAuthLoader
+        onRetry={async () => {
+          await refreshUser()
+          router.refresh()
+        }}
+      />
     )
   }
 

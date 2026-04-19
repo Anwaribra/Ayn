@@ -59,7 +59,7 @@ const COMPLIANCE_WORKFLOW: NavItemConfig[] = [
 ]
 
 const INSIGHTS_TOOLS: NavItemConfig[] = [
-  { id: "reports", icon: BarChart4, label: { en: "Analytics", ar: "التحليلات" }, href: "/platform/analytics" },
+  { id: "analytics", icon: BarChart4, label: { en: "Analytics", ar: "التحليلات" }, href: "/platform/analytics" },
 ]
 
 import React, { useCallback, useMemo, memo } from "react"
@@ -76,8 +76,7 @@ export const SidebarItem = memo(function SidebarItem({
   onNavClick: () => void
 }) {
   const { isArabic } = useUiLanguage()
-  const active =
-    pathname.includes(item.id) || (item.id === "reports" && pathname.includes("analytics"))
+  const active = pathname.includes(item.id)
   const label = isArabic ? item.label.ar : item.label.en
 
   const content = (

@@ -35,8 +35,8 @@ function SettingsContent() {
 
   const sections = [
     { icon: User, label: "Account Profile", desc: "Manage institutional identifiers and contact details", color: "text-primary", href: "/platform/settings/account" },
-    { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-[var(--status-warning)]", href: "/platform/settings/alerts" },
     { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-[var(--status-success)]", href: "/platform/settings/security" },
+    { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-[var(--status-warning)]", href: "/platform/settings/alerts" },
     { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-primary", href: "/platform/settings/data" },
     { icon: Cloud, label: "Module Integrations", desc: "Review connector setup for LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
     { icon: CalendarDays, label: "Calendar & Milestones", desc: "Track deadlines, audits, and compliance checkpoint scheduling", color: "text-primary", href: "/platform/calendar" },

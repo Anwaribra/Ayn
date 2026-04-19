@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
 import { useUiLanguage } from "@/lib/ui-language-context"
+import { useAuth } from "@/lib/auth-context"
 import { getStandardDisplayTitle } from "@/lib/standard-display"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"
@@ -136,6 +137,8 @@ const MAPPING_STATUS_META: Record<string, { label: string; labelAr: string; Icon
 export default function StandardsPage() {
   const router = useRouter()
   const { isArabic } = useUiLanguage()
+  const { user } = useAuth()
+  const isAdmin = user?.role === "ADMIN"
   usePageTitle(isArabic ? "المعايير" : "Standards Hub")
   const { data: standards, isLoading, mutate } = useSWR<Standard[]>(
     "standards",
@@ -308,6 +311,58 @@ export default function StandardsPage() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [sortBy, setSortBy] = useState("weakest")
 
+  const copy = useMemo(() => ({
+    allFrameworks:   isArabic ? "كل الأطر"             : "All Frameworks",
+    highComplexity:  isArabic ? "تعقيد عالٍ"           : "High Complexity",
+    importedCustom:  isArabic ? "مستورد / مخصص"        : "Imported / Custom",
+    allCategories:   isArabic ? "كل الفئات"            : "All categories",
+    allRegions:      isArabic ? "كل المناطق"           : "All regions",
+    allStatuses:     isArabic ? "كل الحالات"           : "All statuses",
+    statusStrong:    isArabic ? "قوي"                  : "Strong",
+    statusPartial:   isArabic ? "جزئي"                 : "Partial",
+    statusCritical:  isArabic ? "حرج"                  : "Critical",
+    statusNotStarted:isArabic ? "لم يبدأ"              : "Not Started",
+    statusAnalyzing: isArabic ? "قيد التحليل"          : "Analyzing",
+    sortWeakest:     isArabic ? "الأضعف أولًا"         : "Weakest first",
+    sortStrongest:   isArabic ? "الأقوى أولًا"         : "Strongest first",
+    sortCriteria:    isArabic ? "أكثر معايير"          : "Most criteria",
+    sortAZ:          isArabic ? "أبجديًا"              : "A–Z",
+    sort:            isArabic ? "ترتيب"                : "Sort",
+    visible:         isArabic ? "ظاهر"                 : "visible",
+    analyzeNow:      isArabic ? "تحليل الآن"           : "Analyze Now",
+    browse:          isArabic ? "تصفح"                 : "Browse",
+    openStandard:    isArabic ? "فتح المعيار"          : "Open Standard",
+    gapAnalysis:     isArabic ? "تحليل الفجوات"        : "Gap Analysis",
+    noFrameworks:    isArabic ? "لا توجد أطر تطابق الفلاتر الحالية" : "No frameworks match the current filters",
+    noFrameworksDesc:isArabic ? "أزل الفلاتر، وسّع البحث، أو استورد إطارًا جديدًا." : "Clear the filters, widen your search, or import a new framework.",
+    importFramework: isArabic ? "استيراد إطار"         : "Import Framework",
+    searchPlaceholder:isArabic? "ابحث بالإطار، الرمز، الفئة، أو المنطقة…" : "Search by framework, code, category, or region…",
+    criteriaLabel:   isArabic ? "المعايير"             : "Criteria",
+    coverageLabel:   isArabic ? "التغطية"              : "Coverage",
+    mappedLabel:     isArabic ? "مرتبط"                : "Mapped",
+    evidenceMapping: isArabic ? "ربط الأدلة"           : "Evidence Mapping",
+    analysisInProgress:isArabic? "التحليل قيد التنفيذ…":"Analysis in progress…",
+    loadingCriteria: isArabic ? "جارٍ تحميل المعايير…" : "Loading criteria…",
+    aynIntelligence: isArabic ? "ذكاء عين"             : "Ayn Intelligence",
+    analyzeAgainst:  isArabic ? "تحليل ضد:"            : "Analyze against:",
+    allEvidence:     (n: number) => isArabic ? `كل الأدلة (${n} ملف)` : `All Evidence (${n} files)`,
+    selectSpecific:  isArabic ? "اختر أدلة محددة"      : "Select Specific Evidence",
+    runAnalysis:     isArabic ? "تشغيل التحليل"        : "Analyze Now",
+    rerunAnalysis:   isArabic ? "إعادة التشغيل"        : "Re-run Analysis",
+    running:         isArabic ? "جارٍ التشغيل"         : "Running",
+    runFreshDesc:    isArabic ? "شغّل تمريرة جديدة على الأدلة المرتبطة، أو أعد التحليل بعد الرفع الجديد." : "Run a fresh pass across linked evidence, or re-analyze after new uploads.",
+    importTitle:     isArabic ? "استيراد إطار"         : "Import Framework",
+    importDesc:      isArabic ? "ارفع ملف PDF لإطار واجعل عين يستخرج هيكل المعيار." : "Upload a framework PDF and let Ayn extract the standard structure.",
+    selectPDF:       isArabic ? "اختر ملف PDF"         : "Select PDF File",
+    dragDrop:        isArabic ? "أو اسحب وأفلت هنا"   : "or drag and drop here",
+    changeFile:      isArabic ? "تغيير الملف"          : "Change file",
+    cancel:          isArabic ? "إلغاء"                : "Cancel",
+    uploadExtract:   isArabic ? "رفع واستخراج"         : "Upload & Extract",
+    processing:      isArabic ? "جارٍ المعالجة…"       : "Processing…",
+    awaitingAnalysis:isArabic ? "في انتظار التحليل."   : "Awaiting analysis against evidence.",
+    openStandardBtn: isArabic ? "فتح المعيار"          : "Open Standard",
+  }), [isArabic])
+
   const categories = useMemo(
     () => Array.from(new Set(publicStandards.map((standard) => formatFilterLabel(standard.category)))).sort(),
     [publicStandards],
@@ -403,7 +458,21 @@ export default function StandardsPage() {
               { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
               { label: isArabic ? "المعايير" : "Standards Hub" },
             ]}
-            actions={undefined}
+            actions={
+              isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPDFModalOpen(true)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)] transition-all hover:bg-primary/90 hover:scale-[1.02]",
+                    isArabic && "flex-row-reverse",
+                  )}
+                >
+                  <FileUp className="h-3.5 w-3.5" />
+                  {copy.importFramework}
+                </button>
+              ) : undefined
+            }
           />
 
           <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8", isArabic && "font-arabic")}>
@@ -532,106 +601,111 @@ export default function StandardsPage() {
               </div>
             </section>
 
-            <section className="glass-panel rounded-[28px] border-[var(--glass-border)] p-4 sm:p-5">
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,180px))]">
-                <div className="relative">
-                  <Search
-                    className={cn(
-                      "absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
-                      isArabic ? "right-4" : "left-4",
-                    )}
-                  />
-                  <input
-                    type="text"
-                    placeholder={
-                      isArabic
-                        ? "ابحث بالإطار، الرمز، الفئة، أو المنطقة..."
-                        : "Search by framework, code, category, or region..."
-                    }
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={cn(
-                      "glass-input h-12 w-full rounded-2xl text-sm",
-                      isArabic ? "pr-11 pl-4" : "pl-11 pr-4",
-                    )}
-                  />
-                </div>
-
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="glass-input h-12 rounded-2xl px-4 text-sm"
-                >
-                  <option value="all">All categories</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="glass-input h-12 rounded-2xl px-4 text-sm"
-                >
-                  <option value="all">All regions</option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="glass-input h-12 rounded-2xl px-4 text-sm"
-                >
-                  <option value="all">All statuses</option>
-                  <option value="strong">Strong</option>
-                  <option value="partial">Partial</option>
-                  <option value="critical">Critical</option>
-                  <option value="unmapped">Not Started</option>
-                  <option value="analyzing">Analyzing</option>
-                </select>
-
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="glass-input h-12 rounded-2xl px-4 text-sm"
-                >
-                  <option value="weakest">Sort: Weakest first</option>
-                  <option value="strongest">Sort: Strongest first</option>
-                  <option value="criteria">Sort: Most criteria</option>
-                  <option value="alphabetical">Sort: A-Z</option>
-                </select>
+            <section className="space-y-3">
+              {/* Search */}
+              <div className="relative">
+                <Search
+                  className={cn(
+                    "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+                    isArabic ? "right-4" : "left-4",
+                  )}
+                />
+                <input
+                  type="text"
+                  placeholder={copy.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={cn(
+                    "glass-input h-11 w-full rounded-xl text-sm",
+                    isArabic ? "pr-11 pl-4" : "pl-11 pr-4",
+                  )}
+                />
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+              {/* Filters + tabs row */}
+              <div className={cn("flex flex-wrap items-center gap-2", isArabic && "flex-row-reverse")}>
+                {/* Tabs */}
                 {[
-                  { id: "all", label: "All Frameworks" },
-                  { id: "popular", label: "High Complexity" },
-                  { id: "recent", label: "Imported / Custom" },
+                  { id: "all",     label: copy.allFrameworks },
+                  { id: "popular", label: copy.highComplexity },
+                  { id: "recent",  label: copy.importedCustom },
                 ].map((tab) => (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] transition-all",
+                      "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all",
                       activeTab === tab.id
-                        ? "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-primary"
-                        : "border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] text-muted-foreground hover:text-foreground",
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground hover:border-primary/25 hover:text-foreground",
                     )}
                   >
                     {tab.label}
                   </button>
                 ))}
 
-                <div className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  {filteredStandards.length} visible
-                </div>
+                <div className="mx-1 h-4 w-px bg-[var(--glass-border)]" />
+
+                {/* Compact filter selects */}
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className={cn(
+                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    selectedStatus !== "all" && "border-primary/40 bg-primary/8 text-primary",
+                  )}
+                >
+                  <option value="all">{copy.allStatuses}</option>
+                  <option value="strong">{copy.statusStrong}</option>
+                  <option value="partial">{copy.statusPartial}</option>
+                  <option value="critical">{copy.statusCritical}</option>
+                  <option value="unmapped">{copy.statusNotStarted}</option>
+                  <option value="analyzing">{copy.statusAnalyzing}</option>
+                </select>
+
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className={cn(
+                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    selectedCategory !== "all" && "border-primary/40 bg-primary/8 text-primary",
+                  )}
+                >
+                  <option value="all">{copy.allCategories}</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className={cn(
+                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    selectedRegion !== "all" && "border-primary/40 bg-primary/8 text-primary",
+                  )}
+                >
+                  <option value="all">{copy.allRegions}</option>
+                  {regions.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="glass-input h-8 rounded-lg px-2.5 text-xs font-medium"
+                >
+                  <option value="weakest">{copy.sortWeakest}</option>
+                  <option value="strongest">{copy.sortStrongest}</option>
+                  <option value="criteria">{copy.sortCriteria}</option>
+                  <option value="alphabetical">{copy.sortAZ}</option>
+                </select>
+
+                <span className={cn("ms-auto text-[11px] font-medium text-muted-foreground", isArabic && "ms-0 me-auto")}>
+                  {filteredStandards.length} {copy.visible}
+                </span>
               </div>
             </section>
 
@@ -701,7 +775,7 @@ export default function StandardsPage() {
                         )}
 
                         <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-                          <span className="font-medium">{standard.criteriaCount} criteria</span>
+                          <span className="font-medium">{standard.criteriaCount} {copy.criteriaLabel}</span>
                           {standard.category && (
                             <>
                               <span className="opacity-30">·</span>
@@ -733,38 +807,38 @@ export default function StandardsPage() {
                           />
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2.5">
+                        <div className={cn("mt-4 flex items-center gap-3", isArabic && "flex-row-reverse")}>
                           {insight?.derivedStatus === "unmapped" || !insight ? (
                             <>
                               <Button
                                 onClick={() => openDetails(standard)}
-                                className="h-11 rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_24px_-12px_rgba(37,99,235,0.4)]"
+                                className="h-9 flex-1 rounded-xl bg-primary text-xs text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)]"
                               >
-                                Analyze Now
+                                {copy.analyzeNow}
                               </Button>
-                              <Button
-                                variant="outline"
+                              <button
+                                type="button"
                                 onClick={() => router.push(`/platform/standards/${standard.id}`)}
-                                className="h-11 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
+                                className="text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
                               >
-                                Browse
-                              </Button>
+                                {copy.browse}
+                              </button>
                             </>
                           ) : (
                             <>
                               <Button
                                 onClick={() => router.push(`/platform/standards/${standard.id}`)}
-                                className="h-11 rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_24px_-12px_rgba(37,99,235,0.4)]"
+                                className="h-9 flex-1 rounded-xl bg-primary text-xs text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)]"
                               >
-                                Open Standard
+                                {copy.openStandard}
                               </Button>
-                              <Button
-                                variant="outline"
+                              <button
+                                type="button"
                                 onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
-                                className="h-11 rounded-2xl border-[var(--glass-border)] glass-button text-foreground"
+                                className="text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
                               >
-                                Gap Analysis
-                              </Button>
+                                {copy.gapAnalysis}
+                              </button>
                             </>
                           )}
                         </div>
@@ -774,12 +848,12 @@ export default function StandardsPage() {
                 })
               ) : (
                 <GlassPanel className="col-span-full rounded-[32px] border-2 border-dashed glass-border py-20 text-center" hoverEffect>
-                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl glass-input shadow-sm">
-                    <Search className="h-10 w-10 text-muted-foreground" />
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl glass-input shadow-sm">
+                    <Search className="h-8 w-8 text-muted-foreground/50" />
                   </div>
-                  <h4 className="text-2xl font-black text-foreground">No frameworks match the current filters</h4>
-                  <p className="mx-auto mt-2 max-w-md font-medium text-muted-foreground">
-                    Clear the filters, widen your search, or import a new framework to expand the standards library.
+                  <h4 className="text-xl font-bold text-foreground">{copy.noFrameworks}</h4>
+                  <p className="mx-auto mt-2 max-w-sm text-sm font-medium text-muted-foreground">
+                    {copy.noFrameworksDesc}
                   </p>
                 </GlassPanel>
               )}
@@ -815,9 +889,9 @@ export default function StandardsPage() {
                     <FileUp className="h-10 w-10 text-primary" />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-3xl font-black text-foreground">Import Framework</h3>
+                    <h3 className="text-3xl font-black text-foreground">{copy.importTitle}</h3>
                     <p className="font-medium text-muted-foreground">
-                      Upload a framework PDF and let Ayn extract the standard structure.
+                      {copy.importDesc}
                     </p>
                   </div>
 
@@ -856,16 +930,16 @@ export default function StandardsPage() {
                           }}
                           className="relative z-10 mt-2 text-[10px] font-bold uppercase text-destructive underline underline-offset-4"
                         >
-                          Change file
+                          {copy.changeFile}
                         </button>
                       </>
                     ) : (
                       <>
                         <Upload className="mx-auto mb-4 h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
                         <p className="text-sm font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary">
-                          Select PDF File
+                          {copy.selectPDF}
                         </p>
-                        <p className="mt-1 text-xs text-muted-foreground">or drag and drop here</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{copy.dragDrop}</p>
                       </>
                     )}
                   </label>
@@ -879,7 +953,7 @@ export default function StandardsPage() {
                       }}
                       className="glass-button h-14 flex-1 rounded-2xl border-2 text-foreground"
                     >
-                      Cancel
+                      {copy.cancel}
                     </Button>
                     <Button
                       onClick={handlePDFUpload}
@@ -889,12 +963,12 @@ export default function StandardsPage() {
                       {isImporting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {copy.processing}
                         </>
                       ) : (
                         <>
                           <FileCheck className="mr-2 h-4 w-4" />
-                          Upload & Extract
+                          {copy.uploadExtract}
                         </>
                       )}
                     </Button>
@@ -943,13 +1017,13 @@ export default function StandardsPage() {
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          Criteria
+                          {copy.criteriaLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">{selectedStandard.criteriaCount}</p>
                       </div>
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          Coverage
+                          {copy.coverageLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-primary">
                           {Math.round(selectedInsight?.coveragePct ?? 0)}%
@@ -957,7 +1031,7 @@ export default function StandardsPage() {
                       </div>
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                          Mapped
+                          {copy.mappedLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">
                           {selectedInsight?.mapped ?? 0}
@@ -983,7 +1057,7 @@ export default function StandardsPage() {
                       className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground"
                       onClick={() => router.push(`/platform/standards/${selectedStandard.id}`)}
                     >
-                      Open Standard
+                      {copy.openStandardBtn}
                     </Button>
                     <button
                       onClick={() => setIsDetailsOpen(false)}
@@ -1013,14 +1087,14 @@ export default function StandardsPage() {
 
                   <h4 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
                     <Activity className="h-4 w-4 text-primary" />
-                    Evidence Mapping
+                    {copy.evidenceMapping}
                   </h4>
 
                         <div className="space-y-3">
                     {mappingStatus === "analyzing" ? (
                       <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
                         <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground">Analysis in progress…</p>
+                        <p className="font-bold text-muted-foreground">{copy.analysisInProgress}</p>
                       </div>
                     ) : mappingsData?.mappings?.length > 0 ? (
                       mappingsData.mappings.map((mapping: any) => {
@@ -1047,7 +1121,7 @@ export default function StandardsPage() {
                                   <p className="mt-1.5 text-sm text-muted-foreground">
                                     {mapping.criterion_description ||
                                       mapping.ai_reasoning ||
-                                      "Awaiting analysis against evidence."}
+                                      copy.awaitingAnalysis}
                                   </p>
                                 </div>
                               </div>
@@ -1061,7 +1135,7 @@ export default function StandardsPage() {
                     ) : (
                       <div className="glass-panel glass-border flex flex-col items-center justify-center rounded-[24px] border border-dashed p-10 text-center">
                         <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary opacity-50" />
-                        <p className="font-bold text-muted-foreground">Loading criteria…</p>
+                        <p className="font-bold text-muted-foreground">{copy.loadingCriteria}</p>
                       </div>
                     )}
                   </div>
@@ -1071,9 +1145,9 @@ export default function StandardsPage() {
                   <div className="space-y-6 rounded-[24px] border border-primary/20 bg-primary/5 p-5 shadow-xl shadow-primary/5 sm:rounded-[32px] sm:p-8">
                     <h5 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
                       <Sparkles className="h-4 w-4" />
-                      Ayn Intelligence
+                      {copy.aynIntelligence}
                     </h5>
-                    <p className="text-lg font-bold leading-relaxed text-foreground">Analyze against:</p>
+                    <p className="text-lg font-bold leading-relaxed text-foreground">{copy.analyzeAgainst}</p>
 
                     <div className="space-y-4">
                       <label className="flex cursor-pointer items-center gap-3">
@@ -1085,7 +1159,7 @@ export default function StandardsPage() {
                           onChange={() => setEvidenceSelection("all")}
                           className="accent-primary"
                         />
-                        <span className="text-sm font-bold">All Evidence ({allEvidence?.length || 0} files)</span>
+                        <span className="text-sm font-bold">{copy.allEvidence(allEvidence?.length || 0)}</span>
                       </label>
 
                       <label className="flex cursor-pointer items-center gap-3">
@@ -1097,7 +1171,7 @@ export default function StandardsPage() {
                           onChange={() => setEvidenceSelection("specific")}
                           className="accent-primary"
                         />
-                        <span className="text-sm font-bold">Select Specific Evidence</span>
+                        <span className="text-sm font-bold">{copy.selectSpecific}</span>
                       </label>
 
                       {evidenceSelection === "specific" && (
@@ -1146,10 +1220,10 @@ export default function StandardsPage() {
 
                   <div className="space-y-4 rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-5 sm:rounded-[32px] sm:p-8">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                      Run Analysis
+                      {copy.runAnalysis}
                     </p>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      Run a fresh pass across linked evidence, or re-analyze after new uploads.
+                      {copy.runFreshDesc}
                     </p>
 
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1161,12 +1235,12 @@ export default function StandardsPage() {
                         {mappingStatus === "analyzing" ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Running
+                            {copy.running}
                           </>
                         ) : (
                           <>
                             <Activity className="mr-2 h-4 w-4" />
-                            Analyze Now
+                            {copy.analyzeNow}
                           </>
                         )}
                       </Button>
@@ -1177,7 +1251,7 @@ export default function StandardsPage() {
                         className="glass-button h-12 rounded-2xl border-[var(--glass-border)] text-foreground"
                       >
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Re-run Analysis
+                        {copy.rerunAnalysis}
                       </Button>
                     </div>
                   </div>

@@ -427,8 +427,9 @@ function GapAnalysisContent() {
     if (analysisScope !== "recent" || recentEvidence.length === 0) return
     setSelectedEvidenceIds((current) => {
       const recentIds = recentEvidence.map((item) => item.id)
+      // Only drop IDs that are no longer in the recent pool; never auto-add.
       const stillValid = current.filter((id) => recentIds.includes(id))
-      return stillValid.length > 0 ? stillValid : recentIds.slice(0, 4)
+      return stillValid
     })
   }, [analysisScope, recentEvidence])
 

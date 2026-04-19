@@ -2,8 +2,9 @@
 
 import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react"
+import { Menu, X, LogOut, LayoutDashboard, ChevronDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ function getInitials(name: string): string {
 }
 
 export function LandingNavbar() {
+  const pathname = usePathname()
   const { user, logout } = useAuth()
   const [scrolled, setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -77,6 +79,8 @@ export function LandingNavbar() {
   const closeMobile  = () => setMobileOpen(false)
   const handleLogout = async () => { await logout(); window.location.href = "/" }
 
+  const faqNavHref = pathname === "/" ? "/#landing-faq" : "/faq/"
+
   /* nav items */
   const navItems = [
     { label: "Platform", href: "/#main-content"       },
@@ -84,7 +88,7 @@ export function LandingNavbar() {
     { label: "Features", href: "/#how-it-works"       },
     { label: "Pricing",  href: "/#pricing"            },
     { label: "About",    href: "/#about"              },
-    { label: "FAQ",      href: "/faq"                 },
+    { label: "FAQ",      href: faqNavHref             },
   ]
 
   return (
@@ -212,14 +216,15 @@ export function LandingNavbar() {
               Platform
             </Link>
           ) : (
-             <Link
+            <Link
               href="/signup"
               className={cn(
-                "hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto shadow-sm",
-                isOverDark ? "bg-white text-black hover:bg-white/90" : "border border-black/90 bg-black text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92"
+                "group hidden md:inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_-18px_hsl(var(--primary)/0.45)] transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 pointer-events-auto",
+                isOverDark && "shadow-[0_14px_36px_-16px_hsl(var(--primary)/0.55)]"
               )}
             >
               Get Started
+              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
             </Link>
           )}
         </div>
@@ -295,9 +300,13 @@ export function LandingNavbar() {
                       )}>
                       Log in
                     </Link>
-                    <Link href="/signup" onClick={closeMobile}
-                      className="mt-1 rounded-xl border border-black/90 bg-black px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92">
+                    <Link
+                      href="/signup"
+                      onClick={closeMobile}
+                      className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_-18px_hsl(var(--primary)/0.4)] hover:bg-primary/90"
+                    >
                       Get Started
+                      <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
                     </Link>
                   </>
                 )}

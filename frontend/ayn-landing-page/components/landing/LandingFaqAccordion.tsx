@@ -27,13 +27,16 @@ const FAQ_ITEMS: FaqItem[] = [
   },
 ]
 
+/** Light landing strip (#f5f5f3): keep body copy as neutral-*, not theme `foreground`
+ *  (dark mode on <html> would otherwise paint light text on light bg).
+ */
 const Chevron = ({ open }: { open: boolean }) => (
   <svg
     viewBox="0 0 20 20"
     fill="none"
     aria-hidden="true"
     className={cn(
-      "h-4 w-4 text-neutral-500 transition-transform duration-300 ease-out dark:text-neutral-400",
+      "h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-300 ease-out",
       open && "rotate-180"
     )}
   >
@@ -45,30 +48,37 @@ export function LandingFaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <section id="landing-faq" className="px-6 py-20 md:py-24">
-      <div className="mx-auto w-full max-w-4xl">
-        <div className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">FAQ</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-3xl">
+    <section
+      id="landing-faq"
+      className="relative overflow-hidden px-6 py-24 text-neutral-950 md:py-32 dark:text-neutral-950"
+    >
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
+        {/* Match AboutSection: badge + headline hierarchy on light landing strip */}
+        <div className="mb-10 text-center md:mb-14 md:text-left">
+          <span className="glass-pill mb-4 inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-primary">
+            FAQ
+          </span>
+          <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
             Questions quality leaders ask before they commit
           </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-neutral-600 md:text-lg md:mx-0">
+            Evidence, standards mapping, and traceable actions in one place—before you expand the rollout.
+          </p>
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-800">
+        <div className="border-t border-black/10">
           {FAQ_ITEMS.map((item, index) => {
             const isOpen = openIndex === index
             return (
-              <article key={item.question} className="border-b border-gray-200 dark:border-gray-800">
+              <article key={item.question} className="border-b border-black/10">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-4 py-5 text-left"
+                  className="flex w-full items-center justify-between gap-4 py-5 text-left text-sm font-medium leading-relaxed md:text-base"
                   onClick={() => setOpenIndex(isOpen ? null : index)}
                   aria-expanded={isOpen}
                   aria-controls={`landing-faq-answer-${index}`}
                 >
-                  <span className="text-sm font-medium leading-relaxed text-neutral-900 dark:text-neutral-100 md:text-base">
-                    {item.question}
-                  </span>
+                  <span>{item.question}</span>
                   <Chevron open={isOpen} />
                 </button>
 
@@ -81,7 +91,7 @@ export function LandingFaqAccordion() {
                 >
                   <p
                     className={cn(
-                      "pb-5 pr-7 text-sm leading-relaxed text-neutral-600 transition-all duration-300 ease-out dark:text-neutral-300",
+                      "pb-5 pr-7 text-sm leading-relaxed text-neutral-600 transition-all duration-300 ease-out",
                       isOpen ? "translate-y-0" : "-translate-y-1"
                     )}
                   >
@@ -95,9 +105,9 @@ export function LandingFaqAccordion() {
 
         <Link
           href="/faq/"
-          className="mt-5 inline-flex items-center text-sm text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
         >
-          View all FAQs <span className="ml-1">→</span>
+          View all FAQs <span aria-hidden>→</span>
         </Link>
       </div>
     </section>

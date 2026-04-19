@@ -83,15 +83,15 @@ function SettingsContent() {
           <Shield className="w-32 h-32 text-destructive" />
         </div>
         <div className="relative z-10 max-w-xl">
-          <h3 className="text-xl font-semibold text-destructive mb-2">Vault Clearance Request</h3>
+          <h3 className="text-xl font-semibold text-destructive mb-2">Delete Data Request</h3>
           <p className="text-sm text-[var(--text-secondary)] mb-8 font-medium leading-relaxed">
-            Full institutional purge is not self-service in the current build. Use this flow to request an administrative review before any destructive operation is approved.
+            Data deletion is not available as a direct self-service action. Use this button to send a review request to your admin team.
           </p>
           <button
             onClick={() => setShowPurgeModal(true)}
             className="px-6 py-2.5 bg-destructive/10 text-destructive border border-destructive/25 rounded-lg text-xs font-medium uppercase tracking-widest hover:bg-destructive hover:text-destructive-foreground transition-all"
           >
-            Request Purge Review
+            Request Deletion Review
           </button>
         </div>
       </div>
@@ -101,7 +101,7 @@ function SettingsContent() {
         <PurgeModal
           onClose={() => setShowPurgeModal(false)}
           onConfirm={() => {
-            toast.info("Vault purge requires additional admin consensus. Contact system administrator.")
+            toast.info("Request sent. An admin will review it before any data is deleted.")
             setShowPurgeModal(false)
           }}
         />
@@ -140,12 +140,12 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
             <AlertTriangle className="w-6 h-6 text-destructive" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Request Data Purge Review</h3>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Administrative approval required</p>
+            <h3 className="text-lg font-semibold text-foreground">Confirm deletion review request</h3>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Admin approval is required</p>
           </div>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
-          This action does not delete data immediately. It records your intent to request a destructive purge review for evidence assets, compliance mappings, and Horus history.
+          This does not delete anything now. It only sends a request to review deletion of evidence, compliance mappings, and Horus history.
         </p>
         <div className="flex gap-3">
           <button
@@ -158,7 +158,7 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium uppercase tracking-widest hover:bg-destructive/90 transition-all"
           >
-            Submit Request
+            Send Request
           </button>
         </div>
       </div>

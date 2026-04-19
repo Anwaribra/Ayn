@@ -66,22 +66,22 @@ export function EvidenceFilters({
     }
 
     return (
-        <div className="mb-8 rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3 sm:p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="mb-6">
+        <div className="flex flex-col sm:flex-row gap-2.5">
             {/* Text Search */}
             <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder={isArabic ? "ابحث بالعنوان أو اسم الملف…" : "Search by title or filename…"}
-                    className="w-full pl-11 pr-4 py-3 border border-white/8 bg-white/[0.04] rounded-full text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all shadow-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all"
                 />
                 {query && (
                     <button
                         onClick={() => handleSearch("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                         aria-label={isArabic ? "مسح البحث" : "Clear search"}
                     >
                         <X className="w-3.5 h-3.5" />
@@ -95,10 +95,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStatusMenu(!showStatusMenu); setShowStandardMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-full text-sm font-bold transition-all shadow-sm border border-white/8 bg-white/[0.04] hover:border-primary/30 hover:shadow-md",
+                            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border",
                             activeStatus
-                                ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                ? "text-primary border-primary/40 bg-primary/10"
+                                : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:border-primary/25 hover:text-foreground"
                         )}
                     >
                         <SlidersHorizontal className="w-4 h-4" />
@@ -135,10 +135,10 @@ export function EvidenceFilters({
                     <button
                         onClick={() => { setShowStandardMenu(!showStandardMenu); setShowStatusMenu(false) }}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-full text-sm font-bold transition-all shadow-sm border border-white/8 bg-white/[0.04] hover:border-primary/30 hover:shadow-md",
+                            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border",
                             activeStandard
-                                ? "text-primary border border-primary/40 bg-primary/10 shadow-primary/5"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                ? "text-primary border-primary/40 bg-primary/10"
+                                : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:border-primary/25 hover:text-foreground"
                         )}
                     >
                         <Filter className="w-4 h-4" />
@@ -181,7 +181,7 @@ export function EvidenceFilters({
                 {hasActiveFilters && (
                     <button
                         onClick={clearAll}
-                        className="flex items-center gap-1.5 px-4 py-3 min-h-[44px] rounded-full text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors border border-transparent"
                     >
                         <X className="w-3.5 h-3.5" />
                         {isArabic ? "مسح" : "Clear"}
@@ -189,6 +189,6 @@ export function EvidenceFilters({
                 )}
             </div>
         </div>
-        </div>
+    </div>
     )
 }

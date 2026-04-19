@@ -434,7 +434,7 @@ function EvidenceContent() {
 
   return (
     <div
-      className="animate-fade-in-up pb-20 space-y-8 relative"
+      className="animate-fade-in-up pb-20 space-y-6 relative"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
@@ -564,36 +564,37 @@ function EvidenceContent() {
             </p>
           )}
           {filteredEvidence.length > 0 && (
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={selectAllVisible}
-                className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
               >
                 {copy.selectAll}
               </button>
               {selectedEvidenceIds.length > 0 && (
                 <>
+                  <span className="text-xs text-muted-foreground">{selectedEvidenceIds.length} {isArabic ? "محدد" : "selected"}</span>
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="rounded-xl border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="rounded-lg border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    {copy.clear} ({selectedEvidenceIds.length})
+                    {copy.clear}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsBulkGapModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="h-3 w-3" />
                     {copy.gapAnalysis}
                   </button>
                 </>
               )}
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredEvidence.length === 0 ? (
               <div className="col-span-full py-20 text-center">
                 <p className="text-muted-foreground font-medium">{copy.noMatches}</p>

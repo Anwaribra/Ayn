@@ -126,7 +126,6 @@ function ArchiveContent() {
       await api.archiveGapAnalysis(id, false)
       toast.success("Item restored successfully")
       refreshArchive()
-      setSelectedItem(null)
     } catch (error) {
       toast.error("Failed to restore item")
     }
@@ -147,7 +146,6 @@ function ArchiveContent() {
       refreshMilestoneArchive()
       setIsPurging(false)
       setItemToPurge(null)
-      if (selectedItem?.id === itemToPurge) setSelectedItem(null)
     } catch (error) {
       toast.error("Failed to purge item")
     }

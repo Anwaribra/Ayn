@@ -25,8 +25,6 @@ import {
   Scale,
   Lightbulb,
   Monitor,
-  Calendar,
-  Wrench,
   type LucideIcon,
 } from "lucide-react"
 import { toggleDemoMode, isDemoMode } from "./demo"
@@ -116,25 +114,6 @@ export const navigationCommands: Command[] = [
     category: "Navigation",
     href: "/platform/notifications",
     keywords: ["alerts", "updates", "messages"],
-  },
-  {
-    id: "ai-tools",
-    title: "AI Tools",
-    description: "Remediation, audit prep & more",
-    icon: Wrench,
-    category: "Navigation",
-    href: "/platform/ai-tools",
-    keywords: ["tools", "remediation", "audit", "ai", "utilities"],
-    badge: "AI",
-  },
-  {
-    id: "calendar",
-    title: "Calendar",
-    description: "View milestones and deadlines",
-    icon: Calendar,
-    category: "Navigation",
-    href: "/platform/calendar",
-    keywords: ["calendar", "milestones", "deadlines", "schedule", "dates"],
   },
   {
     id: "settings",

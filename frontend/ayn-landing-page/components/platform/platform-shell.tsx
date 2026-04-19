@@ -12,15 +12,10 @@ import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
-  ArrowRight,
   Search,
   Bell,
   X,
   PanelLeft,
-  CalendarDays,
-  LayoutGrid,
-  Sparkles,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
@@ -41,7 +36,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   // Start closed so mobile never shows sidebar taking space on first paint
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showQuickPages, setShowQuickPages] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [isWindowVisible, setIsWindowVisible] = useState(true);
   const router = useRouter();
@@ -59,18 +53,11 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     () => ({
       openSidebar: isArabic ? "فتح الشريط الجانبي" : "Open sidebar",
       search: isArabic ? "ابحث..." : "Search…",
-      quickPages: isArabic ? "صفحات سريعة" : "Quick Pages",
       activity: isArabic ? "النشاط" : "Activity",
       markAllRead: isArabic ? "تعيين الكل كمقروء" : "Mark all read",
       quiet: isArabic ? "لا جديد الآن." : "Quiet for now.",
       viewAllActivity: isArabic ? "عرض كل النشاط" : "View All Activity",
       view: isArabic ? "عرض" : "View",
-      overview: isArabic ? "نظرة عامة" : "Overview",
-      overviewNote: isArabic ? "ملخص تنفيذي" : "Executive snapshot",
-      calendar: isArabic ? "التقويم" : "Calendar",
-      calendarNote: isArabic ? "المراجعات القادمة" : "Upcoming audits",
-      aiTools: isArabic ? "أدوات الذكاء" : "AI Tools",
-      aiToolsNote: isArabic ? "مختبر الأتمتة" : "Automation lab",
       failedMarkRead: isArabic ? "تعذر تعيين الكل كمقروء" : "Failed to mark all as read",
       failedSingleRead: isArabic ? "تعذر تعيين الإشعار كمقروء" : "Failed to mark as read",
     }),
@@ -119,14 +106,10 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       ) {
         setShowNotifications(false);
       }
-      if (showQuickPages && !target.closest(".quick-pages-container")) {
-        setShowQuickPages(false);
-      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (showNotifications) setShowNotifications(false);
-      if (showQuickPages) setShowQuickPages(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
@@ -324,86 +307,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                 <div className="flex items-center gap-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-1 shadow-[0_12px_32px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
                 <AnimatedThemeToggle />
                 <LanguageToggle />
-
-                <div className="relative quick-pages-container">
-                  <button
-                    onClick={() => setShowQuickPages(!showQuickPages)}
-                    className={cn(
-                      "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent text-[var(--glass-text-secondary)] transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
-                      showQuickPages
-                        ? "border-[var(--status-info-border)] bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)] shadow-[0_10px_24px_-16px_rgba(37,99,235,0.45)]"
-                        : "hover:bg-[var(--glass-soft-bg)]"
-                    )}
-                    aria-label="Quick pages"
-                    aria-haspopup="true"
-                    aria-expanded={showQuickPages}
-                  >
-                    <LayoutGrid className="h-[17px] w-[17px]" strokeWidth={2.1} />
-                  </button>
-
-                  {showQuickPages && (
-                    <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                          {shellText.quickPages}
-                        </h3>
-                        <button
-                          onClick={() => setShowQuickPages(false)}
-                          className="glass-button glass-text-secondary min-h-[32px] min-w-[32px] rounded-lg p-1 transition-colors hover:text-[var(--glass-text-primary)]"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {[
-                          {
-                            label: "Overview",
-                            translatedLabel: shellText.overview,
-                            href: "/platform/overview",
-                            icon: LayoutGrid,
-                            note: shellText.overviewNote,
-                          },
-                          {
-                            label: "Calendar",
-                            translatedLabel: shellText.calendar,
-                            href: "/platform/calendar",
-                            icon: CalendarDays,
-                            note: shellText.calendarNote,
-                          },
-                          {
-                            label: "AI Tools",
-                            translatedLabel: shellText.aiTools,
-                            href: "/platform/ai-tools",
-                            icon: Sparkles,
-                            note: shellText.aiToolsNote,
-                          },
-                        ].map((item) => (
-                          <button
-                            key={item.href}
-                            onClick={() => {
-                              setShowQuickPages(false);
-                              router.push(item.href);
-                            }}
-                            className="w-full flex items-center gap-3 rounded-2xl glass-button px-3 py-2.5 transition-all"
-                          >
-                            <span className="h-9 w-9 rounded-xl glass-input flex items-center justify-center">
-                              <item.icon className="h-4 w-4 text-primary" />
-                            </span>
-                            <span className="flex-1 text-left">
-                              <span className="text-sm font-semibold text-foreground block">
-                                {item.translatedLabel}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                                {item.note}
-                              </span>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 <div className="relative notification-dropdown-container">
                   <button

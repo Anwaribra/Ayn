@@ -11,6 +11,7 @@ import {
   Database,
   Cloud,
   CreditCard,
+  CalendarDays,
   ChevronRight,
   Shield,
   AlertTriangle,
@@ -37,6 +38,7 @@ function SettingsContent() {
     { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-[var(--status-success)]", href: "/platform/settings/security" },
     { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-primary", href: "/platform/settings/data" },
     { icon: Cloud, label: "Module Integrations", desc: "Review connector setup for LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
+    { icon: CalendarDays, label: "Calendar & Milestones", desc: "Track deadlines, audits, and compliance checkpoint scheduling", color: "text-primary", href: "/platform/calendar" },
     { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-[var(--status-critical)]", href: "/platform/settings/subscription" },
   ]
 

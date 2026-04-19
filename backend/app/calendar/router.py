@@ -98,5 +98,42 @@ async def delete_milestone(milestone_id: str, current_user: dict = Depends(get_c
     existing = await db.activity.find_unique(where={"id": milestone_id})
     if not existing or existing.userId != current_user["id"]:
         raise HTTPException(status_code=404, detail="Milestone not found")
-    await db.activity.delete(where={"id": milestone_id})
-    return {"message": "Deleted"}
+    meta = existing.metadata if isinstance(existing.metadata, dict) else json.loads(existing.metadata) if existing.metadata else {}
+    meta["deleted"] = True
+    meta["deletedAt"] = datetime.now(timezone.utc).isoformat()
+    meta["deletedBy"] = current_user.get("name") or current_user.get("email") or "User"
+    await db.activity.update(
+        where={"id": milestone_id},
+        data={"metadata": json.dumps(meta)},
+    )
+    return {"message": "Archived"}
+
+
+@router.get("/archive/list")
+async def list_archived_milestones(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    activities = await db.activity.find_many(
+        where={"userId": current_user["id"], "type": "calendar_milestone"},
+        order={"createdAt": "desc"},
+        take=200,
+    )
+    archived = []
+    for a in activities:
+        meta = a.metadata if isinstance(a.metadata, dict) else json.loads(a.metadata) if a.metadata else {}
+        if not meta.get("deleted"):
+            continue
+        archived.append(
+            {
+                "id": a.id,
+                "title": a.title,
+                "description": a.description,
+                "dueDate": meta.get("dueDate"),
+                "category": meta.get("category", "deadline"),
+                "priority": meta.get("priority", "medium"),
+                "deletedAt": meta.get("deletedAt") or a.createdAt.isoformat(),
+                "deletedBy": meta.get("deletedBy") or (current_user.get("name") or current_user.get("email") or "User"),
+                "type": "milestone",
+                "originalLocation": "Calendar",
+            }
+        )
+    return archived

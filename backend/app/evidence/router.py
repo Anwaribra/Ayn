@@ -100,3 +100,9 @@ async def list_evidence(
     List evidence files with pagination.
     """
     return await EvidenceService.list_evidence(current_user, page=page, limit=limit)
+
+
+@router.get("/archive/list", status_code=status.HTTP_200_OK)
+async def list_archived_evidence(current_user: dict = Depends(get_current_user)):
+    """List deleted evidence snapshots for archive view."""
+    return await EvidenceService.list_archived_evidence(current_user)

@@ -70,9 +70,17 @@ function ArchiveContent() {
     user ? "archived-gap-analyses" : null,
     () => api.getArchivedGapAnalyses()
   )
+  const { data: archivedEvidence, isLoading: isLoadingEvidence, mutate: refreshEvidenceArchive } = useSWR<any[]>(
+    user ? "archived-evidence" : null,
+    () => api.getArchivedEvidence()
+  )
+  const { data: archivedMilestones, isLoading: isLoadingMilestones, mutate: refreshMilestoneArchive } = useSWR<any[]>(
+    user ? "archived-milestones" : null,
+    () => api.getArchivedMilestones()
+  )
 
   // Map API data to UI model
-  const items: ArchivedItem[] = archivedReports?.map(report => ({
+  const reportItems: ArchivedItem[] = archivedReports?.map(report => ({
     id: report.id,
     title: report.standardTitle,
     type: "gap_analysis",
@@ -83,6 +91,29 @@ function ArchiveContent() {
     score: report.overallScore,
     status: report.status,
   })) || []
+
+  const evidenceItems: ArchivedItem[] = (archivedEvidence || []).map((ev) => ({
+    id: ev.id,
+    title: ev.title || "Untitled evidence",
+    type: "evidence",
+    deletedAt: ev.deletedAt,
+    deletedBy: ev.deletedBy || "User",
+    originalLocation: ev.originalLocation || "Evidence Vault",
+    status: ev.status || "deleted",
+    score: typeof ev.confidenceScore === "number" ? Math.round(ev.confidenceScore) : undefined,
+  }))
+
+  const milestoneItems: ArchivedItem[] = (archivedMilestones || []).map((m) => ({
+    id: m.id,
+    title: m.title || "Milestone",
+    type: "record",
+    deletedAt: m.deletedAt,
+    deletedBy: m.deletedBy || "User",
+    originalLocation: m.originalLocation || "Calendar",
+    status: m.category || "milestone",
+  }))
+
+  const items: ArchivedItem[] = [...reportItems, ...evidenceItems, ...milestoneItems]
 
   const lastArchivedAt = items.length > 0
     ? items
@@ -140,6 +171,8 @@ function ArchiveContent() {
       await api.deleteGapAnalysis(itemToPurge)
       toast.success("Item permanently purged")
       refreshArchive()
+      refreshEvidenceArchive()
+      refreshMilestoneArchive()
       setIsPurging(false)
       setItemToPurge(null)
       if (selectedItem?.id === itemToPurge) setSelectedItem(null)
@@ -254,7 +287,7 @@ function ArchiveContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
-                {isLoading ? (
+                {isLoading || isLoadingEvidence || isLoadingMilestones ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-20 text-center">
                       <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -315,20 +348,24 @@ function ArchiveContent() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleRestore(item.id)}
-                            className="p-2 rounded-lg glass-button text-primary transition-all opacity-0 group-hover:opacity-100"
-                            title="Restore Item"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handlePurge(item.id)}
-                            className="p-2 rounded-lg glass-button text-destructive transition-all opacity-0 group-hover:opacity-100"
-                            title="Purge Permanently"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {item.type === "gap_analysis" && (
+                            <>
+                              <button
+                                onClick={() => handleRestore(item.id)}
+                                className="p-2 rounded-lg glass-button text-primary transition-all opacity-0 group-hover:opacity-100"
+                                title="Restore Item"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handlePurge(item.id)}
+                                className="p-2 rounded-lg glass-button text-destructive transition-all opacity-0 group-hover:opacity-100"
+                                title="Purge Permanently"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -405,18 +442,26 @@ function ArchiveContent() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link
-                href={`/platform/gap-analysis?report=${selectedItem.id}`}
-                className="flex-1 py-3 rounded-xl glass-button text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all text-center"
-              >
-                Open Report
-              </Link>
-              <button
-                onClick={() => handleRestore(selectedItem.id)}
-                className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="w-3.5 h-3.5" /> Restore Content
-              </button>
+              {selectedItem.type === "gap_analysis" ? (
+                <>
+                  <Link
+                    href={`/platform/gap-analysis?report=${selectedItem.id}`}
+                    className="flex-1 py-3 rounded-xl glass-button text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all text-center"
+                  >
+                    Open Report
+                  </Link>
+                  <button
+                    onClick={() => handleRestore(selectedItem.id)}
+                    className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Restore Content
+                  </button>
+                </>
+              ) : (
+                <div className="flex-1 py-3 rounded-xl glass-button text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                  Read-only archive snapshot
+                </div>
+              )}
               <button
                 onClick={() => setSelectedItem(null)}
                 className="flex-1 py-3 rounded-xl glass-button text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all"

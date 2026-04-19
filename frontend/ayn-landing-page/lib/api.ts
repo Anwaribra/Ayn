@@ -364,6 +364,10 @@ class ApiClient {
     return this.request(`/evidence/${id}`, { method: "DELETE" })
   }
 
+  async getArchivedEvidence() {
+    return this.request<any[]>("/evidence/archive/list")
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // PLATFORM STATE APIs (Modules WRITE)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1045,6 +1049,10 @@ class ApiClient {
 
   async deleteMilestone(id: string) {
     return this.request(`/calendar/${id}`, { method: "DELETE" })
+  }
+
+  async getArchivedMilestones() {
+    return this.request<any[]>("/calendar/archive/list")
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

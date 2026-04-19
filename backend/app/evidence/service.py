@@ -33,6 +33,41 @@ MAX_FILE_SIZE = 25 * 1024 * 1024
 
 class EvidenceService:
     """Service for evidence management business logic."""
+
+    @staticmethod
+    async def list_archived_evidence(current_user: dict):
+        """List deleted evidence snapshots from activity log."""
+        db = get_db()
+        where_clause = {"type": "evidence_snapshot_deleted"}
+        if current_user.get("role") != "ADMIN":
+            where_clause["userId"] = current_user["id"]
+
+        rows = await db.activity.find_many(
+            where=where_clause,
+            order={"createdAt": "desc"},
+            take=200,
+        )
+
+        archived = []
+        for row in rows:
+            meta = row.metadata if isinstance(row.metadata, dict) else {}
+            snapshot = meta.get("snapshot", {}) if isinstance(meta.get("snapshot"), dict) else {}
+            archived.append(
+                {
+                    "id": row.entityId or row.id,
+                    "activityId": row.id,
+                    "title": snapshot.get("title") or row.title,
+                    "documentType": snapshot.get("documentType"),
+                    "status": snapshot.get("status"),
+                    "confidenceScore": snapshot.get("confidenceScore"),
+                    "fileUrl": snapshot.get("fileUrl"),
+                    "deletedAt": row.createdAt.isoformat(),
+                    "deletedBy": current_user.get("name") or current_user.get("email") or "User",
+                    "originalLocation": "Evidence Vault",
+                    "type": "evidence",
+                }
+            )
+        return archived
     
     @staticmethod
     async def upload_evidence(

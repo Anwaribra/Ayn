@@ -375,26 +375,25 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
           />
         </div>
 
-        {/* User Row */}
+        {/* User Card */}
         <div
           className={cn(
-            "glass-surface group flex items-center rounded-[22px] border border-[var(--glass-border-subtle)] p-2 transition",
-            isCollapsed ? "justify-center" : "justify-between"
+            "glass-surface rounded-[22px] border border-[var(--glass-border-subtle)] p-2 transition",
+            isCollapsed ? "flex justify-center" : "space-y-1.5"
           )}
         >
-          {/* Profile clickable area */}
           <Link
             href="/platform/settings/account/"
             className={cn(
-              "flex items-center gap-3 flex-1 min-w-0",
-              isCollapsed && "justify-center"
+              "group flex items-center gap-3 rounded-[14px] px-2 py-2 transition-colors hover:bg-[var(--glass-soft-bg)]",
+              isCollapsed && "justify-center px-0"
             )}
             title={copy.goProfile}
           >
-            <UserCircle2 className="glass-text-secondary h-6 w-6 shrink-0 transition-colors" />
+            <UserCircle2 className="glass-text-secondary h-6 w-6 shrink-0 transition-colors group-hover:text-[var(--glass-text-primary)]" />
 
             {!isCollapsed && (
-              <div className="flex flex-col justify-center min-w-0 leading-tight">
+              <div className="min-w-0 leading-tight">
                 <p className="glass-text-primary truncate text-sm font-semibold">
                   {user?.name ?? copy.user}
                 </p>
@@ -405,17 +404,14 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
             )}
           </Link>
 
-          {/* Logout button (isolated action) */}
           {!isCollapsed && (
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleLogout()
-              }}
-              className="glass-text-secondary ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-[var(--glass-soft-bg)] hover:text-red-400 lg:h-8 lg:w-8"
+              onClick={handleLogout}
+              className="group flex w-full items-center gap-2 rounded-[14px] px-2 py-2 text-left text-sm font-medium text-[var(--glass-text-secondary)] transition-colors hover:bg-red-500/10 hover:text-red-400"
               aria-label={copy.signOut}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>{copy.signOut}</span>
             </button>
           )}
         </div>

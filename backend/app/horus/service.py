@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, AsyncGenerator, Callable
 from pydantic import BaseModel
 
-from app.ai.service import get_gemini_client
+from app.ai.service import get_gemini_client, CONTEXT_LIMIT_SENTINEL
 from app.evidence.service import EvidenceService, ALLOWED_FILE_TYPES
 from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
@@ -208,6 +208,33 @@ class HorusService:
             "Answer the current request using this history; do not ignore prior assistant answers.]\n\n"
             + "\n\n".join(lines)
         )
+
+    @staticmethod
+    def _trim_history_to_budget(
+        messages: List[Dict[str, Any]],
+        max_tokens: int = 28_000,
+        chars_per_token: int = 4,
+    ) -> List[Dict[str, Any]]:
+        """
+        Keep the most recent messages that fit within `max_tokens`.
+        Always keeps at least the last user message.
+        Estimation: 1 token ≈ 4 chars (conservative for Arabic/English mix).
+        """
+        if not messages:
+            return messages
+        budget = max_tokens * chars_per_token
+        selected: List[Dict[str, Any]] = []
+        used = 0
+        for msg in reversed(messages):
+            length = len(msg.get("content") or "")
+            if used + length > budget and selected:
+                break
+            selected.insert(0, msg)
+            used += length
+        # Always keep at least the last message
+        if not selected:
+            selected = [messages[-1]]
+        return selected
 
     @staticmethod
     def _detect_language(
@@ -716,7 +743,8 @@ class HorusService:
                     )
                     if history and getattr(history, "messages", None):
                         _fast_history_messages = history.messages
-                        fast_messages = [{"role": m.role, "content": m.content} for m in history.messages[-6:]]
+                        raw = [{"role": m.role, "content": m.content} for m in history.messages[-12:]]
+                        fast_messages = self._trim_history_to_budget(raw)
                         if message and not any(m["content"] == message for m in fast_messages):
                             fast_messages.append({"role": "user", "content": message})
                 except Exception:
@@ -826,6 +854,10 @@ class HorusService:
                         full_response += first
                         yield first
                     async for chunk in gen:
+                        if chunk == CONTEXT_LIMIT_SENTINEL:
+                            yield "\n__CONTEXT_LIMIT__:true\n"
+                            await asyncio.sleep(0)
+                            continue
                         if chunk:
                             full_response += chunk
                             yield chunk
@@ -1520,6 +1552,10 @@ class HorusService:
                         full_response += first
                         yield first
                     async for chunk in gen:
+                        if chunk == CONTEXT_LIMIT_SENTINEL:
+                            yield "\n__CONTEXT_LIMIT__:true\n"
+                            await asyncio.sleep(0)
+                            continue
                         if chunk:
                             full_response += chunk
                             yield chunk
@@ -1597,7 +1633,8 @@ class HorusService:
             history = await history_task
             yield "__THINKING__:Reviewing conversation history...\n"
             await asyncio.sleep(0)
-            messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
+            raw_messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
+            messages = self._trim_history_to_budget(raw_messages)
             if message and not any(m["content"] == message for m in messages):
                 messages.append({"role": "user", "content": message})
 
@@ -1655,6 +1692,10 @@ class HorusService:
                         full_response += first
                         yield first
                     async for chunk in gen:
+                        if chunk == CONTEXT_LIMIT_SENTINEL:
+                            yield "\n__CONTEXT_LIMIT__:true\n"
+                            await asyncio.sleep(0)
+                            continue
                         if chunk:
                             full_response += chunk
                             yield chunk

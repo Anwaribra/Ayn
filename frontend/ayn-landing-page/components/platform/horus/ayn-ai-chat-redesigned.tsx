@@ -1584,6 +1584,18 @@ export default function HorusAIChat() {
                             />
                           )}
 
+                          {/* Context / token limit warning */}
+                          {msg.role === "assistant" && (msg as any).contextLimitHit && (
+                            <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                              <span className="mt-0.5 shrink-0">⚠️</span>
+                              <span>
+                                {isArabicMessage
+                                  ? "الرد اتقطع لأن الإجابة وصلت للحد الأقصى للتوكنز. لو محتاج تكملة، ابعت رسالة جديدة بـ \"كمّل\" أو اسأل من حيث وقف."
+                                  : "Response was cut off because it reached the output token limit. Send a new message saying \"continue\" to get the rest."}
+                              </span>
+                            </div>
+                          )}
+
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && hasRenderableAssistantBody && (
                             <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1 py-1 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">

@@ -734,6 +734,24 @@ def _guess_image_mime_from_bytes(data: bytes) -> str:
     return "image/jpeg"
 
 
+CONTEXT_LIMIT_SENTINEL = "__CONTEXT_LIMIT__"
+
+
+def _gemini_chunk_finish_reason(chunk) -> str | None:
+    """Return the finish_reason string from a stream chunk, or None."""
+    try:
+        for cand in getattr(chunk, "candidates", None) or []:
+            reason = getattr(cand, "finish_reason", None)
+            if reason is not None:
+                # SDK may return an enum or a string
+                r = str(reason).upper()
+                if r and r not in ("NONE", "0", "FINISH_REASON_UNSPECIFIED"):
+                    return r
+    except Exception:
+        pass
+    return None
+
+
 def _gemini_stream_chunk_text(chunk) -> str:
     """
     Extract incremental text from a generate_content_stream event.
@@ -912,6 +930,10 @@ class GeminiClient:
                 delta = _gemini_stream_chunk_text(chunk)
                 if delta:
                     yield delta
+                finish = _gemini_chunk_finish_reason(chunk)
+                if finish in ("MAX_TOKENS", "FINISH_REASON_MAX_TOKENS", "2"):
+                    logger.warning("stream_chat: output truncated by MAX_TOKENS")
+                    yield CONTEXT_LIMIT_SENTINEL
         else:
             response = await self.chat(messages, context)
             async for chunk in _chunk_text_stream(response):
@@ -1006,6 +1028,10 @@ class GeminiClient:
                     delta = _gemini_stream_chunk_text(chunk)
                     if delta:
                         yield delta
+                    finish = _gemini_chunk_finish_reason(chunk)
+                    if finish in ("MAX_TOKENS", "FINISH_REASON_MAX_TOKENS", "2"):
+                        logger.warning("stream_chat_with_files: output truncated by MAX_TOKENS")
+                        yield CONTEXT_LIMIT_SENTINEL
             except Exception as stream_err:
                 logger.error(f"Gemini stream_chat_with_files failed: {stream_err}", exc_info=True)
                 response = await self.client.aio.models.generate_content(

@@ -17,7 +17,7 @@ type ComplianceJsonPayload = {
 /** Strip leaked __THINKING__: or THINKING: protocol markers from displayed content */
 function sanitizeHorusContent(content: string): string {
   const leakedProtocolLine =
-    /^(?:__CHAT_ID__:[^\n]*|__THINKING__:[^\n]*|THINKING:[^\n]*|__FILE_STATUS__:\{.*\}|FILE_STATUS:\{.*\}|__FILE__:[^\n]*|FILE:\{.*\}|__TOOL_STEP__:\{.*\}|__ACTION_CONFIRM__:\{.*\}|__ACTION_RESULT__:\{.*\}|__STREAM_ERROR__:[^\n]*)$/gm
+    /^(?:__CHAT_ID__:[^\n]*|__THINKING__:[^\n]*|THINKING:[^\n]*|__FILE_STATUS__:\{.*\}|FILE_STATUS:\{.*\}|__FILE__:[^\n]*|FILE:\{.*\}|__TOOL_STEP__:\{.*\}|__ACTION_CONFIRM__:\{.*\}|__ACTION_RESULT__:\{.*\}|__STREAM_ERROR__:[^\n]*|__CONTEXT_LIMIT__:[^\n]*)$/gm
   const protocolPattern = /^(?:(?:__THINKING__:|THINKING:)(?:Searching conversation history|Generating response|Reading platform state|Reading your platform|Got it|Processing|Identified action|Executing|Prepared|Phase \d)[^\n]*(?:\n|\s*))*/
   return content
     .replace(leakedProtocolLine, "")

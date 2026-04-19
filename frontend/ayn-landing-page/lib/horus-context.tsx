@@ -68,6 +68,8 @@ export interface Message {
     agentRun?: AgentRunMeta | null
     /** Contextual next-step suggestions (from __AGENT_SUGGESTIONS__ protocol) */
     agentSuggestions?: AgentSuggestion[]
+    /** Set when the AI response was truncated due to output token limit */
+    contextLimitHit?: boolean
 }
 
 type HorusStatus = "idle" | "searching" | "generating" | "error"
@@ -451,6 +453,13 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                             } catch (e) {
                                 console.error("[Horus] Failed to parse agent suggestions:", e)
                             }
+                            return true
+                        }
+
+                        if (line.startsWith("__CONTEXT_LIMIT__:")) {
+                            setMessages(prev => prev.map(m =>
+                                m.id === assistantMsgId ? { ...m, contextLimitHit: true } : m
+                            ))
                             return true
                         }
 

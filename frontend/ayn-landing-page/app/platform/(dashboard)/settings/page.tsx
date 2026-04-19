@@ -32,21 +32,22 @@ export default function SettingsPage() {
 function SettingsContent() {
   const { user } = useAuth()
   const [showPurgeModal, setShowPurgeModal] = useState(false)
+  const [isSubmittingPurgeRequest, setIsSubmittingPurgeRequest] = useState(false)
 
   const sections = [
-    { icon: User, label: "Account Profile", desc: "Manage institutional identifiers and contact details", color: "text-primary", href: "/platform/settings/account" },
-    { icon: Lock, label: "Security & Encryption", desc: "Manage AES-256 keys and MFA requirements", color: "text-[var(--status-success)]", href: "/platform/settings/security" },
-    { icon: Bell, label: "Neural Alerts", desc: "Configure compliance notifications and Horus triggers", color: "text-[var(--status-warning)]", href: "/platform/settings/alerts" },
-    { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-primary", href: "/platform/settings/data" },
-    { icon: Cloud, label: "Module Integrations", desc: "Review connector setup for LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
-    { icon: CalendarDays, label: "Calendar & Milestones", desc: "Track deadlines, audits, and compliance checkpoint scheduling", color: "text-primary", href: "/platform/calendar" },
-    { icon: Archive, label: "Compliance Archive", desc: "Access historical records, evidence snapshots, and previous cycles", color: "text-primary", href: "/platform/archive" },
-    { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-[var(--status-critical)]", href: "/platform/settings/subscription" },
+    { icon: User, label: "Profile", desc: "Manage institution and contact details.", color: "text-primary", href: "/platform/settings/account" },
+    { icon: Lock, label: "Security", desc: "Manage passwords, MFA, and encryption rules.", color: "text-[var(--status-success)]", href: "/platform/settings/security" },
+    { icon: Bell, label: "Notifications", desc: "Choose alerts and notification preferences.", color: "text-[var(--status-warning)]", href: "/platform/settings/alerts" },
+    { icon: Database, label: "Data & Privacy", desc: "Control data residency and retention settings.", color: "text-primary", href: "/platform/settings/data" },
+    { icon: Cloud, label: "Integrations", desc: "Connect LMS, HRIS, and other systems.", color: "text-primary", href: "/platform/settings/integrations" },
+    { icon: CalendarDays, label: "Calendar & Milestones", desc: "Track deadlines, audits, and key checkpoints.", color: "text-primary", href: "/platform/calendar" },
+    { icon: Archive, label: "Archive", desc: "Browse historical records and previous cycles.", color: "text-primary", href: "/platform/archive" },
+    { icon: CreditCard, label: "Billing", desc: "Manage plan details, usage, and invoices.", color: "text-[var(--status-critical)]", href: "/platform/settings/subscription" },
   ]
 
   return (
-    <div className="animate-fade-in-up pb-20 max-w-5xl px-4 mx-auto">
-      <header className="mb-12 pt-6">
+    <div className="animate-fade-in-up pb-16 max-w-5xl px-4 mx-auto">
+      <header className="mb-8 pt-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="px-2 py-0.5 rounded glass-pill">
@@ -61,16 +62,16 @@ function SettingsContent() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {sections.map((item, i) => (
           <Link key={i} href={item.href}>
-            <div className="glass-layer-2 p-6 rounded-3xl group cursor-pointer transition-all flex items-center gap-6 border-glass-border">
-              <div className={cn("w-12 h-12 rounded-2xl glass-input flex items-center justify-center group-hover:scale-105 transition-transform", item.color)}>
+            <div className="glass-layer-2 p-5 rounded-3xl group cursor-pointer transition-all flex items-center gap-5 border-glass-border hover:translate-y-[-1px]">
+              <div className={cn("w-11 h-11 rounded-2xl glass-input flex items-center justify-center group-hover:scale-105 transition-transform", item.color)}>
                 <item.icon className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-[var(--text-primary)] mb-0.5">{item.label}</h3>
-                <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-tight">{item.desc}</p>
+                <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{item.desc}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
             </div>
@@ -78,30 +79,37 @@ function SettingsContent() {
         ))}
       </div>
 
-      <div className="mt-16 p-8 rounded-3xl glass-layer-2 border-glass-border relative overflow-hidden group transition-colors">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.06] group-hover:opacity-[0.10] transition-opacity">
-          <Shield className="w-32 h-32 text-destructive" />
-        </div>
-        <div className="relative z-10 max-w-xl">
-          <h3 className="text-xl font-semibold text-destructive mb-2">Delete Data Request</h3>
-          <p className="text-sm text-[var(--text-secondary)] mb-8 font-medium leading-relaxed">
-            Data deletion is not available as a direct self-service action. Use this button to send a review request to your admin team.
-          </p>
-          <button
-            onClick={() => setShowPurgeModal(true)}
-            className="px-6 py-2.5 bg-destructive/10 text-destructive border border-destructive/25 rounded-lg text-xs font-medium uppercase tracking-widest hover:bg-destructive hover:text-destructive-foreground transition-all"
-          >
-            Request Deletion Review
-          </button>
+      <div className="mt-8 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
+            <Shield className="h-4 w-4 text-destructive" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-destructive">Need to delete institution data?</h3>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
+              This action is review-only. Your admin team must approve before any data is removed.
+            </p>
+            <button
+              onClick={() => setShowPurgeModal(true)}
+              className="mt-3 inline-flex items-center rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+            >
+              Request deletion review
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
         <PurgeModal
+          isSubmitting={isSubmittingPurgeRequest}
           onClose={() => setShowPurgeModal(false)}
-          onConfirm={() => {
+          onConfirm={async () => {
+            if (isSubmittingPurgeRequest) return
+            setIsSubmittingPurgeRequest(true)
+            await new Promise((resolve) => setTimeout(resolve, 700))
             toast.info("Request sent. An admin will review it before any data is deleted.")
+            setIsSubmittingPurgeRequest(false)
             setShowPurgeModal(false)
           }}
         />
@@ -110,7 +118,15 @@ function SettingsContent() {
   )
 }
 
-function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
+function PurgeModal({
+  onClose,
+  onConfirm,
+  isSubmitting,
+}: {
+  onClose: () => void
+  onConfirm: () => Promise<void>
+  isSubmitting: boolean
+}) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -150,15 +166,17 @@ function PurgeModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: ()
         <div className="flex gap-3">
           <button
             onClick={onClose}
+            disabled={isSubmitting}
             className="flex-1 py-2.5 rounded-lg glass-button text-muted-foreground text-xs font-medium uppercase tracking-widest transition-all"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium uppercase tracking-widest hover:bg-destructive/90 transition-all"
+            disabled={isSubmitting}
+            className="flex-1 py-2.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium uppercase tracking-widest hover:bg-destructive/90 transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Send Request
+            {isSubmitting ? "Sending..." : "Send Request"}
           </button>
         </div>
       </div>

@@ -54,6 +54,7 @@ function DarkCardReveal({ children }: { children: React.ReactNode }) {
 export default function Home() {
   useEffect(() => {
     const checkSession = async () => {
+      if (!supabase) return
       log("[Home] Checking for Supabase session...")
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.access_token) {

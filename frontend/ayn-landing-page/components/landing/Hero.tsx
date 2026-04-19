@@ -7,6 +7,7 @@ import { ArrowRight, ChevronDown, X, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ShinyButton } from "./landing-utils"
 import { useState, useRef, useCallback, useEffect } from "react"
+import { Component, type ReactNode } from "react"
 
 const Spline = dynamic(() => import("@splinetool/react-spline"), { ssr: false })
 
@@ -72,6 +73,28 @@ function StaticHeroBackground() {
       />
     </div>
   )
+}
+
+class HeroVisualBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Hero visual failed to render:", error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
 }
 
 /**
@@ -189,10 +212,12 @@ export function Hero() {
                 transform: "translateX(12%)",
               }}
             >
-              <Spline
-                scene="https://prod.spline.design/aysDxqUIU16cNzmO/scene.splinecode"
-                style={{ width: "100%", height: "100%", display: "block" }}
-              />
+              <HeroVisualBoundary fallback={<StaticHeroBackground />}>
+                <Spline
+                  scene="https://prod.spline.design/aysDxqUIU16cNzmO/scene.splinecode"
+                  style={{ width: "100%", height: "100%", display: "block" }}
+                />
+              </HeroVisualBoundary>
             </div>
 
             {/* ════ LEFT VEIL — desktop only ════ */}

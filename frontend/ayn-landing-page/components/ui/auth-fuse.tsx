@@ -366,6 +366,9 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     // Listen for Supabase auth state changes (handles OAuth redirects)
     React.useEffect(() => {
+        if (!supabase) {
+            return;
+        }
         let hasProcessed = false;
         log("[Auth] Setting up auth state listener...");
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -393,6 +396,10 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
     }, []);
 
     const handleGoogleSignIn = async () => {
+        if (!supabase) {
+            setError("Google sign-in is temporarily unavailable. Please use email sign-in.");
+            return;
+        }
         setError(null);
         setIsLoading(true);
         log("[Auth] Starting Supabase Google OAuth...");

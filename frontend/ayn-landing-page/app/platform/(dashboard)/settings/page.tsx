@@ -12,6 +12,7 @@ import {
   Cloud,
   CreditCard,
   CalendarDays,
+  Archive,
   ChevronRight,
   Shield,
   AlertTriangle,
@@ -39,6 +40,7 @@ function SettingsContent() {
     { icon: Database, label: "Data Integrity", desc: "Institutional data residency and bridge settings", color: "text-primary", href: "/platform/settings/data" },
     { icon: Cloud, label: "Module Integrations", desc: "Review connector setup for LMS, HRIS, and core databases", color: "text-primary", href: "/platform/settings/integrations" },
     { icon: CalendarDays, label: "Calendar & Milestones", desc: "Track deadlines, audits, and compliance checkpoint scheduling", color: "text-primary", href: "/platform/calendar" },
+    { icon: Archive, label: "Compliance Archive", desc: "Access historical records, evidence snapshots, and previous cycles", color: "text-primary", href: "/platform/archive" },
     { icon: CreditCard, label: "Subscription Layer", desc: "Ayn OS Tier details, usage metrics, and invoices", color: "text-[var(--status-critical)]", href: "/platform/settings/subscription" },
   ]
 

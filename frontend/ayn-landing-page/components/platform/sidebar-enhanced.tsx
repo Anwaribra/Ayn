@@ -15,7 +15,6 @@ import {
   UserCircle2,
   LogOut,
   PanelLeft,
-  ArchiveIcon,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -45,30 +44,6 @@ type NavItemConfig = {
     ar: string
   }
   href: string
-}
-
-function SidebarSection({
-  title,
-  children,
-  isCollapsed,
-}: {
-  title: string
-  children: React.ReactNode
-  isCollapsed: boolean
-}) {
-  return (
-    <div className={cn(isCollapsed ? "space-y-3" : "space-y-2")}>
-      {!isCollapsed && (
-        <div className="px-2 pt-1">
-          <p className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">
-            {title}
-          </p>
-          <div className="mt-2 h-px w-full bg-gradient-to-r from-[var(--glass-border)] via-[color:color-mix(in_srgb,var(--glass-border)_60%,transparent)] to-transparent" />
-        </div>
-      )}
-      {children}
-    </div>
-  )
 }
 
 // Grouped Menu Items for better visual hierarchy
@@ -250,13 +225,8 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
   const isCollapsed = !open
   const copy = useMemo(
     () => ({
-      overview: isArabic ? "نظرة عامة" : "Overview",
-      complianceCore: isArabic ? "جوهر الامتثال" : "Compliance Core",
-      reportingAutomation: isArabic ? "التقارير والأتمتة" : "Reporting & Automation",
-      archive: isArabic ? "الأرشيف" : "Archive",
       settings: isArabic ? "الإعدادات" : "Settings",
       user: isArabic ? "مستخدم" : "User",
-      noEmail: isArabic ? "بدون بريد" : "No email",
       goHome: isArabic ? "العودة للرئيسية" : "Go to homepage",
       collapseSidebar: isArabic ? "طي الشريط الجانبي" : "Collapse sidebar",
       expandSidebar: isArabic ? "توسيع الشريط الجانبي" : "Expand sidebar",
@@ -327,41 +297,33 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
       </div>
 
       {/* Navigation */}
-      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto space-y-6", isCollapsed ? "px-2 pt-1" : "px-3 pt-1")}>
-        <SidebarSection title={copy.overview} isCollapsed={isCollapsed}>
+      <nav className={cn("sidebar-scroll flex-1 overflow-y-auto", isCollapsed ? "px-2 pt-1" : "px-3 pt-1")}>
+        <div className={cn("space-y-1", isCollapsed && "space-y-2")}>
           {MAIN_MENU.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </SidebarSection>
+        </div>
 
-        <SidebarSection title={copy.complianceCore} isCollapsed={isCollapsed}>
+        <div className={cn("my-3 h-px", isCollapsed ? "mx-2" : "mx-1")} style={{ background: "var(--glass-border-subtle)" }} />
+
+        <div className={cn("space-y-1", isCollapsed && "space-y-2")}>
           {COMPLIANCE_WORKFLOW.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </SidebarSection>
+        </div>
 
-        <SidebarSection title={copy.reportingAutomation} isCollapsed={isCollapsed}>
+        <div className={cn("my-3 h-px", isCollapsed ? "mx-2" : "mx-1")} style={{ background: "var(--glass-border-subtle)" }} />
+
+        <div className={cn("space-y-1", isCollapsed && "space-y-2")}>
           {INSIGHTS_TOOLS.map((item) => (
             <SidebarItem key={item.id} item={item} isCollapsed={isCollapsed} pathname={pathname} onNavClick={handleNavClick} />
           ))}
-        </SidebarSection>
-
+        </div>
       </nav>
 
       {/* Bottom Section */}
       <div className="space-y-3 border-t border-[var(--glass-border-subtle)] p-3">
         <div className="space-y-2">
-          <SidebarItem
-            item={{
-              id: "archive",
-              icon: ArchiveIcon,
-              label: { en: copy.archive, ar: copy.archive },
-              href: "/platform/archive",
-            }}
-            isCollapsed={isCollapsed}
-            pathname={pathname}
-            onNavClick={handleNavClick}
-          />
           <SidebarItem
             item={{
               id: "settings",
@@ -396,9 +358,6 @@ function PlatformSidebarComponent({ open, onToggle, notificationCount }: Sidebar
               <div className="min-w-0 leading-tight">
                 <p className="glass-text-primary truncate text-sm font-semibold">
                   {user?.name ?? copy.user}
-                </p>
-                <p className="glass-text-secondary truncate text-[11px]">
-                  {user?.email ?? copy.noEmail}
                 </p>
               </div>
             )}

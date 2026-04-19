@@ -369,9 +369,10 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         if (!supabase) {
             return;
         }
+        const client = supabase;
         let hasProcessed = false;
         log("[Auth] Setting up auth state listener...");
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
             if (event === "SIGNED_IN" && session?.access_token && !hasProcessed) {
                 hasProcessed = true;
                 log("[Auth] User signed in via OAuth, syncing with backend...");
@@ -380,7 +381,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 try {
                     await api.syncWithSupabase(session.access_token);
                     log("[Auth] Sync successful, clearing Supabase session...");
-                    await supabase.auth.signOut();
+                    await client.auth.signOut();
                     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                     sessionStorage.removeItem("redirectAfterLogin");
                     window.location.href = redirectPath || "/platform/dashboard";
@@ -400,12 +401,13 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             setError("Google sign-in is temporarily unavailable. Please use email sign-in.");
             return;
         }
+        const client = supabase;
         setError(null);
         setIsLoading(true);
         log("[Auth] Starting Supabase Google OAuth...");
         try {
             const redirectPath = isSignIn ? "/login" : "/signup";
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { error } = await client.auth.signInWithOAuth({
                 provider: "google",
                 options: { redirectTo: `${window.location.origin}${redirectPath}` },
             });

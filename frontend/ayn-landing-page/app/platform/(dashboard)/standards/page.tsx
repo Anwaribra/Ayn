@@ -984,45 +984,53 @@ export default function StandardsPage() {
           {isDetailsOpen && selectedStandard && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xl">
               <div className="glass-card relative flex h-[92vh] w-full max-w-[1080px] flex-col overflow-hidden rounded-[28px] p-0 shadow-2xl sm:h-[86vh] sm:rounded-[40px]">
-                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 px-4 pb-5 pt-4 backdrop-blur-xl sm:px-10 sm:pb-8 sm:pt-8">
-                  <div className="min-w-0 space-y-4">
-                    <div className="flex items-center gap-3 sm:gap-5">
+                <div className="flex flex-col sm:flex-row shrink-0 sm:items-start justify-between gap-6 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/70 px-4 pb-5 pt-4 backdrop-blur-xl sm:px-10 sm:pb-8 sm:pt-8 relative">
+                  {/* Close button absolutely positioned on mobile to save space from the top */}
+                  <button
+                    onClick={() => setIsDetailsOpen(false)}
+                    className="absolute right-4 top-4 sm:hidden glass-button h-9 w-9 rounded-xl flex items-center justify-center p-0 transition-all z-10"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+
+                  <div className="min-w-0 space-y-5 flex-1 pr-10 sm:pr-0 w-full">
+                    <div className="flex items-start gap-4 sm:gap-5">
                       <div
                         className={cn(
                           "flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-gradient-to-br text-white shadow-2xl sm:h-16 sm:w-16 sm:rounded-[22px]",
                           resolveStandardColorClass(selectedStandard.color),
                         )}
                       >
-                        <GraduationCap className="h-7 w-7 sm:h-10 sm:w-10" />
+                        <GraduationCap className="h-6 w-6 sm:h-10 sm:w-10" />
                       </div>
                       <div className="min-w-0">
                         <h3 className="truncate text-xl font-black text-foreground sm:text-3xl">
                           {selectedStandard.title}
                         </h3>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:gap-3 opacity-90">
                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
                             {selectedStandard.code || "STD-LIB"}
                           </span>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          <div className="hidden sm:block h-1 w-1 rounded-full bg-border" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground break-keep">
                             {formatFilterLabel(selectedStandard.category)}
                           </span>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          <div className="hidden sm:block h-1 w-1 rounded-full bg-border" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground break-keep">
                             {formatFilterLabel(selectedStandard.region, "Global")}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.criteriaLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">{selectedStandard.criteriaCount}</p>
                       </div>
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.coverageLabel}
                         </p>
@@ -1030,7 +1038,7 @@ export default function StandardsPage() {
                           {Math.round(selectedInsight?.coveragePct ?? 0)}%
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5 min-w-[80px]">
+                      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.mappedLabel}
                         </p>
@@ -1044,7 +1052,7 @@ export default function StandardsPage() {
                       {(() => {
                         const badge = getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped", isArabic)
                         return (
-                          <span className={cn("rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]", badge.className)}>
+                          <span className={cn("rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] mt-1 sm:mt-0", badge.className)}>
                             {badge.label}
                           </span>
                         )
@@ -1052,17 +1060,17 @@ export default function StandardsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-2 sm:mt-0 w-full sm:w-auto">
                     <Button
                       variant="outline"
-                      className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground"
+                      className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground flex-1 sm:flex-none py-2 h-auto text-sm"
                       onClick={() => router.push(`/platform/standards/${selectedStandard.id}`)}
                     >
                       {copy.openStandardBtn}
                     </Button>
                     <button
                       onClick={() => setIsDetailsOpen(false)}
-                      className="glass-button min-h-[44px] min-w-[44px] rounded-2xl p-3 transition-all"
+                      className="hidden sm:flex glass-button h-[44px] w-[44px] rounded-2xl items-center justify-center p-0 transition-all"
                     >
                       <X className="h-5 w-5 text-muted-foreground" />
                     </button>

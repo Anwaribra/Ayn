@@ -732,7 +732,7 @@ export default function StandardsPage() {
                           <div className="flex min-w-0 items-start gap-4">
                             <div
                               className={cn(
-                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] text-white shadow-lg",
+                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br text-white shadow-lg",
                                 standard.color || "bg-[#1E3A8A]",
                               )}
                             >
@@ -988,7 +988,7 @@ export default function StandardsPage() {
                     <div className="flex items-center gap-3 sm:gap-5">
                       <div
                         className={cn(
-                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-white shadow-2xl sm:h-16 sm:w-16 sm:rounded-[22px]",
+                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-gradient-to-br text-white shadow-2xl sm:h-16 sm:w-16 sm:rounded-[22px]",
                           selectedStandard.color || "bg-[#1E3A8A]",
                         )}
                       >

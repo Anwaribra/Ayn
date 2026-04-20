@@ -161,7 +161,7 @@ export function StandardDetailPageClient() {
               <div className="flex items-start gap-4">
                 <div
                   className={cn(
-                    "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] text-white shadow-xl",
+                    "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-gradient-to-br text-white shadow-xl",
                     standard.color || "bg-[#1E3A8A]",
                   )}
                 >

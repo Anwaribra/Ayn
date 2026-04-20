@@ -62,12 +62,7 @@ export const metadata: Metadata = {
     description: siteDescription,
   },
   icons: {
-    icon: [
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: "/logo2.png",
     apple: "/apple-icon.png",
   },
 }

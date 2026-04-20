@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Github, Twitter, Linkedin, Mail, ArrowRight } from "lucide-react"
+import { toast } from "sonner"
 
 const links = {
   Product: [
@@ -55,19 +56,34 @@ export function LandingFooter() {
               Map evidence, identify gaps, and execute actions with minimal effort.
             </p>
 
-            {/* Newsletter Input Mockup */}
+            {/* Newsletter Input */}
             <div className="max-w-sm mb-10">
               <h4 className="text-white/90 text-sm font-medium mb-3">Stay in the loop</h4>
-              <div className="flex items-center p-1 rounded-2xl bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] transition-all duration-300">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const form = e.target as HTMLFormElement
+                  const email = (form.elements.namedItem("email") as HTMLInputElement).value
+                  if (email) {
+                    toast.success("Subscribed successfully!", {
+                      description: "You've been added to our mailing list.",
+                    })
+                    form.reset()
+                  }
+                }}
+                className="flex items-center p-1 rounded-[1.25rem] bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] transition-all duration-300"
+              >
                 <input 
                   type="email" 
+                  name="email"
+                  required
                   placeholder="Enter your email address" 
                   className="bg-transparent border-none outline-none text-sm text-white px-4 py-2 w-full placeholder:text-white/30"
                 />
-                <button className="bg-white text-black hover:bg-white/90 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                <button type="submit" className="bg-white text-black hover:bg-white/90 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                   Subscribe
                 </button>
-              </div>
+              </form>
             </div>
 
             {/* Social Icons */}

@@ -250,14 +250,14 @@ export function HorusIntelligenceSection() {
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="absolute -inset-2 bg-gradient-to-br from-primary/15 to-primary/5 rounded-2xl blur-lg" />
-            <div className="relative rounded-2xl glass-surface-strong p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Brain className="w-8 h-8 text-primary" />
+            <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/20 to-primary/5 rounded-[1.5rem] opacity-30" />
+            <div className="relative rounded-[1.5rem] border border-border/60 bg-background/80 backdrop-blur-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-14 h-14 rounded-xl bg-primary/[0.03] border border-primary/10 flex items-center justify-center">
+                  <Brain className="w-7 h-7 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1">
+                  <h3 className="text-xl font-bold text-foreground mb-1">
                     Horus AI
                   </h3>
                   <p className="text-sm text-muted-foreground">Central Intelligence</p>
@@ -280,12 +280,15 @@ export function HorusIntelligenceSection() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <div className="h-full rounded-xl glass-panel p-4 hover:scale-[1.01] transition-all">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-                    <item.icon className="w-4 h-4 text-muted-foreground" />
+                <div className="relative h-full rounded-[1.5rem] border border-border/40 bg-background/60 backdrop-blur-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-primary/20 transition-all duration-500 group overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="relative z-10 w-10 h-10 rounded-xl bg-primary/[0.03] border border-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/[0.06] transition-colors duration-500">
+                    <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors duration-500" />
                   </div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <div className="relative z-10">
+                    <h4 className="text-sm font-bold text-foreground mb-1">{item.title}</h4>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
                 </div>
               </motion.div>
             ))}

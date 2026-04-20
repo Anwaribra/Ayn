@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 export function SpotlightWrapper({
   children,
   className,
-  spotlightColor = "rgba(16, 185, 129, 0.1)", // Subtle emerald spotlight
+  spotlightColor = "rgba(37, 99, 235, 0.1)", // Subtle primary spotlight
   size = 400,
 }: {
   children: ReactNode

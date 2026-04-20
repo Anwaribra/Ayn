@@ -20,8 +20,8 @@ import { FinalCtaSection }         from "@/components/landing/FinalCtaSection"
 import { LandingFooter }           from "@/components/landing/LandingFooter"
 import { ScrollDrivenExpansion }   from "@/components/landing/scroll-driven-expansion"
 
-/** Off-white page background */
-const PAGE_BG = "#f5f5f3"
+/** Transparent page background to let globals.css gradient shine */
+const PAGE_BG = "transparent"
 
 /**
  * Dark card colour — same as the Hero's Spline scene bg.
@@ -44,7 +44,7 @@ const darkCardBase: React.CSSProperties = {
  */
 function DarkCardReveal({ children }: { children: React.ReactNode }) {
   return (
-    <ScrollDrivenExpansion bgMatchClass="bg-[#f5f5f3]" className="dark-card-base">
+    <ScrollDrivenExpansion bgMatchClass="bg-transparent" className="dark-card-base">
       <div style={darkCardBase}>
         {children}
       </div>

@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import { Plus, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type FaqItem = {
@@ -11,38 +13,21 @@ type FaqItem = {
 
 const FAQ_ITEMS: FaqItem[] = [
   {
-    question: "How does Ayn reduce the time and effort of accreditation preparation?",
+    question: "How does Ayn reduce accreditation effort?",
     answer:
-      "Ayn centralizes the full cycle in one flow: Evidence Vault auto-tags documents, Horus AI maps them to ISO 21001 and NCAAA criteria, then Gap Analysis prioritizes what is missing. Your team moves from manual collection to guided, audit-ready actions in minutes.",
+      "Ayn centralizes the full cycle in one flow: Evidence Vault auto-tags documents, Horus AI maps them to ISO 21001 and NCAAA criteria, then Gap Analysis prioritizes what is missing. Your team moves from manual collection to audit-ready actions in minutes.",
   },
   {
-    question: "Can we trust the output for high-stakes quality reviews and external audits?",
+    question: "Can we trust the AI output for external audits?",
     answer:
-      "Yes. Ayn keeps evidence, standards mapping, detected gaps, and follow-up actions in one traceable workflow. Quality leaders can review rationale, assign ownership, and close actions with a clear audit trail instead of fragmented spreadsheets and email threads.",
+      "Absolutely. Ayn keeps evidence, standard mapping, detected gaps, and follow-up actions in one traceable workflow. Quality leaders review rationale and close actions with a clear audit trail—eliminating fragmented spreadsheets and email threads.",
   },
   {
-    question: "Will this work for cross-functional university teams, not just the QA office?",
+    question: "Does it support cross-campus collaboration?",
     answer:
-      "Ayn is built for institutional collaboration. Faculty and departments contribute evidence, while Quality Managers keep a unified readiness view through Horus insights and analytics. This helps decision-makers align stakeholders and track execution velocity before formal visits.",
+      "Yes, Ayn is built for enterprise scale. Faculty and departments contribute evidence directly, while Quality Managers monitor a unified readiness dashboard. This aligns stakeholders and tracks execution velocity long before formal visits.",
   },
 ]
-
-/** Light landing strip (#f5f5f3): keep body copy as neutral-*, not theme `foreground`
- *  (dark mode on <html> would otherwise paint light text on light bg).
- */
-const Chevron = ({ open }: { open: boolean }) => (
-  <svg
-    viewBox="0 0 20 20"
-    fill="none"
-    aria-hidden="true"
-    className={cn(
-      "h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-300 ease-out",
-      open && "rotate-180"
-    )}
-  >
-    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
 export function LandingFaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
@@ -50,65 +35,87 @@ export function LandingFaqAccordion() {
   return (
     <section
       id="landing-faq"
-      className="relative overflow-hidden px-6 py-24 text-neutral-950 md:py-32 dark:text-neutral-950"
+      className="relative overflow-hidden px-6 py-24 md:py-32 bg-transparent"
     >
-      <div className="relative z-10 mx-auto w-full max-w-6xl">
-        {/* Match AboutSection: badge + headline hierarchy on light landing strip */}
-        <div className="mb-10 text-center md:mb-14 md:text-left">
-          <span className="glass-pill mb-4 inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-primary">
-            FAQ
+      <div className="relative z-10 mx-auto max-w-4xl flex flex-col items-center">
+        
+        {/* Header */}
+        <div className="mb-16 md:mb-24 text-center">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 mb-6 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 shadow-sm">
+            Questions
           </span>
-          <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Questions quality leaders ask before they commit
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter text-slate-900 mx-auto leading-tight max-w-3xl">
+            Everything you need <br className="hidden sm:block"/> to know.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-neutral-600 md:text-lg md:mx-0">
-            Evidence, standards mapping, and traceable actions in one place—before you expand the rollout.
-          </p>
         </div>
 
-        <div className="border-t border-black/10">
+        {/* Accordion Group */}
+        <div className="w-full">
           {FAQ_ITEMS.map((item, index) => {
             const isOpen = openIndex === index
             return (
-              <article key={item.question} className="border-b border-black/10">
+              <div 
+                key={item.question} 
+                className="border-b border-slate-200/60 last:border-0"
+              >
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-4 py-5 text-left text-sm font-medium leading-relaxed md:text-base"
+                  className="flex w-full items-center justify-between py-6 text-left focus:outline-none group"
                   onClick={() => setOpenIndex(isOpen ? null : index)}
                   aria-expanded={isOpen}
-                  aria-controls={`landing-faq-answer-${index}`}
                 >
-                  <span>{item.question}</span>
-                  <Chevron open={isOpen} />
+                  <span className={cn(
+                    "text-xl md:text-2xl font-semibold tracking-tight transition-all duration-300",
+                    isOpen ? "text-slate-900" : "text-slate-500 group-hover:text-slate-800"
+                  )}>
+                    {item.question}
+                  </span>
+                  
+                  {/* Plus/Minus Icon */}
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 border",
+                    isOpen ? "bg-slate-900 border-slate-900 text-white" : "bg-transparent border-slate-200 text-slate-400 group-hover:border-slate-400 group-hover:text-slate-600"
+                  )}>
+                    <motion.div
+                      initial={false}
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      {isOpen ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                    </motion.div>
+                  </div>
                 </button>
 
-                <div
-                  id={`landing-faq-answer-${index}`}
-                  className={cn(
-                    "overflow-hidden transition-all duration-300 ease-out",
-                    isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <p className="pb-8 pr-12 text-lg leading-relaxed text-slate-600 font-medium">
+                        {item.answer}
+                      </p>
+                    </motion.div>
                   )}
-                >
-                  <p
-                    className={cn(
-                      "pb-5 pr-7 text-sm leading-relaxed text-neutral-600 transition-all duration-300 ease-out",
-                      isOpen ? "translate-y-0" : "-translate-y-1"
-                    )}
-                  >
-                    {item.answer}
-                  </p>
-                </div>
-              </article>
+                </AnimatePresence>
+              </div>
             )
           })}
         </div>
 
-        <Link
-          href="/faq/"
-          className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-        >
-          View all FAQs <span aria-hidden>→</span>
-        </Link>
+        <div className="mt-16 text-center">
+          <Link
+            href="/faq/"
+            className="inline-flex items-center gap-2 group text-base font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            Read the full framework guides
+            <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
+          </Link>
+        </div>
+
       </div>
     </section>
   )

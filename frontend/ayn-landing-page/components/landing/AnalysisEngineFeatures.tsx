@@ -1,239 +1,156 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Database, BrainCircuit, GitMerge, LineChart, Terminal } from "lucide-react"
+import { motion } from "framer-motion"
+import { Database, Brain, GitMerge, LineChart, ShieldCheck, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
-import { SpotlightWrapper } from "./spotlight-wrapper"
 
 const FEATURES = [
   {
     id: "evidence",
     title: "Evidence Vault",
-    description: "Auto-maps uploaded documents to the right compliance criterion.",
+    description: "Auto-maps uploaded documents to the right compliance criterion using AI. Seamlessly handling thousands of files without manual tagging.",
     icon: Database,
-    logs: [
-       { delay: 0, text: "> Initializing secure vault...", type: "system" },
-       { delay: 800, text: "> Uploading 42 pending documents...", type: "info" },
-       { delay: 1500, text: "> Extracting metadata and context...", type: "process" },
-       { delay: 2200, text: "✓ Successfully mapped 38 documents to ISO 21001", type: "success" },
-       { delay: 2800, text: "⚠ 4 documents require human review (Ambiguous tags)", type: "warning" },
-       { delay: 3500, text: "> Awaiting further evidence...", type: "system" },
-    ]
+    className: "md:col-span-2 md:row-span-1", // Wide Bento box
+    graphic: (
+      <div className="absolute right-0 bottom-0 w-[60%] h-[60%] pointer-events-none opacity-40 group-hover:opacity-60 transition-opacity duration-700 blur-[1px]">
+        {/* Abstract Document Grid */}
+        <div className="absolute right-4 bottom-[-20%] w-full h-full flex flex-col gap-2 transform rotate-12 translate-x-12 translate-y-8">
+          {[...Array(4)].map((_, i) => (
+             <motion.div key={i} className="w-[110%] h-12 bg-white/5 border border-white/10 rounded-xl overflow-hidden flex items-center px-4 gap-3 shadow-xl backdrop-blur-3xl"
+               initial={{ x: 50, opacity: 0 }}
+               whileInView={{ x: 0, opacity: 1 }}
+               viewport={{ once: true }}
+               transition={{ delay: 0.2 + i * 0.1, duration: 0.7 }}
+             >
+               <div className="w-4 h-4 rounded bg-primary/20 border border-primary/30" />
+               <div className="w-1/2 h-1.5 rounded-full bg-white/10" />
+             </motion.div>
+          ))}
+        </div>
+      </div>
+    )
   },
   {
     id: "analysis", 
     title: "Horus Gap Analysis",
-    description: "Detect compliance gaps and risk priorities in real-time.",
-    icon: BrainCircuit,
-    logs: [
-       { delay: 0, text: "> Initiating Horus Intelligence Engine...", type: "system" },
-       { delay: 600, text: "> Cross-referencing NCAAA Framework...", type: "info" },
-       { delay: 1400, text: "[████████░░] 85% Processed", type: "process" },
-       { delay: 2000, text: "✖ Critical Gap Detected: Standard 4.2 (Missing Course Reports)", type: "error" },
-       { delay: 2700, text: "> Generating remediation tasks...", type: "process" },
-       { delay: 3400, text: "✓ 3 actions drafted for Standard Program heads", type: "success" },
-    ]
+    description: "Detect compliance gaps and risk priorities in real-time, receiving instant actionable insights.",
+    icon: Brain,
+    className: "md:col-span-1 md:row-span-1",
   },
   {
     id: "workflow",
     title: "Workflow Engine",
-    description: "Turn recommendations into approved actions with traceable steps.",
+    description: "Turn recommendations into approved actions. Fully traceable audit logs.",
     icon: GitMerge,
-    logs: [
-       { delay: 0, text: "> Syncing pending action items...", type: "system" },
-       { delay: 700, text: "> Assigning [Task-104]: Update Policy Document", type: "info" },
-       { delay: 1500, text: "> Routing to Quality Assurance team for approval...", type: "process" },
-       { delay: 2400, text: "✓ Approval received from Dr. Ahmed", type: "success" },
-       { delay: 3100, text: "> Updating compliance status to [IN PROGRESS]", type: "info" },
-       { delay: 3800, text: "> Traceable audit log secured.", type: "success" },
-    ]
+    className: "md:col-span-1 md:row-span-1",
+    graphic: (
+      <div className="absolute right-0 bottom-4 pointer-events-none opacity-30 group-hover:opacity-50 transition-opacity translate-x-1/4">
+        <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 40H40L50 20L70 60L80 40H110" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="40" cy="40" r="4" fill="rgba(255,255,255,0.4)"/>
+          <circle cx="80" cy="40" r="4" fill="rgba(255,255,255,0.4)"/>
+        </svg>
+      </div>
+    )
   },
   {
     id: "analytics",
     title: "Readiness Analytics",
-    description: "Track evidence coverage and action velocity from one panel.",
+    description: "Track evidence coverage and action velocity from a unified, elegant panel.",
     icon: LineChart,
-    logs: [
-       { delay: 0, text: "> Querying real-time readiness metrics...", type: "system" },
-       { delay: 800, text: "> Aggregating institutional data...", type: "process" },
-       { delay: 1600, text: "📊 Overall Readiness Score: 82%", type: "info" },
-       { delay: 2200, text: "📈 Evidence Coverage: 91% (+4% this week)", type: "success" },
-       { delay: 2900, text: "📉 Action Velocity: 12 closed / 5 open (High Activity)", type: "info" },
-       { delay: 3500, text: "> Dashboard visualisations rendered.", type: "success" },
-    ]
+    className: "md:col-span-1 md:row-span-1",
+    graphic: (
+      <div className="absolute left-0 bottom-0 w-full h-[40%] pointer-events-none flex items-end px-6 opacity-30 group-hover:opacity-50 transition-opacity">
+        <div className="w-full flex items-end gap-2 h-full">
+           <div className="w-1/4 bg-white/10 rounded-t-md h-[40%]" />
+           <div className="w-1/4 bg-white/10 rounded-t-md h-[70%]" />
+           <div className="w-1/4 bg-primary/30 rounded-t-md h-[100%] shadow-[0_0_15px_rgba(37,99,235,0.2)]" />
+           <div className="w-1/4 bg-white/10 rounded-t-md h-[60%]" />
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "security",
+    title: "Zero-Trust Security",
+    description: "Every piece of evidence is isolated. Data is heavily encrypted at rest and in transit.",
+    icon: ShieldCheck,
+    className: "md:col-span-1 md:row-span-1", // Standard Bento box
+    graphic: (
+      <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity overflow-hidden">
+        <div className="absolute right-[-10%] top-[-20%] w-[120%] h-[140%] border-[1px] border-white/5 rounded-full" />
+        <div className="absolute right-[0%] top-[0%] w-[100%] h-[100%] border-[1px] border-white/5 rounded-full" />
+        <div className="absolute right-[10%] top-[20%] w-[80%] h-[60%] border-[1px] border-primary/20 rounded-full bg-primary/5 blur-[20px]" />
+      </div>
+    )
   }
 ]
 
 export function AnalysisEngineFeatures() {
-  const [activeFeature, setActiveFeature] = useState(FEATURES[0].id)
-  
-  // Terminal log typing effect state
-  const [visibleLogs, setVisibleLogs] = useState<number>(0)
-
-  useEffect(() => {
-    setVisibleLogs(0)
-    const activeData = FEATURES.find(f => f.id === activeFeature)
-    if (!activeData) return
-
-    const timeouts: NodeJS.Timeout[] = []
-    
-    activeData.logs.forEach((log, index) => {
-      const timeout = setTimeout(() => {
-        setVisibleLogs(prev => Math.max(prev, index + 1))
-      }, log.delay)
-      timeouts.push(timeout)
-    })
-
-    return () => {
-      timeouts.forEach(clearTimeout)
-    }
-  }, [activeFeature])
-
-  const currentFeature = FEATURES.find(f => f.id === activeFeature) || FEATURES[0]
-
   return (
-    <section id="features" className="relative py-16 px-6 max-w-6xl mx-auto z-10 scroll-mt-24 pb-32">
-      <FadeUp className="text-center mb-16">
-        <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4">
-          Core Engine Features
+    <section id="features" className="relative py-24 px-6 max-w-6xl mx-auto z-10 scroll-mt-24">
+      {/* Glow Behind the Grid */}
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full pointer-events-none"
+      />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="text-center mb-20 relative z-20"
+      >
+        <span className="inline-block py-1 pb-4 text-sm tracking-widest text-primary/80 uppercase font-semibold">
+          Platform Capabilities
+        </span>
+        <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">
+          Intelligence packed in every workflow.
         </h2>
-        <p className="glass-text-secondary text-base md:text-lg max-w-2xl mx-auto">
-          Select a module to see how Horus handles complex compliance tasks in real-time.
+        <p className="text-white/50 text-lg md:text-xl max-w-2xl mx-auto font-light">
+          Whether it's auto-tagging evidence or detecting compliance gaps, Ayn brings everything into one unified, liquid interface.
         </p>
-      </FadeUp>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-        {/* Left Sidebar: Tabs */}
-        <StaggerContainer className="lg:col-span-4 flex flex-col gap-3 relative z-20">
-          {FEATURES.map((feature) => {
-            const isActive = activeFeature === feature.id
-            const Icon = feature.icon
-            return (
-              <StaggerItem key={feature.id} yOffset={20}>
-                <SpotlightWrapper className="rounded-xl overflow-hidden" spotlightColor="rgba(16, 185, 129, 0.15)">
-                  <button
-                    onClick={() => setActiveFeature(feature.id)}
-                    className={cn(
-                      "w-full h-full relative text-left p-5 rounded-xl border transition-all duration-300 overflow-hidden group outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-                      isActive 
-                        ? "glass-panel border-emerald-500/30 bg-emerald-500/10" 
-                        : "glass-panel glass-border hover:border-white/12"
-                    )}
-                  >
-                  {/* Active Indicator Line */}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeTabIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                  
-                  <div className="flex items-start gap-4">
-                    <div className={cn(
-                      "p-2 rounded-lg flex shrink-0 transition-colors",
-                      isActive ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "glass-button glass-text-secondary group-hover:text-white"
-                    )}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className={cn(
-                        "font-semibold mb-1 transition-colors text-base",
-                        isActive ? "text-emerald-400" : "text-white/80 group-hover:text-white"
-                      )}>
-                        {feature.title}
-                      </h3>
-                      <p className="glass-text-secondary text-sm leading-relaxed font-medium mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </SpotlightWrapper>
-              </StaggerItem>
-            )
-          })}
-        </StaggerContainer>
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[220px] relative z-20">
+        {FEATURES.map((feature, i) => {
+          const Icon = feature.icon
+          return (
+            <motion.div
+              key={feature.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className={cn(
+                "group relative rounded-3xl border border-white/5 bg-white/[0.02] p-8 overflow-hidden hover:bg-white/[0.04] transition-colors duration-500",
+                feature.className
+              )}
+            >
+              {/* Subtle hover gradient / glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              
+              {/* Abstract Graphic representing the feature */}
+              {feature.graphic}
 
-        {/* Right Side: Terminal Window */}
-        <FadeUp delay={0.2} className="lg:col-span-8 flex flex-col h-[400px] shadow-2xl relative z-20" width="100%">
-          {/* Mac-style Window header */}
-          <div className="glass-surface-strong glass-border z-10 flex items-center justify-between rounded-t-xl border border-b-0 px-4 py-3">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-400/90" />
-              <div className="w-3 h-3 rounded-full bg-amber-300/90" />
-              <div className="w-3 h-3 rounded-full bg-emerald-400/90" />
-            </div>
-            <div className="glass-text-secondary flex items-center gap-2 text-[11px] uppercase tracking-wider font-mono">
-              <Terminal className="w-3.5 h-3.5" />
-              horus_engine
-            </div>
-            <div className="w-12" /> {/* Spacer for balance */}
-          </div>
-
-          {/* Terminal Body */}
-          <div className="glass-surface-strong glass-border relative flex-1 overflow-hidden rounded-b-xl border border-t-0 p-6 font-mono text-[13px] md:text-sm">
-            {/* Subtle grid bg inside terminal */}
-            <div 
-              className="absolute inset-0 pointer-events-none opacity-[0.02]"
-              style={{
-                backgroundImage: `linear-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 1) 1px, transparent 1px)`,
-                backgroundSize: '20px 20px',
-              }}
-            />
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentFeature.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col gap-3 relative z-10"
-              >
-                {currentFeature.logs.map((log, index) => {
-                  const isVisible = index < visibleLogs
-                  
-                  if (!isVisible) return null
-
-                  // Color coding for terminal output
-                  let colorClass = "glass-text-secondary"
-                  if (log.type === "system") colorClass = "text-blue-400"
-                  if (log.type === "info") colorClass = "text-white/80"
-                  if (log.type === "success") colorClass = "text-emerald-400"
-                  if (log.type === "warning") colorClass = "text-amber-400"
-                  if (log.type === "error") colorClass = "text-red-400"
-                  if (log.type === "process") colorClass = "text-purple-400"
-
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className={cn("flex flex-wrap break-words leading-relaxed", colorClass)}
-                    >
-                      {log.text}
-                    </motion.div>
-                  )
-                })}
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 mb-auto text-white/70 group-hover:text-white transition-colors">
+                  <Icon className="w-5 h-5" strokeWidth={1.5} />
+                </div>
                 
-                {/* Blinking cursor at the end if the last log is visible */}
-                {visibleLogs > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-2 w-2 h-4 bg-emerald-400/80"
-                    style={{ animation: "blink 1s step-end infinite" }}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </FadeUp>
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold text-white mb-2 tracking-tight">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/50 text-sm leading-relaxed font-light">
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
       </div>
     </section>
   )

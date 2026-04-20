@@ -36,17 +36,13 @@ function StripItem({ label }: { label: string }) {
 
 export function StandardsStrip() {
   return (
-    <div className="relative py-5 overflow-hidden">
-      {/* Left fade */}
-      <div
-        className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to right, #f5f5f3, transparent)" }}
-      />
-      {/* Right fade */}
-      <div
-        className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to left, #f5f5f3, transparent)" }}
-      />
+    <div 
+        className="relative py-5 overflow-hidden"
+        style={{
+            maskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)"
+        }}
+    >
 
       <div className="flex group w-max">
         {/* First copy */}

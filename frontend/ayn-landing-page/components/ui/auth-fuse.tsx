@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useId } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
                         id={id}
                         type={showPassword ? "text" : "password"}
                         className={cn(
-                            "auth-glass-input peer pe-10 h-11 rounded-xl border-white/12 bg-transparent text-foreground placeholder:text-transparent focus:border-primary focus:ring-0",
+                            "auth-glass-input peer pe-10 h-11 rounded-xl border-white/12 bg-transparent text-white placeholder:text-transparent focus:border-primary focus:ring-0 transition-all",
                             className
                         )}
                         ref={ref}
@@ -75,16 +75,6 @@ const GoogleIcon = (props: React.ComponentProps<"svg">) => (
     </svg>
 );
 
-// Microsoft Icon
-const MicrosoftIcon = (props: React.ComponentProps<"svg">) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" {...props}>
-    <path fill="#f25022" d="M1 1h9v9H1z"/>
-    <path fill="#00a4ef" d="M1 11h9v9H1z"/>
-    <path fill="#7fba00" d="M11 1h9v9h-9z"/>
-    <path fill="#ffb900" d="M11 11h9v9h-9z"/>
-  </svg>
-);
-
 
 // Sign In Form
 function SignInForm(props: {
@@ -109,57 +99,52 @@ function SignInForm(props: {
         <motion.form
             onSubmit={onSubmit}
             autoComplete="on"
-            className="flex flex-col gap-6 w-full max-w-[360px]"
-            initial={{ opacity: 0, y: 20 }}
+            className="flex flex-col gap-6 w-full"
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-            </Link>
+            <motion.div layout="position">
+                <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Home
+                </Link>
+            </motion.div>
 
-            <div className="flex items-center justify-center gap-3">
+            <motion.div layout="position" className="flex items-center justify-center gap-3">
                 <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
                     Ayn
                 </span>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col gap-2 text-center">
+            <motion.div layout="position" className="flex flex-col gap-2 text-center">
                 <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
                 <p className="text-sm text-white/72">Sign in to continue to your dashboard</p>
-            </div>
+            </motion.div>
 
             {props.err && (
-                <div id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
+                <motion.div layout="position" id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
                     {props.err}
-                </div>
+                </motion.div>
             )}
 
-            <div className="flex flex-col gap-3">
-                {/* Google OAuth */}
+            <motion.div layout="position" className="flex flex-col gap-3">
                 <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
-                {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-white/72 cursor-not-allowed justify-center font-medium opacity-80">
-                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
-                    Continue with Microsoft
-                    <span className="ml-2 auth-coming-soon">Coming Soon</span>
-                </Button>
-            </div>
+            </motion.div>
 
-            <div className="relative text-center text-xs">
+            <motion.div layout="position" className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
                 <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or sign in with email</span>
-            </div>
+            </motion.div>
 
-            {/* Email / Password fields */}
-            <div className="grid gap-4 mt-2">
+            <motion.div layout="position" className="grid gap-4 mt-2">
                 <div className="relative group">
                     <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                     <Label htmlFor={emailId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Email Address</Label>
@@ -167,6 +152,7 @@ function SignInForm(props: {
                 <div className="relative group">
                     <PasswordInput name="password" label="Password" required placeholder=" " className="h-14 rounded-xl text-white pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                 </div>
+                
                 <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
@@ -175,14 +161,14 @@ function SignInForm(props: {
                         </div>
                     ) : "Sign In"}
                 </Button>
-            </div>
+            </motion.div>
 
-            <div className="text-center text-sm text-white/72">
+            <motion.div layout="position" className="text-center text-sm text-white/72">
                 Don&apos;t have an account?{" "}
                 <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
                     Create account
                 </button>
-            </div>
+            </motion.div>
         </motion.form>
     );
 }
@@ -210,71 +196,56 @@ function SignUpForm(props: {
         }
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.06, delayChildren: 0.1 },
-        },
-    };
-    const itemVariants = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } };
-
     return (
         <motion.form
             onSubmit={onSubmit}
             autoComplete="on"
-            className="flex flex-col gap-6 w-full max-w-[360px]"
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
+            className="flex flex-col gap-6 w-full"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <motion.div variants={itemVariants}>
+            <motion.div layout="position">
                 <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Home
                 </Link>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex items-center justify-center gap-3">
+            <motion.div layout="position" className="flex items-center justify-center gap-3">
                 <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
                     Ayn
                 </span>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex flex-col gap-2 text-center">
+            <motion.div layout="position" className="flex flex-col gap-2 text-center">
                 <h1 className="text-2xl font-semibold text-white">Create your account</h1>
                 <p className="text-sm text-white/72">Get started with your quality journey</p>
             </motion.div>
 
             {props.err && (
-                <motion.div variants={itemVariants} id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
+                <motion.div layout="position" id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
                     {props.err}
                 </motion.div>
             )}
 
-            <motion.div variants={itemVariants} className="flex flex-col gap-3">
-                {/* Google OAuth */}
+            <motion.div layout="position" className="flex flex-col gap-3">
                 <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
                     <GoogleIcon className="mr-2 h-4 w-4" />
                     Continue with Google
                 </Button>
-                {/* Microsoft OAuth */}
-                <Button variant="outline" type="button" disabled className="auth-glass-button auth-microsoft-btn w-full h-11 rounded-xl text-white/72 cursor-not-allowed justify-center font-medium opacity-80">
-                    <MicrosoftIcon className="mr-2 h-4 w-4 opacity-70" />
-                    Continue with Microsoft
-                    <span className="ml-2 auth-coming-soon">Coming Soon</span>
-                </Button>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="relative text-center text-xs">
+            <motion.div layout="position" className="relative text-center text-xs">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t auth-divider-line" />
                 </div>
                 <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or create with email</span>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="grid gap-4 mt-2">
+            <motion.div layout="position" className="grid gap-4 mt-2">
                 <div className="relative group">
                     <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
                     <Label htmlFor={nameId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Full Name</Label>
@@ -296,47 +267,58 @@ function SignUpForm(props: {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    {password.length > 0 && (
-                        <div className="auth-password-rules mt-1 flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
-                                    {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    <AnimatePresence>
+                        {password.length > 0 && (
+                            <motion.div 
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="auth-password-rules mt-1 flex flex-col gap-1.5 pt-2">
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
+                                            {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        </div>
+                                        <span className={password.length >= 8 ? "text-emerald-400 font-medium" : "text-white/72"}>At least 8 characters</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
+                                            {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        </div>
+                                        <span className={/[A-Z]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One uppercase letter</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
+                                            {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        </div>
+                                        <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One special character</span>
+                                    </div>
                                 </div>
-                                <span className={password.length >= 8 ? "text-emerald-400 font-medium" : "text-white/72"}>At least 8 characters</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
-                                    {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                </div>
-                                <span className={/[A-Z]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One uppercase letter</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs">
-                                <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" : "")}>
-                                    {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                </div>
-                                <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One special character</span>
-                            </div>
-                        </div>
-                    )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
+                
                 <div className="grid gap-2">
                     <Label className="text-sm text-white/90">Account Role <span className="text-white/65 font-normal">(Optional)</span></Label>
                     <Select value={selectedRole || "__skip__"} onValueChange={(v) => setSelectedRole(v === "__skip__" ? "" : v)} disabled={props.loading}>
-                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-xl border-white/12 text-white/90 focus:ring-0 [&>span]:line-clamp-1">
+                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-xl border-white/12 text-white/90 focus:ring-0 [&>span]:line-clamp-1 bg-transparent !bg-transparent">
                             <SelectValue placeholder="Select your role" />
                         </SelectTrigger>
-                        <SelectContent className="dark auth-select-dropdown">
-                            <SelectItem value="__skip__" className="border-transparent text-white/72 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">
+                        <SelectContent className="dark auth-select-dropdown bg-[#050810] border-white/10 z-[100] !opacity-100">
+                            <SelectItem value="__skip__" className="border-transparent text-white/72 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">
                                 Select your role
                             </SelectItem>
-                            <SelectItem value="STUDENT" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Student</SelectItem>
-                            <SelectItem value="UNIVERSITY" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">University</SelectItem>
-                            <SelectItem value="INSTITUTION" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Institution</SelectItem>
-                            <SelectItem value="TEACHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Teacher</SelectItem>
-                            <SelectItem value="OTHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/6 data-[highlighted]:shadow-none focus:bg-white/6 focus:text-white">Other</SelectItem>
+                            <SelectItem value="STUDENT" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Student</SelectItem>
+                            <SelectItem value="UNIVERSITY" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">University</SelectItem>
+                            <SelectItem value="INSTITUTION" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Institution</SelectItem>
+                            <SelectItem value="TEACHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Teacher</SelectItem>
+                            <SelectItem value="OTHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Other</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
+
                 <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
                     {props.loading ? (
                         <div className="flex items-center gap-2">
@@ -347,7 +329,7 @@ function SignUpForm(props: {
                 </Button>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="text-center text-sm text-white/72">
+            <motion.div layout="position" className="text-center text-sm text-white/72 mt-2">
                 Already have an account?{" "}
                 <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
                     Sign in
@@ -359,34 +341,27 @@ function SignUpForm(props: {
 
 export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "signup" }) {
     const [isSignIn, setIsSignIn] = useState(defaultMode === "signin");
-    const isSignUp = !isSignIn;
     const [isLoading, setIsLoading] = useState(false);
     const prefersReducedMotion = useReducedMotion();
     const [error, setError] = useState<string | null>(null);
 
-    // Listen for Supabase auth state changes (handles OAuth redirects)
     React.useEffect(() => {
-        if (!supabase) {
-            return;
-        }
+        if (!supabase) return;
         const client = supabase;
         let hasProcessed = false;
-        log("[Auth] Setting up auth state listener...");
+        
         const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
             if (event === "SIGNED_IN" && session?.access_token && !hasProcessed) {
                 hasProcessed = true;
-                log("[Auth] User signed in via OAuth, syncing with backend...");
                 setIsLoading(true);
                 setError(null);
                 try {
                     await api.syncWithSupabase(session.access_token);
-                    log("[Auth] Sync successful, clearing Supabase session...");
                     await client.auth.signOut();
                     const redirectPath = sessionStorage.getItem("redirectAfterLogin");
                     sessionStorage.removeItem("redirectAfterLogin");
                     window.location.href = redirectPath || "/platform/dashboard";
                 } catch (err) {
-                    console.error("[Auth] Sync failed:", err);
                     setError(err instanceof Error ? err.message : "Authentication failed");
                     setIsLoading(false);
                     hasProcessed = false;
@@ -398,13 +373,12 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
 
     const handleGoogleSignIn = async () => {
         if (!supabase) {
-            setError("Google sign-in is temporarily unavailable. Please use email sign-in.");
+            setError("Google sign-in is temporarily unavailable.");
             return;
         }
         const client = supabase;
         setError(null);
         setIsLoading(true);
-        log("[Auth] Starting Supabase Google OAuth...");
         try {
             const redirectPath = isSignIn ? "/login" : "/signup";
             const { error } = await client.auth.signInWithOAuth({
@@ -412,9 +386,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
                 options: { redirectTo: `${window.location.origin}${redirectPath}` },
             });
             if (error) throw error;
-            log("[Auth] Redirecting to Google...");
         } catch (err) {
-            console.error("[Auth] Google Sign-In failed:", err);
             setError(err instanceof Error ? err.message : "Google sign-in failed");
             setIsLoading(false);
         }
@@ -425,15 +397,13 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setIsLoading(true);
         try {
             const response = await api.login(email, password);
-            log('[Auth] Email login successful:', response.user.email);
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
             const redirectPath = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
             window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed - Connection Error");
-        } finally {
+            setError(err instanceof Error ? err.message : "Login failed - Invalid credentials");
             setIsLoading(false);
         }
     };
@@ -443,73 +413,76 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setIsLoading(true);
         try {
             const response = await api.register({ name, email, password, role });
-            log('[Auth] Email signup successful:', response.user.email);
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
             const redirectPath = sessionStorage.getItem("redirectAfterLogin");
             sessionStorage.removeItem("redirectAfterLogin");
             window.location.href = redirectPath || "/platform/dashboard";
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Signup failed - Connection Error");
-        } finally {
+            setError(err instanceof Error ? err.message : "Signup failed - Please try again");
             setIsLoading(false);
         }
     };
 
     return (
         <div className="dark relative min-h-screen w-full overflow-hidden bg-background">
-            {/* Full-screen dashboard background */}
-            <div className="absolute inset-0">
-                <img
-                    src="/dashboard-preview.png"
-                    alt=""
-                    className="auth-bg-image w-full h-full object-cover object-top"
-                    draggable={false}
-                    aria-hidden="true"
-                />
-                {/* Softer blur + dim overlay */}
+            {/* Cinematic Background */}
+            <div className="absolute inset-0 z-0 overflow-hidden">
+                <div className="absolute inset-0">
+                    <img
+                        src="/dashboard-preview.png"
+                        alt=""
+                        className="auth-bg-image w-full h-full object-cover object-top"
+                        draggable={false}
+                    />
+                </div>
+                {/* Heavy Glass Blur Overlay from Original Design */}
                 <div className="absolute inset-0 auth-backdrop" />
-                {/* Subtle color tint */}
                 <div className="absolute inset-0 auth-tint" />
-                {/* Ambient orbs for depth */}
                 <div className="auth-orb auth-orb-1" />
                 <div className="auth-orb auth-orb-2" />
                 <div className="auth-orb auth-orb-3" />
             </div>
 
-            {/* Liquid glass form card — centered */}
+            {/* Crystal Glass Card Container */}
             <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
                 <motion.div
+                    layout
                     initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 350, damping: 30 }}
                     className={cn(
-                        "auth-glass-card w-full rounded-3xl p-8 sm:p-10 relative",
-                        isSignUp ? "max-w-[500px] auth-glass-card-signup" : "max-w-[460px]"
+                        "auth-glass-card relative w-full rounded-3xl p-8 sm:p-10 overflow-hidden",
+                        isSignIn ? "max-w-[420px]" : "max-w-[460px]"
                     )}
                 >
                     <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
-                    {isSignIn ? (
-                        <SignInForm
-                            handleGoogle={handleGoogleSignIn}
-                            handleEmail={onEmailSignIn}
-                            loading={isLoading}
-                            err={error}
-                            toggle={() => setIsSignIn(false)}
-                        />
-                    ) : (
-                        <SignUpForm
-                            handleGoogle={handleGoogleSignIn}
-                            handleEmail={onEmailSignUp}
-                            loading={isLoading}
-                            err={error}
-                            toggle={() => setIsSignIn(true)}
-                        />
-                    )}
+
+                    <AnimatePresence mode="wait">
+                        {isSignIn ? (
+                            <motion.div key="signin-form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                <SignInForm
+                                    handleGoogle={handleGoogleSignIn}
+                                    handleEmail={onEmailSignIn}
+                                    loading={isLoading}
+                                    err={error}
+                                    toggle={() => setIsSignIn(false)}
+                                />
+                            </motion.div>
+                        ) : (
+                            <motion.div key="signup-form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                                <SignUpForm
+                                    handleGoogle={handleGoogleSignIn}
+                                    handleEmail={onEmailSignUp}
+                                    loading={isLoading}
+                                    err={error}
+                                    toggle={() => setIsSignIn(true)}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
             </div>
         </div>
     );
 }
-
-export { PasswordInput };

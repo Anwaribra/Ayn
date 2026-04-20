@@ -1,8 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, Sparkles, Building2, Crown, Clock } from "lucide-react"
+import { Check, Sparkles, Building2, Crown, Zap, Clock } from "lucide-react"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 const plans = [
   {
@@ -11,8 +12,6 @@ const plans = [
     period: "",
     description: "For individual educators exploring compliance",
     icon: Sparkles,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
     features: [
       "1 Standard framework",
       "10 Evidence uploads",
@@ -21,6 +20,9 @@ const plans = [
       "Community support",
     ],
     popular: false,
+    buttonText: "Start for free",
+    buttonHref: "/signup",
+    buttonVariant: "secondary"
   },
   {
     name: "Professional",
@@ -28,8 +30,6 @@ const plans = [
     period: "/month",
     description: "For institutions serious about accreditation",
     icon: Building2,
-    color: "text-primary",
-    bg: "bg-primary/10",
     features: [
       "Unlimited standards",
       "Unlimited evidence uploads",
@@ -41,6 +41,9 @@ const plans = [
       "5 team members",
     ],
     popular: true,
+    buttonText: "Get Started",
+    buttonHref: "/signup",
+    buttonVariant: "primary"
   },
   {
     name: "Enterprise",
@@ -48,8 +51,6 @@ const plans = [
     period: "",
     description: "For large institutions and university systems",
     icon: Crown,
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
     features: [
       "Everything in Professional",
       "Unlimited team members",
@@ -61,94 +62,140 @@ const plans = [
       "Audit trail & compliance logs",
     ],
     popular: false,
+    buttonText: "Contact Sales",
+    buttonHref: "mailto:hello@ayn-edu.com",
+    buttonVariant: "outline"
   },
 ]
 
-
 export function PricingSection() {
   return (
-    <section id="pricing" className="relative overflow-hidden rounded-3xl bg-transparent text-white">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37,99,235,0.08), transparent 65%)" }} />
+    <section id="pricing" className="relative overflow-hidden bg-transparent py-24 px-6">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 blur-[120px] rounded-full" />
+      </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-8 py-20">
+      <div className="relative z-10 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="glass-pill mb-3 inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
-            <Clock className="w-3 h-3" />
-            Pricing — Coming Soon
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Simple, transparent pricing</h2>
-          <p className="glass-text-secondary max-w-lg mx-auto text-sm">We&apos;re finalizing our plans. Start free today and lock in early-adopter benefits.</p>
+        <div className="text-center mb-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs font-semibold mb-6 tracking-widest uppercase"
+          >
+            <Zap className="w-3 h-3 mr-2 text-primary" />
+            Simple Pricing
+          </motion.div>
+          
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight"
+          >
+            Scale your <span className="text-white/40">compliance.</span>
+          </motion.h2>
+          
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-white/50 max-w-xl mx-auto text-lg md:text-xl font-light leading-relaxed"
+          >
+            Start free. Upgrade when you need full autonomous capabilities and infinite scale.
+          </motion.p>
         </div>
 
-        {/* Plans Grid — visually muted with overlay */}
-        <div className="relative mb-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pointer-events-none select-none opacity-26 blur-[1px] brightness-[0.55] contrast-90 saturate-75">
+        {/* Plans Grid */}
+        <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 opacity-30 blur-[4px] pointer-events-none select-none grayscale-[0.3]">
             {plans.map((plan, i) => (
               <motion.div
                 key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className={`relative flex flex-col rounded-2xl border p-6 backdrop-blur-xl ${plan.popular ? "border-primary/24 bg-white/[0.05] shadow-[0_20px_56px_-28px_rgba(59,130,246,0.22)]" : "border-white/[0.07] bg-white/[0.03] shadow-[0_18px_46px_-30px_rgba(0,0,0,0.5)]"}`}
-              >
-                {plan.popular && (
-                  <div className="glass-pill absolute -top-3 left-1/2 -translate-x-1/2 border-primary/20 bg-primary/12 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-primary">Most Popular</div>
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
+                className={cn(
+                  "relative flex flex-col rounded-3xl p-8 backdrop-blur-xl transition-all duration-500",
+                  plan.popular 
+                    ? "bg-white/[0.04] border border-white/10 shadow-[0_0_80px_rgba(37,99,235,0.1)]" 
+                    : "bg-white/[0.02] border border-white/5"
                 )}
-                <div className={`w-10 h-10 rounded-xl ${plan.bg} flex items-center justify-center mb-4`}>
-                  <plan.icon className={`w-5 h-5 ${plan.color}`} />
+              >
+                {/* Animated glow on popular plan */}
+                {plan.popular && (
+                  <div className="absolute inset-0 rounded-3xl border border-primary/20 pointer-events-none">
+                    <div className="absolute top-0 right-1/4 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+                  </div>
+                )}
+
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
+                    Most Popular
+                  </div>
+                )}
+
+                <div className="mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                    <plan.icon className="w-5 h-5 text-white/80" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-white/40 text-sm font-light min-h-[40px]">{plan.description}</p>
                 </div>
-                <h3 className="text-lg font-bold text-white">{plan.name}</h3>
-                <p className="glass-text-secondary mt-1 mb-4 text-xs">{plan.description}</p>
-                <div className="mb-6">
-                  {plan.popular ? (
-                    <div className="glass-pill inline-flex px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-                      Coming Soon
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-3xl font-bold text-white">{plan.price}</span>
-                      {plan.period && <span className="glass-text-secondary text-sm">{plan.period}</span>}
-                    </>
+
+                <div className="mb-8">
+                  <span className="text-4xl font-extrabold text-white">{plan.price}</span>
+                  {plan.period && <span className="text-white/40 text-sm font-light ml-1">{plan.period}</span>}
+                </div>
+
+                <div
+                  className={cn(
+                    "w-full flex items-center justify-center px-6 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 mb-10",
+                    plan.buttonVariant === "primary" && "bg-white text-black",
+                    plan.buttonVariant === "secondary" && "bg-white/10 text-white",
+                    plan.buttonVariant === "outline" && "border border-white/10 text-white"
                   )}
+                >
+                  {plan.buttonText}
                 </div>
-                <ul className="space-y-2.5 mb-8 flex-1">
+
+                <ul className="space-y-4 flex-1">
                   {plan.features.map((f) => (
-                    <li key={f} className="glass-text-secondary flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      {f}
+                    <li key={f} className="flex items-start gap-3 text-[14px]">
+                      <div className="mt-1 flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-primary" strokeWidth={3} />
+                      </div>
+                      <span className="text-white/60 font-light leading-snug">{f}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="glass-button block rounded-xl px-6 py-3 text-center text-sm font-semibold text-white/78">
-                  Coming Soon
-                </div>
               </motion.div>
             ))}
           </div>
 
           {/* Coming Soon Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-3xl bg-[rgba(5,8,16,0.34)] backdrop-blur-[2px]" />
-            <div className="absolute left-1/2 top-[42%] h-28 w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-[32px] bg-[rgba(5,8,16,0.56)] md:top-[40%]" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="glass-surface-strong glass-text-primary relative -translate-y-10 max-w-md rounded-3xl bg-[rgba(10,12,18,0.84)] px-8 py-10 text-center shadow-[0_24px_64px_-30px_rgba(0,0,0,0.62)] md:-translate-y-12"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="relative max-w-md w-full mx-6 rounded-3xl bg-[#090e18]/80 backdrop-blur-3xl border border-white/10 px-8 py-10 text-center shadow-[0_0_80px_rgba(37,99,235,0.15)]"
             >
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/12">
-                <Clock className="w-7 h-7 text-primary" />
+              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/5 bg-white/5">
+                <Clock className="w-6 h-6 text-white/80" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Pricing Coming Soon</h3>
-              <p className="glass-text-secondary mb-6 text-sm leading-relaxed">
-                We&apos;re crafting the perfect plans for every institution size. Sign up now to get free early access and be the first to know when pricing launches.
+              <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Pricing Coming Soon</h3>
+              <p className="text-white/50 mb-10 text-[15px] font-light leading-relaxed">
+                We're crafting the perfect plans for every institution size. Sign up now to get early access and be the first to know when pricing launches.
               </p>
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(37,99,235,0.55)] transition-colors hover:bg-primary/90"
+                className="inline-flex items-center justify-center gap-2 w-full rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition-all hover:bg-white/90 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.15)]"
               >
                 <Sparkles className="w-4 h-4" />
                 Get Early Access — Free
@@ -156,7 +203,6 @@ export function PricingSection() {
             </motion.div>
           </div>
         </div>
-
       </div>
     </section>
   )

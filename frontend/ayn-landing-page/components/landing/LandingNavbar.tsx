@@ -103,18 +103,22 @@ export function LandingNavbar() {
 
         {/* ── LEFT: Logo ── */}
         <Link href="/" aria-label="Ayn home" className="shrink-0 group z-50">
-          <motion.span
+          <motion.div
             whileHover={{ scale: 1.04 }}
             transition={{ type: "spring", stiffness: 400 }}
-            className={cn(
-              "text-[1.6rem] font-bold tracking-tight select-none pointer-events-auto bg-clip-text text-transparent bg-gradient-to-r",
-              isOverDark 
-                ? "from-white via-white/90 to-primary/100" 
-                : "from-black via-black/90 to-primary/100 drop-shadow-sm" 
-            )}
+            className="flex items-center select-none pointer-events-auto"
           >
-            Ayn
-          </motion.span>
+            <span
+              className={cn(
+                "text-[1.6rem] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r",
+                isOverDark 
+                  ? "from-white via-white/90 to-primary/100" 
+                  : "from-black via-black/90 to-primary/100 drop-shadow-sm" 
+              )}
+            >
+              Ayn
+            </span>
+          </motion.div>
         </Link>
 
         {/* ── CENTRE: Nav Links ── */}
@@ -131,7 +135,7 @@ export function LandingNavbar() {
               key={label}
               href={href}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
+                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
                 isOverDark 
                   ? "text-white/70 hover:text-white hover:bg-white/10 hover:shadow-sm" 
                   : "text-black/60 hover:text-black hover:bg-black/5 hover:shadow-sm"
@@ -140,100 +144,96 @@ export function LandingNavbar() {
               {label}
             </Link>
           ))}
-
-          {/* separator */}
-          <div className={cn("w-[1px] h-4 mx-1.5 shrink-0 transition-colors duration-300", isOverDark ? "bg-white/15" : "bg-black/10")} />
-
-          {/* Log in ─ inside pill */}
-          {!user && (
-            <Link
-              href="/login"
-              className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
-                isOverDark 
-                  ? "text-white/72 hover:text-white hover:bg-white/8" 
-                  : "text-black/75 hover:text-black hover:bg-black/5"
-              )}
-            >
-              Log in
-            </Link>
-          )}
-
-          {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5 transition-colors duration-300", isOverDark ? "hover:bg-white/8" : "hover:bg-black/5")}>
-                  <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/10 text-white" : "bg-primary/15 text-primary")}>
-                    {getInitials(user.name)}
-                  </span>
-                  <ChevronDown className={cn("h-3 w-3 transition-colors duration-300", isOverDark ? "text-white/60" : "text-black/50")} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
-                <DropdownMenuLabel className="font-normal">
-                  <p className="font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/platform/dashboard" className="flex items-center gap-2 cursor-pointer">
-                    <LayoutDashboard className="h-4 w-4" /> Go to Platform
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleLogout} className="cursor-pointer">
-                  <LogOut className="h-4 w-4" /> Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </nav>
 
         {/* ── RIGHT: CTA button ── */}
-        <div className="flex items-center gap-3 shrink-0 z-50">
+        <div className="flex items-center gap-1.5 shrink-0 z-50">
           {/* Mobile hamburger */}
           <Button
             ref={menuButtonRef}
             variant="ghost"
             size="icon"
-              className={cn(
-                "md:hidden h-9 w-9 rounded-full transition-colors duration-300 pointer-events-auto",
-                isOverDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/5"
-              )}
+            className={cn(
+              "md:hidden h-9 w-9 rounded-full transition-colors duration-300 pointer-events-auto",
+              isOverDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/5"
+            )}
             onClick={() => setMobileOpen(p => !p)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
 
-          {/* Desktop CTA */}
-          {user ? (
-            <Link
-              href="/platform/dashboard"
-              className={cn(
-                "hidden md:inline-flex items-center rounded-full px-5 py-2 text-sm font-medium transition-all duration-500 hover:scale-[1.02] pointer-events-auto",
-                isOverDark 
-                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
-                  : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
-              )}
-            >
-              Platform
-            </Link>
-          ) : (
-            <Link
-              href="/signup"
-              className={cn(
-                "group hidden md:inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all duration-500 pointer-events-auto",
-                "hover:scale-[1.02]",
-                isOverDark 
-                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
-                  : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
-              )}
-            >
-              Get Started
-              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-500 group-hover:translate-x-0.5" aria-hidden />
-            </Link>
-          )}
+          {/* Desktop Right Side */}
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className={cn("h-9 px-3 rounded-full gap-2 transition-colors duration-300 cursor-pointer", isOverDark ? "hover:bg-white/10" : "hover:bg-black/5")}>
+                      <span className={cn("h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/10 text-white" : "bg-primary/10 text-primary")}>
+                        {getInitials(user.name)}
+                      </span>
+                      <ChevronDown className={cn("h-4 w-4 transition-colors duration-300", isOverDark ? "text-white/60" : "text-black/50")} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="font-medium truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/platform/dashboard" className="flex items-center gap-2 cursor-pointer">
+                        <LayoutDashboard className="h-4 w-4" /> Go to Platform
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="h-4 w-4" /> Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Link
+                  href="/platform/dashboard"
+                  className={cn(
+                    "inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto",
+                    isOverDark 
+                      ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
+                      : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+                  )}
+                >
+                  Platform
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium transition-colors duration-200 pointer-events-auto",
+                    isOverDark 
+                      ? "text-white/70 hover:text-white" 
+                      : "text-black/70 hover:text-black"
+                  )}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className={cn(
+                    "group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 pointer-events-auto",
+                    "hover:scale-[1.02]",
+                    isOverDark 
+                      ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
+                      : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+                  )}
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

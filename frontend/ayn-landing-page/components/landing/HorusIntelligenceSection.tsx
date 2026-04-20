@@ -39,18 +39,18 @@ const NodeCard = ({
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           className="relative"
         >
-          {/* Adaptive glow using CSS var primary */}
-          <div className="absolute -inset-4 bg-[radial-gradient(circle,hsl(var(--primary)/0.12)_0%,transparent_70%)] blur-2xl" />
-          <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/25 to-primary/10 rounded-3xl opacity-50" />
+          {/* Clean ambient shadow rather than heavy neon glow */}
+          <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/20 to-primary/5 rounded-[2rem] opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
 
-          {/* Center card — Liquid Glass */}
-          <div className="relative rounded-3xl glass-surface-strong p-12">
-            <div className="relative w-28 h-28 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group">
-              <Brain className="w-14 h-14 text-primary" style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)/0.4))" }} />
-              <div className="absolute inset-0 rounded-2xl border border-primary/30 animate-ping opacity-20" />
+          {/* Center card — Premium Structure */}
+          <div className="relative rounded-[2rem] border border-border/60 bg-background/80 backdrop-blur-3xl p-12 shadow-sm transition-all duration-500">
+            <div className="relative w-28 h-28 mx-auto rounded-3xl bg-primary/[0.03] border border-primary/10 flex items-center justify-center mb-8">
+              <Brain className="w-14 h-14 text-primary" />
+              {/* Subtle pulsing rings, non-glowing */}
+              <div className="absolute inset-0 rounded-3xl border border-primary/20 animate-ping opacity-10" />
             </div>
             <div className="relative z-10 text-center">
-              <h3 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-foreground to-primary/70 bg-clip-text text-transparent">
+              <h3 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight text-foreground">
                 Horus AI
               </h3>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-xs mx-auto font-medium">
@@ -60,16 +60,19 @@ const NodeCard = ({
           </div>
         </motion.div>
       ) : (
-        /* Side nodes — Liquid Glass */
-        <div className="relative rounded-2xl glass-panel p-6 hover:border-primary/30 hover:scale-[1.01] transition-all duration-300 group">
-          <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center mb-4 border border-primary/10 group-hover:scale-110 transition-transform">
-            <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        /* Side nodes — Clean Minimal Lift */
+        <div className="relative rounded-3xl border border-border/40 bg-background/60 backdrop-blur-2xl p-7 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-primary/20 transition-all duration-500 group overflow-hidden">
+          {/* Subtle hover gradient inside */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="w-12 h-12 rounded-xl bg-primary/[0.03] border border-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/[0.06] transition-colors duration-500">
+            <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors duration-500" />
           </div>
-          <div>
-            <h4 className="text-base font-bold text-foreground mb-1.5 transition-colors">
+          <div className="relative z-10">
+            <h4 className="text-base font-bold text-foreground mb-2">
               {title}
             </h4>
-            <p className="glass-text-secondary text-xs leading-relaxed transition-colors group-hover:text-[var(--muted-foreground)]">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {description}
             </p>
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Database, BrainCircuit } from "lucide-react"
+import { Database, Brain } from "lucide-react"
 import { FadeUp, StaggerContainer, StaggerItem } from "./reveal-on-scroll"
 
 const STEPS = [
@@ -32,7 +32,7 @@ export function HowItWorksSection() {
         
         {/* Header */}
         <FadeUp className="text-center mb-24">
-          <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-400 mb-4">
+          <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">
             How it works
           </span>
           <h2 className="text-4xl md:text-5xl lg:text-5xl font-bold tracking-tight text-white mb-6">
@@ -88,13 +88,13 @@ export function HowItWorksSection() {
               
               {/* Top Node */}
               <div className="flex flex-col items-center">
-                <div className="glass-panel w-full relative flex flex-col items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-6 py-4 text-center">
+                <div className="glass-panel w-full relative flex flex-col items-center justify-center rounded-xl border border-primary/30 bg-primary/5 px-6 py-4 text-center">
                   <span className="text-sm font-bold text-white mb-1">Evidence Vault</span>
                   <span className="glass-text-secondary text-[10px] uppercase tracking-widest font-mono">Upload • Auto-Tag</span>
-                  <Database className="absolute -right-3 -top-3 w-6 h-6 text-emerald-500/50" />
+                  <Database className="absolute -right-3 -top-3 w-6 h-6 text-primary/50" />
                 </div>
                 {/* Connecting Line */}
-                <div className="w-px h-12 bg-gradient-to-b from-emerald-500/30 to-white/10" />
+                <div className="w-px h-12 bg-gradient-to-b from-primary/30 to-white/10" />
               </div>
 
               {/* Middle Node */}
@@ -102,7 +102,7 @@ export function HowItWorksSection() {
                 <div className="glass-panel glass-border w-full relative flex flex-col items-center justify-center rounded-xl px-6 py-4 text-center">
                   <span className="text-sm font-bold text-white mb-1">Horus AI Agent</span>
                   <span className="glass-text-secondary text-[10px] uppercase tracking-widest font-mono">Analyze • Map Gaps</span>
-                  <BrainCircuit className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-white/25" />
+                  <Brain className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-white/25" />
                 </div>
                 
                 {/* Fork Line */}

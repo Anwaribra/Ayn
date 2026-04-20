@@ -111,7 +111,7 @@ export function LandingNavbar() {
               isOverDark ? "text-white" : "text-black drop-shadow-sm" 
             )}
           >
-            Ayn
+            Ay<span className="text-primary">n</span>
           </motion.span>
         </Link>
 

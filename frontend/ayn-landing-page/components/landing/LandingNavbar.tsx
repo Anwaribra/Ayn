@@ -120,10 +120,10 @@ export function LandingNavbar() {
         {/* ── CENTRE: Nav Links ── */}
         <nav
           className={cn(
-            "hidden md:flex items-center gap-1 rounded-full transition-all duration-300 backdrop-blur-md px-6 py-2 shadow-sm border",
+            "hidden md:flex items-center gap-1 rounded-full transition-all duration-500 backdrop-blur-xl px-3 py-1.5 border",
             isOverDark
-              ? "border-white/10 bg-[rgba(10,12,18,0.58)] shadow-[0_18px_45px_-24px_rgba(0,0,0,0.65)]"
-              : "glass-surface-strong border-black/10"
+              ? "border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
+              : "border-black/[0.04] bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
           )}
         >
           {navItems.map(({ label, href }) => (
@@ -131,10 +131,10 @@ export function LandingNavbar() {
               key={label}
               href={href}
               className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150",
+                "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
                 isOverDark 
-                  ? "text-white/72 hover:text-white hover:bg-white/8" 
-                  : "text-black/75 hover:text-black hover:bg-black/5"
+                  ? "text-white/70 hover:text-white hover:bg-white/10 hover:shadow-sm" 
+                  : "text-black/60 hover:text-black hover:bg-black/5 hover:shadow-sm"
               )}
             >
               {label}
@@ -142,7 +142,7 @@ export function LandingNavbar() {
           ))}
 
           {/* separator */}
-          <div className={cn("w-px h-4 mx-2 shrink-0 transition-colors duration-300", isOverDark ? "bg-white/20" : "bg-black/12")} />
+          <div className={cn("w-[1px] h-4 mx-1.5 shrink-0 transition-colors duration-300", isOverDark ? "bg-white/15" : "bg-black/10")} />
 
           {/* Log in ─ inside pill */}
           {!user && (
@@ -211,10 +211,10 @@ export function LandingNavbar() {
             <Link
               href="/platform/dashboard"
               className={cn(
-                "hidden md:inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto",
+                "hidden md:inline-flex items-center rounded-full px-5 py-2 text-sm font-medium transition-all duration-500 hover:scale-[1.02] pointer-events-auto",
                 isOverDark 
-                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-                  : "bg-black text-white hover:bg-slate-900 shadow-[0_4px_14px_rgba(0,0,0,0.2)] ring-1 ring-inset ring-white/10"
+                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
+                  : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
               )}
             >
               Platform
@@ -223,15 +223,15 @@ export function LandingNavbar() {
             <Link
               href="/signup"
               className={cn(
-                "group hidden md:inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white transition-all duration-300 pointer-events-auto relative overflow-hidden",
-                "bg-primary bg-gradient-to-b from-white/15 to-transparent",
-                "ring-1 ring-inset ring-white/20 shadow-[0_4px_14px_0_hsl(var(--primary)/0.4)]",
-                "hover:scale-[1.02] hover:shadow-[0_6px_24px_hsl(var(--primary)/0.6)] hover:ring-white/30",
-                isOverDark && "shadow-[0_4px_20px_hsl(var(--primary)/0.55)] ring-white/10"
+                "group hidden md:inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all duration-500 pointer-events-auto",
+                "hover:scale-[1.02]",
+                isOverDark 
+                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
+                  : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
               )}
             >
               Get Started
-              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-500 group-hover:translate-x-0.5" aria-hidden />
             </Link>
           )}
         </div>

@@ -24,6 +24,7 @@ import type { Criterion } from "@/types/standards"
 import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { getStandardDisplayTitle } from "@/lib/standard-display"
+import { resolveStandardColorClass } from "@/lib/standard-color"
 
 function formatValue(value?: string | null, fallback = "Unspecified") {
   return value?.trim() || fallback
@@ -162,7 +163,7 @@ export function StandardDetailPageClient() {
                 <div
                   className={cn(
                     "flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] bg-gradient-to-br text-white shadow-xl",
-                    standard.color || "bg-[#1E3A8A]",
+                    resolveStandardColorClass(standard.color),
                   )}
                 >
                   <GraduationCap className="h-8 w-8 text-white" />

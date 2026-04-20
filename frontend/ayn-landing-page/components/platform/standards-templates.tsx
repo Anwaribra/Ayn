@@ -24,6 +24,7 @@ import {
 import useSWR from "swr"
 import { api } from "@/lib/api"
 import { type Standard } from "@/types/standards"
+import { resolveStandardColorClass } from "@/lib/standard-color"
 
 const iconMap: Record<string, React.ElementType> = {
   GraduationCap,
@@ -90,7 +91,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
     features: std.features || [],
     estimatedSetup: std.estimatedSetup || "Unknown",
     iconComponent: iconMap[std.icon || ""] || GraduationCap,
-    color: std.color || "from-blue-600 to-indigo-600"
+    color: resolveStandardColorClass(std.color),
   }))
 
   const categories = Array.from(new Set(templates.map(t => t.category)))

@@ -38,6 +38,7 @@ import type { Standard, Evidence } from "@/types"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { useAuth } from "@/lib/auth-context"
 import { getStandardDisplayTitle } from "@/lib/standard-display"
+import { resolveStandardColorClass } from "@/lib/standard-color"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"
 import { GlassPanel } from "@/components/ui/glass-panel"
@@ -733,7 +734,7 @@ export default function StandardsPage() {
                             <div
                               className={cn(
                                 "flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br text-white shadow-lg",
-                                standard.color || "bg-[#1E3A8A]",
+                                resolveStandardColorClass(standard.color),
                               )}
                             >
                               <GraduationCap className="h-7 w-7 text-white" />
@@ -989,7 +990,7 @@ export default function StandardsPage() {
                       <div
                         className={cn(
                           "flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-gradient-to-br text-white shadow-2xl sm:h-16 sm:w-16 sm:rounded-[22px]",
-                          selectedStandard.color || "bg-[#1E3A8A]",
+                          resolveStandardColorClass(selectedStandard.color),
                         )}
                       >
                         <GraduationCap className="h-7 w-7 sm:h-10 sm:w-10" />

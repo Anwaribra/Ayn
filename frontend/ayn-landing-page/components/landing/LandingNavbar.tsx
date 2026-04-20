@@ -107,11 +107,13 @@ export function LandingNavbar() {
             whileHover={{ scale: 1.04 }}
             transition={{ type: "spring", stiffness: 400 }}
             className={cn(
-              "text-[1.6rem] font-bold tracking-tight select-none transition-colors duration-300 pointer-events-auto",
-              isOverDark ? "text-white" : "text-black drop-shadow-sm" 
+              "text-[1.6rem] font-bold tracking-tight select-none pointer-events-auto bg-clip-text text-transparent bg-gradient-to-r",
+              isOverDark 
+                ? "from-white via-white/90 to-primary/100" 
+                : "from-black via-black/90 to-primary/100 drop-shadow-sm" 
             )}
           >
-            Ay<span className="text-primary">n</span>
+            Ayn
           </motion.span>
         </Link>
 

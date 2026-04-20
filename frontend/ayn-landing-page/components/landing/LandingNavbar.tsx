@@ -211,8 +211,10 @@ export function LandingNavbar() {
             <Link
               href="/platform/dashboard"
               className={cn(
-                "hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto shadow-sm",
-                isOverDark ? "bg-white text-black hover:bg-white/90" : "border border-black/90 bg-black text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)] hover:bg-black/92"
+                "hidden md:inline-flex items-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] pointer-events-auto",
+                isOverDark 
+                  ? "bg-white text-black hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                  : "bg-black text-white hover:bg-slate-900 shadow-[0_4px_14px_rgba(0,0,0,0.2)] ring-1 ring-inset ring-white/10"
               )}
             >
               Platform
@@ -221,12 +223,15 @@ export function LandingNavbar() {
             <Link
               href="/signup"
               className={cn(
-                "group hidden md:inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_14px_32px_-18px_hsl(var(--primary)/0.45)] transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 pointer-events-auto",
-                isOverDark && "shadow-[0_14px_36px_-16px_hsl(var(--primary)/0.55)]"
+                "group hidden md:inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white transition-all duration-300 pointer-events-auto relative overflow-hidden",
+                "bg-primary bg-gradient-to-b from-white/15 to-transparent",
+                "ring-1 ring-inset ring-white/20 shadow-[0_4px_14px_0_hsl(var(--primary)/0.4)]",
+                "hover:scale-[1.02] hover:shadow-[0_6px_24px_hsl(var(--primary)/0.6)] hover:ring-white/30",
+                isOverDark && "shadow-[0_4px_20px_hsl(var(--primary)/0.55)] ring-white/10"
               )}
             >
               Get Started
-              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
+              <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
             </Link>
           )}
         </div>

@@ -1077,7 +1077,8 @@ export default function StandardsPage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-card/20 px-4 py-5 custom-scrollbar sm:px-10 sm:py-8">
+                <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
+                  <div className="flex-1 bg-card/20 px-4 py-5 sm:px-10 sm:py-8">
                   <div className="mb-6 rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-4">
                     <CoverageBar
                       standardId={selectedStandard.id}
@@ -1148,9 +1149,9 @@ export default function StandardsPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                  </div>
 
-                <div className="z-10 grid shrink-0 grid-cols-1 gap-5 border-t border-[var(--border-subtle)] bg-[var(--surface-modal)]/60 px-4 py-5 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] sm:px-10 sm:py-8 xl:grid-cols-2 xl:gap-8">
+                  <div className="z-10 grid shrink-0 grid-cols-1 gap-5 border-t border-[var(--border-subtle)] bg-[var(--surface-modal)]/60 px-4 py-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] sm:px-10 sm:py-8 xl:grid-cols-2 xl:gap-8">
                   <div className="space-y-6 rounded-[24px] border border-primary/20 bg-primary/5 p-5 shadow-xl shadow-primary/5 sm:rounded-[32px] sm:p-8">
                     <h5 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
                       <Sparkles className="h-4 w-4" />

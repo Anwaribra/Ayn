@@ -23,7 +23,7 @@ import Link from "next/link"
 import type { Criterion } from "@/types/standards"
 import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
-import { getStandardDisplayTitle } from "@/lib/standard-display"
+import { getStandardDisplayTitle, extractLocalizedText } from "@/lib/standard-display"
 import { resolveStandardColorClass } from "@/lib/standard-color"
 
 function formatValue(value?: string | null, fallback = "Unspecified") {
@@ -112,7 +112,7 @@ export function StandardDetailPageClient() {
       <Header
         title={displayTitle}
         description={
-          standard.description ||
+          extractLocalizedText(standard.description, isArabic) ||
           (isArabic
             ? "تفاصيل الإطار، هيكل المعايير، وتغطية الجاهزية."
             : "Framework detail, criteria structure, and readiness coverage.")
@@ -182,7 +182,7 @@ export function StandardDetailPageClient() {
                       {displayTitle}
                     </h2>
                     <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                      {standard.description ||
+                      {extractLocalizedText(standard.description, isArabic) ||
                         (isArabic ? "لا يوجد وصف لهذا الإطار بعد." : "No description available for this framework yet.")}
                     </p>
                   </div>
@@ -303,10 +303,10 @@ export function StandardDetailPageClient() {
                       {index + 1}
                     </span>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{criterion.title}</h4>
+                      <h4 className="font-semibold text-foreground">{extractLocalizedText(criterion.title, isArabic)}</h4>
                       {criterion.description && (
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {criterion.description}
+                          {extractLocalizedText(criterion.description, isArabic)}
                         </p>
                       )}
                     </div>

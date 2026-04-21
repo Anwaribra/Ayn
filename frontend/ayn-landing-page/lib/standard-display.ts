@@ -21,6 +21,54 @@ const STANDARD_TITLE_AR: Record<string, string> = {
 }
 
 export function getStandardDisplayTitle(standard: Pick<Standard, "id" | "title">, isArabic: boolean): string {
-  if (!isArabic) return standard.title
-  return STANDARD_TITLE_AR[standard.id] ?? standard.title
+  const mappedAr = STANDARD_TITLE_AR[standard.id];
+  if (isArabic && mappedAr) return mappedAr;
+  
+  // If no hardcoded map, parse the text dynamically
+  return extractLocalizedText(standard.title, isArabic);
+}
+
+/**
+ * Automatically splits bilingual text formatted like "Arabic (English)" or "English (Arabic)".
+ * Also handles basic translation for "Standard X" to "المعيار X".
+ */
+export function extractLocalizedText(text: string | null | undefined, isArabic: boolean): string {
+  if (!text) return "";
+  
+  // Fast translation for generic titles
+  if (isArabic) {
+    if (text.startsWith("Standard ")) {
+      return text.replace("Standard ", "المعيار ");
+    }
+    if (text.startsWith("Domain ")) {
+      return text.replace("Domain ", "المجال ");
+    }
+    if (text.startsWith("Clause ")) {
+      return text.replace("Clause ", "البند ");
+    }
+  }
+
+  // Detect parenthesis wrapping dual-language text
+  // e.g "التخطيط الاستراتيجي (Strategic Planning)"
+  const match = text.match(/^(.*?)\s*\((.*?)\)\s*$/);
+  
+  if (match) {
+    const part1 = match[1].trim();
+    const part2 = match[2].trim();
+    
+    const arabicRegex = /[\u0600-\u06FF]/;
+    const part1IsArabic = arabicRegex.test(part1);
+    const part2IsArabic = arabicRegex.test(part2);
+    
+    if (isArabic) {
+      if (part1IsArabic) return part1;
+      if (part2IsArabic) return part2;
+    } else {
+      // English requested, return the one without Arabic chars, or fallback
+      if (!part1IsArabic) return part1;
+      if (!part2IsArabic) return part2;
+    }
+  }
+  
+  return text;
 }

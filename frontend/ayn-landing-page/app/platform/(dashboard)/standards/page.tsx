@@ -771,7 +771,7 @@ export default function StandardsPage() {
 
                         {standard.description && (
                           <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                            {standard.description}
+                            {extractLocalizedText(standard.description, isArabic)}
                           </p>
                         )}
 
@@ -1125,11 +1125,11 @@ export default function StandardsPage() {
                                       </span>
                                     )}
                                     <span className="text-base font-bold text-foreground">
-                                      {mapping.criterion_title}
+                                      {extractLocalizedText(mapping.criterion_title, isArabic)}
                                     </span>
                                   </div>
                                   <p className="mt-1.5 text-sm text-muted-foreground">
-                                    {mapping.criterion_description ||
+                                    {extractLocalizedText(mapping.criterion_description, isArabic) ||
                                       mapping.ai_reasoning ||
                                       copy.awaitingAnalysis}
                                   </p>

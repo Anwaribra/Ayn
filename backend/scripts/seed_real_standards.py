@@ -67,13 +67,38 @@ NCAAA_EGYPT = {
     ]
 }
 
+NAQAAE_EGYPT_EDU = {
+    "title": "NAQAAE Higher Education - Egypt",
+    "code": "NAQAAE-HE",
+    "category": "National Accreditation",
+    "description": "National Authority for Quality Assurance and Accreditation of Education (Egypt) standards for Higher Education.",
+    "region": "Egypt",
+    "icon": "GraduationCap",
+    "color": "from-red-600 to-rose-700",
+    "isPublic": True,
+    "source": "seeded",
+    "criteria": [
+        {"title": "Standard 1", "description": "التخطيط الاستراتيجي (Strategic Planning)"},
+        {"title": "Standard 2", "description": "القيادة والحوكمة (Leadership and Governance)"},
+        {"title": "Standard 3", "description": "إدارة الجودة والتطوير (Quality Management)"},
+        {"title": "Standard 4", "description": "أعضاء هيئة التدريس (Faculty Members)"},
+        {"title": "Standard 5", "description": "الجهاز الإداري (Administrative Staff)"},
+        {"title": "Standard 6", "description": "الموارد المالية والمادية (Financial & Material Resources)"},
+        {"title": "Standard 7", "description": "المعايير الأكاديمية والبرامج التعليمية (Academic Programs)"},
+        {"title": "Standard 8", "description": "التدريس والتعلم (Teaching and Learning)"},
+        {"title": "Standard 9", "description": "الطلاب والخريجون (Students and Graduates)"},
+        {"title": "Standard 10", "description": "البحث العلمي (Scientific Research)"},
+        {"title": "Standard 11", "description": "المشاركة المجتمعية (Community Participation)"},
+    ]
+}
+
 async def seed():
     await connect_db()
     db = get_db()
     
     print("Seeding real standards...")
     
-    for std_data in [ISO_21001, NCAAA_EGYPT]:
+    for std_data in [ISO_21001, NCAAA_EGYPT, NAQAAE_EGYPT_EDU]:
         # Check if exists
         existing = await db.standard.find_first(where={"code": std_data["code"]})
         if existing:

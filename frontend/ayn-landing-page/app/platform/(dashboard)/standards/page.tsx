@@ -1268,6 +1268,7 @@ export default function StandardsPage() {
                 </div>
               </div>
             </div>
+          </div>
           )}
         </AnimatePresence>
       </div>

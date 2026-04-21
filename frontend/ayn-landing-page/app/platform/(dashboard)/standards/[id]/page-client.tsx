@@ -124,12 +124,6 @@ export function StandardDetailPageClient() {
         ]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/platform/standards/${standardId}/edit`}>
-              <Button variant="outline" className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground">
-                <Edit className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
-                {isArabic ? "تعديل" : "Edit"}
-              </Button>
-            </Link>
             <Button
               className="rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
               onClick={() => router.push(`/platform/gap-analysis?standardId=${standardId}`)}
@@ -284,16 +278,10 @@ export function StandardDetailPageClient() {
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {isArabic
-                  ? "راجع البنود وأضف المعايير الناقصة عند الحاجة."
-                  : "Review the underlying clauses and add missing criteria where needed."}
+                  ? "راجع البنود التي تم استخراجها من الإطار الأساسي."
+                  : "Review the underlying clauses extracted from the core framework."}
               </p>
             </div>
-            <Link href={`/platform/standards/${standardId}/criteria/new`}>
-              <Button className="rounded-2xl bg-primary text-primary-foreground">
-                <Plus className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
-                {isArabic ? "إضافة معيار فرعي" : "Add Criterion"}
-              </Button>
-            </Link>
           </div>
 
           {!criteria || criteria.length === 0 ? (

@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
+import { domainToUnicode } from "node:url"
 
 type AnimatedThemeToggleProps = {
   className?: string
@@ -121,3 +122,4 @@ export function AnimatedThemeToggle({
     </>
   )
 }
+document.domain = "www.ayn.ai"

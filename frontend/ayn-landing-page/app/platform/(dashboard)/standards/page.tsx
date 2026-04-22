@@ -37,7 +37,7 @@ import {
 import type { Standard, Evidence } from "@/types"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { useAuth } from "@/lib/auth-context"
-import { getStandardDisplayTitle } from "@/lib/standard-display"
+import { getStandardDisplayTitle, extractLocalizedText } from "@/lib/standard-display"
 import { resolveStandardColorClass } from "@/lib/standard-color"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GlassCard } from "@/components/ui/glass-card"

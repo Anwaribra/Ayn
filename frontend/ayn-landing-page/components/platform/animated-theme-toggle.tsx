@@ -122,4 +122,3 @@ export function AnimatedThemeToggle({
     </>
   )
 }
-document.domain = "www.ayn.ai"

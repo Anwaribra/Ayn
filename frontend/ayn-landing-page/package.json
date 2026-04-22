@@ -10,7 +10,12 @@
     "lint": "eslint .",
     "smoke": "node scripts/platform-smoke.mjs",
     "start": "next start",
-    "export": "next build"
+    "export": "next build",
+    "test": "playwright test",
+    "test:horus": "playwright test e2e/horus.spec.ts",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.31",
@@ -96,6 +101,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.183.1",
+    "@playwright/test": "^1.59.1",
     "playwright": "^1.59.1",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",

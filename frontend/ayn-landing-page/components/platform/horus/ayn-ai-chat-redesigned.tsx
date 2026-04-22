@@ -630,6 +630,7 @@ export default function HorusAIChat() {
   const [draftMessage, setDraftMessage] = useState("")
   const [deepResearchRunning, setDeepResearchRunning] = useState(false)
   const [inputResetKey, setInputResetKey] = useState(0)
+  const [historySheetOpen, setHistorySheetOpen] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true
     return !localStorage.getItem("horus-sound-disabled")
@@ -1191,9 +1192,9 @@ export default function HorusAIChat() {
         <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
-        <Sheet>
+        <Sheet open={historySheetOpen} onOpenChange={setHistorySheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="History">
+            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="History" onClick={() => setHistorySheetOpen(true)}>
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
@@ -1215,7 +1216,7 @@ export default function HorusAIChat() {
                   history.map((session: any) => (
                     <div
                       key={session.id}
-                      onClick={() => loadChat(session.id)}
+                      onClick={() => { setHistorySheetOpen(false); loadChat(session.id) }}
                       className={cn(
                         "group relative cursor-pointer rounded-[var(--radius-lg)] border p-3.5 transition-all sm:p-4",
                         currentChatId === session.id

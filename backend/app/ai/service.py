@@ -375,7 +375,7 @@ class OpenRouterClient:
     
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
     
-    def __init__(self, api_key: str, model: str = "google/gemini-2.0-flash-001"):
+    def __init__(self, api_key: str, model: str = "nvidia/nemotron-3-super:free"):
         self.api_key = api_key
         self.model = model
         logger.info(f"OpenRouter client initialized with model: {model}")

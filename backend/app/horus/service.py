@@ -2207,7 +2207,16 @@ Behavioral rules:
                 "help with standards and evidence, and guide you through gap analysis."
             )
 
-        if msg.startswith("من انت") or msg.startswith("من أنت") or "ماذا تستطيع" in msg or "تقدر تعمل ايه" in msg or "تعمل ايه" in msg:
+        if (
+            msg.startswith("من انت") or msg.startswith("من أنت")
+            or "ماذا تستطيع" in msg
+            or "تقدر تعمل" in msg
+            or "تعمل ايه" in msg
+            or "تعملي ايه" in msg
+            or "what can you do" in lowered
+            or "what do you do" in lowered
+            or "ايه اللي تقدر" in msg
+        ):
             return (
                 "أنا Horus، مساعد منصة Ayn. أقدر ألخص الملفات، أراجع الأدلة، أساعدك في المعايير، "
                 "وأوجّهك في Gap Analysis وخطوات الامتثال."

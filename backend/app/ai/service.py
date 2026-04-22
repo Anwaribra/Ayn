@@ -22,6 +22,11 @@ def _gemini_daily_quota_exhausted(err: Exception) -> bool:
     msg = str(err)
     return "generate_content_free_tier_requests" in msg and "PerDay" in msg
 
+def _gemini_model_invalid(err: Exception) -> bool:
+    """Return True when the model name is not found — no point retrying."""
+    msg = str(err)
+    return "NOT_FOUND" in msg or "404" in msg or "is not found for API version" in msg
+
 # Try importing Gemini SDK
 GEMINI_AVAILABLE = False
 try:
@@ -840,7 +845,7 @@ class GeminiClient:
             self.model_name = (
                 getattr(settings, 'GEMINI_MODEL', None)
                 or os.getenv('GEMINI_MODEL')
-                or "gemini-2.5-flash-preview-04-17"
+                or "gemini-2.0-flash"
             )
             self.embedding_model = "text-embedding-004"
         else:
@@ -1147,7 +1152,10 @@ class HorusAIClient:
                 return await method(*args, **kwargs)
             except Exception as e:
                 last_error = e
-                if _gemini_rate_limited(e):
+                if _gemini_model_invalid(e):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + 24 * 3600
+                    logger.error(f"Gemini model invalid — skipping for 24h: {e}")
+                elif _gemini_rate_limited(e):
                     cooldown = 6 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
@@ -1179,7 +1187,10 @@ class HorusAIClient:
                     yield chunk
                 return
             except Exception as e:
-                if _gemini_rate_limited(e):
+                if _gemini_model_invalid(e):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + 24 * 3600
+                    logger.error(f"Gemini model invalid — skipping for 24h: {e}")
+                elif _gemini_rate_limited(e):
                     cooldown = 6 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")

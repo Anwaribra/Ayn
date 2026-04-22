@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     
     # Gemini AI
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash-preview-04-17"
     
     # OpenRouter (fallback AI provider)
     OPENROUTER_API_KEY: Optional[str] = None

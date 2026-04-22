@@ -17,6 +17,11 @@ def _gemini_rate_limited(err: Exception) -> bool:
     msg = str(err)
     return "RESOURCE_EXHAUSTED" in msg or "429" in msg or "rate limit" in msg.lower()
 
+def _gemini_daily_quota_exhausted(err: Exception) -> bool:
+    """Return True when the daily free-tier quota (not just per-minute) is gone."""
+    msg = str(err)
+    return "generate_content_free_tier_requests" in msg and "PerDay" in msg
+
 # Try importing Gemini SDK
 GEMINI_AVAILABLE = False
 try:
@@ -829,7 +834,11 @@ class GeminiClient:
         
         if USE_NEW_API:
             self.client = new_genai.Client(api_key=api_key)
-            self.model_name = "gemini-2.0-flash"
+            self.model_name = (
+                getattr(settings, 'GEMINI_MODEL', None)
+                or os.getenv('GEMINI_MODEL')
+                or "gemini-2.5-flash-preview-04-17"
+            )
             self.embedding_model = "text-embedding-004"
         else:
             old_genai.configure(api_key=api_key)
@@ -1136,7 +1145,9 @@ class HorusAIClient:
             except Exception as e:
                 last_error = e
                 if _gemini_rate_limited(e):
-                    _GEMINI_COOLDOWN_UNTIL = time.time() + 60
+                    cooldown = 6 * 3600 if _gemini_daily_quota_exhausted(e) else 60
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
+                    logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
                 logger.warning(f"Gemini {method_name} failed: {e}. Trying fallback...")
         if self.openrouter:
             try:
@@ -1166,7 +1177,9 @@ class HorusAIClient:
                 return
             except Exception as e:
                 if _gemini_rate_limited(e):
-                    _GEMINI_COOLDOWN_UNTIL = time.time() + 60
+                    cooldown = 6 * 3600 if _gemini_daily_quota_exhausted(e) else 60
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
+                    logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
                 logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
         if self.openrouter:
             try:

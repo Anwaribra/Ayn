@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     
     # OpenRouter (fallback AI provider)
     OPENROUTER_API_KEY: Optional[str] = None
-    OPENROUTER_MODEL: str = "nvidia/nemotron-3-super:free"
+    OPENROUTER_MODEL: str = "openrouter/free"
     
     # OpenAI (speech-to-text)
     OPENAI_API_KEY: Optional[str] = None

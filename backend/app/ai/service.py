@@ -375,7 +375,7 @@ class OpenRouterClient:
     
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
     
-    def __init__(self, api_key: str, model: str = "nvidia/nemotron-3-super:free"):
+    def __init__(self, api_key: str, model: str = "openrouter/free"):
         self.api_key = api_key
         self.model = model
         logger.info(f"OpenRouter client initialized with model: {model}")
@@ -468,7 +468,10 @@ class OpenRouterClient:
         }
         async with httpx.AsyncClient() as client:
             async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
-                response.raise_for_status()
+                if response.status_code >= 400:
+                    body = await response.aread()
+                    logger.error(f"OpenRouter stream error {response.status_code} model={self.model}: {body.decode()[:500]}")
+                    response.raise_for_status()
                 buffer = ""
                 async for chunk in response.aiter_text():
                     buffer += chunk

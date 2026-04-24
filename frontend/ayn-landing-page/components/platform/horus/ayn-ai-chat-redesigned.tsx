@@ -37,6 +37,7 @@ import {
   VolumeX,
   Sun,
   Moon,
+  Wrench,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -57,6 +58,8 @@ import { AgentExecutionTimeline, deriveAgentSteps } from "./agent-execution-time
 import { ThinkStepper } from "./think-stepper"
 import { ThinkingPanel } from "./thinking-panel"
 import { useLiveStreamingText } from "@/hooks/use-streaming-text"
+import { AgentContextIndicator } from "./agent-context-indicator"
+import { AgentActivityLog } from "./agent-activity-log"
 
 const EMPTY_STRINGS: string[] = []
 const EMPTY_TOOL_STEPS: ToolStep[] = []
@@ -108,6 +111,18 @@ const RESPONSE_MODES = [
     icon: Sparkles,
   },
 ] as const
+
+// ── Agent Commands for Slash Palette ────────────────────────────────────────
+const AGENT_COMMANDS = [
+  { command: "audit", label: "Run full audit", description: "Generate audit report from existing analysis data", icon: "shield-check", category: "analysis" },
+  { command: "gaps", label: "Check compliance gaps", description: "Show criteria-level gap/met status table", icon: "alert-triangle", category: "analysis" },
+  { command: "remediation", label: "Generate remediation plan", description: "AI-powered action plan for open gaps", icon: "wrench", category: "analysis" },
+  { command: "analytics", label: "Get analytics report", description: "KPIs, trends, scores, and growth metrics", icon: "bar-chart-2", category: "analytics" },
+  { command: "link", label: "Link evidence to criterion", description: "Attach evidence to a specific criterion", icon: "link", category: "actions" },
+  { command: "export", label: "Export report", description: "Generate downloadable report link", icon: "download", category: "actions" },
+  { command: "snapshot", label: "Platform snapshot", description: "View current platform state overview", icon: "search", category: "info" },
+  { command: "analyze", label: "Start gap analysis", description: "Queue a new gap analysis for a standard", icon: "sparkles", category: "actions" },
+]
 
 function containsArabic(text?: string | null): boolean {
   return !!text && /[\u0600-\u06FF]/.test(text)
@@ -611,6 +626,8 @@ export default function HorusAIChat() {
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
   const [feedbackPersisted, setFeedbackPersisted] = useState<Set<string>>(new Set())
   // Tiered feedback: when thumbs down, expand to show categories + optional "Tell us more"
+  const [detailedFeedbackCategory, setDetailedFeedbackCategory] = useState<string | null>(null)
+  const [activityLogOpen, setActivityLogOpen] = useState(false)
   const [feedbackDownExpanded, setFeedbackDownExpanded] = useState<string | null>(null)
   const [feedbackTellMore, setFeedbackTellMore] = useState<Record<string, string>>({})
   // M1: copy state tracking
@@ -738,6 +755,34 @@ export default function HorusAIChat() {
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
   }, [newChat])
+
+  // Enhancement: Document title + favicon update during agent processing
+  useEffect(() => {
+    const originalTitle = document.title
+    if (status === "generating") {
+      const goalText = activeAssistantMsg?.agentRun?.goal
+      if (activeResponseMode === "agent" && goalText) {
+        document.title = `⚡ ${goalText.slice(0, 40)}… — Horus AI`
+      } else if (activeResponseMode === "think") {
+        document.title = `🧠 Thinking… — Horus AI`
+      } else {
+        document.title = `✨ Generating… — Horus AI`
+      }
+    }
+    return () => { document.title = originalTitle }
+  }, [status, activeResponseMode, activeAssistantMsg?.agentRun?.goal])
+
+  // Enhancement: Escape key to cancel pending confirmation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && activeAssistantMsg?.pendingConfirmation) {
+        e.preventDefault()
+        resolveActionConfirmation(activeAssistantMsg.pendingConfirmation.id, "cancel")
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [activeAssistantMsg?.pendingConfirmation, resolveActionConfirmation])
 
   // Cleanup on unmount to prevent ghost streams
   useEffect(() => {
@@ -1189,6 +1234,16 @@ export default function HorusAIChat() {
       
       {/* New + History as floating top-right */}
       <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
+        <AgentActivityLog
+          messages={messages}
+          open={activityLogOpen}
+          onOpenChange={setActivityLogOpen}
+          trigger={
+            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="Agent Activity Log">
+              <Wrench className="h-4 w-4" />
+            </Button>
+          }
+        />
         <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
@@ -1962,6 +2017,7 @@ export default function HorusAIChat() {
                   { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
                   { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
                 ]}
+                agentCommands={AGENT_COMMANDS}
                 footer={
                   <div className="flex items-center gap-2">
                     <Button
@@ -2012,9 +2068,18 @@ export default function HorusAIChat() {
                       </SelectContent>
                     </Select>
                     <span className="hidden h-4 w-px bg-white/8 sm:block" />
-                    <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
-                      {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}
-                    </span>
+                    {messages.length > 0 && (
+                      <AgentContextIndicator
+                        messages={messages}
+                        status={status}
+                        className="hidden sm:flex"
+                      />
+                    )}
+                    {messages.length === 0 && (
+                      <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
+                        {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}
+                      </span>
+                    )}
                   </div>
                 }
               />

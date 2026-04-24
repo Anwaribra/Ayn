@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any, Awaitable, Callable, Dict
 
 logger = logging.getLogger(__name__)
@@ -88,13 +89,21 @@ async def tool_start_gap_analysis_run(
     if not standard_id:
         return {
             "type": "action_error",
-            "payload": {"message": "Missing required argument: standard_id"},
+            "payload": {
+                "message": "Missing required argument: standard_id",
+                "suggested_fix": "Go to Standards Hub and select which standard to analyze.",
+                "recovery_url": "/platform/standards",
+            },
         }
 
     if not institution_id:
         return {
             "type": "action_error",
-            "payload": {"message": "No institution is associated with this user."},
+            "payload": {
+                "message": "No institution is associated with this user.",
+                "suggested_fix": "Set up your institution profile in Settings before running analysis.",
+                "recovery_url": "/platform/settings",
+            },
         }
 
     user_dto = UserDTO(
@@ -139,7 +148,11 @@ async def tool_link_evidence_to_criterion(
     if not evidence_id or not criterion_id:
         return {
             "type": "action_error",
-            "payload": {"message": "Missing required arguments: evidence_id and criterion_id"},
+            "payload": {
+                "message": "Missing required arguments: evidence_id and criterion_id",
+                "suggested_fix": "Specify both the evidence ID and the criterion ID to link them.",
+                "recovery_url": "/platform/evidence-vault",
+            },
         }
 
     req = AttachEvidenceRequest(criterionId=criterion_id)
@@ -207,6 +220,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "a full platform snapshot",
         "description": "Fetch a complete platform snapshot for the current user/institution.",
         "args_schema": {},
+        "estimated_duration_ms": 2000,
         "handler": tool_get_platform_snapshot,
     },
     "run_full_audit": {
@@ -215,6 +229,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "a full compliance audit report",
         "description": "Generate an audit report card from existing institution analysis data.",
         "args_schema": {},
+        "estimated_duration_ms": 5000,
         "handler": tool_run_full_audit,
     },
     "check_compliance_gaps": {
@@ -223,6 +238,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "the compliance gap table",
         "description": "Return criteria-level compliance gap rows for the institution.",
         "args_schema": {},
+        "estimated_duration_ms": 3000,
         "handler": tool_check_compliance_gaps,
     },
     "generate_remediation_report": {
@@ -231,6 +247,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "the remediation action plan",
         "description": "Generate remediation actions for current open platform gaps.",
         "args_schema": {},
+        "estimated_duration_ms": 8000,
         "handler": tool_generate_remediation_report,
     },
     "start_gap_analysis_run": {
@@ -239,6 +256,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "a new gap analysis run",
         "description": "Queue and run a new gap analysis for a specific standard id.",
         "args_schema": {"standard_id": "string"},
+        "estimated_duration_ms": 15000,
         "handler": tool_start_gap_analysis_run,
     },
     "link_evidence_to_criterion": {
@@ -247,6 +265,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "evidence-to-criterion linking",
         "description": "Attach one evidence item to one criterion.",
         "args_schema": {"evidence_id": "string", "criterion_id": "string"},
+        "estimated_duration_ms": 1500,
         "handler": tool_link_evidence_to_criterion,
     },
     "generate_report_export_link": {
@@ -255,6 +274,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "the report export link",
         "description": "Create an export link for an existing gap analysis report id.",
         "args_schema": {"report_id": "string"},
+        "estimated_duration_ms": 1000,
         "handler": tool_generate_report_export_link,
     },
     "get_analytics_report": {
@@ -263,6 +283,7 @@ TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
         "prepare_text": "the compliance analytics report",
         "description": "Fetch comprehensive analytics: KPIs, score trends, standard performance, anomaly detection, growth metrics, evidence trends, and auto-generated insights. Use this when the user asks for analytics, reports, statistics, trends, or performance summaries.",
         "args_schema": {"period_days": "integer (optional, default 30)"},
+        "estimated_duration_ms": 4000,
         "handler": tool_get_analytics_report,
     },
 }
@@ -285,12 +306,13 @@ def requires_explicit_confirmation(tool_name: str) -> bool:
     return bool(spec and spec.get("mutating"))
 
 
-def get_tool_ui_meta(tool_name: str) -> dict[str, str]:
+def get_tool_ui_meta(tool_name: str) -> dict[str, str | int]:
     spec = TOOL_REGISTRY.get(tool_name, {})
     return {
         "title": spec.get("title", tool_name),
         "prepare_text": spec.get("prepare_text", f"preparing {tool_name}"),
         "description": spec.get("description", ""),
+        "estimated_duration_ms": spec.get("estimated_duration_ms", 3000),
     }
 
 
@@ -305,9 +327,16 @@ async def execute_tool(
 ) -> dict:
     spec = TOOL_REGISTRY.get(tool_name)
     if not spec:
-        return {"type": "action_error", "payload": {"message": f"Unknown tool '{tool_name}'"}}
+        return {
+            "type": "action_error",
+            "payload": {
+                "message": f"Unknown tool '{tool_name}'",
+                "suggested_fix": "Check the available tools using the slash command palette.",
+            },
+        }
     handler: ToolFn = spec["handler"]
     last_error: str | None = None
+    start_time = time.monotonic()
     for attempt in range(TOOL_RETRY_ATTEMPTS + 1):
         try:
             result = await handler(
@@ -317,9 +346,26 @@ async def execute_tool(
                 current_user=current_user,
                 args=args or {},
             )
+            # Inject execution metadata
+            elapsed_ms = round((time.monotonic() - start_time) * 1000)
+            if isinstance(result, dict):
+                result["_meta"] = {
+                    "tool": tool_name,
+                    "elapsed_ms": elapsed_ms,
+                    "user_id": user_id,
+                }
+                # For mutating tools, add undo hint
+                if spec.get("mutating") and result.get("type") not in ("action_error", None):
+                    result["_meta"]["undoable"] = True
+                    result["_meta"]["undo_tool"] = f"undo_{tool_name}"
+
             if result.get("type") == "action_error":
                 payload = result.get("payload") or {}
                 last_error = payload.get("message") or result.get("message") or str(result)
+                # Inject suggested_fix if not already present
+                if "suggested_fix" not in payload:
+                    payload["suggested_fix"] = _default_suggested_fix(tool_name, last_error)
+                    result["payload"] = payload
                 if attempt < TOOL_RETRY_ATTEMPTS:
                     delay = TOOL_RETRY_BASE_DELAY_SEC * (2**attempt)
                     logger.warning(
@@ -347,5 +393,32 @@ async def execute_tool(
                 )
                 await asyncio.sleep(delay)
                 continue
-            return {"type": "action_error", "payload": {"message": last_error or "Unknown error"}}
-    return {"type": "action_error", "payload": {"message": last_error or "Unknown error"}}
+            return {
+                "type": "action_error",
+                "payload": {
+                    "message": last_error or "Unknown error",
+                    "suggested_fix": _default_suggested_fix(tool_name, last_error),
+                },
+            }
+    return {
+        "type": "action_error",
+        "payload": {
+            "message": last_error or "Unknown error",
+            "suggested_fix": _default_suggested_fix(tool_name, last_error),
+        },
+    }
+
+
+def _default_suggested_fix(tool_name: str, error_msg: str | None) -> str:
+    """Generate a default recovery suggestion based on the tool and error."""
+    fixes: dict[str, str] = {
+        "run_full_audit": "Ensure your institution has completed at least one gap analysis run first.",
+        "check_compliance_gaps": "Link your institution to standards and map criteria before checking gaps.",
+        "generate_remediation_report": "Run a gap analysis first to generate gaps that need remediation.",
+        "start_gap_analysis_run": "Go to Standards Hub and select the standard you want to analyze against.",
+        "link_evidence_to_criterion": "Upload evidence in the Evidence Vault first, then specify both IDs.",
+        "generate_report_export_link": "Run an audit or gap analysis first to have a report to export.",
+        "get_analytics_report": "Complete some gap analyses to generate analytics data.",
+    }
+    return fixes.get(tool_name, "Try again or contact support if the issue persists.")
+

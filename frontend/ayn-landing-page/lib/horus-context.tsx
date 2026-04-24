@@ -81,6 +81,12 @@ export type ToolStep = {
     title?: string
     status: "running" | "done" | "error"
     result_type?: string
+    /** Live progress percentage (0-100) from __TOOL_PROGRESS__ events */
+    progress_percent?: number
+    /** Estimated duration in milliseconds from backend tool spec */
+    estimated_duration_ms?: number
+    /** Live progress message from __TOOL_PROGRESS__ events */
+    progress_message?: string
 }
 
 export type FileStatus = "uploading" | "extracting" | "analyzing" | "done" | "error"
@@ -411,6 +417,26 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                                 }))
                             } catch (e) {
                                 console.error("[Horus] Failed to parse tool step:", e)
+                            }
+                            return true
+                        }
+
+                        if (line.startsWith("__TOOL_PROGRESS__:")) {
+                            try {
+                                const jsonStr = line.slice("__TOOL_PROGRESS__:".length).trim()
+                                const parsed = JSON.parse(jsonStr) as { tool: string; percent: number; message?: string }
+                                setMessages(prev => prev.map(m => {
+                                    if (m.id !== assistantMsgId) return m
+                                    const prevSteps = m.toolSteps ?? []
+                                    const updatedSteps = prevSteps.map(ts =>
+                                        ts.tool === parsed.tool && ts.status === "running"
+                                            ? { ...ts, progress_percent: parsed.percent, progress_message: parsed.message }
+                                            : ts
+                                    )
+                                    return { ...m, toolSteps: updatedSteps }
+                                }))
+                            } catch (e) {
+                                console.error("[Horus] Failed to parse tool progress:", e)
                             }
                             return true
                         }

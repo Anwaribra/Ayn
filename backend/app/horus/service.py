@@ -1105,7 +1105,7 @@ class HorusService:
                                 )
                             return
 
-                        yield f"__TOOL_STEP__:{json.dumps({'step': 1, 'total': 1, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running'})}\n"
+                        yield f"__TOOL_STEP__:{json.dumps({'step': 1, 'total': 1, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running', 'estimated_duration_ms': tool_meta.get('estimated_duration_ms', 3000)})}\n"
                         tool_result = await execute_tool(
                             tool_name=tool_name,
                             args=args,
@@ -2666,7 +2666,7 @@ Rules:
             args = step.get("arguments", {}) or {}
             tool_meta = get_tool_ui_meta(tool_name)
 
-            _emit(f"__TOOL_STEP__:{json.dumps({'step': step_idx, 'total': total, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running'})}\n")
+            _emit(f"__TOOL_STEP__:{json.dumps({'step': step_idx, 'total': total, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'running', 'estimated_duration_ms': tool_meta.get('estimated_duration_ms', 3000)})}\n")
 
             result = await execute_tool(
                 tool_name=tool_name,
@@ -2728,11 +2728,34 @@ Rules:
         phase: str = "auto",
         correlation_id: Optional[str] = None,
     ) -> None:
-        title = f"Horus executed {tool_name}"
-        description = f"Phase={phase}, result={result.get('type', 'unknown')}"
-        metadata = {"tool": tool_name, "args": args, "result_type": result.get("type"), "phase": phase}
+        result_type = result.get("type", "unknown")
+        is_error = result_type == "action_error"
+        meta = result.get("_meta", {})
+        elapsed_ms = meta.get("elapsed_ms", 0)
+
+        title = f"Horus {'failed' if is_error else 'executed'} {tool_name}"
+        description = f"Phase={phase}, result={result_type}"
+        if elapsed_ms:
+            description += f", took {elapsed_ms}ms"
+
+        metadata: Dict[str, Any] = {
+            "tool": tool_name,
+            "args": args,
+            "result_type": result_type,
+            "phase": phase,
+            "success": not is_error,
+            "elapsed_ms": elapsed_ms,
+        }
+        if is_error:
+            payload = result.get("payload", {})
+            metadata["error_message"] = payload.get("message", "")
+            metadata["suggested_fix"] = payload.get("suggested_fix", "")
+        if meta.get("undoable"):
+            metadata["undoable"] = True
+            metadata["undo_tool"] = meta.get("undo_tool", "")
         if correlation_id:
             metadata["correlation_id"] = correlation_id
+
         if background_tasks:
             background_tasks.add_task(
                 ActivityService.log_activity,

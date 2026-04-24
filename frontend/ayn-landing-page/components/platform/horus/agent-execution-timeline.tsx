@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
-import { Check, Loader2, Wrench, AlertCircle, FileText, ChevronDown, ChevronUp } from "lucide-react"
+import { Check, Loader2, Wrench, AlertCircle, FileText, ChevronDown, ChevronUp, Clock, Maximize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ToolStep } from "@/lib/horus-context"
 
@@ -14,6 +14,12 @@ export type ExecutionStep = {
   status: ExecutionStepStatus
   /** Optional tool/action name for agent steps */
   tool?: string
+  /** Live progress percentage (0-100) */
+  progress_percent?: number
+  /** Estimated duration in milliseconds */
+  estimated_duration_ms?: number
+  /** Live progress message */
+  progress_message?: string
 }
 
 export type AgentExecutionPhase =
@@ -79,6 +85,7 @@ export function AgentExecutionTimeline({
 }: AgentExecutionTimelineProps) {
   const reducedMotion = useReducedMotion()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
   const hasSteps = steps.length > 0
   const activeToolStep = steps.find((s) => s.status === "active" && s.tool)
   const isExecuting = phase === "executing"
@@ -239,14 +246,14 @@ export function AgentExecutionTimeline({
         </div>
       )}
 
-      {/* Tool chip — highlighted when executing */}
+      {/* Tool chip — highlighted when executing, with live progress */}
       {activeToolStep?.tool && (
         <motion.div
           layout
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1, duration: 0.2 }}
-          className="mb-3"
+          className="mb-3 space-y-1.5"
         >
           <motion.span
             animate={
@@ -276,7 +283,52 @@ export function AgentExecutionTimeline({
           >
             <Wrench className="w-3 h-3" />
             {activeToolStep.tool}
+            {activeToolStep.progress_percent != null && activeToolStep.progress_percent > 0 && (
+              <span className="ml-1 font-mono text-[10px] opacity-80">
+                {activeToolStep.progress_percent}%
+              </span>
+            )}
           </motion.span>
+
+          {/* Progress bar */}
+          {isExecuting && (
+            <div className="flex items-center gap-2 px-0.5">
+              <div className="h-1 flex-1 rounded-full bg-white/10 overflow-hidden">
+                {activeToolStep.progress_percent != null && activeToolStep.progress_percent > 0 ? (
+                  <motion.div
+                    className="h-full rounded-full bg-primary/60"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${activeToolStep.progress_percent}%` }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  />
+                ) : (
+                  <motion.div
+                    className="h-full w-1/3 rounded-full bg-primary/40"
+                    animate={{ x: ["-100%", "300%"] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                )}
+              </div>
+              {activeToolStep.estimated_duration_ms && !activeToolStep.progress_percent && (
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5" />
+                  ~{Math.ceil(activeToolStep.estimated_duration_ms / 1000)}s
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Progress message */}
+          {activeToolStep.progress_message && (
+            <motion.p
+              key={activeToolStep.progress_message}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[10px] text-muted-foreground/80 pl-0.5"
+            >
+              {activeToolStep.progress_message}
+            </motion.p>
+          )}
         </motion.div>
       )}
 
@@ -306,8 +358,20 @@ export function AgentExecutionTimeline({
                   duration: reducedMotion ? 0 : 0.25,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="flex items-start gap-2.5 rounded-2xl border border-white/6 bg-white/[0.02] px-2.5 py-2"
+                className="overflow-hidden"
               >
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step.status === "done") {
+                      setExpandedStepId((prev) => prev === step.id ? null : step.id)
+                    }
+                  }}
+                  className={cn(
+                    "flex w-full items-start gap-2.5 rounded-2xl border border-white/6 bg-white/[0.02] px-2.5 py-2 text-left",
+                    step.status === "done" && "cursor-pointer hover:bg-white/[0.04] transition-colors"
+                  )}
+                >
                 <div
                   className={cn(
                     "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all",
@@ -342,6 +406,46 @@ export function AgentExecutionTimeline({
                     {step.tool}
                   </span>
                 )}
+                {step.status === "done" && (
+                  <Maximize2 className={cn(
+                    "w-3 h-3 shrink-0 text-muted-foreground/40 transition-transform",
+                    expandedStepId === step.id && "rotate-45"
+                  )} />
+                )}
+                </button>
+
+                {/* Expandable detail panel */}
+                <AnimatePresence>
+                  {expandedStepId === step.id && step.status === "done" && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-1 ml-7 rounded-xl border border-white/6 bg-white/[0.015] px-3 py-2 space-y-1.5">
+                        {step.tool && (
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <span className="text-muted-foreground/60 min-w-[60px]">Tool</span>
+                            <span className="font-mono text-foreground/80">{step.tool}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <span className="text-muted-foreground/60 min-w-[60px]">Status</span>
+                          <span className="inline-flex items-center gap-1 text-emerald-400">
+                            <Check className="h-2.5 w-2.5" />
+                            Completed
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <span className="text-muted-foreground/60 min-w-[60px]">Step</span>
+                          <span className="text-foreground/80">{idx + 1} of {steps.length}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -378,6 +482,9 @@ export function deriveAgentSteps(
         label: t.total > 1 ? `Step ${t.step} of ${t.total}: ${t.title ?? t.tool}` : (t.title ?? t.tool),
         status,
         tool: t.tool,
+        progress_percent: t.progress_percent,
+        estimated_duration_ms: t.estimated_duration_ms,
+        progress_message: t.progress_message,
       })
     })
     if (!isGenerating && phase === "executing") {

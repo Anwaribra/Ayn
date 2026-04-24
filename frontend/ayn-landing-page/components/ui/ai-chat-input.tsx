@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from "react"
-import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff } from "lucide-react"
+import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff, ShieldCheck, BarChart2, AlertTriangle, Link, Download, Search, Sparkles, Wrench } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -34,6 +34,8 @@ interface AIChatInputProps {
   /** When input is empty and user presses Up, fill with this (last user message) */
   lastUserMessage?: string
   quickPrompts?: { label: string; prompt: string }[]
+  /** Full agent tool commands for the slash palette */
+  agentCommands?: { command: string; label: string; description: string; icon: string; category?: string }[]
   header?: ReactNode
 }
 
@@ -51,6 +53,7 @@ export const AIChatInput = ({
   draftKey,
   lastUserMessage,
   quickPrompts = [],
+  agentCommands = [],
   header,
 }: AIChatInputProps) => {
   const [isActive, setIsActive] = useState(false)
@@ -58,6 +61,8 @@ export const AIChatInput = ({
   const [isDragging, setIsDragging] = useState(false)
   const [plusMenuOpen, setPlusMenuOpen] = useState(false)
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
+  const [slashFilter, setSlashFilter] = useState("")
+  const [slashSelectedIdx, setSlashSelectedIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -69,8 +74,8 @@ export const AIChatInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (!quickPrompts.length && slashMenuOpen) setSlashMenuOpen(false)
-  }, [quickPrompts.length, slashMenuOpen])
+    if (!quickPrompts.length && !agentCommands.length && slashMenuOpen) setSlashMenuOpen(false)
+  }, [quickPrompts.length, agentCommands.length, slashMenuOpen])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -110,26 +115,108 @@ export const AIChatInput = ({
     setSlashMenuOpen(false)
   }
 
+  // Build the combined slash items list for filtering/keyboard navigation
+  const SLASH_ICON_MAP: Record<string, React.ElementType> = {
+    "shield-check": ShieldCheck,
+    "bar-chart-2": BarChart2,
+    "alert-triangle": AlertTriangle,
+    "link": Link,
+    "download": Download,
+    "search": Search,
+    "sparkles": Sparkles,
+    "wrench": Wrench,
+    "file-text": FileText,
+    "brain": Brain,
+  }
+
+  const filteredAgentCommands = agentCommands.filter((cmd) =>
+    !slashFilter ||
+    cmd.command.toLowerCase().includes(slashFilter.toLowerCase()) ||
+    cmd.label.toLowerCase().includes(slashFilter.toLowerCase())
+  )
+
+  const filteredQuickPrompts = quickPrompts.filter((qp) =>
+    !slashFilter || qp.label.toLowerCase().includes(slashFilter.toLowerCase())
+  )
+
+  const totalSlashItems = filteredAgentCommands.length + filteredQuickPrompts.length
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
+      if (slashMenuOpen && totalSlashItems > 0) {
+        // Select the highlighted slash item
+        if (slashSelectedIdx < filteredAgentCommands.length) {
+          const cmd = filteredAgentCommands[slashSelectedIdx]
+          setSlashMenuOpen(false)
+          setSlashFilter("")
+          setSlashSelectedIdx(0)
+          setInputValue(cmd.label)
+          onSend(cmd.label)
+          setInputValue("")
+          setIsActive(false)
+        } else {
+          const qpIdx = slashSelectedIdx - filteredAgentCommands.length
+          const qp = filteredQuickPrompts[qpIdx]
+          if (qp) {
+            setSlashMenuOpen(false)
+            setSlashFilter("")
+            setSlashSelectedIdx(0)
+            setInputValue(qp.prompt)
+            requestAnimationFrame(() => textareaRef.current?.focus())
+          }
+        }
+        return
+      }
       handleSend()
     }
-    if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    if (e.key === "/" && !inputValue.trim() && !e.metaKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault()
       e.stopPropagation()
       setSlashMenuOpen(true)
+      setSlashFilter("")
+      setSlashSelectedIdx(0)
       setIsActive(true)
       return
     }
-    if (e.key === "Escape" && slashMenuOpen) {
+    if (e.key === "Escape") {
+      if (slashMenuOpen) {
+        e.preventDefault()
+        setSlashMenuOpen(false)
+        setSlashFilter("")
+        setSlashSelectedIdx(0)
+        return
+      }
+    }
+    // Arrow key navigation in slash menu
+    if (slashMenuOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault()
-      setSlashMenuOpen(false)
+      setSlashSelectedIdx((prev) => {
+        if (e.key === "ArrowDown") return Math.min(prev + 1, totalSlashItems - 1)
+        return Math.max(prev - 1, 0)
+      })
       return
     }
     if (e.key === "ArrowUp" && !inputValue.trim() && lastUserMessage) {
       e.preventDefault()
       setInputValue(lastUserMessage)
+    }
+    // If typing while slash menu is open, filter
+    if (slashMenuOpen && e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
+      setSlashFilter((prev) => prev + e.key)
+      setSlashSelectedIdx(0)
+      e.preventDefault()
+      return
+    }
+    if (slashMenuOpen && e.key === "Backspace") {
+      if (slashFilter) {
+        setSlashFilter((prev) => prev.slice(0, -1))
+        setSlashSelectedIdx(0)
+      } else {
+        setSlashMenuOpen(false)
+      }
+      e.preventDefault()
+      return
     }
   }
 
@@ -350,23 +437,116 @@ export const AIChatInput = ({
               ref={textareaRef}
               rows={1}
             />
-            {slashMenuOpen && quickPrompts.length > 0 && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[360px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.96)] p-2 shadow-2xl backdrop-blur-xl">
-                {quickPrompts.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => {
-                      setSlashMenuOpen(false)
-                      setInputValue(item.prompt)
-                      requestAnimationFrame(() => textareaRef.current?.focus())
-                    }}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-[var(--border-subtle)]/50"
-                  >
-                    <span>{item.label}</span>
-                    <span className="text-[11px] text-muted-foreground">/{item.label}</span>
-                  </button>
-                ))}
+            {slashMenuOpen && (filteredAgentCommands.length > 0 || filteredQuickPrompts.length > 0) && (
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[420px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.97)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/8 px-3.5 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-primary">
+                      <Sparkles className="h-3 w-3" />
+                    </span>
+                    <span className="text-[12px] font-semibold text-foreground">Agent Commands</span>
+                  </div>
+                  {slashFilter && (
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      /{slashFilter}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground/60">↑↓ navigate · Enter select · Esc close</span>
+                </div>
+
+                <div className="max-h-[320px] overflow-y-auto p-1.5 custom-scrollbar">
+                  {/* Agent Commands */}
+                  {filteredAgentCommands.length > 0 && (
+                    <div className="mb-1">
+                      {filteredAgentCommands.map((cmd, idx) => {
+                        const CmdIcon = SLASH_ICON_MAP[cmd.icon] ?? Wrench
+                        const isSelected = idx === slashSelectedIdx
+                        return (
+                          <button
+                            key={cmd.command}
+                            type="button"
+                            onClick={() => {
+                              setSlashMenuOpen(false)
+                              setSlashFilter("")
+                              setSlashSelectedIdx(0)
+                              setInputValue(cmd.label)
+                              onSend(cmd.label)
+                              setInputValue("")
+                              setIsActive(false)
+                            }}
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                              isSelected
+                                ? "bg-primary/10 border border-primary/20"
+                                : "hover:bg-white/[0.04] border border-transparent"
+                            )}
+                          >
+                            <span className={cn(
+                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors",
+                              isSelected
+                                ? "border-primary/25 bg-primary/15 text-primary"
+                                : "border-white/10 bg-white/[0.04] text-muted-foreground"
+                            )}>
+                              <CmdIcon className="h-4 w-4" />
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-semibold text-foreground">{cmd.label}</span>
+                                <span className="rounded-full border border-white/8 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground/70">/{cmd.command}</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-1">{cmd.description}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Quick Prompts */}
+                  {filteredQuickPrompts.length > 0 && (
+                    <>
+                      {filteredAgentCommands.length > 0 && (
+                        <div className="mx-2 my-1 h-px bg-white/8" />
+                      )}
+                      <div className="px-2 py-1">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 mb-1">Quick prompts</p>
+                      </div>
+                      {filteredQuickPrompts.map((item, idx) => {
+                        const globalIdx = filteredAgentCommands.length + idx
+                        const isSelected = globalIdx === slashSelectedIdx
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => {
+                              setSlashMenuOpen(false)
+                              setSlashFilter("")
+                              setSlashSelectedIdx(0)
+                              setInputValue(item.prompt)
+                              requestAnimationFrame(() => textareaRef.current?.focus())
+                            }}
+                            className={cn(
+                              "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                              isSelected
+                                ? "bg-primary/10 text-foreground"
+                                : "text-foreground hover:bg-white/[0.04]"
+                            )}
+                          >
+                            <span className="text-[13px]">{item.label}</span>
+                            <span className="text-[10px] text-muted-foreground/60">/{item.label}</span>
+                          </button>
+                        )
+                      })}
+                    </>
+                  )}
+
+                  {totalSlashItems === 0 && (
+                    <div className="px-3 py-6 text-center">
+                      <p className="text-[12px] text-muted-foreground">No commands match "/{slashFilter}"</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             </div>

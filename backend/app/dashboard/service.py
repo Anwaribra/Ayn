@@ -1,4 +1,5 @@
 """Dashboard service - Live Data Refactor."""
+import asyncio
 from fastapi import HTTPException, status
 from typing import List, Dict, Any
 from app.core.db import get_db
@@ -46,11 +47,11 @@ class DashboardService:
                 total_criteria = counts.get("total_criteria", 0)
             else:
                 if is_admin:
-                    evidence_count = await db.evidence.count()
-                    total_gap_analyses = await db.gapanalysis.count()
-                    total_criteria = await db.criterion.count()
-                    aligned_criteria_count = await count_distinct_criteria_with_evidence(
-                        db, evidence_where=None
+                    evidence_count, total_gap_analyses, total_criteria, aligned_criteria_count = await asyncio.gather(
+                        db.evidence.count(),
+                        db.gapanalysis.count(),
+                        db.criterion.count(),
+                        count_distinct_criteria_with_evidence(db, evidence_where=None),
                     )
                 else:
                     evidence_count = await db.evidence.count(where={"uploadedById": user_id})
@@ -89,7 +90,7 @@ class DashboardService:
                                 "aligned_criteria_count": aligned_criteria_count,
                                 "total_criteria": total_criteria,
                             }),
-                            ex=30,
+                            ex=120,
                         )
                     except Exception:
                         pass
@@ -130,28 +131,22 @@ class DashboardService:
             except Exception as se:
                 logger.error(f"Failed to update platform state metric: {se}")
             
-            # --- 2. Live Data Fetches ---
-            
-            # Recent Evidence
-            recent_evidence = await db.evidence.find_many(
-                where={} if is_admin else {"uploadedById": user_id},
-                take=5,
-                order={"createdAt": "desc"}
+            # --- 2. Live Data Fetches (parallelized) ---
+            recent_evidence, recent_analyses, recent_activities, unread_count = await asyncio.gather(
+                db.evidence.find_many(
+                    where={} if is_admin else {"uploadedById": user_id},
+                    take=5,
+                    order={"createdAt": "desc"}
+                ),
+                db.gapanalysis.find_many(
+                    where={} if is_admin else {"institutionId": institution_id} if institution_id else {"id": "none"},
+                    take=5,
+                    order={"createdAt": "desc"},
+                    include={"standard": True}
+                ),
+                ActivityService.get_recent_activities(user_id, limit=10),
+                NotificationService.get_unread_count(user_id),
             )
-            
-            # Recent Analyses
-            recent_analyses = await db.gapanalysis.find_many(
-                where={} if is_admin else {"institutionId": institution_id} if institution_id else {"id": "none"},
-                take=5,
-                order={"createdAt": "desc"},
-                include={"standard": True}
-            )
-            
-            # Recent activities
-            recent_activities = await ActivityService.get_recent_activities(user_id, limit=10)
-            
-            # Unread notifications count
-            unread_count = await NotificationService.get_unread_count(user_id)
             
             # Recent Scores
             recent_scores = []

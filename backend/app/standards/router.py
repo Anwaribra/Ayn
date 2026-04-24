@@ -136,6 +136,15 @@ class CoverageResponse(BaseModel):
     coveredCriteria: int
     coveragePct: float
 
+@router.get("/coverage/batch", response_model=List[CoverageResponse])
+async def get_all_standards_coverage(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Batch coverage for ALL standards in a single call (3 queries instead of 3×N).
+    """
+    return await StandardService.get_all_coverage()
+
 
 @router.get("/{standard_id}/coverage", response_model=CoverageResponse)
 async def get_standard_coverage(

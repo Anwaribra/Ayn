@@ -197,22 +197,35 @@ async def horus_events_stream(
     user_id = get_user_id(current_user)
     
     async def event_generator():
-        from app.core.events import event_bus
+        from app.core.events import event_bus, HEARTBEAT_INTERVAL
         queue = await event_bus.subscribe(user_id)
         try:
             # Initial heartbeat/sync
             yield f"data: {json.dumps({'type': 'sync', 'status': 'connected'})}\n\n"
-            
+
             while True:
-                event = await queue.get()
+                try:
+                    event = await asyncio.wait_for(
+                        queue.get(), timeout=HEARTBEAT_INTERVAL
+                    )
+                except asyncio.TimeoutError:
+                    # No event within heartbeat window - send keepalive ping
+                    event_bus.touch(queue)
+                    yield ": keepalive\n\n"
+                    continue
+
+                # Check if we were evicted by a newer connection
+                if isinstance(event, dict) and event.get("type") == "__evicted__":
+                    logger.info(f"SSE for user {user_id}: evicted by newer connection")
+                    return
+
+                event_bus.touch(queue)
                 yield f"data: {json.dumps(event)}\n\n"
         except asyncio.CancelledError:
-            from app.core.events import event_bus
-            event_bus.unsubscribe(user_id, queue)
             raise
         except Exception as e:
-            logger.error(f"SSE Error: {e}")
-            from app.core.events import event_bus
+            logger.error(f"SSE Error for user {user_id}: {e}")
+        finally:
             event_bus.unsubscribe(user_id, queue)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

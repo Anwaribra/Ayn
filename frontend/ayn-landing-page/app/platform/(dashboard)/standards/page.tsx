@@ -158,33 +158,42 @@ export default function StandardsPage() {
 
   const { data: standardInsights, isLoading: insightsLoading } = useSWR<StandardInsight[]>(
     publicStandards.length ? ["standards-insights", ...publicStandards.map((standard) => standard.id)] : null,
-    async () =>
-      Promise.all(
-        publicStandards.map(async (standard) => {
-          const [coverage, mapping] = await Promise.all([
-            api.getStandardCoverage(standard.id).catch(() => null),
-            api.getStandardMappingsStatus(standard.id).catch(() => null),
-          ])
+    async () => {
+      // Batch coverage in a single call instead of N individual calls
+      const [batchCoverage, ...mappingResults] = await Promise.all([
+        api.getBatchCoverage().catch(() => [] as { standardId: string; totalCriteria: number; coveredCriteria: number; coveragePct: number }[]),
+        ...publicStandards.map((standard) =>
+          api.getStandardMappingsStatus(standard.id).catch(() => null)
+        ),
+      ])
 
-          const totalCriteria = coverage?.totalCriteria ?? standard.criteriaCount ?? 0
-          const coveredCriteria = coverage?.coveredCriteria ?? 0
-          const coveragePct = coverage?.coveragePct ?? 0
-          const mapped = mapping?.mapped ?? coveredCriteria
-          const totalMapped = mapping?.total ?? totalCriteria
-          const mappingState = (mapping?.status as MappingState | undefined) ?? "not_started"
+      const coverageMap = new Map(
+        (batchCoverage ?? []).map((c) => [c.standardId, c])
+      )
 
-          return {
-            standardId: standard.id,
-            totalCriteria,
-            coveredCriteria,
-            coveragePct,
-            mapped,
-            totalMapped,
-            mappingState,
-            derivedStatus: deriveStatus(coveragePct, mapping?.status, mapped, totalMapped),
-          }
-        }),
-      ),
+      return publicStandards.map((standard, idx) => {
+        const coverage = coverageMap.get(standard.id) ?? null
+        const mapping = mappingResults[idx] as { status: string; mapped: number; total: number } | null
+
+        const totalCriteria = coverage?.totalCriteria ?? standard.criteriaCount ?? 0
+        const coveredCriteria = coverage?.coveredCriteria ?? 0
+        const coveragePct = coverage?.coveragePct ?? 0
+        const mapped = mapping?.mapped ?? coveredCriteria
+        const totalMapped = mapping?.total ?? totalCriteria
+        const mappingState = (mapping?.status as MappingState | undefined) ?? "not_started"
+
+        return {
+          standardId: standard.id,
+          totalCriteria,
+          coveredCriteria,
+          coveragePct,
+          mapped,
+          totalMapped,
+          mappingState,
+          derivedStatus: deriveStatus(coveragePct, mapping?.status, mapped, totalMapped),
+        }
+      })
+    },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

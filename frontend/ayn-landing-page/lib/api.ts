@@ -224,6 +224,15 @@ class ApiClient {
     }>(`/standards/${standardId}/coverage`)
   }
 
+  async getBatchCoverage() {
+    return this.request<{
+      standardId: string
+      totalCriteria: number
+      coveredCriteria: number
+      coveragePct: number
+    }[]>(`/standards/coverage/batch`)
+  }
+
   async createStandard(data: {
     title: string;
     description?: string;

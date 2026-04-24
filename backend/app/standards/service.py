@@ -455,3 +455,66 @@ class StandardService:
             "coveredCriteria": covered,
             "coveragePct": coverage_pct,
         }
+
+    @staticmethod
+    async def get_all_coverage() -> list:
+        """
+        Batch coverage for ALL standards in 3 queries (instead of 3×N).
+        Returns a list of coverage dicts, one per standard.
+        """
+        db = get_db()
+
+        # 1. All standards (id only)
+        standards = await db.standard.find_many(select={"id": True})
+        standard_ids = [s.id for s in standards]
+        if not standard_ids:
+            return []
+
+        # 2. All criteria grouped by standard
+        all_criteria = await db.criterion.find_many(
+            where={"standardId": {"in": standard_ids}},
+            select={"id": True, "standardId": True},
+        )
+        # Build maps: standard_id -> set of criteria ids, standard_id -> total count
+        criteria_by_standard: dict[str, set] = {}
+        for c in all_criteria:
+            criteria_by_standard.setdefault(c.standardId, set()).add(c.id)
+
+        all_criteria_ids = [c.id for c in all_criteria]
+
+        # 3. All evidence-criterion links (distinct criteria)
+        covered_criteria_ids: set = set()
+        if all_criteria_ids:
+            try:
+                links = await db.evidencecriterion.find_many(
+                    where={"criterionId": {"in": all_criteria_ids}},
+                    distinct=["criterionId"],
+                    select={"criterionId": True},
+                )
+                covered_criteria_ids = {l.criterionId for l in links}
+            except Exception:
+                try:
+                    links = await db.evidencecriterion.find_many(
+                        where={"criterionId": {"in": all_criteria_ids}},
+                    )
+                    covered_criteria_ids = {l.criterionId for l in links}
+                except Exception:
+                    pass  # Table may not exist yet
+
+        # 4. Assemble results
+        results = []
+        for sid in standard_ids:
+            crit_ids = criteria_by_standard.get(sid, set())
+            total = len(crit_ids)
+            covered = len(crit_ids & covered_criteria_ids) if total > 0 else 0
+            pct = round((covered / total) * 100, 1) if total > 0 else 0.0
+            results.append({
+                "standardId": sid,
+                "totalCriteria": total,
+                "coveredCriteria": covered,
+                "coveragePct": pct,
+            })
+
+        logger.info(f"Batch coverage: {len(results)} standards processed")
+        return results
+

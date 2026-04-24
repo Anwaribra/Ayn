@@ -125,6 +125,8 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
     const streamRemainderRef = useRef("")
+    const sseRef = useRef<EventSource | null>(null)
+    const sseConnectingRef = useRef(false)
 
     const prefersArabicUi = () => {
         if (typeof window === "undefined") return false
@@ -161,21 +163,30 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         const isHorusPage = pathname?.startsWith("/platform/horus-ai")
         if (!user || !isHorusPage) return
 
-        let eventSource: EventSource | null = null
+        // Guard against React strict-mode double-mount
+        if (sseConnectingRef.current) return
+        sseConnectingRef.current = true
+
         let retryCount = 0
         let retryTimer: ReturnType<typeof setTimeout> | null = null
         const MAX_RETRIES = 10
+        let disposed = false
 
         function connect() {
+            if (disposed) return
+            // Close previous connection if any
+            sseRef.current?.close()
+
             const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
             const sseUrl = `/api/horus/events${token ? `?token=${token}` : ''}`;
-            eventSource = new EventSource(sseUrl)
+            const es = new EventSource(sseUrl)
+            sseRef.current = es
 
-            eventSource.onopen = () => {
+            es.onopen = () => {
                 retryCount = 0
             }
 
-            eventSource.onmessage = (e) => {
+            es.onmessage = (e) => {
                 try {
                     const event = JSON.parse(e.data)
                     if (event.type === "activity") {
@@ -197,9 +208,10 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             }
 
-            eventSource.onerror = () => {
-                eventSource?.close()
-                if (retryCount < MAX_RETRIES) {
+            es.onerror = () => {
+                es.close()
+                if (sseRef.current === es) sseRef.current = null
+                if (!disposed && retryCount < MAX_RETRIES) {
                     const delay = Math.min(1000 * Math.pow(2, retryCount), 30000)
                     retryCount++
                     retryTimer = setTimeout(connect, delay)
@@ -207,10 +219,21 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             }
         }
 
+        // Clean close on tab unload
+        const onBeforeUnload = () => {
+            sseRef.current?.close()
+            sseRef.current = null
+        }
+        window.addEventListener('beforeunload', onBeforeUnload)
+
         connect()
 
         return () => {
-            eventSource?.close()
+            disposed = true
+            sseConnectingRef.current = false
+            window.removeEventListener('beforeunload', onBeforeUnload)
+            sseRef.current?.close()
+            sseRef.current = null
             if (retryTimer) clearTimeout(retryTimer)
         }
     }, [user, pathname])

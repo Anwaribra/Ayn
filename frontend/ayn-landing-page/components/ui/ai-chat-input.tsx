@@ -546,7 +546,7 @@ export const AIChatInput = ({
             </div>
           </div>
 
-            <div className="flex flex-col gap-2 border-t border-white/8 px-3 py-3 sm:px-4">
+            <div className="flex flex-col gap-2 px-3 py-3 sm:px-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-1">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>

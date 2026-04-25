@@ -37,7 +37,6 @@ import {
   VolumeX,
   Sun,
   Moon,
-  Wrench,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -59,7 +58,6 @@ import { ThinkStepper } from "./think-stepper"
 import { ThinkingPanel } from "./thinking-panel"
 import { useLiveStreamingText } from "@/hooks/use-streaming-text"
 import { AgentContextIndicator } from "./agent-context-indicator"
-import { AgentActivityLog } from "./agent-activity-log"
 
 const EMPTY_STRINGS: string[] = []
 const EMPTY_TOOL_STEPS: ToolStep[] = []
@@ -642,7 +640,6 @@ export default function HorusAIChat() {
   const [feedbackPersisted, setFeedbackPersisted] = useState<Set<string>>(new Set())
   // Tiered feedback: when thumbs down, expand to show categories + optional "Tell us more"
   const [detailedFeedbackCategory, setDetailedFeedbackCategory] = useState<string | null>(null)
-  const [activityLogOpen, setActivityLogOpen] = useState(false)
   const [feedbackDownExpanded, setFeedbackDownExpanded] = useState<string | null>(null)
   const [feedbackTellMore, setFeedbackTellMore] = useState<Record<string, string>>({})
   // M1: copy state tracking
@@ -680,13 +677,6 @@ export default function HorusAIChat() {
   )
   const { focusMode, setFocusMode } = useFocusMode()
   const { theme: _theme, setTheme, resolvedTheme } = useTheme()
-
-  const starterPrompts = useMemo(() => ([
-    "Give me a full compliance overview of my institution",
-    "Run a full gap analysis against our active standards",
-    "Which NCAAA criteria are not covered by our current evidence?",
-    "Create a prioritized remediation plan for our open gaps",
-  ]), [])
 
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
   const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
@@ -1331,16 +1321,6 @@ export default function HorusAIChat() {
             {copiedSessionId === currentChatId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         )}
-        <AgentActivityLog
-          messages={messages}
-          open={activityLogOpen}
-          onOpenChange={setActivityLogOpen}
-          trigger={
-            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="Agent Activity Log">
-              <Wrench className="h-4 w-4" />
-            </Button>
-          }
-        />
         <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
           <PlusCircle className="h-4 w-4" />
         </Button>
@@ -1465,25 +1445,6 @@ export default function HorusAIChat() {
                     <p className="mt-2 text-sm text-muted-foreground">
                       Upload documents, run analysis, or ask anything about your accreditation programme.
                     </p>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="rounded-md border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                      Deep Research {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "ready" : "offline"}
-                    </span>
-                  </div>
-
-                  <div className="grid w-full max-w-[720px] gap-2 sm:grid-cols-2">
-                    {starterPrompts.map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => handleSendMessage(prompt)}
-                        className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left text-[13px] font-medium text-foreground/90 transition-colors hover:border-primary/25 hover:bg-primary/[0.06] sm:min-h-[72px]"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -2214,11 +2175,6 @@ export default function HorusAIChat() {
                         <Brain className="mr-1 h-3.5 w-3.5" />
                         {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
                       </Button>
-                    )}
-                    {messages.length === 0 && (
-                      <span className="hidden rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium sm:inline-flex">
-                        {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}
-                      </span>
                     )}
                   </div>
                 }

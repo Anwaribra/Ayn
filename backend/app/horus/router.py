@@ -191,6 +191,7 @@ async def horus_chat_stream(
     return StreamingResponse(
         event_generator(),
         media_type="text/plain; charset=utf-8",
+        background=background_tasks,
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "X-Accel-Buffering": "no",

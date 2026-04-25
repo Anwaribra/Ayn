@@ -1186,6 +1186,11 @@ export default function HorusAIChat() {
     }
   }, [appendMessages, currentChatId, deepResearchRunning, deepagentsStatus?.enabled, deepagentsStatus?.provider_ready, draftMessage, isProcessing])
 
+  useEffect(() => {
+    if (status !== "idle" || !currentChatId) return
+    mutateHistory()
+  }, [status, currentChatId, mutateHistory])
+
   const handleAction = async (type: string, payload: string) => {
     if (type === 'gap_report') {
       toast.promise(api.downloadGapAnalysisReport(payload), {
@@ -1253,19 +1258,19 @@ export default function HorusAIChat() {
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="glass-flyout glass-text-primary inset-x-3 top-6 bottom-6 h-auto w-auto overflow-hidden rounded-[var(--radius-xl)] border border-[var(--glass-border)] p-0 sm:inset-y-4 sm:right-4 sm:left-auto sm:h-auto sm:w-[380px] sm:max-w-[380px]">
-            <div className="glass-border flex items-center justify-between border-b px-5 pb-4 pt-5 pr-14 sm:px-6 sm:pb-5 sm:pt-6">
-              <h2 className="text-lg font-black tracking-tight text-foreground">Session History</h2>
-              <span className="glass-pill glass-text-secondary px-2.5 py-1 text-[10px] font-medium">
+          <SheetContent side="right" className="inset-x-3 top-6 bottom-6 h-auto w-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0d1117]/96 p-0 text-foreground shadow-[0_28px_80px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[360px] sm:max-w-[360px]">
+            <div className="flex items-center justify-between border-b border-white/8 px-5 pb-4 pt-5 pr-14 sm:px-5 sm:pb-4 sm:pt-5">
+              <h2 className="text-base font-semibold tracking-tight text-foreground">Session History</h2>
+              <span className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] text-muted-foreground/75">
                 ⌘N new chat
               </span>
             </div>
             <ScrollArea className="h-[calc(100dvh-8.25rem)] sm:h-[calc(100dvh-7rem)]">
-              <div className="space-y-3 p-3 sm:p-4">
+              <div className="space-y-2.5 p-3 sm:p-3">
                 {(!history || history.length === 0) ? (
-                  <div className="glass-panel rounded-[var(--radius-lg)] px-5 py-10 text-center sm:py-12">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-xs font-medium text-muted-foreground">No chat history</p>
+                  <div className="rounded-xl border border-white/8 bg-white/[0.02] px-5 py-10 text-center sm:py-12">
+                    <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/25" />
+                    <p className="text-xs font-medium text-muted-foreground/75">No chat history</p>
                   </div>
                 ) : (
                   history.map((session: any) => (
@@ -1273,35 +1278,38 @@ export default function HorusAIChat() {
                       key={session.id}
                       onClick={() => { setHistorySheetOpen(false); loadChat(session.id) }}
                       className={cn(
-                        "group relative cursor-pointer rounded-[var(--radius-lg)] border p-3.5 transition-all sm:p-4",
+                        "group relative cursor-pointer rounded-xl border px-3.5 py-3 transition-all",
                         currentChatId === session.id
-                          ? "glass-panel border-primary/25 bg-primary/10 text-primary shadow-[0_20px_40px_-28px_rgba(37,99,235,0.55)]"
-                          : "horus-history-card hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                          ? "border-primary/35 bg-primary/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                          : "border-white/8 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.035]"
                       )}
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <p className={cn("pr-6 text-sm font-bold leading-snug", currentChatId === session.id ? "text-primary" : "text-foreground")}>
+                      {currentChatId === session.id && (
+                        <span className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full bg-primary/80" />
+                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={cn("pr-6 text-[13px] font-medium leading-snug", currentChatId === session.id ? "text-primary" : "text-foreground/92")}>
                           {session.title || "Untitled Conversation"}
                         </p>
                         <button
                           onClick={(e) => deleteSession(session.id, e)}
-                          className="horus-tool-button min-h-[36px] min-w-[36px] p-2 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
+                          className="rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-white/[0.04] hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       {session.description && (
-                        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/70">
                           {session.description}
                         </p>
                       )}
-                      <div className="mt-3 flex items-center justify-between">
-                        <p className="text-[10px] font-medium text-muted-foreground">
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-medium text-muted-foreground/60">
                           {new Date(session.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </p>
                         {session.messageCount > 0 && (
-                          <span className="glass-pill glass-text-secondary px-1.5 py-0.5 text-[9px] font-bold">
-                            {session.messageCount} msg{session.messageCount !== 1 ? "s" : ""}
+                          <span className="rounded-md border border-white/8 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/75">
+                            {session.messageCount}m
                           </span>
                         )}
                       </div>
@@ -2019,33 +2027,36 @@ export default function HorusAIChat() {
                 ]}
                 agentCommands={AGENT_COMMANDS}
                 footer={
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl border border-white/8 bg-[#0a0f16]/90 px-2 py-1.5 text-muted-foreground/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                      className="h-7 rounded-md px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
                       onClick={handleDeepResearch}
                       disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
                     >
-                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      <Sparkles className="mr-1 h-3.5 w-3.5" />
                       {deepResearchRunning ? "Researching..." : "Deep Research"}
                     </Button>
                     {reasoning && reasoning.steps.length > 0 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                        className="h-7 rounded-md px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground"
                         onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
                       >
-                        <Brain className="h-3.5 w-3.5 mr-1" />
+                        <Brain className="mr-1 h-3.5 w-3.5" />
                         {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
                       </Button>
                     )}
                     <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
                       <SelectTrigger
                         size="sm"
-                        className={cn("h-8 min-w-0 rounded-full border-transparent bg-transparent px-1.5 py-1 text-[11px] font-medium shadow-none hover:text-foreground", modeTone)}
+                        className={cn(
+                          "h-7 min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1 text-[11px] font-medium shadow-none hover:bg-white/[0.04] hover:text-foreground",
+                          modeTone
+                        )}
                         aria-label="Horus response mode"
                       >
                         <span className="flex items-center gap-1.5">

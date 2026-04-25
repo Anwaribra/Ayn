@@ -15,6 +15,14 @@ interface AgentContextIndicatorProps {
 const MAX_TOKEN_BUDGET = 128_000 // Gemini's context window
 const CHARS_PER_TOKEN = 4
 
+function formatCompactTokens(value: number) {
+  if (value >= 1000) {
+    const compact = value / 1000
+    return `${Number.isInteger(compact) ? compact.toFixed(0) : compact.toFixed(1)}k`
+  }
+  return value.toString()
+}
+
 export function AgentContextIndicator({ messages, status, className }: AgentContextIndicatorProps) {
   const stats = useMemo(() => {
     const messageCount = messages.length
@@ -38,7 +46,7 @@ export function AgentContextIndicator({ messages, status, className }: AgentCont
       ? "#fbbf24"
       : "#f87171"
 
-  const inlineValue = stats.budgetPercent.toLocaleString()
+  const inlineValue = formatCompactTokens(stats.estimatedTokens)
 
   return (
     <AnimatePresence>
@@ -55,8 +63,8 @@ export function AgentContextIndicator({ messages, status, className }: AgentCont
                 type="button"
                 aria-label={`Context window ${stats.budgetPercent}% used, ${stats.estimatedTokens} of ${MAX_TOKEN_BUDGET} tokens`}
                 className={cn(
-                  "inline-flex h-6 items-center gap-2 rounded-md px-1.5 text-[11px] font-medium tabular-nums transition-colors",
-                  "text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground/90"
+                  "inline-flex h-7 items-center gap-2 rounded-md px-2 text-[11px] font-medium tabular-nums transition-colors",
+                  "text-muted-foreground/70 hover:bg-white/[0.04] hover:text-foreground/90"
                 )}
               >
                 <span
@@ -69,7 +77,7 @@ export function AgentContextIndicator({ messages, status, className }: AgentCont
                   <span className="absolute inset-[2px] rounded-full bg-[#0b1017]" />
                   <span className="absolute inset-[4px] rounded-full border border-white/12" />
                 </span>
-                <span className={cn("font-mono text-[11px] font-medium", budgetColor)}>
+                <span className={cn("font-mono text-[11px] font-medium tracking-[-0.01em]", budgetColor)}>
                   {inlineValue}
                 </span>
               </button>

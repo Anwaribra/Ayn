@@ -651,7 +651,11 @@ export default function HorusAIChat() {
     appendMessages,
   } = useHorus()
 
-  const isEmpty = messages.length === 0
+  const conversationalMessages = useMemo(
+    () => messages.filter((message) => message.role !== "system"),
+    [messages]
+  )
+  const isEmpty = conversationalMessages.length === 0
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [responseMode, setResponseMode] = useState<"ask" | "think" | "agent">("ask")
   const [activeResponseMode, setActiveResponseMode] = useState<"ask" | "think" | "agent">("ask")
@@ -1287,7 +1291,7 @@ export default function HorusAIChat() {
   }
 
   const visibleMessages = useMemo(() => {
-    const sliced = messages.slice(-30).filter((msg) => {
+    const sliced = conversationalMessages.slice(-30).filter((msg) => {
       if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false
       return true
     })
@@ -1299,7 +1303,7 @@ export default function HorusAIChat() {
       if (!prev) return true
       return current !== (prev.content || "").trim()
     })
-  }, [messages])
+  }, [conversationalMessages])
 
   const filteredHistory = useMemo(() => {
     if (!historyQuery.trim()) return history ?? []

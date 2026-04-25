@@ -42,17 +42,6 @@ class ActivityService:
         except Exception as e:
             print(f"Failed to emit event: {e}")
 
-        # Post as system message to Horus last chat
-        if type not in ["chat_message"]: # Avoid redundant chat logs
-             try:
-                from app.chat.service import ChatService
-                await ChatService.add_system_message(
-                    user_id=user_id, 
-                    content=f"System: {title}. {description or ''}"
-                )
-             except Exception as e:
-                print(f"Failed to post system message to Horus: {e}")
-
         return activity
 
     @staticmethod

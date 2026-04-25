@@ -343,7 +343,7 @@ export const AIChatInput = ({
   const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
   return (
-    <div className="relative flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
+    <div className="relative flex w-full flex-col items-center justify-center pb-1 pt-1 sm:pb-2">
       <div
         ref={wrapperRef}
         style={{ overflow: "visible" }}
@@ -364,7 +364,7 @@ export const AIChatInput = ({
               {header}
             </div>
           )}
-          <div className="relative w-full px-4 pb-3 pt-3.5 sm:px-5">
+          <div className="relative w-full px-3 pb-1.5 pt-2 sm:px-4">
             {isDragging && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[22px] bg-primary/10 text-sm font-medium text-primary">
                 Drop files here
@@ -408,7 +408,7 @@ export const AIChatInput = ({
                 if (onChange) onChange(nextValue)
               }}
               className={cn(
-                "horus-input-field w-full min-h-[48px] resize-none border-none bg-transparent pe-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
+                "horus-input-field w-full min-h-[38px] resize-none border-none bg-transparent pe-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
                 "text-foreground placeholder:text-muted-foreground/55"
               )}
               style={{
@@ -534,7 +534,7 @@ export const AIChatInput = ({
             </div>
           </div>
 
-            <div className="flex flex-col gap-2.5 px-3 py-3 sm:px-4">
+            <div className="flex flex-col gap-1 px-3 py-1.5 sm:px-4 pb-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>

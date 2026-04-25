@@ -13,9 +13,7 @@ client_secret_*.json
 # Documentation files
 *.docx
 *.pdf
-*.md
 !README.md
-*.sh
 *.text
 STRUCTURE_AND_IMPROVEMENTS.docx
 PROJECT_VISION.docx
@@ -67,3 +65,7 @@ notuse/*
 
 .gemini/ 
 .codex
+
+# Frontend generated artifacts
+frontend/ayn-landing-page/playwright-report/
+frontend/ayn-landing-page/test-results/

@@ -150,8 +150,8 @@ Ayn/
 │   │   └── ...
 │   ├── prisma/
 │   └── tests/
-├── frontend/
-│   └── ayn-landing-page/         # Next.js site + platform UI
+├── frontend/                     # Legacy Vite marketing shell (maintenance mode)
+│   └── ayn-landing-page/         # Canonical Next.js site + platform UI
 │       ├── app/
 │       ├── components/
 │       ├── hooks/
@@ -237,6 +237,31 @@ Current development is focused on:
 - stronger agent UX and clearer execution feedback
 - better structured results from Horus
 - improved platform-wide polish for production readiness
+
+## Local Development Quickstart
+
+### Canonical frontend
+
+The canonical frontend for active product work is:
+
+- `frontend/ayn-landing-page` (Next.js + pnpm)
+
+The `frontend` root Vite app is legacy and kept for compatibility/migration only.
+
+### Run full stack locally
+
+1. Backend
+   - `cd backend`
+   - copy `env.template` to `.env` and fill required values
+   - `pip install -r requirements.txt`
+   - `uvicorn main:app --reload --port 8000`
+
+2. Frontend (Next.js app)
+   - `cd frontend/ayn-landing-page`
+   - `pnpm install`
+   - `pnpm dev`
+
+3. Open `http://localhost:3000`
 
 ## Closing
 

@@ -111,10 +111,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Documentation files
-*.md
-*.text
-
 # Backup files
 *.bak
 *.backup
@@ -125,8 +121,5 @@ dmypy.json
 !start_server.sh
 !stop_server.sh
 
-# Test files (optional - remove if you want to keep them)
-test_*.py
-*_test.py
+# Test cache
 tests/__pycache__/
-!tests/test_compliance_helpers.py

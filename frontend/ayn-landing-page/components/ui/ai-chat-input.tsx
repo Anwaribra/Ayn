@@ -352,7 +352,7 @@ export const AIChatInput = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "horus-input-shell relative z-[1] w-full max-w-[920px] overflow-visible rounded-[26px] border backdrop-blur-2xl transition-all duration-200",
+          "horus-input-shell relative z-[1] w-full max-w-[920px] overflow-visible rounded-[32px] border backdrop-blur-2xl transition-all duration-300",
           shellTone,
           isDragging && "ring-2 ring-primary/40 border-primary/50 bg-primary/5",
           isLoading && "horus-input-shimmer"
@@ -385,7 +385,7 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="relative overflow-hidden rounded-[20px] border border-border/60 bg-muted/40 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] dark:bg-[#0f141c]">
+            <div className="relative overflow-hidden px-1 py-0.5">
             <textarea
               value={inputValue}
               onKeyDown={handleKeyDown}

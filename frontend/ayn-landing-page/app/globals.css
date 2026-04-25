@@ -624,6 +624,45 @@
   border-color: rgba(15, 23, 42, 0.1);
 }
 
+/* ── Liquid Glass Chat Input Shell ── */
+.horus-input-shell {
+  position: relative;
+  background: rgba(12, 17, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px) saturate(140%);
+  -webkit-backdrop-filter: blur(40px) saturate(140%);
+  box-shadow:
+    0 20px 50px -24px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.horus-input-shell:focus-within {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow:
+    0 24px 56px -28px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(59, 130, 246, 0.12);
+}
+
+[data-section="platform"][data-platform-theme="light"] .horus-input-shell {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow:
+    0 12px 36px -16px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+[data-section="platform"][data-platform-theme="light"] .horus-input-shell:focus-within {
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow:
+    0 16px 40px -20px rgba(15, 23, 42, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
 .horus-ai-icon {
   border: 1px solid var(--glass-border);
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.06));

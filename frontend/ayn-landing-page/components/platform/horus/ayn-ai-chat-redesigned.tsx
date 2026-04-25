@@ -134,9 +134,7 @@ function getResponseModeLabel(mode?: "ask" | "think" | "agent", isArabic = false
 }
 
 function getResponseModeTone(mode?: "ask" | "think" | "agent") {
-  if (mode === "think") return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-  if (mode === "agent") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-  return "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300"
+  return "border-border/40 bg-muted/40 text-foreground/80"
 }
 
 function getAttachmentContextLabel(message?: HorusMessage | null, isArabic = false) {
@@ -1187,11 +1185,7 @@ export default function HorusAIChat() {
 
   const isProcessing = status !== "idle"
   const currentResponseMode = RESPONSE_MODES.find((mode) => mode.key === responseMode) ?? RESPONSE_MODES[0]
-  const modeTone = responseMode === "ask"
-    ? "text-sky-400"
-    : responseMode === "think"
-      ? "text-amber-400"
-      : "text-emerald-400"
+  const modeTone = "text-foreground/70"
 
   const handleDeepResearch = useCallback(async () => {
     const prompt = draftMessage.trim()
@@ -2134,7 +2128,7 @@ export default function HorusAIChat() {
                         {RESPONSE_MODES.map((mode) => (
                           <SelectItem key={mode.key} value={mode.key}>
                             <span className="flex items-center gap-2">
-                              <mode.icon className={cn("h-4 w-4", mode.key === "ask" ? "text-sky-400" : mode.key === "think" ? "text-amber-400" : "text-emerald-400")} />
+                              <mode.icon className="h-4 w-4 text-muted-foreground" />
                               <span className="flex flex-col">
                                 <span className="text-sm font-medium text-foreground">{mode.label}</span>
                                 <span className="text-[11px] text-muted-foreground">{mode.description}</span>

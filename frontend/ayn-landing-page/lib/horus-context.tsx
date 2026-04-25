@@ -678,22 +678,29 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
             const chat = await api.getChatMessages(chatId)
             const rawMessages = Array.isArray(chat?.messages) ? chat.messages : []
             setCurrentChatId(chat.id)
-            setMessages(rawMessages.map((m: any) => ({
-                id: m.id,
-                role: m.role,
-                content: m.content,
-                timestamp: new Date(m.timestamp).getTime(),
-                attachments: Array.isArray(m.metadata?.attachments)
-                    ? m.metadata.attachments.map((att: any) => ({
-                        name: att.name || "Attachment",
-                        type: att.type === "image" ? "image" : "document",
-                        preview: att.preview || undefined,
-                    }))
-                    : undefined,
-                structuredResult: m.metadata?.structuredResult || null,
-                citations: m.metadata?.citations || undefined,
-                responseMode: m.metadata?.responseMode || undefined,
-            })))
+            setMessages(rawMessages.map((m: any) => {
+                let meta = m.metadata
+                if (typeof meta === 'string') {
+                    try { meta = JSON.parse(meta) } catch (e) { meta = null }
+                }
+                const parsedTime = m.timestamp ? new Date(m.timestamp).getTime() : NaN
+                return {
+                    id: m.id,
+                    role: (m.role?.toLowerCase() || "user") as any,
+                    content: m.content || "",
+                    timestamp: isNaN(parsedTime) ? Date.now() : parsedTime,
+                    attachments: Array.isArray(meta?.attachments)
+                        ? meta.attachments.map((att: any) => ({
+                            name: att.name || "Attachment",
+                            type: att.type === "image" ? "image" : "document",
+                            preview: att.preview || undefined,
+                        }))
+                        : undefined,
+                    structuredResult: meta?.structuredResult || null,
+                    citations: meta?.citations || undefined,
+                    responseMode: meta?.responseMode || undefined,
+                }
+            }))
         } catch (err) {
             toast.error("Failed to load chat history.")
         }

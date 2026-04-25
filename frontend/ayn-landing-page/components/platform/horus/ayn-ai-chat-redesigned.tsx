@@ -1895,7 +1895,7 @@ export default function HorusAIChat() {
                           </span>
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
 

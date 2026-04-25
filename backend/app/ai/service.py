@@ -853,7 +853,7 @@ class GeminiClient:
                 or os.getenv('GEMINI_MODEL')
                 or "gemini-2.0-flash"
             )
-            self.embedding_model = "gemini-embedding-exp-03-07"
+            self.embedding_model = "gemini-embedding-001"
         else:
             old_genai.configure(api_key=api_key)
             self.model = old_genai.GenerativeModel('gemini-1.5-flash')
@@ -1081,12 +1081,13 @@ class GeminiClient:
         """Generate a vector embedding for a given text chunk."""
         if USE_NEW_API:
             # Using the new google-genai library
-            # Primary: gemini-embedding-exp-03-07, Fallback: text-embedding-004
-            for model_name in [self.embedding_model, "text-embedding-004"]:
+            # Keep embeddings aligned to the pgvector column width (vector(768)).
+            for model_name in [self.embedding_model, "models/gemini-embedding-001"]:
                 try:
                     response = await self.client.aio.models.embed_content(
                         model=model_name,
-                        contents=text
+                        contents=text,
+                        config=genai_types.EmbedContentConfig(output_dimensionality=768),
                     )
                     return response.embeddings[0].values
                 except Exception as e:

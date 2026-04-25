@@ -10,6 +10,8 @@ from app.core.db import db as prisma_client
 
 logger = logging.getLogger(__name__)
 
+_VECTOR_DOCUMENT_COLUMNS: Optional[set[str]] = None
+
 class RagService:
     """Handles Vector Embeddings, Chunking, and Retrieval for Horus AI."""
     
@@ -21,6 +23,25 @@ class RagService:
             length_function=len,
             is_separator_regex=False,
         )
+
+    async def _get_vector_document_columns(self) -> set[str]:
+        global _VECTOR_DOCUMENT_COLUMNS
+        if _VECTOR_DOCUMENT_COLUMNS is not None:
+            return _VECTOR_DOCUMENT_COLUMNS
+
+        rows = await prisma_client.query_raw(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'VectorDocument'
+            """
+        )
+        _VECTOR_DOCUMENT_COLUMNS = {
+            str((row.get("column_name") or "")).strip()
+            for row in (rows or [])
+            if row.get("column_name")
+        }
+        return _VECTOR_DOCUMENT_COLUMNS
 
     async def index_document(
         self,
@@ -37,29 +58,38 @@ class RagService:
 
         chunks = self.text_splitter.split_text(content)
         logger.info(f"RAG: Split document into {len(chunks)} chunks for embedding.")
+        columns = await self._get_vector_document_columns()
 
         for i, chunk in enumerate(chunks):
             try:
                 # 1. Generate Embedding
                 embedding = await self.ai_client.create_embedding(chunk)
+                if not embedding:
+                    logger.warning(f"RAG: Empty embedding returned for document {document_id}, chunk {i}. Skipping chunk.")
+                    continue
                 
                 # 2. Insert into pgvector with user/institution scoping
                 embedding_str = "[" + ",".join(map(str, embedding)) + "]"
-                
-                query = """
-                INSERT INTO "VectorDocument" ("id", "content", "embedding", "documentId", "standardId", "chunkIndex", "userId", "institutionId", "updatedAt")
-                VALUES (gen_random_uuid(), $1, $2::vector, $3, $4, $5, $6, $7, NOW())
+                insert_columns = ['"id"', '"content"', '"embedding"', '"documentId"', '"standardId"', '"chunkIndex"', '"updatedAt"']
+                insert_values = ["gen_random_uuid()", "$1", "$2::vector", "$3", "$4", "$5", "NOW()"]
+                params: List[Any] = [chunk, embedding_str, document_id, standard_id, i]
+                param_idx = 6
+
+                if "userId" in columns:
+                    insert_columns.append('"userId"')
+                    insert_values.append(f"${param_idx}")
+                    params.append(user_id)
+                    param_idx += 1
+                if "institutionId" in columns:
+                    insert_columns.append('"institutionId"')
+                    insert_values.append(f"${param_idx}")
+                    params.append(institution_id)
+
+                query = f"""
+                INSERT INTO "VectorDocument" ({", ".join(insert_columns)})
+                VALUES ({", ".join(insert_values)})
                 """
-                await prisma_client.execute_raw(
-                    query,
-                    chunk,
-                    embedding_str,
-                    document_id,
-                    standard_id,
-                    i,
-                    user_id,
-                    institution_id,
-                )
+                await prisma_client.execute_raw(query, *params)
                 
             except Exception as e:
                 logger.error(f"RAG: Failed to index chunk {i} for document {document_id}: {str(e)}")
@@ -83,7 +113,7 @@ class RagService:
         document_id: Optional[str] = None,
         user_id: Optional[str] = None,
         institution_id: Optional[str] = None,
-    ) -> str:
+    ) -> Tuple[str, List[Dict[str, Any]]]:
         """Embeds a query, searches the vector DB, and returns relevant text chunks.
         Scoped by user_id and/or institution_id when provided for multi-tenant security."""
         try:
@@ -92,8 +122,12 @@ class RagService:
                 query_embedding = await self.ai_client.create_embedding(query)
             except NotImplementedError:
                 logger.warning("RAG: Embeddings unavailable (Gemini not configured). Skipping retrieval.")
-                return ""
+                return "", []
+            if not query_embedding:
+                logger.warning("RAG: Empty query embedding returned. Skipping retrieval.")
+                return "", []
             embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+            columns = await self._get_vector_document_columns()
             
             # 2. Build WHERE clause for scoping (user/institution for row-level security)
             where_parts = []
@@ -103,11 +137,11 @@ class RagService:
                 where_parts.append(f'"documentId" = ${param_idx}')
                 params.append(document_id)
                 param_idx += 1
-            if user_id:
+            if user_id and "userId" in columns:
                 where_parts.append(f'("userId" = ${param_idx} OR "userId" IS NULL)')
                 params.append(user_id)
                 param_idx += 1
-            if institution_id:
+            if institution_id and "institutionId" in columns:
                 where_parts.append(f'("institutionId" = ${param_idx} OR "institutionId" IS NULL)')
                 params.append(institution_id)
                 param_idx += 1

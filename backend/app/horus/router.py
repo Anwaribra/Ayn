@@ -344,16 +344,21 @@ async def get_chat_history(
 ):
     """Get user's chat history/archives."""
     user_id = get_user_id(current_user)
-    chats = await ChatService.list_chats(user_id)
+    chats = await ChatService.list_chat_summaries(user_id)
     if not chats:
         return []
-
-    detailed_chats = await asyncio.gather(
-        *(ChatService.get_chat(getattr(chat, "id", ""), user_id) for chat in chats)
-    )
     return [
-        _serialize_chat_summary(detailed_chat or chat)
-        for chat, detailed_chat in zip(chats, detailed_chats)
+        {
+            "id": chat.get("id"),
+            "title": chat.get("title"),
+            "goal": chat.get("goal"),
+            "goalUpdatedAt": chat.get("goalUpdatedAt"),
+            "createdAt": chat.get("createdAt"),
+            "updatedAt": chat.get("updatedAt"),
+            "messageCount": int(chat.get("messageCount") or 0),
+            "description": ((chat.get("latestContent") or "").strip()[:160] or None),
+        }
+        for chat in chats
     ]
 
 

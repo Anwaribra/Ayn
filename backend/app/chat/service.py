@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Any
 from app.core.db import get_db
 from prisma.models import Chat, Message
 
@@ -47,6 +47,40 @@ class ChatService:
             where={"userId": user_id},
             order={"updatedAt": "desc"}
         )
+
+    @staticmethod
+    async def list_chat_summaries(user_id: str) -> List[dict[str, Any]]:
+        db = get_db()
+        rows = await db.query_raw(
+            """
+            SELECT
+              c."id",
+              c."title",
+              c."goal",
+              c."goalUpdatedAt",
+              c."createdAt",
+              c."updatedAt",
+              COALESCE(msg_counts."messageCount", 0) AS "messageCount",
+              latest_msg."content" AS "latestContent"
+            FROM "Chat" c
+            LEFT JOIN (
+              SELECT "chatId", COUNT(*)::int AS "messageCount"
+              FROM "Message"
+              GROUP BY "chatId"
+            ) AS msg_counts ON msg_counts."chatId" = c."id"
+            LEFT JOIN LATERAL (
+              SELECT m."content"
+              FROM "Message" m
+              WHERE m."chatId" = c."id"
+              ORDER BY m."timestamp" DESC
+              LIMIT 1
+            ) AS latest_msg ON TRUE
+            WHERE c."userId" = $1
+            ORDER BY c."updatedAt" DESC
+            """,
+            user_id,
+        )
+        return list(rows or [])
 
     @staticmethod
     async def get_last_chat(user_id: str, message_limit: int = 20) -> Optional[Chat]:

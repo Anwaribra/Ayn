@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -601,6 +601,7 @@ function formatTimestamp(timestamp: number, isArabic = false) {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const {
@@ -691,6 +692,19 @@ export default function HorusAIChat() {
       // loadChat already surfaces toast errors.
     })
   }, [searchParams, currentChatId, loadChat])
+
+  useEffect(() => {
+    const currentUrlChatId = searchParams.get("chat")
+    if (currentChatId === currentUrlChatId) return
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    if (currentChatId) nextParams.set("chat", currentChatId)
+    else nextParams.delete("chat")
+
+    const nextQuery = nextParams.toString()
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    router.replace(nextUrl, { scroll: false })
+  }, [currentChatId, pathname, router, searchParams])
 
   // Check if user is near bottom (within 100px)
   const checkNearBottom = useCallback(() => {

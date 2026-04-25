@@ -339,17 +339,12 @@ export const AIChatInput = ({
 
   const hasDraft = !!inputValue.trim() || hasFiles
   const shellTone = isActive || inputValue
-    ? "border-white/10 bg-[linear-gradient(180deg,rgba(13,19,29,0.88),rgba(9,14,22,0.94))] shadow-[0_26px_70px_-48px_rgba(15,23,42,0.95)]"
-    : "border-white/8 bg-[linear-gradient(180deg,rgba(11,16,23,0.82),rgba(9,14,22,0.92))] shadow-[0_22px_56px_-46px_rgba(0,0,0,0.9)]"
+    ? "border-white/10 bg-[#0c1118]/96 shadow-[0_24px_56px_-46px_rgba(0,0,0,0.92)]"
+    : "border-white/8 bg-[#0c1118]/92 shadow-[0_20px_44px_-40px_rgba(0,0,0,0.9)]"
   const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/[0.03] text-muted-foreground/75 transition-colors hover:bg-white/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
   return (
     <div className="relative flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
-      <div className="pointer-events-none absolute inset-x-6 bottom-0 top-0 overflow-hidden rounded-[34px]">
-        <div className="absolute left-[8%] top-[18%] h-24 w-40 rounded-full bg-sky-500/12 blur-3xl sm:h-28 sm:w-48" />
-        <div className="absolute right-[12%] top-[30%] h-28 w-44 rounded-full bg-cyan-400/10 blur-3xl sm:h-32 sm:w-52" />
-        <div className="absolute bottom-[6%] left-1/2 h-24 w-[70%] -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl sm:h-28" />
-      </div>
       <div
         ref={wrapperRef}
         style={{ overflow: "visible" }}
@@ -364,7 +359,6 @@ export const AIChatInput = ({
         )}
         onClick={handleActivate}
       >
-        <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.08),transparent_42%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.06),transparent_38%)] opacity-90" />
         <div className="flex h-full w-full flex-col items-stretch">
           {header && (
             <div className="border-b border-white/8 px-4 py-2.5 sm:px-5">
@@ -391,8 +385,7 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="relative overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_34px_-30px_rgba(59,130,246,0.3)]">
-            <div className="pointer-events-none absolute inset-x-6 bottom-0 top-0 rounded-full bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.08),transparent_26%),radial-gradient(circle_at_78%_55%,rgba(34,211,238,0.06),transparent_28%)] blur-2xl" />
+            <div className="relative overflow-hidden rounded-[20px] border border-white/8 bg-[#0f141c] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
             <textarea
               value={inputValue}
               onKeyDown={handleKeyDown}

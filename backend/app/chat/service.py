@@ -5,6 +5,22 @@ from prisma.models import Chat, Message
 
 class ChatService:
     @staticmethod
+    async def _hydrate_recent_messages(chat: Optional[Chat], user_id: str, message_limit: int) -> Optional[Chat]:
+        if not chat:
+            return None
+        db = get_db()
+        messages = await db.message.find_many(
+            where={
+                "chatId": chat.id,
+                "userId": user_id,
+            },
+            take=message_limit,
+            order={"timestamp": "desc"},
+        )
+        chat.messages = list(reversed(messages or []))
+        return chat
+
+    @staticmethod
     async def create_chat(user_id: str, title: Optional[str] = "New Chat") -> Chat:
         db = get_db()
         return await db.chat.create(
@@ -17,18 +33,13 @@ class ChatService:
     @staticmethod
     async def get_chat(chat_id: str, user_id: str, message_limit: int = 50) -> Optional[Chat]:
         db = get_db()
-        return await db.chat.find_first(
+        chat = await db.chat.find_first(
             where={
                 "id": chat_id,
                 "userId": user_id
-            },
-            include={
-                "messages": {
-                    "take": -message_limit,  # Last N messages
-                    "order_by": {"timestamp": "asc"}
-                }
             }
         )
+        return await ChatService._hydrate_recent_messages(chat, user_id, message_limit)
 
     @staticmethod
     async def get_chat_no_messages(chat_id: str, user_id: str) -> Optional[Chat]:
@@ -85,16 +96,11 @@ class ChatService:
     @staticmethod
     async def get_last_chat(user_id: str, message_limit: int = 20) -> Optional[Chat]:
         db = get_db()
-        return await db.chat.find_first(
+        chat = await db.chat.find_first(
             where={"userId": user_id},
             order={"updatedAt": "desc"},
-            include={
-                "messages": {
-                    "take": -message_limit,
-                    "order_by": {"timestamp": "asc"}
-                }
-            }
         )
+        return await ChatService._hydrate_recent_messages(chat, user_id, message_limit)
 
     @staticmethod
     async def get_last_chat_no_messages(user_id: str) -> Optional[Chat]:

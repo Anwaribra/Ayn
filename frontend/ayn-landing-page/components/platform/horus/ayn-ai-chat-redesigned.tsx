@@ -687,10 +687,6 @@ export default function HorusAIChat() {
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
   const [historyQuery, setHistoryQuery] = useState("")
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === "undefined") return true
-    return !localStorage.getItem("horus-sound-disabled")
-  })
   const prevStatusRef = useRef<typeof status>(status)
   const COLLAPSE_THRESHOLD = 600
 
@@ -905,25 +901,9 @@ export default function HorusAIChat() {
   useEffect(() => {
     if (prevStatusRef.current === "generating" && status === "idle") {
       setCompletionPulseKey((k) => k + 1)
-      // Sound notification on completion (respect user preference)
-      if (typeof window !== "undefined" && soundEnabled) {
-        try {
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const osc = ctx.createOscillator()
-          const gain = ctx.createGain()
-          osc.connect(gain)
-          gain.connect(ctx.destination)
-          osc.frequency.setValueAtTime(880, ctx.currentTime)
-          osc.frequency.setValueAtTime(660, ctx.currentTime + 0.05)
-          gain.gain.setValueAtTime(0.05, ctx.currentTime)
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15)
-          osc.start(ctx.currentTime)
-          osc.stop(ctx.currentTime + 0.15)
-        } catch (_) {}
-      }
     }
     prevStatusRef.current = status
-  }, [status, soundEnabled])
+  }, [status])
 
   useEffect(() => {
     if (status !== "idle") return
@@ -1466,9 +1446,6 @@ export default function HorusAIChat() {
                   </motion.div>
                   <div className="max-w-[560px] text-center">
                     <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Your compliance agent</h1>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      Ask a question, attach evidence, or let Horus reason through standards, gaps, and remediation work.
-                    </p>
                     <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/70">
                       <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Chat</span>
                       <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Reason</span>
@@ -2051,11 +2028,6 @@ export default function HorusAIChat() {
         {/* ─── Input: centered, no heavy bar ─── */}
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-[#060913]/92 via-[#060913]/38 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-2">
           <div className="relative mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
-            <div className="pointer-events-none absolute inset-x-8 bottom-6 top-8 -z-10 overflow-hidden rounded-[40px]">
-              <div className="absolute left-[6%] top-[18%] h-28 w-52 rounded-full bg-sky-500/10 blur-3xl" />
-              <div className="absolute right-[10%] top-[26%] h-24 w-44 rounded-full bg-cyan-400/10 blur-3xl" />
-              <div className="absolute bottom-[2%] left-1/2 h-24 w-[72%] -translate-x-1/2 rounded-full bg-blue-600/8 blur-3xl" />
-            </div>
             {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
               <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-[rgba(255,255,255,0.035)] px-4 py-2.5 shadow-[0_16px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
                 <div className="flex min-w-0 items-center gap-3">
@@ -2177,17 +2149,6 @@ export default function HorusAIChat() {
                       status={status}
                       className="hidden sm:flex"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] text-muted-foreground/75 hover:bg-white/[0.05] hover:text-foreground disabled:opacity-50"
-                      onClick={handleDeepResearch}
-                      disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
-                    >
-                      <Sparkles className="mr-1 h-3.5 w-3.5" />
-                      {deepResearchRunning ? "Researching..." : "Deep Research"}
-                    </Button>
                     {reasoning && reasoning.steps.length > 0 && (
                       <Button
                         variant="ghost"

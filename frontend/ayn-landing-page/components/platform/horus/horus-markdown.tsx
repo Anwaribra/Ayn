@@ -179,6 +179,40 @@ export function HorusMarkdown({
                             </code>
                         )
                     },
+                    table: ({ children }: any) => (
+                        <div className="my-6 w-full overflow-hidden rounded-2xl border border-border shadow-sm">
+                            <div className="w-full overflow-x-auto">
+                                <table className="w-full text-left text-sm border-collapse">
+                                    {children}
+                                </table>
+                            </div>
+                        </div>
+                    ),
+                    thead: ({ children }: any) => (
+                        <thead className="bg-muted/50 text-xs uppercase text-foreground/80 border-b border-border">
+                            {children}
+                        </thead>
+                    ),
+                    tbody: ({ children }: any) => (
+                        <tbody className="divide-y divide-border bg-background/50">
+                            {children}
+                        </tbody>
+                    ),
+                    tr: ({ children }: any) => (
+                        <tr className="hover:bg-muted/30 transition-colors">
+                            {children}
+                        </tr>
+                    ),
+                    th: ({ children }: any) => (
+                        <th className="px-4 py-3 font-semibold tracking-wide whitespace-nowrap">
+                            {children}
+                        </th>
+                    ),
+                    td: ({ children }: any) => (
+                        <td className="px-4 py-3 align-top text-[13.5px] leading-relaxed text-foreground/90">
+                            {children}
+                        </td>
+                    ),
                     blockquote: ({ children }: any) => (
                         <blockquote className="my-4 rounded-e-2xl border-s-2 border-primary/40 bg-primary/5 px-4 py-3 text-foreground/78">
                             {children}

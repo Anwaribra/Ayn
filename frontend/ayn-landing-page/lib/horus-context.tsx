@@ -676,8 +676,9 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
+            const rawMessages = Array.isArray(chat?.messages) ? chat.messages : []
             setCurrentChatId(chat.id)
-            setMessages(chat.messages.map((m: any) => ({
+            setMessages(rawMessages.map((m: any) => ({
                 id: m.id,
                 role: m.role,
                 content: m.content,

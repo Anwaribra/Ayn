@@ -2068,13 +2068,11 @@ export default function HorusAIChat() {
                       </SelectContent>
                     </Select>
                     <span className="hidden h-4 w-px bg-white/8 sm:block" />
-                    {messages.length > 0 && (
-                      <AgentContextIndicator
-                        messages={messages}
-                        status={status}
-                        className="hidden sm:flex"
-                      />
-                    )}
+                    <AgentContextIndicator
+                      messages={messages}
+                      status={status}
+                      className="hidden sm:flex"
+                    />
                     {messages.length === 0 && (
                       <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
                         {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}

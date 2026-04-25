@@ -2,7 +2,6 @@
 
 import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Brain } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Message } from "@/lib/horus-context"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -27,19 +26,19 @@ export function AgentContextIndicator({ messages, status, className }: AgentCont
     return { messageCount, estimatedTokens, budgetPercent, remainingPercent, remainingTokens }
   }, [messages])
 
-  if (stats.messageCount === 0) return null
-
   const budgetColor = stats.budgetPercent < 50
     ? "text-emerald-400"
     : stats.budgetPercent < 80
       ? "text-amber-400"
       : "text-red-400"
 
-  const budgetBarColor = stats.budgetPercent < 50
-    ? "bg-emerald-500/60"
+  const ringColor = stats.budgetPercent < 50
+    ? "#34d399"
     : stats.budgetPercent < 80
-      ? "bg-amber-500/60"
-      : "bg-red-500/60"
+      ? "#fbbf24"
+      : "#f87171"
+
+  const inlineValue = stats.budgetPercent.toLocaleString()
 
   return (
     <AnimatePresence>
@@ -56,21 +55,22 @@ export function AgentContextIndicator({ messages, status, className }: AgentCont
                 type="button"
                 aria-label={`Context window ${stats.budgetPercent}% used, ${stats.estimatedTokens} of ${MAX_TOKEN_BUDGET} tokens`}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border border-white/10 bg-[#0b1017]/90 px-3 py-1.5 shadow-[0_12px_32px_-26px_rgba(0,0,0,0.95)] backdrop-blur-md transition-colors",
-                  "hover:border-white/15 hover:bg-[#0f1520]"
+                  "inline-flex h-6 items-center gap-2 rounded-md px-1.5 text-[11px] font-medium tabular-nums transition-colors",
+                  "text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground/90"
                 )}
               >
-                <Brain className={cn("h-3 w-3 shrink-0", budgetColor)} />
-                <div className="h-1 w-14 overflow-hidden rounded-full bg-white/10">
-                  <motion.div
-                    className={cn("h-full rounded-full", budgetBarColor)}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${stats.budgetPercent}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                  />
-                </div>
-                <span className={cn("text-[10px] font-mono font-semibold tabular-nums", budgetColor)}>
-                  {stats.budgetPercent}%
+                <span
+                  aria-hidden="true"
+                  className="relative h-3.5 w-3.5 shrink-0 rounded-full"
+                  style={{
+                    background: `conic-gradient(${ringColor} 0deg ${stats.budgetPercent * 3.6}deg, rgba(255,255,255,0.12) ${stats.budgetPercent * 3.6}deg 360deg)`,
+                  }}
+                >
+                  <span className="absolute inset-[2px] rounded-full bg-[#0b1017]" />
+                  <span className="absolute inset-[4px] rounded-full border border-white/12" />
+                </span>
+                <span className={cn("font-mono text-[11px] font-medium", budgetColor)}>
+                  {inlineValue}
                 </span>
               </button>
             </TooltipTrigger>

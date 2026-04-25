@@ -29,6 +29,43 @@ from app.chat.service import ChatService
 router = APIRouter(prefix="/horus", tags=["horus"])
 
 
+def _serialize_message(message):
+    return {
+        "id": getattr(message, "id", None),
+        "role": getattr(message, "role", None),
+        "content": getattr(message, "content", "") or "",
+        "timestamp": getattr(message, "timestamp", None),
+        "metadata": getattr(message, "metadata", None),
+    }
+
+
+def _serialize_chat_summary(chat):
+    messages = list(getattr(chat, "messages", None) or [])
+    latest_message = messages[-1] if messages else None
+    description = None
+    if latest_message:
+        raw = (getattr(latest_message, "content", None) or "").strip()
+        description = raw[:160] if raw else None
+
+    return {
+        "id": getattr(chat, "id", None),
+        "title": getattr(chat, "title", None),
+        "goal": getattr(chat, "goal", None),
+        "goalUpdatedAt": getattr(chat, "goalUpdatedAt", None),
+        "createdAt": getattr(chat, "createdAt", None),
+        "updatedAt": getattr(chat, "updatedAt", None),
+        "messageCount": len(messages),
+        "description": description,
+    }
+
+
+def _serialize_chat_detail(chat):
+    payload = _serialize_chat_summary(chat)
+    messages = list(getattr(chat, "messages", None) or [])
+    payload["messages"] = [_serialize_message(message) for message in messages]
+    return payload
+
+
 async def _buffer_upload_files(files: List[UploadFile] | None) -> list[dict]:
     """Read UploadFile objects into plain dicts before request teardown closes them."""
     buffered: list[dict] = []
@@ -297,7 +334,7 @@ async def get_last_chat(
     if not chat:
         # No chat found, return null instead of 404 to let frontend handle it
         return None
-    return chat
+    return _serialize_chat_detail(chat)
 
 
 @router.get("/history")
@@ -306,7 +343,17 @@ async def get_chat_history(
 ):
     """Get user's chat history/archives."""
     user_id = get_user_id(current_user)
-    return await ChatService.list_chats(user_id)
+    chats = await ChatService.list_chats(user_id)
+    if not chats:
+        return []
+
+    detailed_chats = await asyncio.gather(
+        *(ChatService.get_chat(getattr(chat, "id", ""), user_id) for chat in chats)
+    )
+    return [
+        _serialize_chat_summary(detailed_chat or chat)
+        for chat, detailed_chat in zip(chats, detailed_chats)
+    ]
 
 
 @router.get("/goal", response_model=GoalResponse)
@@ -351,7 +398,7 @@ async def get_chat_messages(
     chat = await ChatService.get_chat(chat_id, user_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
-    return chat
+    return _serialize_chat_detail(chat)
 
 
 @router.get("/agent/capabilities")
@@ -424,4 +471,3 @@ async def submit_message_feedback(
     except Exception as e:
         logger.warning(f"Failed to persist Horus feedback: {e}")
     return {"status": "ok", "message_id": body.message_id}
-

@@ -339,9 +339,9 @@ export const AIChatInput = ({
 
   const hasDraft = !!inputValue.trim() || hasFiles
   const shellTone = isActive || inputValue
-    ? "border-white/10 bg-[#0d131d]/98 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.95)]"
-    : "border-white/8 bg-[#0b1017]/94 shadow-[0_24px_70px_-50px_rgba(0,0,0,0.9)]"
-  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground/75 transition-colors hover:border-white/8 hover:bg-white/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    ? "border-white/10 bg-[#0d131d]/98 shadow-[0_26px_70px_-48px_rgba(15,23,42,0.95)]"
+    : "border-white/8 bg-[#0b1017]/94 shadow-[0_22px_56px_-46px_rgba(0,0,0,0.9)]"
+  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/[0.03] text-muted-foreground/75 transition-colors hover:bg-white/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
   return (
     <div className="flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
@@ -361,7 +361,7 @@ export const AIChatInput = ({
       >
         <div className="flex h-full w-full flex-col items-stretch">
           {header && (
-            <div className="border-b border-white/8 px-4 py-2 sm:px-5">
+            <div className="border-b border-white/8 px-4 py-2.5 sm:px-5">
               {header}
             </div>
           )}
@@ -385,7 +385,7 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="relative rounded-[18px] border border-white/6 bg-black/10 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+            <div className="relative rounded-[18px] border border-white/6 bg-black/10 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
             <textarea
               value={inputValue}
               onKeyDown={handleKeyDown}
@@ -535,9 +535,9 @@ export const AIChatInput = ({
             </div>
           </div>
 
-            <div className="flex flex-col gap-2 px-3 py-3 sm:px-4">
+            <div className="flex flex-col gap-2.5 px-3 py-3 sm:px-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -613,13 +613,10 @@ export const AIChatInput = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="hidden text-[11px] text-muted-foreground/55 md:inline">
-                  {hasFiles ? "Attachments ready" : "No attachments"}
-                </span>
                 {!isLoading ? (
                   <button
                     className={cn(
-                      "inline-flex h-10 min-w-[84px] shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-[12px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[92px]",
+                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-40",
                       hasDraft
                         ? "bg-primary text-primary-foreground shadow-[0_12px_26px_-12px_rgba(59,130,246,0.6)] hover:bg-primary/90 hover:shadow-[0_16px_30px_-12px_rgba(59,130,246,0.65)]"
                         : "border border-white/8 bg-white/[0.04] text-muted-foreground"
@@ -630,16 +627,15 @@ export const AIChatInput = ({
                     onClick={handleSend}
                   >
                     <Send size={16} className="rotate-[-45deg]" />
-                    <span>Send</span>
                   </button>
                 ) : (
                   <button
-                    className="inline-flex h-10 min-w-[92px] shrink-0 items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/15 px-3 text-[12px] font-semibold text-destructive hover:bg-destructive/25"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-destructive/20 bg-destructive/15 text-destructive hover:bg-destructive/25"
                     onClick={onStop}
                     type="button"
+                    title="Stop"
                   >
                     <StopCircle size={16} />
-                    <span>Stop</span>
                   </button>
                 )}
               </div>

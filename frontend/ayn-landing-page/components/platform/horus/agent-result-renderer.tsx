@@ -84,12 +84,35 @@ function ConfidenceBadge({ confidence }: { confidence: { level: "high" | "medium
   const Icon = config.icon
 
   return (
-    <div className={cn("mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium", config.bg)}>
+    <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium", config.bg)}>
       <Icon className="h-3 w-3" />
       <span>{config.label}</span>
       <span className="text-[10px] opacity-70">— {confidence.reason}</span>
     </div>
   )
+}
+
+function resultTypeLabel(type: string) {
+  switch (type) {
+    case "audit_report":
+      return "Audit result"
+    case "gap_table":
+      return "Gap analysis"
+    case "remediation_plan":
+      return "Remediation plan"
+    case "analytics_report":
+      return "Analytics"
+    case "job_started":
+      return "Queued task"
+    case "link_result":
+      return "Evidence update"
+    case "report_export":
+      return "Export"
+    case "action_error":
+      return "Action result"
+    default:
+      return "Tool result"
+  }
 }
 
 export function AgentResultRenderer({ result }: AgentResultRendererProps) {
@@ -206,8 +229,18 @@ export function AgentResultRenderer({ result }: AgentResultRendererProps) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         >
-          {content}
-          {confidence && <ConfidenceBadge confidence={confidence} />}
+          <div className="overflow-hidden rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] shadow-[0_18px_40px_-34px_rgba(15,23,42,0.92)]">
+            <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/65">Agent output</p>
+                <p className="mt-1 text-sm font-medium text-foreground">{resultTypeLabel(result.type)}</p>
+              </div>
+              {confidence && <ConfidenceBadge confidence={confidence} />}
+            </div>
+            <div className="p-3 sm:p-4">
+              {content}
+            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

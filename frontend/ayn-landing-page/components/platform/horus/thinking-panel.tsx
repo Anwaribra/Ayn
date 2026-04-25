@@ -156,9 +156,9 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
               <div className="flex items-center gap-3">
                 <ThinkingOrb isComplete={reasoning?.isComplete ?? false} />
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">AI Intelligence</h3>
+                  <h3 className="text-sm font-bold text-foreground">Agent activity</h3>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                    {reasoning?.isComplete ? `Done in ${reasoning.duration?.toFixed(1)}s` : "Processing..."}
+                    {reasoning?.isComplete ? `Finished in ${reasoning.duration?.toFixed(1)}s` : "Working..."}
                   </p>
                 </div>
               </div>
@@ -207,9 +207,9 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
               <div className="flex items-center gap-2.5">
                 <ThinkingOrb isComplete={reasoning?.isComplete ?? false} />
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">AI Intelligence</h3>
+                  <h3 className="text-sm font-bold text-foreground">Agent activity</h3>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                    {reasoning?.isComplete ? `Done in ${reasoning?.duration?.toFixed(1)}s` : "Processing..."}
+                    {reasoning?.isComplete ? `Finished in ${reasoning?.duration?.toFixed(1)}s` : "Working..."}
                   </p>
                 </div>
               </div>

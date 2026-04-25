@@ -248,15 +248,15 @@ function AssistantMessageMeta({
 }) {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium">
-      <span className={cn("rounded-full border px-2.5 py-1 tracking-[0.12em] uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]", getResponseModeTone(mode))}>
+      <span className={cn("rounded-full border px-2 py-0.5 tracking-[0.08em] uppercase", getResponseModeTone(mode))}>
         {getResponseModeLabel(mode, isArabic)}
       </span>
       {sourceLabel && (
-        <span className="rounded-full border border-white/8 bg-white/[0.025] px-2.5 py-1 text-muted-foreground/90">
+        <span className="rounded-full border border-white/8 bg-white/[0.025] px-2 py-0.5 text-muted-foreground/85">
           {sourceLabel}
         </span>
       )}
-      <span className="text-muted-foreground/55">{formatTimestamp(timestamp, isArabic)}</span>
+      <span className="text-muted-foreground/50">{formatTimestamp(timestamp, isArabic)}</span>
     </div>
   )
 }
@@ -394,42 +394,63 @@ function ComposerStatusStrip({
 }) {
   const routeLabel = formatAgentRoute(agentRun, isArabic)
   const intentLabel = formatAgentIntent(agentRun, isArabic)
-  const progressLabel = agentRun?.step_count
-    ? (isArabic ? `${agentRun.step_count} خطوات مخططة` : `${agentRun.step_count} planned steps`)
-    : null
+  const summaryLabel = isProcessing
+    ? (agentRun?.goal || (isArabic ? "الوكيل يعمل الآن" : "Agent is working"))
+    : attachedCount > 0
+      ? (isArabic
+        ? `${attachedCount} ${attachedCount > 1 ? "مرفقات جاهزة" : "مرفق جاهز"}`
+        : `${attachedCount} attachment${attachedCount > 1 ? "s are" : " is"} ready`)
+      : (isArabic ? "جاهز للمحادثة" : "Ready for chat")
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/75">
-      {attachedCount > 0 && (
-        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
-          {isArabic
-            ? `${attachedCount} مرفق`
-            : `${attachedCount} attachment${attachedCount > 1 ? "s" : ""}`}
-        </span>
-      )}
-      {intentLabel && (
-        <span className="rounded-md border border-emerald-500/15 bg-emerald-500/10 px-2 py-1 font-medium text-emerald-200">
-          {intentLabel}
-        </span>
-      )}
-      {routeLabel && (
-        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
-          {routeLabel}
-        </span>
-      )}
-      {isProcessing && (
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/15 bg-primary/10 px-2 py-1 font-medium text-primary/90">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          {isArabic ? "جارٍ التنفيذ" : "Running"}
-        </span>
-      )}
-      {progressLabel && (
-        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
-          {progressLabel}
-        </span>
-      )}
+    <div className="flex min-w-0 items-center justify-between gap-3 text-[11px]">
+      <div className="min-w-0">
+        <p className="truncate font-medium text-foreground/90">{summaryLabel}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-muted-foreground/65">
+          {intentLabel && <span>{intentLabel}</span>}
+          {routeLabel && <span>{intentLabel ? "· " : ""}{routeLabel}</span>}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {agentRun?.step_count ? (
+          <span className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 font-medium text-muted-foreground/80">
+            {isArabic ? `${agentRun.step_count} خطوات` : `${agentRun.step_count} steps`}
+          </span>
+        ) : null}
+        {isProcessing && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 font-medium text-primary/90">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            {isArabic ? "يعمل" : "Running"}
+          </span>
+        )}
+      </div>
     </div>
   )
+}
+
+function getAgentActivityText({
+  mode,
+  status,
+  hasAttachments,
+  isArabic,
+  phase,
+}: {
+  mode: "ask" | "think" | "agent"
+  status: string
+  hasAttachments: boolean
+  isArabic: boolean
+  phase?: string
+}) {
+  if (status !== "generating") return isArabic ? "جاهز" : "Ready"
+  if (mode === "agent") {
+    if (phase === "waiting_confirmation") return isArabic ? "بانتظار التأكيد" : "Waiting for approval"
+    if (phase === "executing") return isArabic ? "ينفذ الخطوات" : "Running tools"
+    if (hasAttachments) return isArabic ? "يحلل الملفات وينفذ المهام" : "Analyzing files and running tools"
+    return isArabic ? "يخطط وينفذ المهمة" : "Planning and executing"
+  }
+  if (mode === "think") return isArabic ? "يفكر في أفضل إجابة" : "Reasoning through the answer"
+  if (hasAttachments) return isArabic ? "يحلل المرفقات" : "Analyzing attachments"
+  return isArabic ? "يكتب الرد" : "Writing the reply"
 }
 
 function LiveTaskCards({
@@ -1430,8 +1451,7 @@ export default function HorusAIChat() {
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
               <div className="flex min-h-0 w-full flex-1 items-center justify-center pb-40 md:pb-36">
-                <div className="flex max-h-full min-h-0 w-full flex-col items-center justify-center gap-5 py-2 md:gap-8">
-                  {/* Classic Orb Loader */}
+                <div className="flex max-h-full min-h-0 w-full flex-col items-center justify-center gap-5 py-2 md:gap-7">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -1440,11 +1460,16 @@ export default function HorusAIChat() {
                   >
                     <AiLoader size={200} text="Horus AI" />
                   </motion.div>
-                  <div className="text-center max-w-[560px]">
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Your compliance agent</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Upload documents, run analysis, or ask anything about your accreditation programme.
+                  <div className="max-w-[560px] text-center">
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Your compliance agent</h1>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Ask a question, attach evidence, or let Horus reason through standards, gaps, and remediation work.
                     </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/70">
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Chat</span>
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Reason</span>
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Run tasks</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1506,7 +1531,7 @@ export default function HorusAIChat() {
                     >
                       {msg.role === "user" ? (
                         <div className="flex w-full flex-col items-end py-2 sm:py-4">
-                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[24px] rounded-tr-md px-4 py-3 text-[14px] font-medium shadow-[0_18px_40px_-28px_rgba(37,99,235,0.55)] sm:max-w-[85%]">
+                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[22px] rounded-tr-md px-4 py-3 text-[14px] font-medium leading-6 shadow-[0_18px_40px_-30px_rgba(37,99,235,0.52)] sm:max-w-[82%]">
                              {msg.content}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
@@ -1528,9 +1553,9 @@ export default function HorusAIChat() {
                               ))}
                             </div>
                            )}
-                           <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/70 sm:mt-2">
+                           <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/60 sm:mt-2">
                              {msg.responseMode && (
-                               <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
+                               <span className="rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
                                  {msg.responseMode}
                                </span>
                              )}
@@ -1631,7 +1656,7 @@ export default function HorusAIChat() {
                                 aria-atomic={isStreamingThis ? false : undefined}
                                 aria-busy={isStreamingThis}
                                 className={cn(
-                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[22px] rounded-tl-md border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.018))] px-4 py-4 text-[15px] leading-7 text-foreground prose text-start shadow-[0_20px_52px_-42px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.02)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
+                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[20px] rounded-tl-md border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.028),rgba(255,255,255,0.016))] px-4 py-4 text-[15px] leading-7 text-foreground prose text-start shadow-[0_18px_40px_-36px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.02)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
                                   isStreamingThis && "horus-streaming-active"
                                 )}
                               >
@@ -1755,7 +1780,7 @@ export default function HorusAIChat() {
 
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && hasRenderableAssistantBody && (
-                            <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-xl border border-white/8 bg-white/[0.025] px-1.5 py-1.5 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
+                            <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.02] px-1.5 py-1.5 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
                               {/* Regenerate — only on last message */}
                               {msg.id === lastAssistantMsgId && (
                                 <>
@@ -1890,18 +1915,9 @@ export default function HorusAIChat() {
                 {showLoadingBubble && (
                   <div role="status" aria-live="polite" aria-label="Processing your request" className="w-full py-2 sm:py-4 animate-in fade-in">
                     {shouldShowAskAttachmentLoader ? (
-                      <div
-                        role="status"
-                        aria-live="polite"
-                        aria-label="Analyzing your attachment"
-                        className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200"
-                      >
-                        <div className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
-                        </div>
-                        <span className="text-[11px] font-medium">{preferArabicUi ? "جارٍ تحليل المرفق…" : "Analyzing your attachment…"}</span>
+                      <div className="flex w-fit items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[11px] text-muted-foreground shadow-[0_16px_36px_-28px_rgba(0,0,0,0.82)]">
+                        <MiniOrb state="generating" className="scale-[0.82]" />
+                        <span className="font-medium">{preferArabicUi ? "يحلل المرفق" : "Analyzing your attachment"}</span>
                       </div>
                     ) : (
                     activeResponseMode === "agent" &&
@@ -1950,32 +1966,28 @@ export default function HorusAIChat() {
                         compact
                       />
                     ) : isAskLoading ? (
-                      <div
-                        role="status"
-                        aria-live="polite"
-                        aria-label="Answering your question"
-                        className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 animate-in fade-in duration-200"
-                      >
-                        <div className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
-                        </div>
-                        <span className="text-[11px] font-medium">{preferArabicUi ? "جارٍ تجهيز الإجابة…" : "Answering…"}</span>
+                      <div className="flex w-fit items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[11px] text-muted-foreground shadow-[0_16px_36px_-28px_rgba(0,0,0,0.82)]">
+                        <MiniOrb state="generating" className="scale-[0.82]" />
+                        <span className="font-medium">{preferArabicUi ? "يكتب الرد" : "Writing the reply"}</span>
                       </div>
                     ) : (
-                      <div
-                        role="status"
-                        aria-live="polite"
-                        aria-label="Generating response"
-                        className="glass-panel flex max-w-[18rem] items-start gap-3 rounded-2xl p-3 sm:max-w-none sm:p-4"
-                      >
-                        <MiniOrb state="generating" className="mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0 space-y-2.5">
-                          <div className="horus-loading-line w-full max-w-[85%]" />
-                          <div className="horus-loading-line w-full max-w-[95%]" />
-                          <div className="horus-loading-line w-3/4 max-w-[70%]" />
-                          <div className="horus-loading-line w-1/2 max-w-[40%]" />
+                      <div className="flex w-fit max-w-full items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[11px] text-muted-foreground shadow-[0_16px_36px_-28px_rgba(0,0,0,0.82)]">
+                        <MiniOrb state="generating" className="scale-[0.82]" />
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="font-medium text-foreground/88">
+                            {getAgentActivityText({
+                              mode: activeResponseMode,
+                              status,
+                              hasAttachments: lastUserHasAttachments,
+                              isArabic: preferArabicUi,
+                            })}
+                          </span>
+                          <span className="text-muted-foreground/45">·</span>
+                          <div className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "0ms" }} />
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "150ms" }} />
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary horus-ask-dot" style={{ animationDelay: "300ms" }} />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2036,36 +2048,38 @@ export default function HorusAIChat() {
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/80 via-background/35 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-2">
           <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
             {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
-              <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 shadow-[0_18px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-                      <Sparkles className="h-3.5 w-3.5 text-foreground/80" />
+              <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-[rgba(255,255,255,0.035)] px-4 py-2.5 shadow-[0_16px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex min-w-0 items-center gap-3">
+                  <MiniOrb state="generating" className="scale-[0.82]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-medium text-foreground/92">
+                      {activeAssistantMsg?.agentRun?.goal || getAgentActivityText({
+                        mode: activeResponseMode,
+                        status,
+                        hasAttachments: lastUserHasAttachments,
+                        isArabic: preferArabicUi,
+                      })}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground/72">
+                      {activeAssistantMsg?.agentRun?.reason || getAgentActivityText({
+                        mode: activeResponseMode,
+                        status,
+                        hasAttachments: lastUserHasAttachments,
+                        isArabic: preferArabicUi,
+                        phase: activeAssistantMsg?.pendingConfirmation ? "waiting_confirmation" : undefined,
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {activeAssistantMsg?.agentRun?.step_count ? (
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                      {preferArabicUi
+                        ? `${activeAssistantMsg.agentRun.step_count} خطوة`
+                        : `${activeAssistantMsg.agentRun.step_count} step${activeAssistantMsg.agentRun.step_count > 1 ? "s" : ""}`}
                     </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-[12px] font-medium text-foreground/92">
-                        {activeAssistantMsg?.agentRun?.goal || (preferArabicUi ? "جاهز للتنفيذ" : "Ready to work")}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {activeAssistantMsg?.agentRun?.reason || (isProcessing ? (preferArabicUi ? "جارٍ تجهيز الاستجابة" : "Preparing the response") : (preferArabicUi ? "في انتظار طلبك التالي" : "Waiting for your next request"))}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {activeAssistantMsg?.agentRun?.step_count ? (
-                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                        {preferArabicUi
-                          ? `${activeAssistantMsg.agentRun.step_count} خطوة`
-                          : `${activeAssistantMsg.agentRun.step_count} step${activeAssistantMsg.agentRun.step_count > 1 ? "s" : ""}`}
-                      </span>
-                    ) : null}
-                    {isProcessing && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary/90">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        {preferArabicUi ? "قيد التنفيذ" : "In progress"}
-                      </span>
-                    )}
-                  </div>
+                  ) : null}
+                  {isProcessing && <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
                 </div>
               </div>
             )}
@@ -2158,7 +2172,7 @@ export default function HorusAIChat() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 rounded-md border border-transparent px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
+                      className="h-7 rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] text-muted-foreground/75 hover:bg-white/[0.05] hover:text-foreground disabled:opacity-50"
                       onClick={handleDeepResearch}
                       disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
                     >
@@ -2169,7 +2183,7 @@ export default function HorusAIChat() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 rounded-md border border-transparent px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground"
+                        className="h-7 rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] text-muted-foreground/75 hover:bg-white/[0.05] hover:text-foreground"
                         onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
                       >
                         <Brain className="mr-1 h-3.5 w-3.5" />

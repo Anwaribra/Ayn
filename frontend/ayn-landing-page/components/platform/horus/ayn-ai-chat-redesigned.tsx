@@ -670,7 +670,7 @@ export default function HorusAIChat() {
   const userRequestedScrollRef = useRef(false)
   const fallbackQueueRef = useRef<string[]>([])
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const didLoadFromQueryRef = useRef(false)
+  const hasInitializedChatLoadRef = useRef(false)
   const [completionPulseKey, setCompletionPulseKey] = useState(0)
   const [thinkingPanelExpanded, setThinkingPanelExpanded] = useState(false)
   const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set())
@@ -708,13 +708,13 @@ export default function HorusAIChat() {
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
     const chatIdFromQuery = searchParams.get("chat")
-    if (!chatIdFromQuery || didLoadFromQueryRef.current) return
+    if (!chatIdFromQuery || hasInitializedChatLoadRef.current) return
     if (currentChatId === chatIdFromQuery) {
-      didLoadFromQueryRef.current = true
+      hasInitializedChatLoadRef.current = true
       return
     }
 
-    didLoadFromQueryRef.current = true
+    hasInitializedChatLoadRef.current = true
     loadChat(chatIdFromQuery).catch(() => {
       // loadChat already surfaces toast errors.
     })
@@ -722,12 +722,13 @@ export default function HorusAIChat() {
 
   useEffect(() => {
     const chatIdFromQuery = searchParams.get("chat")
-    if (chatIdFromQuery || didLoadFromQueryRef.current) return
+    const shouldSkipAutoRestore = !!chatIdFromQuery || hasInitializedChatLoadRef.current || !!currentChatId
+    if (shouldSkipAutoRestore) return
     if (typeof window === "undefined") return
     const lastChatId = window.localStorage.getItem(LAST_CHAT_STORAGE_KEY)
     if (!lastChatId || currentChatId === lastChatId) return
 
-    didLoadFromQueryRef.current = true
+    hasInitializedChatLoadRef.current = true
     loadChat(lastChatId).catch(() => {
       window.localStorage.removeItem(LAST_CHAT_STORAGE_KEY)
     })
@@ -1259,6 +1260,14 @@ export default function HorusAIChat() {
     }
   }
 
+  const handleHistorySessionSelect = useCallback((sessionId: string) => {
+    hasInitializedChatLoadRef.current = true
+    setHistorySheetOpen(false)
+    loadChat(sessionId).catch(() => {
+      // loadChat already surfaces toast errors.
+    })
+  }, [loadChat])
+
   const visibleMessages = useMemo(() => {
     const sliced = conversationalMessages.slice(-30).filter((msg) => {
       if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false
@@ -1356,7 +1365,7 @@ export default function HorusAIChat() {
                   filteredHistory.map((session: any) => (
                     <div
                       key={session.id}
-                      onClick={() => { setHistorySheetOpen(false); loadChat(session.id) }}
+                      onClick={() => handleHistorySessionSelect(session.id)}
                       className={cn(
                         "group relative cursor-pointer rounded-xl border px-3.5 py-3 transition-all",
                         currentChatId === session.id

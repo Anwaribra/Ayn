@@ -12,6 +12,29 @@ interface AttachmentPreview {
     preview?: string
 }
 
+type ChatHistoryPayload = {
+    id?: string
+    messages?: Array<{
+        id: string
+        role?: string
+        content?: string
+        timestamp?: string | number
+        metadata?: unknown
+    }>
+}
+
+type ChatHistoryResponse = ChatHistoryPayload | {
+    data?: ChatHistoryPayload
+}
+
+const extractChatPayload = (chat: ChatHistoryResponse | null | undefined): ChatHistoryPayload => {
+    if (!chat || typeof chat !== "object") return {}
+    if ("data" in chat && chat.data && typeof chat.data === "object") {
+        return chat.data
+    }
+    return chat
+}
+
 type HorusResponseMode = "ask" | "think" | "agent"
 
 export type CitationSource = {
@@ -676,8 +699,12 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
-            const rawMessages = Array.isArray(chat?.messages) ? chat.messages : []
-            setCurrentChatId(chat.id)
+            if (process.env.NODE_ENV !== "production") {
+                console.log("[Horus] loadChat response", chat)
+            }
+            const payload = extractChatPayload(chat)
+            const rawMessages = Array.isArray(payload?.messages) ? payload.messages : []
+            setCurrentChatId(payload?.id ?? chatId)
             setMessages(rawMessages.map((m: any) => {
                 let meta = m.metadata
                 if (typeof meta === 'string') {

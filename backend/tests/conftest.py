@@ -10,6 +10,7 @@ from pathlib import Path
 os.environ["JWT_SECRET"] = os.environ.get("JWT_SECRET", "test-jwt-secret")
 os.environ["SUPABASE_URL"] = os.environ.get("SUPABASE_URL", "https://example.supabase.co")
 os.environ["SUPABASE_KEY"] = os.environ.get("SUPABASE_KEY", "test-supabase-key")
+os.environ["DATABASE_URL"] = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/ayn_platform")
 os.environ["DEBUG"] = "false"
 
 # Ensure `app` and `main` imports resolve regardless of pytest cwd.

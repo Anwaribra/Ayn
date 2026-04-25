@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Ayn Platform"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    # Requires DEBUG=True and ENABLE_DEBUG_ENDPOINTS=True to expose debug-only routes.
+    ENABLE_DEBUG_ENDPOINTS: bool = False
     
     # CORS (comma-separated string, will be parsed)
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"

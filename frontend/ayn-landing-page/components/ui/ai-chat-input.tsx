@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback, type ReactNode } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react"
 import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff, ShieldCheck, BarChart2, AlertTriangle, Link, Download, Search, Sparkles, Wrench } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -129,15 +129,15 @@ export const AIChatInput = ({
     "brain": Brain,
   }
 
-  const filteredAgentCommands = agentCommands.filter((cmd) =>
+  const filteredAgentCommands = useMemo(() => agentCommands.filter((cmd) =>
     !slashFilter ||
     cmd.command.toLowerCase().includes(slashFilter.toLowerCase()) ||
     cmd.label.toLowerCase().includes(slashFilter.toLowerCase())
-  )
+  ), [agentCommands, slashFilter])
 
-  const filteredQuickPrompts = quickPrompts.filter((qp) =>
+  const filteredQuickPrompts = useMemo(() => quickPrompts.filter((qp) =>
     !slashFilter || qp.label.toLowerCase().includes(slashFilter.toLowerCase())
-  )
+  ), [quickPrompts, slashFilter])
 
   const totalSlashItems = filteredAgentCommands.length + filteredQuickPrompts.length
 
@@ -170,20 +170,10 @@ export const AIChatInput = ({
       }
       handleSend()
     }
-    if (e.key === "/" && !inputValue.trim() && !e.metaKey && !e.ctrlKey && !e.altKey) {
-      e.preventDefault()
-      e.stopPropagation()
-      setSlashMenuOpen(true)
-      setSlashFilter("")
-      setSlashSelectedIdx(0)
-      setIsActive(true)
-      return
-    }
     if (e.key === "Escape") {
       if (slashMenuOpen) {
         e.preventDefault()
         setSlashMenuOpen(false)
-        setSlashFilter("")
         setSlashSelectedIdx(0)
         return
       }
@@ -200,23 +190,6 @@ export const AIChatInput = ({
     if (e.key === "ArrowUp" && !inputValue.trim() && lastUserMessage) {
       e.preventDefault()
       setInputValue(lastUserMessage)
-    }
-    // If typing while slash menu is open, filter
-    if (slashMenuOpen && e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
-      setSlashFilter((prev) => prev + e.key)
-      setSlashSelectedIdx(0)
-      e.preventDefault()
-      return
-    }
-    if (slashMenuOpen && e.key === "Backspace") {
-      if (slashFilter) {
-        setSlashFilter((prev) => prev.slice(0, -1))
-        setSlashSelectedIdx(0)
-      } else {
-        setSlashMenuOpen(false)
-      }
-      e.preventDefault()
-      return
     }
   }
 
@@ -364,6 +337,13 @@ export const AIChatInput = ({
 
   sendRef.current = handleSend
 
+  const hasDraft = !!inputValue.trim() || hasFiles
+  const modeLabel = responseMode === "think" ? "Think" : responseMode === "agent" ? "Agent" : "Ask"
+  const shellTone = isActive || inputValue
+    ? "border-primary/20 bg-[#0d131d]/98 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.95),0_0_0_1px_rgba(59,130,246,0.08)]"
+    : "border-white/8 bg-[#0b1017]/94 shadow-[0_24px_70px_-50px_rgba(0,0,0,0.9)]"
+  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground/75 transition-colors hover:border-white/8 hover:bg-white/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+
   return (
     <div className="flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
       <div
@@ -373,11 +353,8 @@ export const AIChatInput = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "horus-input-shell relative w-full max-w-[920px] overflow-visible rounded-[28px]",
-          "border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.025))] backdrop-blur-xl",
-          "shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.04)]",
-          "transition-all duration-200",
-          (isActive || inputValue) && "border-primary/25 shadow-[0_28px_70px_-40px_rgba(37,99,235,0.45),inset_0_1px_0_rgba(255,255,255,0.05)]",
+          "horus-input-shell relative w-full max-w-[920px] overflow-visible rounded-[24px] border backdrop-blur-xl transition-all duration-200",
+          shellTone,
           isDragging && "ring-2 ring-primary/40 border-primary/50 bg-primary/5",
           isLoading && "horus-input-shimmer"
         )}
@@ -385,19 +362,18 @@ export const AIChatInput = ({
       >
         <div className="flex h-full w-full flex-col items-stretch">
           {header && (
-            <div className="border-b border-white/8 px-4 py-2.5 sm:px-5">
+            <div className="border-b border-white/8 px-4 py-2 sm:px-5">
               {header}
             </div>
           )}
-          {/* Text area */}
-          <div className="relative w-full px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-[18px]">
+          <div className="relative w-full px-4 pb-3 pt-3.5 sm:px-5">
             {isDragging && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] bg-primary/10 text-sm font-medium text-primary">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[22px] bg-primary/10 text-sm font-medium text-primary">
                 Drop files here
               </div>
             )}
             {isListening && (
-              <div className="absolute bottom-2 left-4 z-10 flex items-center gap-1 rounded-full border border-primary/15 bg-primary/12 px-2.5 py-1 text-[11px] font-medium text-primary">
+              <div className="absolute right-4 top-3 z-10 flex items-center gap-1 rounded-full border border-primary/15 bg-primary/12 px-2.5 py-1 text-[11px] font-medium text-primary">
                 <span className="flex gap-0.5">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <span
@@ -410,7 +386,17 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="relative">
+            <div className="mb-2 hidden flex-wrap items-center gap-2 text-[11px] text-muted-foreground/60 sm:flex">
+              <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium text-foreground/80">
+                {modeLabel}
+              </span>
+              <span>Enter to send</span>
+              <span className="text-white/20">/</span>
+              <span>Shift+Enter for newline</span>
+              <span className="text-white/20">/</span>
+              <span>Type `/` for commands</span>
+            </div>
+            <div className="relative rounded-[18px] border border-white/6 bg-black/10 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
             <textarea
               value={inputValue}
               onKeyDown={handleKeyDown}
@@ -418,9 +404,20 @@ export const AIChatInput = ({
               disabled={disabled}
               placeholder={DEFAULT_PLACEHOLDER}
               onChange={(e) => {
-                setInputValue(e.target.value)
-                resizeTextarea(e.target.value)
-                if (onChange) onChange(e.target.value)
+                const nextValue = e.target.value
+                const trimmedLeft = nextValue.trimStart()
+                const isSlashMode = trimmedLeft.startsWith("/")
+                setInputValue(nextValue)
+                resizeTextarea(nextValue)
+                if (isSlashMode) {
+                  setSlashMenuOpen(true)
+                  setSlashFilter(trimmedLeft.slice(1))
+                  setSlashSelectedIdx(0)
+                } else {
+                  setSlashMenuOpen(false)
+                  setSlashFilter("")
+                }
+                if (onChange) onChange(nextValue)
               }}
               className={cn(
                 "horus-input-field w-full min-h-[48px] resize-none border-none bg-transparent pe-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
@@ -438,25 +435,23 @@ export const AIChatInput = ({
               rows={1}
             />
             {slashMenuOpen && (filteredAgentCommands.length > 0 || filteredQuickPrompts.length > 0) && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[420px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.97)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/8 px-3.5 py-2.5">
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[440px] overflow-hidden rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.98)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-primary">
                       <Sparkles className="h-3 w-3" />
                     </span>
-                    <span className="text-[12px] font-semibold text-foreground">Agent Commands</span>
+                    <span className="text-[12px] font-semibold text-foreground">Commands</span>
                   </div>
-                  {slashFilter && (
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {(slashFilter || inputValue.trimStart().startsWith("/")) && (
+                    <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
                       /{slashFilter}
                     </span>
                   )}
-                  <span className="text-[10px] text-muted-foreground/60">↑↓ navigate · Enter select · Esc close</span>
+                  <span className="text-[10px] text-muted-foreground/60">↑↓ navigate · Enter select</span>
                 </div>
 
                 <div className="max-h-[320px] overflow-y-auto p-1.5 custom-scrollbar">
-                  {/* Agent Commands */}
                   {filteredAgentCommands.length > 0 && (
                     <div className="mb-1">
                       {filteredAgentCommands.map((cmd, idx) => {
@@ -478,8 +473,8 @@ export const AIChatInput = ({
                             className={cn(
                               "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                               isSelected
-                                ? "bg-primary/10 border border-primary/20"
-                                : "hover:bg-white/[0.04] border border-transparent"
+                                ? "border border-primary/20 bg-primary/10"
+                                : "border border-transparent hover:bg-white/[0.04]"
                             )}
                           >
                             <span className={cn(
@@ -503,7 +498,6 @@ export const AIChatInput = ({
                     </div>
                   )}
 
-                  {/* Quick Prompts */}
                   {filteredQuickPrompts.length > 0 && (
                     <>
                       {filteredAgentCommands.length > 0 && (
@@ -550,19 +544,17 @@ export const AIChatInput = ({
               </div>
             )}
             </div>
-
           </div>
 
-          {/* Bottom toolbar */}
-          <div className="flex min-h-[54px] items-center justify-between gap-3 border-t border-white/8 px-3 py-2.5 sm:px-4">
-            <div className="flex items-center gap-1">
+            <div className="flex flex-col gap-2 border-t border-white/8 px-3 py-3 sm:px-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
               <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/80 transition-colors hover:bg-[var(--border-subtle)]/50 hover:text-foreground"
+                    className={iconButtonClass}
                     title="Add attachment or switch mode (Ctrl+/)"
                     type="button"
-                    tabIndex={-1}
                   >
                     <Plus size={20} strokeWidth={2} />
                   </button>
@@ -597,10 +589,10 @@ export const AIChatInput = ({
               <button
                 onClick={startVoiceInput}
                 className={cn(
-                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                  `${iconButtonClass} disabled:cursor-not-allowed disabled:opacity-40`,
                   isListening
                     ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                    : "text-muted-foreground/80 hover:bg-[var(--border-subtle)]/50 hover:text-foreground"
+                    : ""
                 )}
                 title={
                   isTranscribing
@@ -610,7 +602,6 @@ export const AIChatInput = ({
                       : "Voice input"
                 }
                 type="button"
-                tabIndex={-1}
                 aria-label={isListening ? "Stop voice input" : "Start voice input"}
                 disabled={isTranscribing}
               >
@@ -630,37 +621,44 @@ export const AIChatInput = ({
                 accept=".pdf,.docx,.doc,.txt"
                 onChange={(e) => handleFileChange(e, "document")}
               />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="hidden text-[11px] text-muted-foreground/55 md:inline">
+                  {hasFiles ? "Attachments ready" : "No attachments"}
+                </span>
+                {!isLoading ? (
+                  <button
+                    className={cn(
+                      "inline-flex h-10 min-w-[84px] shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-[12px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[92px]",
+                      hasDraft
+                        ? "bg-primary text-primary-foreground shadow-[0_12px_26px_-12px_rgba(59,130,246,0.6)] hover:bg-primary/90 hover:shadow-[0_16px_30px_-12px_rgba(59,130,246,0.65)]"
+                        : "border border-white/8 bg-white/[0.04] text-muted-foreground"
+                    )}
+                    title="Send (Ctrl+Enter)"
+                    type="button"
+                    disabled={!hasDraft}
+                    onClick={handleSend}
+                  >
+                    <Send size={16} className="rotate-[-45deg]" />
+                    <span>Send</span>
+                  </button>
+                ) : (
+                  <button
+                    className="inline-flex h-10 min-w-[92px] shrink-0 items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/15 px-3 text-[12px] font-semibold text-destructive hover:bg-destructive/25"
+                    onClick={onStop}
+                    type="button"
+                  >
+                    <StopCircle size={16} />
+                    <span>Stop</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="min-w-0 flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="min-w-0 text-muted-foreground">
               {footer}
             </div>
-
-            {!isLoading ? (
-              <button
-                className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold transition-all disabled:cursor-not-allowed disabled:opacity-30",
-                  (inputValue.trim() || hasFiles)
-                    ? "bg-primary text-primary-foreground shadow-[0_12px_26px_-12px_rgba(59,130,246,0.6)] hover:bg-primary/90 hover:shadow-[0_16px_30px_-12px_rgba(59,130,246,0.65)]"
-                    : "border border-white/8 bg-white/[0.04] text-muted-foreground"
-                )}
-                title="Send (Ctrl+Enter)"
-                type="button"
-                disabled={!inputValue.trim() && !hasFiles}
-                onClick={handleSend}
-                tabIndex={-1}
-              >
-                <Send size={18} className="ml-0.5 rotate-[-45deg]" />
-              </button>
-            ) : (
-              <button
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-destructive/20 bg-destructive/15 text-destructive hover:bg-destructive/25"
-                onClick={onStop}
-                type="button"
-              >
-                <StopCircle size={18} />
-              </button>
-            )}
           </div>
         </div>
       </div>

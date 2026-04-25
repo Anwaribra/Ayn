@@ -65,6 +65,7 @@ const EMPTY_STRINGS: string[] = []
 const EMPTY_TOOL_STEPS: ToolStep[] = []
 const EMPTY_FILES: string[] = []
 const EMPTY_FILE_STATUSES: Record<string, FileStatus> = {}
+const LAST_CHAT_STORAGE_KEY = "horus-last-chat-id"
 
 /** Renders assistant content with typing effect when streaming */
 function StreamingAssistantContent({
@@ -400,32 +401,32 @@ function ComposerStatusStrip({
     : null
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/75">
       {attachedCount > 0 && (
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
           {isArabic
             ? `${attachedCount} مرفق`
             : `${attachedCount} attachment${attachedCount > 1 ? "s" : ""}`}
         </span>
       )}
       {intentLabel && (
-        <span className="rounded-full border border-emerald-500/15 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-200">
+        <span className="rounded-md border border-emerald-500/15 bg-emerald-500/10 px-2 py-1 font-medium text-emerald-200">
           {intentLabel}
         </span>
       )}
       {routeLabel && (
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
           {routeLabel}
         </span>
       )}
       {isProcessing && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 font-medium text-primary/90">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/15 bg-primary/10 px-2 py-1 font-medium text-primary/90">
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
           {isArabic ? "جارٍ التنفيذ" : "Running"}
         </span>
       )}
       {progressLabel && (
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-medium text-muted-foreground">
+        <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium">
           {progressLabel}
         </span>
       )}
@@ -564,28 +565,41 @@ function getReasoningSteps(text: string, hasFiles: boolean) {
   return steps
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${bytes} B`
+}
 
 
 // ─── File Preview Component ─────────────────────────────────────────────────────
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
+  const isImage = file.type === "image" && !!file.preview
+
   return (
-    <div className="relative group flex items-center gap-2 p-2 pr-8 rounded-xl horus-file-chip transition-all hover:border-primary/40 hover:shadow-md">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-        {file.type === 'image' && file.preview ? (
-          <img src={file.preview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+    <div className="group relative flex items-center gap-3 rounded-xl border border-white/8 bg-[#0d131b]/92 p-2.5 pr-10 shadow-[0_14px_28px_-24px_rgba(0,0,0,0.9)] transition-all hover:border-primary/30 hover:bg-[#111927]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/8 bg-primary/10 text-primary">
+        {isImage ? (
+          <img src={file.preview} alt={file.file.name} className="h-full w-full object-cover" />
         ) : (
-          <FileText className="w-4 h-4" />
+          <FileText className="h-4 w-4" />
         )}
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-bold text-foreground truncate max-w-[120px]">{file.file.name}</p>
-        <p className="text-[10px] text-muted-foreground uppercase font-bold">{(file.file.size / 1024).toFixed(0)}KB</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[12px] font-medium text-foreground">{file.file.name}</p>
+        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground/65">
+          <span className="rounded-md border border-white/8 bg-white/[0.03] px-1.5 py-0.5 font-medium uppercase tracking-[0.08em]">
+            {file.type}
+          </span>
+          <span>{formatFileSize(file.file.size)}</span>
+        </div>
       </div>
       <button
         onClick={onRemove}
-        className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground/55 transition-colors hover:bg-destructive/10 hover:text-destructive"
+        aria-label={`Remove ${file.file.name}`}
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   )
@@ -649,6 +663,8 @@ export default function HorusAIChat() {
   const [deepResearchRunning, setDeepResearchRunning] = useState(false)
   const [inputResetKey, setInputResetKey] = useState(0)
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
+  const [historyQuery, setHistoryQuery] = useState("")
+  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true
     return !localStorage.getItem("horus-sound-disabled")
@@ -664,6 +680,13 @@ export default function HorusAIChat() {
   )
   const { focusMode, setFocusMode } = useFocusMode()
   const { theme: _theme, setTheme, resolvedTheme } = useTheme()
+
+  const starterPrompts = useMemo(() => ([
+    "Give me a full compliance overview of my institution",
+    "Run a full gap analysis against our active standards",
+    "Which NCAAA criteria are not covered by our current evidence?",
+    "Create a prioritized remediation plan for our open gaps",
+  ]), [])
 
   const lastAssistantMsgId = messages.filter((m) => m.role === "assistant").pop()?.id
   const lastAssistantMsg = messages.filter((m) => m.role === "assistant").pop()
@@ -694,6 +717,19 @@ export default function HorusAIChat() {
   }, [searchParams, currentChatId, loadChat])
 
   useEffect(() => {
+    const chatIdFromQuery = searchParams.get("chat")
+    if (chatIdFromQuery || didLoadFromQueryRef.current) return
+    if (typeof window === "undefined") return
+    const lastChatId = window.localStorage.getItem(LAST_CHAT_STORAGE_KEY)
+    if (!lastChatId || currentChatId === lastChatId) return
+
+    didLoadFromQueryRef.current = true
+    loadChat(lastChatId).catch(() => {
+      window.localStorage.removeItem(LAST_CHAT_STORAGE_KEY)
+    })
+  }, [searchParams, currentChatId, loadChat])
+
+  useEffect(() => {
     const currentUrlChatId = searchParams.get("chat")
     if (currentChatId === currentUrlChatId) return
 
@@ -705,6 +741,12 @@ export default function HorusAIChat() {
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
     router.replace(nextUrl, { scroll: false })
   }, [currentChatId, pathname, router, searchParams])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (currentChatId) window.localStorage.setItem(LAST_CHAT_STORAGE_KEY, currentChatId)
+    else window.localStorage.removeItem(LAST_CHAT_STORAGE_KEY)
+  }, [currentChatId])
 
   // Check if user is near bottom (within 100px)
   const checkNearBottom = useCallback(() => {
@@ -1248,11 +1290,47 @@ export default function HorusAIChat() {
     })
   }, [messages])
 
+  const filteredHistory = useMemo(() => {
+    if (!historyQuery.trim()) return history ?? []
+    const needle = historyQuery.trim().toLowerCase()
+    return (history ?? []).filter((session: any) =>
+      [session.title, session.description]
+        .filter(Boolean)
+        .some((value: string) => value.toLowerCase().includes(needle))
+    )
+  }, [history, historyQuery])
+
+  const copySessionLink = useCallback(async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const url = typeof window !== "undefined"
+        ? `${window.location.origin}${pathname}?chat=${encodeURIComponent(sessionId)}`
+        : `${pathname}?chat=${encodeURIComponent(sessionId)}`
+      await navigator.clipboard.writeText(url)
+      setCopiedSessionId(sessionId)
+      setTimeout(() => setCopiedSessionId((current) => current === sessionId ? null : current), 1800)
+      toast.success("Chat link copied")
+    } catch {
+      toast.error("Failed to copy chat link")
+    }
+  }, [pathname])
+
   return (
       <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
       {/* New + History as floating top-right */}
       <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
+        {currentChatId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => copySessionLink(currentChatId, e as unknown as React.MouseEvent)}
+            className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8"
+            title="Copy active chat link"
+          >
+            {copiedSessionId === currentChatId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
+        )}
         <AgentActivityLog
           messages={messages}
           open={activityLogOpen}
@@ -1281,13 +1359,27 @@ export default function HorusAIChat() {
             </div>
             <ScrollArea className="h-[calc(100dvh-8.25rem)] sm:h-[calc(100dvh-7rem)]">
               <div className="space-y-2.5 p-3 sm:p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/45" />
+                  <input
+                    value={historyQuery}
+                    onChange={(e) => setHistoryQuery(e.target.value)}
+                    placeholder="Search chats"
+                    className="h-9 w-full rounded-lg border border-white/8 bg-white/[0.03] pl-9 pr-3 text-[12px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/45 focus:border-primary/30"
+                  />
+                </div>
                 {(!history || history.length === 0) ? (
                   <div className="rounded-xl border border-white/8 bg-white/[0.02] px-5 py-10 text-center sm:py-12">
                     <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/25" />
                     <p className="text-xs font-medium text-muted-foreground/75">No chat history</p>
                   </div>
+                ) : filteredHistory.length === 0 ? (
+                  <div className="rounded-xl border border-white/8 bg-white/[0.02] px-5 py-10 text-center sm:py-12">
+                    <Search className="mx-auto mb-2 h-7 w-7 text-muted-foreground/25" />
+                    <p className="text-xs font-medium text-muted-foreground/75">No chats match your search</p>
+                  </div>
                 ) : (
-                  history.map((session: any) => (
+                  filteredHistory.map((session: any) => (
                     <div
                       key={session.id}
                       onClick={() => { setHistorySheetOpen(false); loadChat(session.id) }}
@@ -1305,12 +1397,22 @@ export default function HorusAIChat() {
                         <p className={cn("pr-6 text-[13px] font-medium leading-snug", currentChatId === session.id ? "text-primary" : "text-foreground/92")}>
                           {session.title || "Untitled Conversation"}
                         </p>
-                        <button
-                          onClick={(e) => deleteSession(session.id, e)}
-                          className="rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-white/[0.04] hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                          <button
+                            onClick={(e) => copySessionLink(session.id, e)}
+                            className="rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-white/[0.04] hover:text-foreground"
+                            title="Copy chat link"
+                          >
+                            {copiedSessionId === session.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                          <button
+                            onClick={(e) => deleteSession(session.id, e)}
+                            className="rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-white/[0.04] hover:text-destructive"
+                            title="Delete chat"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                       {session.description && (
                         <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/70">
@@ -1341,14 +1443,14 @@ export default function HorusAIChat() {
         <div
           ref={scrollContainerRef}
           className={cn(
-            "flex-1 w-full px-6 pt-8 custom-scrollbar flex flex-col items-center",
-            isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-36 md:pb-28"
+            "flex-1 w-full px-3 pt-6 custom-scrollbar flex flex-col items-center sm:px-6 sm:pt-8",
+            isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-40 md:pb-28"
           )}
         >
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
-              <div className="flex-1 min-h-0 w-full flex items-center justify-center pb-44 md:pb-36">
-                <div className="flex flex-col items-center justify-center gap-6 md:gap-8 w-full min-h-0 max-h-full py-2">
+              <div className="flex min-h-0 w-full flex-1 items-center justify-center pb-40 md:pb-36">
+                <div className="flex max-h-full min-h-0 w-full flex-col items-center justify-center gap-5 py-2 md:gap-8">
                   {/* Classic Orb Loader */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
@@ -1366,9 +1468,22 @@ export default function HorusAIChat() {
                   </div>
 
                   <div className="flex items-center justify-center gap-2">
-                    <span className="glass-pill glass-text-secondary px-3 py-1 text-[11px] font-medium">
+                    <span className="rounded-md border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-muted-foreground">
                       Deep Research {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "ready" : "offline"}
                     </span>
+                  </div>
+
+                  <div className="grid w-full max-w-[720px] gap-2 sm:grid-cols-2">
+                    {starterPrompts.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => handleSendMessage(prompt)}
+                        className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left text-[13px] font-medium text-foreground/90 transition-colors hover:border-primary/25 hover:bg-primary/[0.06] sm:min-h-[72px]"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1430,28 +1545,31 @@ export default function HorusAIChat() {
                     >
                       {msg.role === "user" ? (
                         <div className="flex w-full flex-col items-end py-2 sm:py-4">
-                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-3xl rounded-tr-lg px-4 py-3 text-[14px] font-semibold sm:max-w-[88%]">
+                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[24px] rounded-tr-md px-4 py-3 text-[14px] font-medium shadow-[0_18px_40px_-28px_rgba(37,99,235,0.55)] sm:max-w-[85%]">
                              {msg.content}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
-                           <div className="mt-2 flex flex-wrap gap-2 justify-end max-w-[88%]">
+                           <div className="mt-2 flex max-w-[85%] flex-wrap justify-end gap-2">
                               {msg.attachments.map((file, idx) => (
-                                <div key={`${msg.id}-att-${idx}`} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-2.5 py-2 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.8)]">
+                                <div key={`${msg.id}-att-${idx}`} className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.04] px-2.5 py-2 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.8)]">
                                   {file.type === "image" && file.preview ? (
                                     <img src={file.preview} alt={file.name} className="h-10 w-10 rounded-lg object-cover" />
                                   ) : (
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                                      <FileText className="w-4 h-4 text-primary" />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/8 bg-primary/10">
+                                      <FileText className="h-4 w-4 text-primary" />
                                     </div>
                                   )}
-                                  <div className="max-w-[140px] truncate text-[11px] font-medium text-muted-foreground">{file.name}</div>
+                                  <div className="min-w-0">
+                                    <div className="max-w-[140px] truncate text-[11px] font-medium text-foreground/90">{file.name}</div>
+                                    <div className="text-[10px] text-muted-foreground/60">{file.type === "image" ? "Image" : "Document"}</div>
+                                  </div>
                                 </div>
                               ))}
                             </div>
                            )}
                            <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/70 sm:mt-2">
                              {msg.responseMode && (
-                               <span className="glass-pill glass-text-secondary px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
+                               <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
                                  {msg.responseMode}
                                </span>
                              )}
@@ -1552,7 +1670,7 @@ export default function HorusAIChat() {
                                 aria-atomic={isStreamingThis ? false : undefined}
                                 aria-busy={isStreamingThis}
                                 className={cn(
-                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[26px] rounded-tl-lg border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02))] px-4 py-4 text-[15px] leading-relaxed text-foreground prose text-start shadow-[0_20px_52px_-42px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.025)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
+                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[22px] rounded-tl-md border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.018))] px-4 py-4 text-[15px] leading-7 text-foreground prose text-start shadow-[0_20px_52px_-42px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.02)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
                                   isStreamingThis && "horus-streaming-active"
                                 )}
                               >
@@ -1676,13 +1794,13 @@ export default function HorusAIChat() {
 
                           {/* Regenerate (last only) + Copy + Feedback — on completed assistant messages */}
                           {msg.role === "assistant" && status === "idle" && hasRenderableAssistantBody && (
-                            <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1 py-1 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
+                            <div className="relative mt-2 flex w-fit flex-wrap items-center gap-1 rounded-xl border border-white/8 bg-white/[0.025] px-1.5 py-1.5 shadow-[0_12px_28px_-24px_rgba(0,0,0,0.85)] sm:mt-3">
                               {/* Regenerate — only on last message */}
                               {msg.id === lastAssistantMsgId && (
                                 <>
                                   <button
                                     onClick={() => retryLastMessage()}
-                                    className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
+                                    className="horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8"
                                     title={isArabicMessage ? "إعادة توليد الرد" : "Regenerate response"}
                                   >
                                     <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -1694,7 +1812,7 @@ export default function HorusAIChat() {
                                 <>
                                   <button
                                     onClick={handleExportChat}
-                                    className="horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8"
+                                    className="horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8"
                                     title={isArabicMessage ? "تصدير المحادثة" : "Export chat (.txt)"}
                                   >
                                     <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -1707,7 +1825,7 @@ export default function HorusAIChat() {
                                 <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
                                   className={cn(
-                                    "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
+                                    "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
                                     copiedMsgId === msg.id
                                       ? "text-green-500 bg-green-500/10"
                                       : ""
@@ -1723,7 +1841,7 @@ export default function HorusAIChat() {
                               <button
                                 onClick={() => handleFeedback(msg.id, "up")}
                                 className={cn(
-                                  "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
+                                  "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
                                   feedback[msg.id] === "up"
                                     ? "text-green-500 bg-green-500/10"
                                     : "hover:text-green-500 hover:bg-green-500/10"
@@ -1741,7 +1859,7 @@ export default function HorusAIChat() {
                                   handleFeedback(msg.id, "down")
                                 }}
                                 className={cn(
-                                  "horus-tool-button inline-flex h-7 w-7 items-center justify-center md:h-8 md:w-8",
+                                  "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
                                   feedback[msg.id] === "down"
                                     ? "text-red-500 bg-red-500/10"
                                     : "hover:text-red-500 hover:bg-red-500/10"
@@ -1954,7 +2072,7 @@ export default function HorusAIChat() {
         )}
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/70 via-background/25 to-transparent px-2.5 pb-1 pt-1 sm:px-4 sm:pb-2">
+        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/80 via-background/35 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-2">
           <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
             {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
               <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 shadow-[0_18px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
@@ -2041,34 +2159,12 @@ export default function HorusAIChat() {
                 ]}
                 agentCommands={AGENT_COMMANDS}
                 footer={
-                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl border border-white/8 bg-[#0a0f16]/90 px-2 py-1.5 text-muted-foreground/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 rounded-md px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
-                      onClick={handleDeepResearch}
-                      disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
-                    >
-                      <Sparkles className="mr-1 h-3.5 w-3.5" />
-                      {deepResearchRunning ? "Researching..." : "Deep Research"}
-                    </Button>
-                    {reasoning && reasoning.steps.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 rounded-md px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground"
-                        onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
-                      >
-                        <Brain className="mr-1 h-3.5 w-3.5" />
-                        {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
-                      </Button>
-                    )}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/75">
                     <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
                       <SelectTrigger
                         size="sm"
                         className={cn(
-                          "h-7 min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1 text-[11px] font-medium shadow-none hover:bg-white/[0.04] hover:text-foreground",
+                          "h-7 min-w-0 rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium shadow-none hover:bg-white/[0.05] hover:text-foreground",
                           modeTone
                         )}
                         aria-label="Horus response mode"
@@ -2092,14 +2188,35 @@ export default function HorusAIChat() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <span className="hidden h-4 w-px bg-white/8 sm:block" />
                     <AgentContextIndicator
                       messages={messages}
                       status={status}
                       className="hidden sm:flex"
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 rounded-md border border-transparent px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
+                      onClick={handleDeepResearch}
+                      disabled={isProcessing || deepResearchRunning || !draftMessage.trim() || !deepagentsStatus?.enabled || !deepagentsStatus?.provider_ready}
+                    >
+                      <Sparkles className="mr-1 h-3.5 w-3.5" />
+                      {deepResearchRunning ? "Researching..." : "Deep Research"}
+                    </Button>
+                    {reasoning && reasoning.steps.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 rounded-md border border-transparent px-2 text-[11px] text-muted-foreground/75 hover:bg-white/[0.04] hover:text-foreground"
+                        onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
+                      >
+                        <Brain className="mr-1 h-3.5 w-3.5" />
+                        {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
+                      </Button>
+                    )}
                     {messages.length === 0 && (
-                      <span className="hidden text-[11px] font-medium text-muted-foreground/70 sm:block">
+                      <span className="hidden rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium sm:inline-flex">
                         {deepagentsStatus?.enabled && deepagentsStatus?.provider_ready ? "Research ready" : "Fast mode"}
                       </span>
                     )}

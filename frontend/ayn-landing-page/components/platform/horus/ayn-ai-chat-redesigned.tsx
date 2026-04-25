@@ -2045,8 +2045,13 @@ export default function HorusAIChat() {
         )}
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-background/80 via-background/35 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 sm:px-4 sm:pb-2">
-          <div className="mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
+        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-[#060913]/92 via-[#060913]/38 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-2">
+          <div className="relative mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
+            <div className="pointer-events-none absolute inset-x-8 bottom-6 top-8 -z-10 overflow-hidden rounded-[40px]">
+              <div className="absolute left-[6%] top-[18%] h-28 w-52 rounded-full bg-sky-500/10 blur-3xl" />
+              <div className="absolute right-[10%] top-[26%] h-24 w-44 rounded-full bg-cyan-400/10 blur-3xl" />
+              <div className="absolute bottom-[2%] left-1/2 h-24 w-[72%] -translate-x-1/2 rounded-full bg-blue-600/8 blur-3xl" />
+            </div>
             {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
               <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-[rgba(255,255,255,0.035)] px-4 py-2.5 shadow-[0_16px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
                 <div className="flex min-w-0 items-center gap-3">

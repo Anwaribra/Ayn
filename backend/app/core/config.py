@@ -28,10 +28,6 @@ class Settings(BaseSettings):
     # OpenRouter (fallback AI provider)
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_MODEL: str = "openrouter/free"
-
-    # AgentRouter (fast AI — OpenAI-compatible proxy)
-    AGENTROUTER_API_KEY: Optional[str] = None
-    AGENTROUTER_MODEL: str = "deepseek-v3.2"
     
     # OpenAI (speech-to-text)
     OPENAI_API_KEY: Optional[str] = None

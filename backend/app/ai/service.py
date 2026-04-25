@@ -379,146 +379,6 @@ class DifyClient:
             yield chunk
 
 
-# ─── AgentRouter Client ───────────────────────────────────────────────────────
-class AgentRouterClient:
-    """AgentRouter API client (OpenAI-compatible). Fast, unlimited quota provider."""
-
-    BASE_URL = "https://agentrouter.org/v1/chat/completions"
-
-    def __init__(self, api_key: str, model: str = "deepseek-v3.2"):
-        self.api_key = api_key
-        self.model = model
-        logger.info(f"AgentRouter client initialized with model: {model}")
-
-    async def _call(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
-        """Make a request to AgentRouter API."""
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                *[{"role": m["role"], "content": m["content"]} for m in messages],
-            ],
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.BASE_URL,
-                json=payload,
-                headers=headers,
-                timeout=90.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-
-    async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
-        query_text = " ".join([m["content"] for m in messages[-2:]]).lower()
-        context_text = (context or "").lower()
-        needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
-        if context:
-            system_instruction += f"\n\nAdditional context:\n{context}"
-        return await self._call(messages, system_instruction)
-
-    async def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
-        full_prompt = prompt
-        if context:
-            full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
-        return await self._call([{"role": "user", "content": full_prompt}], SYSTEM_PROMPT)
-
-    async def summarize(self, content: str, max_length: int = 100) -> str:
-        prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
-        return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
-
-    async def generate_comment(self, text: str, focus: Optional[str] = None) -> str:
-        focus_part = f" with focus on {focus}" if focus else ""
-        prompt = f"Provide constructive comments and feedback on the following text{focus_part}:\n\n{text}"
-        return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
-
-    async def explain(self, topic: str, level: str = "intermediate") -> str:
-        prompt = f"Explain {topic} at a {level} level. Be clear and comprehensive."
-        return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
-
-    async def extract_evidence(self, text: str, criteria: Optional[str] = None) -> str:
-        criteria_part = f" related to: {criteria}" if criteria else ""
-        prompt = f"Extract and identify evidence from the following text{criteria_part}. List key points that serve as evidence:\n\n{text}"
-        return await self._call([{"role": "user", "content": prompt}], SYSTEM_PROMPT)
-
-    async def _stream_call(self, messages: List[Dict], system_prompt: str):
-        """Stream chat completion via AgentRouter SSE."""
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                *[{"role": m["role"], "content": m["content"]} for m in messages],
-            ],
-            "stream": True,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient() as client:
-            async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
-                if response.status_code >= 400:
-                    body = await response.aread()
-                    logger.error(f"AgentRouter stream error {response.status_code}: {body.decode()[:500]}")
-                    response.raise_for_status()
-                buffer = ""
-                async for chunk in response.aiter_text():
-                    buffer += chunk
-                    while "\n" in buffer:
-                        line, buffer = buffer.split("\n", 1)
-                        line = line.strip()
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data == "[DONE]":
-                                return
-                            try:
-                                obj = json.loads(data)
-                                content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
-                                if content:
-                                    yield content
-                            except json.JSONDecodeError:
-                                pass
-
-    async def stream_chat(self, messages: List[Dict[str, str]], context: Optional[str] = None):
-        """Stream chat completions via AgentRouter SSE."""
-        query_text = " ".join([m.get("content", "") for m in messages[-2:]]).lower()
-        context_text = (context or "").lower()
-        needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
-        if context:
-            system_instruction += f"\n\nAdditional context:\n{context}"
-        async for chunk in self._stream_call(messages, system_instruction):
-            yield chunk
-
-    async def chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None) -> str:
-        """Multimodal chat with files (text extraction only — images not supported via AgentRouter)."""
-        text_content = message
-        for file_item in files:
-            text_content = _openrouter_append_file_text(text_content, file_item)
-        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
-        if context:
-            system_instruction += f"\n\nAdditional context:\n{context}"
-        return await self._call([{"role": "user", "content": text_content}], system_instruction)
-
-    async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
-        """Stream multimodal chat with files via AgentRouter SSE."""
-        text_content = message
-        for file_item in files:
-            text_content = _openrouter_append_file_text(text_content, file_item)
-        needs_deep_knowledge = any(k in message.lower() for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
-        system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge)
-        if context:
-            system_instruction += f"\n\nAdditional context:\n{context}"
-        async for chunk in self._stream_call([{"role": "user", "content": text_content}], system_instruction):
-            yield chunk
-
 
 # ─── OpenRouter Client ────────────────────────────────────────────────────────
 class OpenRouterClient:
@@ -1252,23 +1112,15 @@ class GeminiClient:
 
 # ─── AI Client with Fallback ─────────────────────────────────────────────────
 class HorusAIClient:
-    """AI client with automatic fallback: AgentRouter -> Gemini -> OpenRouter -> Dify."""
+    """AI client with automatic fallback: Gemini -> OpenRouter -> Dify."""
     
     def __init__(self):
-        self.agentrouter: Optional[AgentRouterClient] = None
         self.gemini: Optional[GeminiClient] = None
         self.openrouter: Optional[OpenRouterClient] = None
         self.dify: Optional[DifyClient] = None
         self._provider = "none"
-
-        # --- AgentRouter (fast, unlimited quota) ---
-        agentrouter_key = getattr(settings, 'AGENTROUTER_API_KEY', None) or os.getenv('AGENTROUTER_API_KEY')
-        if agentrouter_key:
-            model = getattr(settings, 'AGENTROUTER_MODEL', None) or "deepseek-v3.2"
-            self.agentrouter = AgentRouterClient(api_key=agentrouter_key, model=model)
-            self._provider = "agentrouter"
         
-        # --- Gemini (primary when AgentRouter unavailable) ---
+        # --- Gemini (primary) ---
         gemini_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
         if gemini_key and GEMINI_AVAILABLE:
             try:
@@ -1292,24 +1144,15 @@ class HorusAIClient:
             if self._provider == "none":
                 self._provider = "dify"
         
-        if not self.agentrouter and not self.gemini and not self.openrouter and not self.dify:
-            raise ValueError("No AI provider configured (AgentRouter, Gemini, OpenRouter, or Dify).")
+        if not self.gemini and not self.openrouter and not self.dify:
+            raise ValueError("No AI provider configured (Gemini, OpenRouter, or Dify).")
     
     async def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
-        """Call a method with fallback: AgentRouter -> Gemini -> OpenRouter -> Dify."""
+        """Call a method with fallback: Gemini -> OpenRouter -> Dify."""
         global _GEMINI_COOLDOWN_UNTIL
         last_error = None
 
-        # 1. AgentRouter (fastest, unlimited)
-        if self.agentrouter:
-            try:
-                method = getattr(self.agentrouter, method_name)
-                return await method(*args, **kwargs)
-            except Exception as e:
-                last_error = e
-                logger.warning(f"AgentRouter {method_name} failed: {e}. Trying Gemini...")
-
-        # 2. Gemini
+        # 1. Gemini
         if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
@@ -1325,7 +1168,7 @@ class HorusAIClient:
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
                 logger.warning(f"Gemini {method_name} failed: {e}. Trying OpenRouter...")
 
-        # 3. OpenRouter
+        # 2. OpenRouter
         if self.openrouter:
             try:
                 method = getattr(self.openrouter, method_name)
@@ -1334,7 +1177,7 @@ class HorusAIClient:
                 last_error = e
                 logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
 
-        # 4. Dify
+        # 3. Dify
         if self.dify:
             try:
                 method = getattr(self.dify, method_name, None)
@@ -1346,20 +1189,10 @@ class HorusAIClient:
         raise Exception(f"All AI providers failed: {str(last_error)}")
     
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
-        """Call a streaming method with fallback: AgentRouter -> Gemini -> OpenRouter -> Dify."""
+        """Call a streaming method with fallback: Gemini -> OpenRouter -> Dify."""
         global _GEMINI_COOLDOWN_UNTIL
 
-        # 1. AgentRouter (fastest, unlimited)
-        if self.agentrouter:
-            try:
-                method = getattr(self.agentrouter, method_name)
-                async for chunk in method(*args, **kwargs):
-                    yield chunk
-                return
-            except Exception as e:
-                logger.warning(f"AgentRouter {method_name} stream failed: {e}. Trying Gemini...")
-
-        # 2. Gemini
+        # 1. Gemini
         if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
@@ -1376,7 +1209,7 @@ class HorusAIClient:
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
                 logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
 
-        # 3. OpenRouter
+        # 2. OpenRouter
         if self.openrouter:
             try:
                 method = getattr(self.openrouter, method_name)
@@ -1386,7 +1219,7 @@ class HorusAIClient:
             except Exception as e:
                 logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
 
-        # 4. Dify
+        # 3. Dify
         if self.dify:
             try:
                 method = getattr(self.dify, method_name, None)

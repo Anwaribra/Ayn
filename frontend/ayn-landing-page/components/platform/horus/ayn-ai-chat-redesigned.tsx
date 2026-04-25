@@ -1571,20 +1571,6 @@ export default function HorusAIChat() {
                                     activeFiles={msgActiveFiles}
                                     isArabic={isArabicMessage}
                                   />
-                                  <div className="mt-2">
-                                  <AgentExecutionTimeline
-                                    steps={steps}
-                                    phase={phase}
-                                    stepProgress={stepProgress}
-                                    pendingTool={msg.pendingConfirmation?.title}
-                                    isWaitingConfirmation={!!msg.pendingConfirmation}
-                                    activeFiles={msgActiveFiles}
-                                    fileStatuses={msgFileStatuses}
-                                    isArabic={isArabicMessage}
-                                    collapsible
-                                    compact
-                                  />
-                                  </div>
                                 </div>
                               )
                             })()}
@@ -1883,45 +1869,6 @@ export default function HorusAIChat() {
                         <MiniOrb state="generating" className="scale-[0.82]" />
                         <span className="font-medium">{preferArabicUi ? "يحلل المرفق" : "Analyzing your attachment"}</span>
                       </div>
-                    ) : (
-                    activeResponseMode === "agent" &&
-                    (activeAssistantMsg?.agentRun || activeThinkingSteps.length > 0 || activeToolSteps.length > 0 || messages.filter((m) => m.role === "assistant").pop()?.pendingConfirmation) ? (
-                      (() => {
-                        const lastMsg = activeAssistantMsg
-                        const effectiveSteps = activeThinkingSteps.length > 0 ? activeThinkingSteps : []
-                        const { steps, phase, stepProgress } = deriveAgentSteps(
-                          effectiveSteps,
-                          lastMsg?.pendingConfirmation ?? null,
-                          !!(lastMsg as any)?.structuredResult,
-                          status === "generating",
-                          activeToolSteps
-                        )
-                        if (!lastMsg?.agentRun && steps.length === 0 && !lastMsg?.pendingConfirmation) return null
-                        return (
-                          <div className="space-y-2">
-                            <AgentRunHeader meta={lastMsg?.agentRun} isArabic={preferArabicUi} />
-                            <LiveTaskCards
-                              phase={phase}
-                              stepProgress={stepProgress}
-                              activeFiles={activeFiles}
-                              isArabic={preferArabicUi}
-                            />
-                            {(steps.length > 0 || lastMsg?.pendingConfirmation) && (
-                              <AgentExecutionTimeline
-                                steps={steps}
-                                phase={phase}
-                                stepProgress={stepProgress}
-                                pendingTool={lastMsg?.pendingConfirmation?.title}
-                                isWaitingConfirmation={!!lastMsg?.pendingConfirmation}
-                                activeFiles={activeFiles}
-                                fileStatuses={fileStatuses}
-                                isArabic={preferArabicUi}
-                                collapsible
-                              />
-                            )}
-                          </div>
-                        )
-                      })()
                     ) : activeResponseMode === "think" && reasoning ? (
                       <ThinkStepper
                         steps={reasoning.steps}

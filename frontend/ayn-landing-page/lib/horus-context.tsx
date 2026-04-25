@@ -698,7 +698,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         stopGeneration()
         setStreamError(null)
         try {
-            const chat = await api.getChatMessages(chatId) as ChatHistoryResponse
+            const chat = await api.getChatMessages(chatId)
             if (process.env.NODE_ENV !== "production") {
                 console.log("[Horus] loadChat response", chat)
             }

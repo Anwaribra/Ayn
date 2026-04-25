@@ -722,7 +722,8 @@ export default function HorusAIChat() {
 
   useEffect(() => {
     const chatIdFromQuery = searchParams.get("chat")
-    if (chatIdFromQuery || hasInitializedChatLoadRef.current || currentChatId) return
+    const shouldSkipAutoRestore = !!chatIdFromQuery || hasInitializedChatLoadRef.current || !!currentChatId
+    if (shouldSkipAutoRestore) return
     if (typeof window === "undefined") return
     const lastChatId = window.localStorage.getItem(LAST_CHAT_STORAGE_KEY)
     if (!lastChatId || currentChatId === lastChatId) return

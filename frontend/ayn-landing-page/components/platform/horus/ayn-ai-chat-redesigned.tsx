@@ -97,12 +97,7 @@ const RESPONSE_MODES = [
     description: "Direct answers",
     icon: MessageSquare,
   },
-  {
-    key: "think",
-    label: "Think",
-    description: "Deeper reasoning",
-    icon: Brain,
-  },
+
   {
     key: "agent",
     label: "Agent",
@@ -2073,7 +2068,7 @@ export default function HorusAIChat() {
                     target: { files: [file] },
                   } as unknown as React.ChangeEvent<HTMLInputElement>);
                 }}
-                onThinkingSelect={() => setResponseMode("think")}
+
                 responseMode={responseMode}
                 draftKey={currentChatId ?? undefined}
                 lastUserMessage={[...messages].reverse().find((m) => m.role === "user")?.content ?? undefined}
@@ -2097,50 +2092,11 @@ export default function HorusAIChat() {
                 agentCommands={AGENT_COMMANDS}
                 footer={
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/75">
-                    <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
-                      <SelectTrigger
-                        size="sm"
-                        className={cn(
-                          "h-7 min-w-0 rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium shadow-none hover:bg-white/[0.05] hover:text-foreground",
-                          modeTone
-                        )}
-                        aria-label="Horus response mode"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <currentResponseMode.icon className="h-3.5 w-3.5" />
-                          <span>{currentResponseMode.label}</span>
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="w-56">
-                        {RESPONSE_MODES.map((mode) => (
-                          <SelectItem key={mode.key} value={mode.key}>
-                            <span className="flex items-center gap-2">
-                              <mode.icon className="h-4 w-4 text-muted-foreground" />
-                              <span className="flex flex-col">
-                                <span className="text-sm font-medium text-foreground">{mode.label}</span>
-                                <span className="text-[11px] text-muted-foreground">{mode.description}</span>
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <AgentContextIndicator
                       messages={messages}
                       status={status}
                       className="hidden sm:flex"
                     />
-                    {reasoning && reasoning.steps.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] text-muted-foreground/75 hover:bg-white/[0.05] hover:text-foreground"
-                        onClick={() => setThinkingPanelExpanded(!thinkingPanelExpanded)}
-                      >
-                        <Brain className="mr-1 h-3.5 w-3.5" />
-                        {thinkingPanelExpanded ? "Hide" : "Show"} reasoning
-                      </Button>
-                    )}
                   </div>
                 }
               />

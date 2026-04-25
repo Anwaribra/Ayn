@@ -27,7 +27,7 @@ interface AIChatInputProps {
   disabled?: boolean
   hasFiles?: boolean
   footer?: ReactNode
-  onThinkingSelect?: () => void
+
   responseMode?: "ask" | "think" | "agent"
   /** Key for draft persistence (unused; draft persistence is disabled). */
   draftKey?: string
@@ -48,7 +48,6 @@ export const AIChatInput = ({
   disabled = false,
   hasFiles = false,
   footer,
-  onThinkingSelect,
   responseMode = "ask",
   draftKey,
   lastUserMessage,
@@ -562,16 +561,6 @@ export const AIChatInput = ({
                   >
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span>Upload document</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onThinkingSelect?.()}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-accent"
-                  >
-                    <Brain className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span>Thinking mode</span>
-                    {responseMode === "think" && (
-                      <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />
-                    )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

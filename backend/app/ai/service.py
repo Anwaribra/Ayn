@@ -12,10 +12,24 @@ from fastapi import HTTPException, status
 logger = logging.getLogger(__name__)
 
 _GEMINI_COOLDOWN_UNTIL: float = 0.0
+GEMINI_PRIMARY_REQUEST_TIMEOUT_SECONDS = float(
+    os.getenv("GEMINI_PRIMARY_REQUEST_TIMEOUT_SECONDS", "3")
+)
+GEMINI_STREAM_FIRST_CHUNK_TIMEOUT_SECONDS = float(
+    os.getenv("GEMINI_STREAM_FIRST_CHUNK_TIMEOUT_SECONDS", "3")
+)
+GEMINI_TIMEOUT_COOLDOWN_SECONDS = 15.0
 
 def _gemini_rate_limited(err: Exception) -> bool:
     msg = str(err)
-    return "RESOURCE_EXHAUSTED" in msg or "429" in msg or "rate limit" in msg.lower()
+    code = getattr(err, "code", None)
+    return (
+        "RESOURCE_EXHAUSTED" in msg
+        or "resource exhausted" in msg.lower()
+        or "429" in msg
+        or "rate limit" in msg.lower()
+        or code == 429
+    )
 
 def _gemini_daily_quota_exhausted(err: Exception) -> bool:
     """Return True when the daily free-tier quota (not just per-minute) is gone."""
@@ -1157,7 +1171,10 @@ class HorusAIClient:
         if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
-                return await method(*args, **kwargs)
+                return await asyncio.wait_for(
+                    method(*args, **kwargs),
+                    timeout=GEMINI_PRIMARY_REQUEST_TIMEOUT_SECONDS,
+                )
             except Exception as e:
                 last_error = e
                 if _gemini_model_invalid(e):
@@ -1167,6 +1184,12 @@ class HorusAIClient:
                     cooldown = 2 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
+                elif isinstance(e, asyncio.TimeoutError):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + GEMINI_TIMEOUT_COOLDOWN_SECONDS
+                    logger.warning(
+                        "Gemini timed out after %.1fs. Fast-failing to fallback provider.",
+                        GEMINI_PRIMARY_REQUEST_TIMEOUT_SECONDS,
+                    )
                 logger.warning(f"Gemini {method_name} failed: {e}. Trying OpenRouter...")
 
         # 2. OpenRouter
@@ -1192,15 +1215,27 @@ class HorusAIClient:
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
         """Call a streaming method with fallback: Gemini -> OpenRouter -> Dify."""
         global _GEMINI_COOLDOWN_UNTIL
+        last_error = None
 
         # 1. Gemini
         if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
             try:
                 method = getattr(self.gemini, method_name)
-                async for chunk in method(*args, **kwargs):
+                stream = method(*args, **kwargs)
+                try:
+                    first_chunk = await asyncio.wait_for(
+                        stream.__anext__(),
+                        timeout=GEMINI_STREAM_FIRST_CHUNK_TIMEOUT_SECONDS,
+                    )
+                except StopAsyncIteration:
+                    return
+                if first_chunk:
+                    yield first_chunk
+                async for chunk in stream:
                     yield chunk
                 return
             except Exception as e:
+                last_error = e
                 if _gemini_model_invalid(e):
                     _GEMINI_COOLDOWN_UNTIL = time.time() + 24 * 3600
                     logger.error(f"Gemini model invalid — skipping for 24h: {e}")
@@ -1208,6 +1243,12 @@ class HorusAIClient:
                     cooldown = 2 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
+                elif isinstance(e, asyncio.TimeoutError):
+                    _GEMINI_COOLDOWN_UNTIL = time.time() + GEMINI_TIMEOUT_COOLDOWN_SECONDS
+                    logger.warning(
+                        "Gemini stream first-token timeout after %.1fs. Fast-failing to fallback provider.",
+                        GEMINI_STREAM_FIRST_CHUNK_TIMEOUT_SECONDS,
+                    )
                 logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
 
         # 2. OpenRouter
@@ -1218,6 +1259,7 @@ class HorusAIClient:
                     yield chunk
                 return
             except Exception as e:
+                last_error = e
                 logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
 
         # 3. Dify
@@ -1229,8 +1271,9 @@ class HorusAIClient:
                         yield chunk
                     return
             except Exception as e:
+                last_error = e
                 logger.error(f"Dify {method_name} failed: {e}")
-        raise Exception("No streaming AI provider available.")
+        raise Exception(f"No streaming AI provider available: {str(last_error)}")
 
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         return await self._call_with_fallback("chat", messages=messages, context=context)

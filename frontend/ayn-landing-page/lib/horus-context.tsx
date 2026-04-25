@@ -14,7 +14,13 @@ interface AttachmentPreview {
 
 type ChatHistoryPayload = {
     id?: string
-    messages?: unknown[]
+    messages?: Array<{
+        id: string
+        role?: string
+        content?: string
+        timestamp?: string | number
+        metadata?: unknown
+    }>
 }
 
 type ChatHistoryResponse = ChatHistoryPayload | {
@@ -693,7 +699,9 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId) as ChatHistoryResponse
-            console.log("[Horus] loadChat response", chat)
+            if (process.env.NODE_ENV !== "production") {
+                console.log("[Horus] loadChat response", chat)
+            }
             const payload = extractChatPayload(chat)
             const rawMessages = Array.isArray(payload?.messages) ? payload.messages : []
             setCurrentChatId(payload?.id ?? chatId)

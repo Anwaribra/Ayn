@@ -338,9 +338,8 @@ export const AIChatInput = ({
   sendRef.current = handleSend
 
   const hasDraft = !!inputValue.trim() || hasFiles
-  const modeLabel = responseMode === "think" ? "Think" : responseMode === "agent" ? "Agent" : "Ask"
   const shellTone = isActive || inputValue
-    ? "border-primary/20 bg-[#0d131d]/98 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.95),0_0_0_1px_rgba(59,130,246,0.08)]"
+    ? "border-white/10 bg-[#0d131d]/98 shadow-[0_28px_80px_-46px_rgba(15,23,42,0.95)]"
     : "border-white/8 bg-[#0b1017]/94 shadow-[0_24px_70px_-50px_rgba(0,0,0,0.9)]"
   const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground/75 transition-colors hover:border-white/8 hover:bg-white/[0.04] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
@@ -386,16 +385,6 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="mb-2 hidden flex-wrap items-center gap-2 text-[11px] text-muted-foreground/60 sm:flex">
-              <span className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-medium text-foreground/80">
-                {modeLabel}
-              </span>
-              <span>Enter to send</span>
-              <span className="text-white/20">/</span>
-              <span>Shift+Enter for newline</span>
-              <span className="text-white/20">/</span>
-              <span>Type `/` for commands</span>
-            </div>
             <div className="relative rounded-[18px] border border-white/6 bg-black/10 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
             <textarea
               value={inputValue}

@@ -70,7 +70,7 @@ function StreamingAssistantContent({
   content,
   isStreaming,
   onAction,
-  speedMs = 220,
+  speedMs = 800,
 }: {
   content: string
   isStreaming: boolean
@@ -134,9 +134,9 @@ function getResponseModeLabel(mode?: "ask" | "think" | "agent", isArabic = false
 }
 
 function getResponseModeTone(mode?: "ask" | "think" | "agent") {
-  if (mode === "think") return "border-amber-500/20 bg-amber-500/10 text-amber-200"
-  if (mode === "agent") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-  return "border-sky-500/20 bg-sky-500/10 text-sky-200"
+  if (mode === "think") return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+  if (mode === "agent") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+  return "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300"
 }
 
 function getAttachmentContextLabel(message?: HorusMessage | null, isArabic = false) {
@@ -596,7 +596,7 @@ function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => v
   const isImage = file.type === "image" && !!file.preview
 
   return (
-    <div className="group relative flex items-center gap-3 rounded-xl border border-white/8 bg-[#0d131b]/92 p-2.5 pr-10 shadow-[0_14px_28px_-24px_rgba(0,0,0,0.9)] transition-all hover:border-primary/30 hover:bg-[#111927]">
+    <div className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-background/92 p-2.5 pr-10 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/40">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/8 bg-primary/10 text-primary">
         {isImage ? (
           <img src={file.preview} alt={file.file.name} className="h-full w-full object-cover" />
@@ -1335,7 +1335,7 @@ export default function HorusAIChat() {
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="inset-x-3 top-6 bottom-6 h-auto w-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0d1117]/96 p-0 text-foreground shadow-[0_28px_80px_-38px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[360px] sm:max-w-[360px]">
+          <SheetContent side="right" className="inset-x-3 top-6 bottom-6 h-auto w-auto overflow-hidden rounded-2xl border border-border bg-background/96 p-0 text-foreground shadow-xl backdrop-blur-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[360px] sm:max-w-[360px]">
             <div className="flex items-center justify-between border-b border-white/8 px-5 pb-4 pt-5 pr-14 sm:px-5 sm:pb-4 sm:pt-5">
               <h2 className="text-base font-semibold tracking-tight text-foreground">Session History</h2>
               <span className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] text-muted-foreground/75">
@@ -1428,7 +1428,7 @@ export default function HorusAIChat() {
         <div
           ref={scrollContainerRef}
           className={cn(
-            "flex-1 w-full px-3 pt-6 custom-scrollbar flex flex-col items-center sm:px-6 sm:pt-8",
+            "flex-1 w-full px-3 pt-6 custom-scrollbar flex flex-col items-center sm:px-6 sm:pt-8 bg-transparent",
             isEmpty ? "overflow-hidden pb-0" : "overflow-y-auto pb-40 md:pb-28"
           )}
         >
@@ -1512,7 +1512,7 @@ export default function HorusAIChat() {
                     >
                       {msg.role === "user" ? (
                         <div className="flex w-full flex-col items-end py-2 sm:py-4">
-                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[22px] rounded-tr-md px-4 py-3 text-[14px] font-medium leading-6 shadow-[0_18px_40px_-30px_rgba(37,99,235,0.52)] sm:max-w-[82%]">
+                           <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[22px] rounded-tr-md px-4 py-3 text-[14px] font-medium leading-6 sm:max-w-[82%]">
                              {msg.content}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
@@ -1637,7 +1637,7 @@ export default function HorusAIChat() {
                                 aria-atomic={isStreamingThis ? false : undefined}
                                 aria-busy={isStreamingThis}
                                 className={cn(
-                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[20px] rounded-tl-md border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.028),rgba(255,255,255,0.016))] px-4 py-4 text-[15px] leading-7 text-foreground prose text-start shadow-[0_18px_40px_-36px_rgba(15,23,42,0.92),inset_0_1px_0_rgba(255,255,255,0.02)] [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
+                                  "horus-assistant-bubble horus-markdown-wrapper w-full max-w-none rounded-[20px] rounded-tl-md px-4 py-4 text-[15px] leading-7 text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert sm:px-5 sm:py-[18px]",
                                   isStreamingThis && "horus-streaming-active"
                                 )}
                               >
@@ -1650,7 +1650,7 @@ export default function HorusAIChat() {
                                       <StreamingAssistantContent
                                         content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
                                         isStreaming={isStreamingThis}
-                                        speedMs={isStreamingThis && activeResponseMode === "ask" ? 30 : 160}
+                                        speedMs={isStreamingThis && activeResponseMode === "ask" ? 600 : 400}
                                         onAction={handleAction}
                                       />
                                       {isStreamingThis && (
@@ -1837,7 +1837,7 @@ export default function HorusAIChat() {
                               </button>
                               {/* Tiered feedback: categories + Tell us more when thumbs down expanded */}
                               {feedback[msg.id] === "down" && feedbackDownExpanded === msg.id && !feedbackPersisted.has(msg.id) && (
-                                <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[220px] rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.94)] p-2.5 shadow-lg backdrop-blur-xl">
+                                <div className="absolute left-0 top-full z-10 mt-1.5 w-full min-w-[220px] rounded-2xl border border-border bg-popover/94 p-2.5 shadow-lg backdrop-blur-xl">
                                   <p className="text-[11px] font-medium text-muted-foreground mb-2">{isArabicMessage ? "ما المشكلة في الرد؟" : "What was wrong?"}</p>
                                   <div className="flex flex-wrap gap-1.5 mb-2">
                                     {(isArabicMessage
@@ -2026,7 +2026,7 @@ export default function HorusAIChat() {
         )}
 
         {/* ─── Input: centered, no heavy bar ─── */}
-        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center bg-gradient-to-t from-[#060913]/92 via-[#060913]/38 to-transparent px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-2">
+        <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center horus-input-bg-gradient px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-2">
           <div className="relative mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
             {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
               <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-[rgba(255,255,255,0.035)] px-4 py-2.5 shadow-[0_16px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">

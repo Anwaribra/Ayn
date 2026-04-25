@@ -575,7 +575,7 @@
     linear-gradient(180deg, rgba(37, 99, 235, 0.94), rgba(29, 78, 216, 0.88));
   color: rgb(239, 246, 255);
   box-shadow:
-    0 18px 34px -24px rgba(37, 99, 235, 0.65),
+    0 12px 28px -18px rgba(37, 99, 235, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -589,11 +589,50 @@
   border-color: var(--glass-border-subtle);
 }
 
+/* ── Light mode refinements for Horus chat ── */
+[data-section="platform"][data-platform-theme="light"] .horus-assistant-bubble {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow:
+    0 4px 16px -8px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+[data-section="platform"][data-platform-theme="light"] .horus-user-bubble {
+  box-shadow:
+    0 8px 20px -14px rgba(37, 99, 235, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Bottom input gradient — adapts to light/dark */
+.horus-input-bg-gradient {
+  background: linear-gradient(to top, rgba(6, 9, 19, 0.92), rgba(6, 9, 19, 0.38), transparent);
+}
+
+[data-section="platform"][data-platform-theme="light"] .horus-input-bg-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(241, 245, 249, 0.96) 0%,
+    rgba(248, 250, 252, 0.7) 50%,
+    transparent 100%
+  );
+}
+
+/* Light mode: fix processing bar and action toolbar */
+[data-section="platform"][data-platform-theme="light"] .horus-tool-button:hover {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
 .horus-ai-icon {
   border: 1px solid var(--glass-border);
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.06));
   box-shadow: var(--glass-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: rgb(147, 197, 253);
+}
+
+[data-section="platform"][data-platform-theme="light"] .horus-ai-icon {
+  color: rgb(37, 99, 235);
 }
 
 .horus-tool-button {

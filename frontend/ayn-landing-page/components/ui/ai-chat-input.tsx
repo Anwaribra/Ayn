@@ -339,9 +339,9 @@ export const AIChatInput = ({
 
   const hasDraft = !!inputValue.trim() || hasFiles
   const shellTone = isActive || inputValue
-    ? "border-white/10 bg-[#0c1118]/96 shadow-[0_24px_56px_-46px_rgba(0,0,0,0.92)]"
-    : "border-white/8 bg-[#0c1118]/92 shadow-[0_20px_44px_-40px_rgba(0,0,0,0.9)]"
-  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/[0.03] text-muted-foreground/75 transition-colors hover:bg-white/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    ? "border-border bg-background/96 shadow-[0_24px_56px_-46px_rgba(0,0,0,0.25)] dark:shadow-[0_24px_56px_-46px_rgba(0,0,0,0.92)]"
+    : "border-border/80 bg-background/92 shadow-[0_20px_44px_-40px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_44px_-40px_rgba(0,0,0,0.9)]"
+  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
   return (
     <div className="relative flex w-full flex-col items-center justify-center pb-3 pt-1 sm:pb-6 sm:pt-2">
@@ -361,7 +361,7 @@ export const AIChatInput = ({
       >
         <div className="flex h-full w-full flex-col items-stretch">
           {header && (
-            <div className="border-b border-white/8 px-4 py-2.5 sm:px-5">
+            <div className="border-b border-border/50 px-4 py-2.5 sm:px-5">
               {header}
             </div>
           )}
@@ -385,7 +385,7 @@ export const AIChatInput = ({
                 Recording…
               </div>
             )}
-            <div className="relative overflow-hidden rounded-[20px] border border-white/8 bg-[#0f141c] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="relative overflow-hidden rounded-[20px] border border-border/60 bg-muted/40 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] dark:bg-[#0f141c]">
             <textarea
               value={inputValue}
               onKeyDown={handleKeyDown}
@@ -424,8 +424,8 @@ export const AIChatInput = ({
               rows={1}
             />
             {slashMenuOpen && (filteredAgentCommands.length > 0 || filteredQuickPrompts.length > 0) && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[440px] overflow-hidden rounded-2xl border border-white/10 bg-[rgba(11,14,22,0.98)] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 px-3.5 py-2.5">
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[440px] overflow-hidden rounded-2xl border border-border bg-popover/98 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-primary">
                       <Sparkles className="h-3 w-3" />

@@ -27,12 +27,12 @@ type ChatHistoryResponse = ChatHistoryPayload | {
     data?: ChatHistoryPayload
 }
 
-const extractChatPayload = (chat: ChatHistoryResponse | null | undefined): ChatHistoryPayload => {
+const extractChatPayload = (chat: any): ChatHistoryPayload => {
     if (!chat || typeof chat !== "object") return {}
     if ("data" in chat && chat.data && typeof chat.data === "object") {
-        return chat.data
+        return chat.data as ChatHistoryPayload
     }
-    return chat
+    return chat as ChatHistoryPayload
 }
 
 type HorusResponseMode = "ask" | "think" | "agent"

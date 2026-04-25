@@ -676,8 +676,12 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         setStreamError(null)
         try {
             const chat = await api.getChatMessages(chatId)
-            const rawMessages = Array.isArray(chat?.messages) ? chat.messages : []
-            setCurrentChatId(chat.id)
+            console.log("[Horus] loadChat response", chat)
+            const payload = (chat && typeof chat === "object" && "data" in (chat as Record<string, unknown>))
+                ? (chat as any).data
+                : chat
+            const rawMessages = Array.isArray(payload?.messages) ? payload.messages : []
+            setCurrentChatId(payload?.id ?? chatId)
             setMessages(rawMessages.map((m: any) => {
                 let meta = m.metadata
                 if (typeof meta === 'string') {

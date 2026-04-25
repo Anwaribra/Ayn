@@ -722,7 +722,7 @@ export default function HorusAIChat() {
 
   useEffect(() => {
     const chatIdFromQuery = searchParams.get("chat")
-    if (chatIdFromQuery || didLoadFromQueryRef.current) return
+    if (chatIdFromQuery || didLoadFromQueryRef.current || currentChatId) return
     if (typeof window === "undefined") return
     const lastChatId = window.localStorage.getItem(LAST_CHAT_STORAGE_KEY)
     if (!lastChatId || currentChatId === lastChatId) return
@@ -1259,6 +1259,14 @@ export default function HorusAIChat() {
     }
   }
 
+  const handleHistorySessionSelect = useCallback((sessionId: string) => {
+    didLoadFromQueryRef.current = true
+    setHistorySheetOpen(false)
+    loadChat(sessionId).catch(() => {
+      // loadChat already surfaces toast errors.
+    })
+  }, [loadChat])
+
   const visibleMessages = useMemo(() => {
     const sliced = conversationalMessages.slice(-30).filter((msg) => {
       if ((msg.content || "").toUpperCase().startsWith("EVENT:")) return false
@@ -1356,7 +1364,7 @@ export default function HorusAIChat() {
                   filteredHistory.map((session: any) => (
                     <div
                       key={session.id}
-                      onClick={() => { setHistorySheetOpen(false); loadChat(session.id) }}
+                      onClick={() => handleHistorySessionSelect(session.id)}
                       className={cn(
                         "group relative cursor-pointer rounded-xl border px-3.5 py-3 transition-all",
                         currentChatId === session.id

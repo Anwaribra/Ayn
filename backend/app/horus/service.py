@@ -445,7 +445,9 @@ class HorusService:
         if files:
             visual_only = self._is_visual_only(files)
             needs_analysis = self._needs_compliance_analysis(message)
-            store_as_evidence = not (visual_only and not needs_analysis)
+            # Disabled automatic evidence upload to vastly improve latency
+            # the user can manually save files to evidence if needed
+            store_as_evidence = False
             for file in files:
                 if store_as_evidence:
                     content = await file.read()
@@ -718,7 +720,9 @@ class HorusService:
         )
         visual_only_request = self._is_visual_only(files)
         needs_analysis = self._needs_compliance_analysis(message)
-        store_as_evidence = not (visual_only_request and not needs_analysis)
+        
+        # Disabled automatic evidence upload in chat flow to vastly improve latency
+        store_as_evidence = False
         agent_intent = self._classify_agent_intent(message=message, files=files, request_mode=request_mode)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────

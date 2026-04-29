@@ -22,7 +22,8 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Copy Prisma and generate client
 COPY prisma ./prisma/
-RUN PYTHONPATH=/install/lib/python3.11/site-packages /install/bin/python3 -m prisma generate
+# pip --prefix=/install does not install a python binary under /install/bin; use image python3 + PYTHONPATH
+RUN PYTHONPATH=/install/lib/python3.11/site-packages python3 -m prisma generate
 
 # --- STAGE 2: Runtime ---
 FROM python:3.11-slim
@@ -35,10 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatomic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed python packages from builder
+# Copy installed python packages and generated Prisma client from builder
 COPY --from=builder /install /usr/local
-# Copy the generated prisma client (it usually resides in site-packages)
-COPY --from=builder /usr/local/lib/python3.11/site-packages/prisma /usr/local/lib/python3.11/site-packages/prisma
 
 # Copy application code
 COPY . .

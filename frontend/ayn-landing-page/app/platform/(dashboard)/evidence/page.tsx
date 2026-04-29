@@ -181,9 +181,13 @@ function EvidenceContent() {
     complete: { label: copy.complete, tone: "success" as EvidenceStatusTone },
     failed: { label: copy.failedStatus, tone: "critical" as EvidenceStatusTone },
   }), [copy])
+  type EvidenceStatusKey = keyof typeof evidenceStatusMeta
   const resolveEvidenceStatus = (status?: string | null) => {
     const fallback = { label: copy.statusUnknown, tone: "neutral" as EvidenceStatusTone, animate: false }
-    const meta = (status && evidenceStatusMeta[status]) ? evidenceStatusMeta[status] : fallback
+    const meta =
+      status && Object.prototype.hasOwnProperty.call(evidenceStatusMeta, status)
+        ? evidenceStatusMeta[status as EvidenceStatusKey]
+        : fallback
     return {
       label: meta.label,
       badgeClass: statusToneClasses[meta.tone],

@@ -433,18 +433,10 @@ class StandardService:
             try:
                 linked = await db.evidencecriterion.find_many(
                     where={"criterionId": {"in": criteria_ids}},
-                    distinct=["criterionId"],
-                    select={"criterionId": True},
                 )
-                covered = len(linked)
+                covered = len({l.criterionId for l in linked})
             except Exception:
-                try:
-                    linked = await db.evidencecriterion.find_many(
-                        where={"criterionId": {"in": criteria_ids}},
-                    )
-                    covered = len({l.criterionId for l in linked})
-                except Exception:
-                    pass  # Table may not exist yet in dev environments
+                pass  # Table may not exist yet in dev environments
 
         coverage_pct = round((covered / total) * 100, 1) if total > 0 else 0.0
         logger.info(f"Coverage for standard {standard_id}: {covered}/{total} ({coverage_pct}%)")
@@ -464,8 +456,8 @@ class StandardService:
         """
         db = get_db()
 
-        # 1. All standards (id only)
-        standards = await db.standard.find_many(select={"id": True})
+        # 1. All standards
+        standards = await db.standard.find_many()
         standard_ids = [s.id for s in standards]
         if not standard_ids:
             return []
@@ -473,7 +465,6 @@ class StandardService:
         # 2. All criteria grouped by standard
         all_criteria = await db.criterion.find_many(
             where={"standardId": {"in": standard_ids}},
-            select={"id": True, "standardId": True},
         )
         # Build maps: standard_id -> set of criteria ids, standard_id -> total count
         criteria_by_standard: dict[str, set] = {}
@@ -488,18 +479,10 @@ class StandardService:
             try:
                 links = await db.evidencecriterion.find_many(
                     where={"criterionId": {"in": all_criteria_ids}},
-                    distinct=["criterionId"],
-                    select={"criterionId": True},
                 )
                 covered_criteria_ids = {l.criterionId for l in links}
             except Exception:
-                try:
-                    links = await db.evidencecriterion.find_many(
-                        where={"criterionId": {"in": all_criteria_ids}},
-                    )
-                    covered_criteria_ids = {l.criterionId for l in links}
-                except Exception:
-                    pass  # Table may not exist yet
+                pass  # Table may not exist yet
 
         # 4. Assemble results
         results = []

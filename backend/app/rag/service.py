@@ -216,7 +216,6 @@ class RagService:
                 try:
                     ev = await prisma_client.evidence.find_unique(
                         where={"id": s["document_id"]},
-                        select={"originalFilename": True}
                     )
                     if ev and ev.originalFilename:
                         s["title"] = ev.originalFilename

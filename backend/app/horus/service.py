@@ -3004,3 +3004,123 @@ Rules:
                 metadata=metadata,
             )
 
+    async def get_analytics_insights(self, user_id: str, db: Prisma):
+        """
+        Generate strategic Horus insights for the analytics dashboard using actual data.
+        """
+        try:
+            from app.analytics.service import AnalyticsService
+            user = await db.user.find_unique(where={"id": user_id})
+            if not user:
+                raise Exception("User not found")
+                
+            current_user_dict = {"id": user_id, "institutionId": user.institutionId}
+            analytics = await AnalyticsService.get_analytics(current_user_dict, period_days=30)
+            
+            prompt = f"""
+            You are Horus, the AI auditor for the Ayn platform. 
+            Analyze this compliance data and provide strategic, actionable insights.
+            
+            KPIs:
+            - Avg Score: {analytics.avgScore}%
+            - Alignment: {analytics.alignmentPercentage}%
+            - Growth: {analytics.growth.growthPercent}%
+            - Total Reports: {analytics.totalReports}
+            - Total Evidence: {analytics.totalEvidence}
+            
+            DETAILED DATA:
+            {json.dumps(analytics.dict(), default=str)}
+            
+            Return ONLY a JSON object with this exact structure:
+            {{
+              "directAnswer": "concise 2-sentence executive summary",
+              "topRisks": [
+                {{
+                  "id": "unique-id",
+                  "severity": "critical" | "warning" | "positive",
+                  "title": "Clear Title",
+                  "description": "Short explanation",
+                  "metric": "e.g. 12% drop",
+                  "actions": [{{ "label": "Fix Now", "href": "/platform/gap-analysis" }}]
+                }}
+              ],
+              "nextActions": ["step 1", "step 2", "step 3"],
+              "cardInsights": {{ "avg-score": "insight", "growth": "insight", ... }},
+              "confidence": "High",
+              "counts": {{ "reports": {analytics.totalReports}, "evidence": {analytics.totalEvidence} }},
+              "analysis": "Internal logic summary",
+              "timestamp": {time.time()}
+            }}
+            """
+            
+            client = get_gemini_client()
+            response = await client.generate_content(prompt)
+            text = response.text.strip()
+            
+            # Clean up potential markdown formatting
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+            
+            return json.loads(text)
+        except Exception as e:
+            logger.error(f"Error generating Horus insights: {e}")
+            return {
+                "directAnswer": "Compliance data indicates stable posture. Continue monitoring gaps.",
+                "topRisks": [],
+                "nextActions": ["Review latest reports", "Update evidence vault"],
+                "cardInsights": {},
+                "confidence": "Medium",
+                "counts": {},
+                "analysis": str(e),
+                "timestamp": time.time()
+            }
+
+    async def explain_analytics_page(self, user_id: str, analytics_data: dict, horus_data: Optional[dict] = None):
+        """
+        Generate a deep explanation for the current analytics page state.
+        """
+        try:
+            prompt = f"""
+            You are Horus, the AI auditor. Explain the current analytics state for the user.
+            
+            ANALYTICS STATE:
+            {json.dumps(analytics_data, default=str)}
+            
+            PREVIOUS INSIGHTS:
+            {json.dumps(horus_data, default=str) if horus_data else "None"}
+            
+            Return ONLY a JSON object with:
+            {{
+              "summary": ["Point 1", "Point 2", "Point 3"],
+              "topProblems": ["Problem 1", "Problem 2", "Problem 3"],
+              "impact": "Description of business impact",
+              "recommendedPlan": ["Action 1", "Action 2", "Action 3"],
+              "links": [{{ "label": "Go to Gaps", "href": "/platform/gap-analysis" }}],
+              "confidence": "High"
+            }}
+            """
+            
+            client = get_gemini_client()
+            response = await client.generate_content(prompt)
+            text = response.text.strip()
+            
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                    
+            return json.loads(text)
+        except Exception as e:
+            logger.error(f"Error explaining analytics page: {e}")
+            return {
+                "summary": ["Failed to generate deep explanation."],
+                "topProblems": [str(e)],
+                "impact": "Analysis unavailable.",
+                "recommendedPlan": ["Retry in a few moments"],
+                "links": [],
+                "confidence": "Low"
+            }
+
+

@@ -15,7 +15,6 @@ import {
   ArrowUpRight,
   FileText,
   AlertTriangle,
-  ShieldCheck,
   Sparkles,
   Brain,
   UploadCloud,
@@ -26,7 +25,6 @@ import type { DashboardMetrics, Standard } from "@/types"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
 import { SystemLog } from "@/components/platform/system-log"
 import { StatusTiles } from "@/components/platform/status-tiles"
-import { CoverageBar } from "@/components/platform/coverage-bar"
 
 function formatMetricsSynced(dataUpdatedAt: number, isArabic: boolean): string {
   if (!dataUpdatedAt) return ""
@@ -43,13 +41,7 @@ function formatMetricsSynced(dataUpdatedAt: number, isArabic: boolean): string {
   return isArabic ? `محدّث منذ ${d} يوم` : `Updated ${d}d ago`
 }
 
-interface StandardCoverageSummary {
-  standard: Standard
-  standardId: string
-  totalCriteria: number
-  coveredCriteria: number
-  coveragePct: number
-}
+
 
 export default function DashboardPage() {
   return (
@@ -122,30 +114,7 @@ function DashboardContent() {
     [safeStandards]
   )
 
-  const { data: standardsCoverage } = useSWR<StandardCoverageSummary[]>(
-    user && publicStandards.length > 0
-      ? ["dashboard-standards-coverage", ...publicStandards.slice(0, 5).map((standard) => standard.id)]
-      : null,
-    async () => {
-      // Fetch up to 5 standards concurrently; failures on individual calls are swallowed
-      // so one bad standard does not block the entire section.
-      const results = await Promise.allSettled(
-        publicStandards.slice(0, 5).map(async (standard) => {
-          const coverage = await api.getStandardCoverage(standard.id)
-          return { standard, ...coverage }
-        })
-      )
-      return results
-        .filter((r): r is PromiseFulfilledResult<StandardCoverageSummary> => r.status === "fulfilled")
-        .map((r) => r.value)
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 120_000,
-      revalidateIfStale: false,
-    }
-  )
+
 
   const dashboardStats = useMemo(() => {
     const alertIsCritical = (safeMetrics?.unreadNotificationsCount ?? 0) > 0
@@ -285,44 +254,7 @@ function DashboardContent() {
           ? "يحتاج متابعة"
           : "Needs attention"
 
-  const featuredStandards = useMemo(() => {
-    if (!publicStandards.length) return []
 
-    if (!standardsCoverage?.length) {
-      return publicStandards.slice(0, 3).map((standard) => ({
-        standard,
-        standardId: standard.id,
-        totalCriteria: 0,
-        coveredCriteria: 0,
-        coveragePct: 0,
-      }))
-    }
-
-    return [...standardsCoverage]
-      .sort((a, b) => a.coveragePct - b.coveragePct)
-      .slice(0, 3)
-  }, [publicStandards, standardsCoverage])
-
-  const getCoverageTone = (coveragePct: number) => {
-    if (coveragePct >= 80) {
-      return {
-        label: isArabic ? "قوي" : "Strong",
-        className: "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]",
-      }
-    }
-
-    if (coveragePct >= 50) {
-      return {
-        label: isArabic ? "جزئي" : "Partial",
-        className: "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]",
-      }
-    }
-
-    return {
-      label: isArabic ? "حرج" : "Critical",
-      className: "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
-    }
-  }
 
   const formatEvidenceDate = (value?: string | null) => {
     if (!value) return isArabic ? "أضيف مؤخراً" : "Recently added"
@@ -501,82 +433,7 @@ function DashboardContent() {
         ))}
       </section>
 
-      {/* ─── Standards Progress ─── */}
-      {publicStandards.length > 0 && (
-        <section className="glass-card relative overflow-hidden p-4 rounded-[20px] sm:rounded-[22px]">
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.06),transparent_16%),linear-gradient(180deg,rgba(255,255,255,0.018),transparent)]" />
-          <div className={cn("relative z-10 flex items-center justify-between gap-3 mb-2.5", isArabic && "flex-row-reverse")}>
-            <div className={cn("flex items-center gap-3", isArabic && "flex-row-reverse text-right")}>
-              <div className="w-8 h-8 rounded-xl status-success border flex items-center justify-center shadow-[0_18px_36px_-28px_rgba(16,185,129,0.42)]">
-                <ShieldCheck className="w-3 h-3" />
-              </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
-                  {isArabic ? "تقدّم المعايير" : "Standards Progress"}
-                </h3>
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-[0.14em]">
-                  {isArabic ? "أضعف المعايير ربطاً أولاً" : "Weakest mapped standards first"}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/platform/standards"
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-primary transition-colors hover:bg-[var(--glass-strong-bg)] sm:text-[10px]",
-                isArabic && "flex-row-reverse",
-              )}
-            >
-              {isArabic ? "عرض الكل" : "View All"} <ArrowUpRight className="w-3 h-3" />
-            </Link>
-          </div>
 
-          <div className="relative z-10 space-y-1.5">
-            {featuredStandards.map((entry) => {
-              const tone = getCoverageTone(entry.coveragePct)
-
-              return (
-              <div
-                key={entry.standard.id}
-                className="rounded-[15px] border border-white/6 bg-white/[0.025] px-3 py-2.5 transition-all hover:bg-white/[0.045] hover:border-white/10"
-              >
-                <div className="flex items-center justify-between gap-3 mb-1.5">
-                  <div className="min-w-0 flex-1">
-                    <span className="block text-[13px] sm:text-sm font-bold text-foreground truncate">
-                      {entry.standard.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.12em] ${tone.className}`}>
-                      {tone.label}
-                    </span>
-                    <span className="hidden max-w-full truncate rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-muted-foreground sm:inline-flex sm:text-[9px]">
-                      {entry.standard.code ?? entry.standard.category ?? (isArabic ? "معيار" : "Standard")}
-                    </span>
-                  </div>
-                </div>
-                <CoverageBar standardId={entry.standard.id} result={entry} compact />
-              </div>
-            )})}
-          </div>
-
-          {publicStandards.length > 3 && (
-            <div className="relative z-10 mt-2.5 pt-2 border-t border-[var(--border-subtle)]">
-              <Link
-                href="/platform/standards"
-                className={cn(
-                  "inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-[0.12em]",
-                  isArabic && "flex-row-reverse",
-                )}
-              >
-                {isArabic
-                  ? `+${publicStandards.length - 3} معايير إضافية`
-                  : `+${publicStandards.length - 3} more standards`}{" "}
-                <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            </div>
-          )}
-        </section>
-      )}
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-6">

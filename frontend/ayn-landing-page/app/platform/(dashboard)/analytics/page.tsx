@@ -35,25 +35,7 @@ const PERIOD_OPTIONS: { key: PeriodKey; days: number | null }[] = [
   { key: "all", days: null },
 ]
 
-/* ─── CSV Export ──────────────────────────────────────────────── */
-function downloadCsv(filename: string, rows: string[][]) {
-  const csv = rows
-    .map((row) =>
-      row.length === 0
-        ? ""
-        : row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
-    )
-    .join("\n")
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  window.URL.revokeObjectURL(url)
-  document.body.removeChild(a)
-}
+
 
 async function exportAnalyticsReportPdf(params: {
   analytics: any
@@ -816,39 +798,7 @@ function AnalyticsContent() {
   /* ════════════════════════════════════════════════════════════
      EXPORT
      ════════════════════════════════════════════════════════════ */
-  const handleExportData = () => {
-    if (!analytics || analytics.totalReports === 0) {
-      toast.info(copy.noDataExport)
-      return
-    }
-    const periodLabel = periodLabels[period] ?? (isArabic ? "كل الوقت" : "All Time")
-    const growth = analytics.growth?.growthPercent ?? 0
-    const rows: string[][] = [
-      // Summary section
-      ["Summary", ""],
-      ["Period", periodLabel],
-      ["Average Score", `${Math.round(analytics.avgScore ?? 0)}%`],
-      ["Total Reports", String(analytics.totalReports ?? 0)],
-      ["Score Growth", `${growth >= 0 ? "+" : ""}${growth}%`],
-      ["Evidence Files", String(analytics.totalEvidence ?? 0)],
-      ["Aligned Criteria", `${analytics.alignedCriteria ?? 0} / ${analytics.totalCriteria ?? 0}`],
-      ["Anomalies Flagged", String(analytics.anomalies?.length ?? 0)],
-      // Blank separator
-      [],
-      // Standards section
-      ["Standard", "Avg Score", "Min Score", "Max Score", "Reports", "Trend"],
-      ...(analytics.standardPerformance ?? []).map((s: any) => [
-        s.standardTitle,
-        `${Math.round(s.avgScore)}%`,
-        `${Math.round(s.minScore)}%`,
-        `${Math.round(s.maxScore)}%`,
-        String(s.reportCount),
-        s.trend ?? "—",
-      ]),
-    ]
-    downloadCsv(`ayn-analytics-${period}-${new Date().toISOString().slice(0, 10)}.csv`, rows)
-    toast.success(copy.exportedData)
-  }
+
 
   const handleExportReport = async () => {
     if (!analytics || analytics.totalReports === 0) {
@@ -967,67 +917,102 @@ function AnalyticsContent() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_78%_18%,rgba(16,185,129,0.10),transparent_26%)] pointer-events-none" />
           <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-2 max-w-3xl">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{copy.title}</h1>
-              <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
+            <div className={cn("space-y-3 max-w-3xl", isArabic && "text-right")}>
+              <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/60 leading-tight">
+                {copy.title}
+              </h1>
+              <p className="max-w-2xl text-sm sm:text-base text-muted-foreground/90 leading-relaxed font-medium">
                 {executiveSummary}
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="p-1 glass-panel rounded-xl glass-border flex items-center gap-1">
+            <div className={cn("flex flex-wrap items-center gap-3", isArabic && "flex-row-reverse")}>
+              <div className="p-1.5 glass-panel rounded-2xl glass-border flex items-center gap-1 bg-background/20 backdrop-blur-md">
                 {PERIOD_OPTIONS.map((option) => (
-                  <button key={option.key} onClick={() => setPeriod(option.key)} className={cn("px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors min-h-[36px]", period === option.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground glass-button")}>
+                  <button 
+                    key={option.key} 
+                    onClick={() => setPeriod(option.key)} 
+                    className={cn(
+                      "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 min-h-[38px]", 
+                      period === option.key 
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    )}
+                  >
                     {periodLabels[option.key]}
                   </button>
                 ))}
               </div>
-              <div className="flex flex-col items-end gap-0.5">
-                <button onClick={refreshAnalytics} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground">
-                  <RefreshCw className="w-3 h-3" /> {copy.refresh}
+              
+              <div className="flex flex-col items-end gap-1">
+                <button 
+                  onClick={refreshAnalytics} 
+                  className="group flex items-center gap-2.5 px-5 py-3 min-h-[46px] glass-panel rounded-2xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground hover:bg-white/5 active:scale-95"
+                >
+                  <RefreshCw className={cn("w-3.5 h-3.5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} /> 
+                  {copy.refresh}
                 </button>
                 {lastUpdated && (
-                  <span className="text-[9px] text-muted-foreground px-1">
+                  <span className="text-[9px] font-bold text-muted-foreground/60 px-2 uppercase tracking-tighter">
                     {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 )}
               </div>
-              <button
-                onClick={handleExportReport}
-                disabled={!analytics || (analytics.totalReports ?? 0) === 0}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <Download className="w-3 h-3" /> {copy.exportReport}
-              </button>
+
               <button
                 onClick={handleExplainPage}
                 disabled={!analytics || explainLoading}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/15 disabled:opacity-40 disabled:pointer-events-none"
+                className="group flex min-h-[46px] items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/10 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-primary/5"
               >
-                {explainLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
-                Explain this page
+                {explainLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4 group-hover:animate-pulse" />}
+                {isArabic ? "اشرح هذه الصفحة" : "Explain this page"}
               </button>
+
               <button
-                onClick={handleExportData}
+                onClick={handleExportReport}
                 disabled={!analytics || (analytics.totalReports ?? 0) === 0}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
-                title={copy.csvTitle}
+                className="flex min-h-[46px] items-center gap-2.5 rounded-2xl bg-primary px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_20px_40px_-15px_rgba(37,99,235,0.4)] transition-all hover:scale-105 hover:shadow-primary/50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
               >
-                CSV
+                <Download className="w-3.5 h-3.5" /> {copy.exportReport}
               </button>
+
+
             </div>
           </div>
 
-          <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            {executiveNotes.map((note) => (
-              <div key={note.label} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3.5 backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{note.label}</p>
-                    <p className={cn("mt-2 text-sm sm:text-base font-bold truncate", note.tone)}>{note.value}</p>
+          <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {executiveNotes.map((note, idx) => (
+              <div 
+                key={note.label} 
+                className="group relative overflow-hidden rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 transition-all hover:-translate-y-1 hover:bg-[var(--glass-strong-bg)]"
+              >
+                {/* Subtle background gradient based on index */}
+                <div className={cn(
+                  "absolute inset-0 opacity-[0.03] pointer-events-none transition-opacity group-hover:opacity-[0.06]",
+                  idx === 0 && "bg-gradient-to-br from-blue-500 to-transparent",
+                  idx === 1 && "bg-gradient-to-br from-amber-500 to-transparent",
+                  idx === 2 && "bg-gradient-to-br from-emerald-500 to-transparent",
+                  idx === 3 && "bg-gradient-to-br from-purple-500 to-transparent"
+                )} />
+                
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">
+                      {note.label}
+                    </p>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-background/50 group-hover:border-primary/30 group-hover:bg-primary/5 transition-colors">
+                      <note.icon className="w-4.5 h-4.5 text-primary/70 group-hover:text-primary transition-colors" />
+                    </div>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
-                    <note.icon className="w-4 h-4 text-primary" />
+                  
+                  <div className="space-y-1">
+                    <p className={cn("text-xl sm:text-2xl font-black tracking-tight truncate", note.tone)}>
+                      {note.value}
+                    </p>
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="h-1 w-1 rounded-full bg-primary" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-primary/60">Live Insight</span>
+                    </div>
                   </div>
                 </div>
               </div>

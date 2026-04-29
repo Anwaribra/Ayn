@@ -109,6 +109,12 @@ class TranscriptionResponse(BaseModel):
     text: str
 
 
+class AnalyticsExplainRequest(BaseModel):
+    analytics: dict
+    horus: Optional[dict] = None
+
+
+
 def get_user_id(current_user):
     """Safely extract user_id from current_user."""
     if current_user is None:
@@ -477,3 +483,33 @@ async def submit_message_feedback(
     except Exception as e:
         logger.warning(f"Failed to persist Horus feedback: {e}")
     return {"status": "ok", "message_id": body.message_id}
+
+
+@router.get("/analytics/insights")
+async def horus_analytics_insights(
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Get strategic Horus insights for the analytics dashboard.
+    """
+    user_id = get_user_id(current_user)
+    state_service = StateService(db)
+    horus_service = HorusService(state_service)
+    return await horus_service.get_analytics_insights(user_id, db)
+
+
+@router.post("/analytics/explain")
+async def horus_analytics_explain(
+    body: AnalyticsExplainRequest,
+    db: Prisma = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Explain the current analytics page state.
+    """
+    user_id = get_user_id(current_user)
+    state_service = StateService(db)
+    horus_service = HorusService(state_service)
+    return await horus_service.explain_analytics_page(user_id, body.analytics, body.horus)
+

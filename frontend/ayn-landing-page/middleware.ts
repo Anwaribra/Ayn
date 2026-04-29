@@ -4,7 +4,6 @@ const FROZEN_PLATFORM_PREFIXES = [
   "/platform/archive",
   "/platform/calendar",
   "/platform/notifications",
-  "/platform/workflows",
 ]
 
 export function middleware(request: NextRequest) {

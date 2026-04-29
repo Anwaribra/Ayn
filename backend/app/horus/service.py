@@ -721,7 +721,13 @@ class HorusService:
         return resolved
 
     async def _get_conversation_memory(self, user_id: str, exclude_chat_id: str | None = None) -> str:
-        """Build a lightweight memory string from recent chat summaries."""
+        """Build a lightweight memory string from recent chat summaries. Cached for 90s."""
+        cache_key = f"horus:memory:{user_id}"
+        if redis_client.enabled:
+            cached = redis_client.get(cache_key)
+            if cached:
+                return cached.decode("utf-8") if isinstance(cached, bytes) else str(cached)
+
         try:
             from app.core.db import db as prisma_client
             institution_id = None
@@ -760,7 +766,12 @@ class HorusService:
             if not memory_lines:
                 return durable_memory
             recent_memory = "Recent conversation memory (past sessions):\n" + "\n".join(memory_lines)
-            return "\n\n".join(part for part in [durable_memory, recent_memory] if part)
+            full_memory = "\n\n".join(part for part in [durable_memory, recent_memory] if part)
+            
+            if redis_client.enabled:
+                redis_client.set(cache_key, full_memory, ex=90)
+            
+            return full_memory
         except Exception as e:
             logger.error(f"Failed to build conversation memory: {e}")
             return ""

@@ -39,6 +39,7 @@ GEMINI_AVAILABLE = False
 try:
     from google import genai as new_genai
     from google.genai import types as genai_types
+    from google.genai import Client as GeminiSDKClient
     GEMINI_AVAILABLE = True
     USE_NEW_API = True
 except ImportError:
@@ -49,6 +50,16 @@ except ImportError:
     except ImportError:
         logger.warning("Gemini SDK not installed. Only OpenRouter will be available.")
         USE_NEW_API = False
+
+
+# Shared HTTP client for better performance (connection pooling)
+_shared_httpx_client: Optional[httpx.AsyncClient] = None
+
+def get_shared_client() -> httpx.AsyncClient:
+    global _shared_httpx_client
+    if _shared_httpx_client is None:
+        _shared_httpx_client = httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0))
+    return _shared_httpx_client
 
 
 # ─── Platform-Aware System Prompt ────────────────────────────────────────────
@@ -327,27 +338,27 @@ class DifyClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        async with httpx.AsyncClient() as client:
-            async with client.stream("POST", self.chat_url, json=payload, headers=headers, timeout=120.0) as response:
-                response.raise_for_status()
-                buffer = ""
-                async for chunk in response.aiter_text():
-                    buffer += chunk
-                    while "\n" in buffer:
-                        line, buffer = buffer.split("\n", 1)
-                        line = line.strip()
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data == "[DONE]":
-                                return
-                            try:
-                                obj = json.loads(data)
-                                event = obj.get("event")
-                                delta = obj.get("answer") or obj.get("delta", "")
-                                if delta and event in ("message", "agent_message", "message_delta", "text-generation"):
-                                    yield delta
-                            except json.JSONDecodeError:
-                                pass
+        client = get_shared_client()
+        async with client.stream("POST", self.chat_url, json=payload, headers=headers, timeout=120.0) as response:
+            response.raise_for_status()
+            buffer = ""
+            async for chunk in response.aiter_text():
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            return
+                        try:
+                            obj = json.loads(data)
+                            event = obj.get("event")
+                            delta = obj.get("answer") or obj.get("delta", "")
+                            if delta and event in ("message", "agent_message", "message_delta", "text-generation"):
+                                yield delta
+                        except json.JSONDecodeError:
+                            pass
     
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         """Non-streaming chat - collect stream into full response."""
@@ -408,17 +419,17 @@ class OpenRouterClient:
             "X-Title": "Ayn Platform - Horus AI",
         }
         
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.BASE_URL,
-                json=payload,
-                headers=headers,
-                timeout=60.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            return data["choices"][0]["message"]["content"]
+        client = get_shared_client()
+        response = await client.post(
+            self.BASE_URL,
+            json=payload,
+            headers=headers,
+            timeout=60.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        return data["choices"][0]["message"]["content"]
     
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
         # Determine if we need deep knowledge base
@@ -478,29 +489,29 @@ class OpenRouterClient:
             "HTTP-Referer": "https://ayn.vercel.app",
             "X-Title": "Ayn Platform - Horus AI",
         }
-        async with httpx.AsyncClient() as client:
-            async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
-                if response.status_code >= 400:
-                    body = await response.aread()
-                    logger.error(f"OpenRouter stream error {response.status_code} model={self.model}: {body.decode()[:500]}")
-                    response.raise_for_status()
-                buffer = ""
-                async for chunk in response.aiter_text():
-                    buffer += chunk
-                    while "\n" in buffer:
-                        line, buffer = buffer.split("\n", 1)
-                        line = line.strip()
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data == "[DONE]":
-                                return
-                            try:
-                                obj = json.loads(data)
-                                content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
-                                if content:
-                                    yield content
-                            except json.JSONDecodeError:
-                                pass
+        client = get_shared_client()
+        async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+            if response.status_code >= 400:
+                body = await response.aread()
+                logger.error(f"OpenRouter stream error {response.status_code} model={self.model}: {body.decode()[:500]}")
+                response.raise_for_status()
+            buffer = ""
+            async for chunk in response.aiter_text():
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            return
+                        try:
+                            obj = json.loads(data)
+                            content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            pass
 
     async def stream_chat(self, messages: List[Dict[str, str]], context: Optional[str] = None):
         """Stream chat completions via OpenRouter SSE."""
@@ -560,16 +571,16 @@ class OpenRouterClient:
             "X-Title": "Ayn Platform - Horus AI",
         }
         
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                self.BASE_URL,
-                json=payload,
-                headers=headers,
-                timeout=120.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
+        client = get_shared_client()
+        response = await client.post(
+            self.BASE_URL,
+            json=payload,
+            headers=headers,
+            timeout=120.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
     async def stream_chat_with_files(self, message: str, files: List[Dict], context: Optional[str] = None):
         """Stream multimodal chat with files via OpenRouter SSE."""
@@ -604,26 +615,26 @@ class OpenRouterClient:
             "HTTP-Referer": "https://ayn.vercel.app",
             "X-Title": "Ayn Platform - Horus AI",
         }
-        async with httpx.AsyncClient() as client:
-            async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
-                response.raise_for_status()
-                buffer = ""
-                async for chunk in response.aiter_text():
-                    buffer += chunk
-                    while "\n" in buffer:
-                        line, buffer = buffer.split("\n", 1)
-                        line = line.strip()
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data == "[DONE]":
-                                return
-                            try:
-                                obj = json.loads(data)
-                                content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
-                                if content:
-                                    yield content
-                            except json.JSONDecodeError:
-                                pass
+        client = get_shared_client()
+        async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+            response.raise_for_status()
+            buffer = ""
+            async for chunk in response.aiter_text():
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            return
+                        try:
+                            obj = json.loads(data)
+                            content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            pass
 
 
 def _file_item_bytes(file_item: Dict) -> bytes:

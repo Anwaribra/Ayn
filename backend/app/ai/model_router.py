@@ -74,7 +74,7 @@ class MultiModelAIRouter:
             )
         if input_tokens < 900 and not complex_task:
             return ModelRoute(
-                ("openrouter", "gemini", "dify"),
+                ("gemini", "openrouter", "dify"),
                 cls.FAST_MODEL,
                 "fast_chat",
                 "short general turn routed to lowest-latency low-cost model",

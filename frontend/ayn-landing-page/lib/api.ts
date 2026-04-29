@@ -315,6 +315,10 @@ class ApiClient {
     return this.request<import("./types").Evidence>(`/evidence/${id}`)
   }
 
+  async getEvidenceSignedUrl(id: string) {
+    return this.request<{ url: string; expiresIn: number }>(`/evidence/${id}/signed-url`)
+  }
+
   async uploadEvidence(file: File) {
     const formData = new FormData()
     formData.append("file", file)

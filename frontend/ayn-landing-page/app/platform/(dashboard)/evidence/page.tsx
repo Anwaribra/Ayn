@@ -152,10 +152,15 @@ function EvidenceContent() {
     runAnalysis: isArabic ? "تشغيل التحليل" : "Run Analysis",
     deleteEvidence: isArabic ? "حذف الدليل" : "Delete Evidence",
     confirmDelete: isArabic ? "تأكيد الحذف" : "Confirm Delete",
+    previewLoading: isArabic ? "جارٍ تحميل المعاينة…" : "Loading preview…",
+    previewFailed: isArabic ? "تعذّر تحميل الملف. حاول مرة أخرى." : "Could not load the file. Please try again.",
   }), [isArabic])
  
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
+  const [evidenceFileUrl, setEvidenceFileUrl] = useState<string | null>(null)
+  const [evidenceFileUrlLoading, setEvidenceFileUrlLoading] = useState(false)
+  const [evidenceFileUrlError, setEvidenceFileUrlError] = useState(false)
   const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
   const [isBulkGapModalOpen, setIsBulkGapModalOpen] = useState(false)
   const [bulkStandardId, setBulkStandardId] = useState<string>("")
@@ -230,6 +235,62 @@ function EvidenceContent() {
       }
     }
   }, [highlightId, evidenceList, selectedEvidence])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!selectedEvidence) {
+      setEvidenceFileUrl(null)
+      setEvidenceFileUrlLoading(false)
+      setEvidenceFileUrlError(false)
+      return
+    }
+
+    const raw = selectedEvidence.fileUrl ?? ""
+    const isHttp =
+      raw.startsWith("http://") ||
+      raw.startsWith("https://")
+
+    if (raw && raw !== "#" && raw !== "private" && isHttp) {
+      setEvidenceFileUrl(raw)
+      setEvidenceFileUrlLoading(false)
+      setEvidenceFileUrlError(false)
+      return
+    }
+
+    const isDemo = (selectedEvidence as { institutionId?: string }).institutionId === "demo"
+    if (isDemo || raw === "#") {
+      setEvidenceFileUrl(null)
+      setEvidenceFileUrlLoading(false)
+      setEvidenceFileUrlError(false)
+      return
+    }
+
+    setEvidenceFileUrl(null)
+    setEvidenceFileUrlError(false)
+    setEvidenceFileUrlLoading(true)
+
+    ;(async () => {
+      try {
+        const { url } = await api.getEvidenceSignedUrl(selectedEvidence.id)
+        if (!cancelled) {
+          setEvidenceFileUrl(url)
+          setEvidenceFileUrlError(false)
+        }
+      } catch {
+        if (!cancelled) {
+          setEvidenceFileUrl(null)
+          setEvidenceFileUrlError(true)
+        }
+      } finally {
+        if (!cancelled) setEvidenceFileUrlLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedEvidence])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -431,6 +492,10 @@ function EvidenceContent() {
       setBulkStandardId("")
     }
   }, [bulkStandardId, selectedStandardCandidates])
+
+  const selectedIsPdf =
+    selectedEvidence?.originalFilename?.toLowerCase().endsWith(".pdf") ?? false
+  const canOpenOriginalFile = Boolean(evidenceFileUrl) && !evidenceFileUrlError
 
   return (
     <div
@@ -710,8 +775,23 @@ function EvidenceContent() {
 
           {/* LEFT PANE: Document Viewer */}
           <div className="w-1/2 h-full pt-16 border-r border-[var(--border-subtle)] flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
-            {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && selectedEvidence.originalFilename?.toLowerCase().endsWith(".pdf") ? (
-              <iframe src={selectedEvidence.fileUrl} className="w-full h-full" title={selectedEvidence.title || copy.docPreview} />
+            {selectedIsPdf && evidenceFileUrl ? (
+              <iframe
+                key={evidenceFileUrl}
+                src={evidenceFileUrl}
+                className="w-full h-full border-0"
+                title={selectedEvidence.title || copy.docPreview}
+              />
+            ) : selectedIsPdf && evidenceFileUrlLoading ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+                <p className="text-sm font-medium">{copy.previewLoading}</p>
+              </div>
+            ) : selectedIsPdf && evidenceFileUrlError ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
+                <FileText className="h-10 w-10 text-destructive/80" aria-hidden />
+                <p className="text-sm font-medium text-destructive">{copy.previewFailed}</p>
+              </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
                 <div className="max-w-3xl mx-auto rounded-xl glass-panel glass-border shadow-2xl p-8 lg:p-12 min-h-full">
@@ -733,9 +813,9 @@ function EvidenceContent() {
                         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{copy.summary}</h3>
                         <p className="text-sm text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
                       </div>
-                      {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
+                      {canOpenOriginalFile && evidenceFileUrl && (
                         <a
-                          href={selectedEvidence.fileUrl}
+                          href={evidenceFileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
@@ -748,9 +828,9 @@ function EvidenceContent() {
                     <div className="flex flex-col items-center justify-center py-14 text-center">
                       <FileText className="w-10 h-10 text-muted-foreground/30 mb-3" />
                       <p className="text-sm text-muted-foreground">{copy.noPreview}</p>
-                      {selectedEvidence.fileUrl && selectedEvidence.fileUrl !== "#" && (
+                      {canOpenOriginalFile && evidenceFileUrl && (
                         <a
-                          href={selectedEvidence.fileUrl}
+                          href={evidenceFileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-primary hover:underline"

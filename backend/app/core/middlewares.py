@@ -6,6 +6,8 @@ from app.core.utils import decode_access_token
 from app.core.db import get_db
 import logging
 
+from app.ai.provider_context import request_ai_provider
+
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
@@ -95,6 +97,17 @@ async def request_timing_middleware(request: Request, call_next):
     logger.info(f"{request.method} {request.url.path} status={response.status_code} {elapsed_ms:.2f}ms")
 
     return response
+
+
+async def ai_provider_preference_middleware(request: Request, call_next):
+    """Honor X-AI-Provider: gemini | openrouter to reorder model fallback (still falls back on failure)."""
+    raw = (request.headers.get("x-ai-provider") or "").strip().lower()
+    pref = raw if raw in ("gemini", "openrouter") else None
+    token = request_ai_provider.set(pref)
+    try:
+        return await call_next(request)
+    finally:
+        request_ai_provider.reset(token)
 
 
 def require_role(allowed_roles: list[str]):

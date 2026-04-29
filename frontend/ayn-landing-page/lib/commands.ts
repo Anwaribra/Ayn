@@ -24,9 +24,11 @@ import {
   Scale,
   Lightbulb,
   Monitor,
+  Cpu,
   type LucideIcon,
 } from "lucide-react"
 import { toggleDemoMode, isDemoMode } from "./demo"
+import { OPEN_AI_PROVIDER_PICKER_EVENT } from "./ai-provider-preference"
 
 export type CommandCategory =
   | "Navigation"
@@ -366,6 +368,18 @@ export const allCommands: Command[] = [
   ...helpCommands,
 ]
 
+const AI_PROVIDER_SECRET_COMMAND: Command = {
+  id: "open-ai-provider-picker",
+  title: "AI provider route",
+  description: "Prefer Gemini or OpenRouter in this browser (server still falls back if needed).",
+  icon: Cpu,
+  category: "Preferences",
+  keywords: ["ayn:ai", "ayn:model"],
+  action: () => {
+    window.dispatchEvent(new CustomEvent(OPEN_AI_PROVIDER_PICKER_EVENT))
+  },
+}
+
 // Group commands by category for display
 export const groupCommandsByCategory = (
   commands: Command[]
@@ -385,9 +399,14 @@ export const filterCommands = (
   query: string
 ): Command[] => {
   const normalizedQuery = query.toLowerCase().trim()
+  const secretMatch =
+    normalizedQuery === "ayn:ai" || normalizedQuery === "ayn:model"
+      ? [AI_PROVIDER_SECRET_COMMAND]
+      : []
+
   if (!normalizedQuery) return commands
 
-  return commands.filter((cmd) => {
+  const matched = commands.filter((cmd) => {
     const titleMatch = cmd.title.toLowerCase().includes(normalizedQuery)
     const descMatch = cmd.description
       ?.toLowerCase()
@@ -397,6 +416,8 @@ export const filterCommands = (
     )
     return titleMatch || descMatch || keywordMatch
   })
+
+  return secretMatch.length > 0 ? [...secretMatch, ...matched] : matched
 }
 
 // Get recent commands from localStorage

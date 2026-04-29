@@ -31,6 +31,8 @@ import { useFocusMode } from "@/lib/focus-mode-context";
 import { useUiLanguage } from "@/lib/ui-language-context";
 import type { Notification } from "@/types";
 import { cn } from "@/lib/utils";
+import { OPEN_AI_PROVIDER_PICKER_EVENT } from "@/lib/ai-provider-preference";
+import { AiProviderPickerDialog } from "./ai-provider-picker-dialog";
 
 export default function PlatformShell({ children }: { children: ReactNode }) {
   // Start closed so mobile never shows sidebar taking space on first paint
@@ -38,6 +40,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [isWindowVisible, setIsWindowVisible] = useState(true);
+  const [aiProviderPickerOpen, setAiProviderPickerOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
@@ -63,6 +66,12 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     }),
     [isArabic],
   );
+
+  useEffect(() => {
+    const onOpenPicker = () => setAiProviderPickerOpen(true);
+    window.addEventListener(OPEN_AI_PROVIDER_PICKER_EVENT, onOpenPicker);
+    return () => window.removeEventListener(OPEN_AI_PROVIDER_PICKER_EVENT, onOpenPicker);
+  }, []);
 
   // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
@@ -450,6 +459,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       </main>
 
       <FloatingAIBar />
+      <AiProviderPickerDialog open={aiProviderPickerOpen} onOpenChange={setAiProviderPickerOpen} />
       <CommandPalette />
     </div>
   );

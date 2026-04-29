@@ -324,92 +324,6 @@ async function exportAnalyticsReportPdf(params: {
   doc.save(params.filename)
 }
 
-function HorusAnalyticsPanel({
-  intelligence,
-  onNavigate,
-}: {
-  intelligence?: HorusAnalyticsInsight
-  onNavigate: (href: string) => void
-}) {
-  if (!intelligence) return null
-
-  const severityClass = (severity: string) => {
-    if (severity === "critical") return "border-red-500/25 bg-red-500/[0.06] text-red-400"
-    if (severity === "warning") return "border-amber-500/25 bg-amber-500/[0.06] text-amber-400"
-    if (severity === "positive") return "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-400"
-    return "border-primary/20 bg-primary/[0.05] text-primary"
-  }
-
-  return (
-    <section className="glass-panel glass-border relative overflow-hidden rounded-[28px] p-5 sm:p-6 lg:p-7">
-      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.85),transparent)] opacity-70" />
-      <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-      <div className="relative z-10">
-        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-              <Brain className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Horus Intelligence</p>
-              <h2 className="mt-1 text-base font-bold text-foreground">Analytics Summary</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/75">{intelligence.directAnswer}</p>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-foreground/55">
-            Confidence: <span className="text-foreground">{intelligence.confidence}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {intelligence.topRisks.slice(0, 4).map((insight) => (
-            <div key={insight.id} className={cn("rounded-2xl border p-4", severityClass(insight.severity))}>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-foreground">{insight.title}</h3>
-                {insight.metric && (
-                  <span className="rounded-full border border-current/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]">
-                    {insight.metric}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs leading-relaxed text-foreground/72">{insight.description}</p>
-              {!!insight.actions?.length && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {insight.actions.slice(0, 3).map((action) => (
-                    <button
-                      key={`${insight.id}-${action.label}`}
-                      type="button"
-                      onClick={() => onNavigate(action.href)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
-                    >
-                      {action.label}
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {intelligence.nextActions.length > 0 && (
-          <div className="mt-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">Next 3 Actions</p>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-              {intelligence.nextActions.slice(0, 3).map((action, index) => (
-                <div key={action} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-foreground/75">
-                  <span className="mr-2 font-mono text-primary">{index + 1}</span>
-                  {action}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
 function HorusExplainSheet({
   open,
   onOpenChange,
@@ -922,8 +836,8 @@ function AnalyticsContent() {
         <div className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] glass-panel glass-border p-4 sm:p-5 lg:p-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_78%_18%,rgba(16,185,129,0.10),transparent_26%)] pointer-events-none" />
           <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className={cn("min-w-0 space-y-2 max-w-3xl flex-1", isArabic && "text-right")}>
+          <div className="relative z-10 flex flex-col gap-4 lg:gap-5">
+            <div className={cn("min-w-0 max-w-3xl space-y-2", isArabic && "text-right")}>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-snug">
                 {copy.title}
               </h1>
@@ -932,62 +846,98 @@ function AnalyticsContent() {
               </p>
             </div>
 
+            {/* Toolbar: aligned row, strong contrast on period pills */}
             <div
               className={cn(
-                "flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:flex-nowrap xl:max-w-xl xl:justify-end xl:items-start",
-                isArabic && "sm:flex-row-reverse",
+                "flex flex-col gap-3 border-t border-white/[0.08] pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-2",
               )}
             >
-              <div className="p-1 glass-panel rounded-2xl glass-border inline-flex flex-wrap items-center gap-0.5 bg-background/30 backdrop-blur-md">
-                {PERIOD_OPTIONS.map((option) => (
-                  <button 
-                    key={option.key} 
-                    onClick={() => setPeriod(option.key)} 
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-1 sm:gap-2">
+                <div className="flex max-w-full flex-nowrap items-stretch gap-1 overflow-x-auto rounded-xl border border-white/12 bg-white/[0.05] p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  {PERIOD_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setPeriod(option.key)}
+                      className={cn(
+                        "shrink-0 rounded-lg px-3.5 py-2 text-[11px] font-semibold uppercase tracking-wide transition-colors",
+                        "h-10 min-h-[40px] inline-flex items-center justify-center",
+                        period === option.key
+                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                          : "text-foreground/85 bg-white/[0.04] hover:bg-white/12 hover:text-foreground",
+                      )}
+                    >
+                      {periodLabels[option.key]}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="hidden h-8 w-px shrink-0 bg-white/12 sm:block" aria-hidden />
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={refreshAnalytics}
                     className={cn(
-                      "px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-wide transition-all duration-200 min-h-[36px] sm:min-h-[38px]",
-                      period === option.key 
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
-                        : "text-foreground/55 hover:text-foreground hover:bg-white/8"
+                      "group inline-flex h-10 min-h-[40px] shrink-0 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.05] px-3.5",
+                      "text-[11px] font-semibold uppercase tracking-wide text-foreground/90 transition-colors hover:bg-white/12 hover:text-foreground",
                     )}
                   >
-                    {periodLabels[option.key]}
+                    <RefreshCw
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 transition-transform duration-500 group-hover:rotate-180",
+                        isLoading && "animate-spin",
+                      )}
+                    />
+                    {copy.refresh}
                   </button>
-                ))}
-              </div>
-              
-              <div className={cn("flex flex-col gap-1", isArabic ? "items-end sm:items-start" : "items-start sm:items-end")}>
-                <button 
-                  onClick={refreshAnalytics} 
-                  className="group inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] glass-panel rounded-2xl glass-border text-[11px] font-semibold uppercase tracking-wide transition-all text-foreground/70 hover:text-foreground hover:bg-white/8 active:scale-[0.98]"
-                >
-                  <RefreshCw className={cn("w-3.5 h-3.5 shrink-0 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} /> 
-                  {copy.refresh}
-                </button>
-                {lastUpdated && (
-                  <span className="text-[10px] font-medium text-foreground/50 px-0.5 uppercase tracking-wide">
-                    {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                )}
+                  {lastUpdated && (
+                    <span className="hidden text-[10px] font-medium text-foreground/62 tabular-nums sm:inline whitespace-nowrap">
+                      {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className={cn("flex flex-wrap gap-2 sm:flex-nowrap", isArabic && "flex-row-reverse")}>
+              <div className="flex flex-wrap items-stretch gap-2 sm:ms-auto sm:justify-end sm:ps-2">
                 <button
+                  type="button"
                   onClick={handleExplainPage}
                   disabled={!analytics || explainLoading}
-                  className="group inline-flex flex-1 min-w-[9rem] justify-center items-center gap-2 rounded-2xl border border-primary/35 bg-primary/12 px-4 py-2.5 min-h-[40px] text-[11px] font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/22 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                  className={cn(
+                    "inline-flex h-10 min-h-[40px] items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4",
+                    "text-[11px] font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/20",
+                    "disabled:pointer-events-none disabled:opacity-40",
+                  )}
                 >
-                  {explainLoading ? <Loader2 className="h-4 w-4 animate-spin shrink-0" /> : <Brain className="h-4 w-4 group-hover:animate-pulse shrink-0" />}
-                  <span className="truncate">{copy.explainPage}</span>
+                  {explainLoading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  ) : (
+                    <Brain className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="whitespace-nowrap">{copy.explainPage}</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleExportReport}
                   disabled={!analytics || (analytics.totalReports ?? 0) === 0}
-                  className="inline-flex flex-1 min-w-[9rem] justify-center items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 min-h-[40px] text-[11px] font-semibold uppercase tracking-wide text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/92 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                  className={cn(
+                    "inline-flex h-10 min-h-[40px] items-center justify-center gap-2 rounded-xl bg-primary px-4",
+                    "text-[11px] font-semibold uppercase tracking-wide text-primary-foreground shadow-md shadow-primary/30",
+                    "transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-40",
+                  )}
                 >
-                  <Download className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{copy.exportReport}</span>
+                  <Download className="h-3.5 w-3.5 shrink-0" />
+                  <span className="whitespace-nowrap">{copy.exportReport}</span>
                 </button>
               </div>
+
+              {lastUpdated && (
+                <p className="w-full text-[10px] font-medium text-foreground/55 tabular-nums sm:hidden">
+                  {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1068,8 +1018,6 @@ function AnalyticsContent() {
         <div className="mt-20"><EmptyState type="reports" /></div>
       ) : (
         <div className="px-4 space-y-8">
-          <HorusAnalyticsPanel intelligence={horusAnalytics} onNavigate={(href) => router.push(href)} />
-
           {/* ─── KPI Cards ─── */}
           <AnalyticsKpiCards cards={kpiCards} />
 

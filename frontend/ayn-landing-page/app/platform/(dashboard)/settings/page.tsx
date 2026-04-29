@@ -3,7 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
-import { useAuth } from "@/lib/auth-context"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { AiProviderPickerDialog } from "@/components/platform/ai-provider-picker-dialog"
 import {
   User,
   Bell,
@@ -27,7 +28,8 @@ export default function SettingsPage() {
 }
 
 function SettingsContent() {
-  const { user } = useAuth()
+  const { isArabic } = useUiLanguage()
+  const [aiRoutingOpen, setAiRoutingOpen] = useState(false)
 
   const sections = [
     { icon: User, label: "Profile", desc: "Manage institution and contact details.", color: "text-primary", href: "/platform/settings/account" },
@@ -73,6 +75,23 @@ function SettingsContent() {
           </Link>
         ))}
       </div>
+
+      <details className="mt-10 rounded-2xl border border-border/25 bg-muted/15 px-4 py-3">
+        <summary className="cursor-pointer select-none text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45 list-none [&::-webkit-details-marker]:hidden">
+          {isArabic ? "متقدم" : "Advanced"}
+        </summary>
+        <div className="mt-3 border-t border-border/20 pt-3">
+          <button
+            type="button"
+            onClick={() => setAiRoutingOpen(true)}
+            className="text-left text-xs text-muted-foreground/80 transition-colors hover:text-foreground"
+          >
+            {isArabic ? "تفضيل مسار نموذج الذكاء الاصطناعي (جيمناي / أوبن راوتر)…" : "AI model routing (Gemini / OpenRouter)…"}
+          </button>
+        </div>
+      </details>
+
+      <AiProviderPickerDialog open={aiRoutingOpen} onOpenChange={setAiRoutingOpen} />
 
       <div className="mt-8 rounded-2xl border border-destructive/25 bg-destructive/5 p-4 sm:p-5">
         <div className="flex items-start gap-3">

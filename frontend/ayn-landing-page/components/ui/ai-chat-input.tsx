@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } fro
 import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff, ShieldCheck, BarChart2, AlertTriangle, Link, Download, Search, Sparkles, Wrench } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { getAIProviderFetchHeaders } from "@/lib/ai-provider-preference"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -279,7 +280,10 @@ export const AIChatInput = ({
             method: "POST",
             body: formData,
             credentials: "include",
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            headers: {
+              ...getAIProviderFetchHeaders(),
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
           })
           if (!res.ok) {
             const errData = await res.json().catch(() => null)

@@ -1,5 +1,6 @@
 // API client for Horus Engine Platform
 
+import { getAIProviderFetchHeaders } from "./ai-provider-preference"
 import { log } from "./logger"
 
 // Use relative /api path so requests go through Next.js rewrites (same-origin, no CORS).
@@ -13,6 +14,7 @@ class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers: HeadersInit = {
+      ...getAIProviderFetchHeaders(),
       "Content-Type": "application/json",
       ...options.headers,
     }
@@ -266,6 +268,7 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}/standards/import-pdf`, {
       method: "POST",
       credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
       body: formData,
     })
 
@@ -319,6 +322,7 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}/evidence/upload`, {
       method: "POST",
       credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
       body: formData,
     })
 
@@ -694,6 +698,7 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}/horus/chat`, {
       method: "POST",
       credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
       body: formData,
     })
 
@@ -719,6 +724,7 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}/horus/chat`, {
       method: "POST",
       credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
       body: formData,
     })
 
@@ -750,6 +756,7 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}/horus/chat/stream`, {
       method: "POST",
       credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
       body: formData,
       signal,
     })

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth-context"
+import { getAIProviderFetchHeaders } from "@/lib/ai-provider-preference"
 
 interface AttachmentPreview {
     name: string
@@ -228,6 +229,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
                 typeof window !== "undefined" ? localStorage.getItem("access_token") : null
             const headers: HeadersInit = {
                 Accept: "text/event-stream",
+                ...getAIProviderFetchHeaders(),
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
             }
 

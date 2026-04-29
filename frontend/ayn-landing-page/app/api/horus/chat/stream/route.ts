@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { forwardAiProviderFromNextRequest } from "@/lib/ai-provider-preference"
 
 const BACKEND_URL =
   process.env.BACKEND_URL ||
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       headers: {
         // Do NOT set Content-Type — fetch sets multipart/form-data boundary automatically
         ...(authHeader ? { Authorization: authHeader } : {}),
+        ...forwardAiProviderFromNextRequest(req),
       },
       body: formData,
       // @ts-ignore — Node 18+ supports this; prevents Node from buffering the response

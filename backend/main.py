@@ -17,7 +17,7 @@ from app.auth.router import router as auth_router
 from app.bootstrap.standards_seed import seed_missing_standards
 from app.core.config import settings
 from app.core.db import connect_db, disconnect_db
-from app.core.middlewares import request_timing_middleware
+from app.core.middlewares import ai_provider_preference_middleware, request_timing_middleware
 from app.core.rate_limit import limiter
 from app.evidence.router import router as evidence_router
 from app.gap_analysis.router import router as gap_analysis_router
@@ -60,6 +60,7 @@ app.add_middleware(
 )
 
 app.middleware("http")(request_timing_middleware)
+app.middleware("http")(ai_provider_preference_middleware)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

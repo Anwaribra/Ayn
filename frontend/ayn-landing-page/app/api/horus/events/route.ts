@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { forwardAiProviderFromNextRequest } from "@/lib/ai-provider-preference"
 
 const BACKEND_URL =
   process.env.BACKEND_URL ||
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
         ...(authHeader ? { Authorization: authHeader } : {}),
         ...(cookie ? { Cookie: cookie } : {}),
         Accept: "text/event-stream",
+        ...forwardAiProviderFromNextRequest(req),
       },
       cache: "no-store",
     })

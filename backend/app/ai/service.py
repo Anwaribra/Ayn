@@ -1230,9 +1230,11 @@ class HorusAIClient:
 
     async def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
         """Call a method with policy routing and fallback."""
+        from app.ai.provider_context import apply_provider_preference
+
         global _GEMINI_COOLDOWN_UNTIL
         last_error = None
-        route = self._route_for(method_name, kwargs)
+        route = apply_provider_preference(self._route_for(method_name, kwargs))
 
         for provider in route.providers:
             client = self._provider_client(provider)
@@ -1274,8 +1276,10 @@ class HorusAIClient:
     
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
         """Call a streaming method with policy routing and fallback."""
+        from app.ai.provider_context import apply_provider_preference
+
         global _GEMINI_COOLDOWN_UNTIL
-        route = self._route_for(method_name, kwargs)
+        route = apply_provider_preference(self._route_for(method_name, kwargs))
 
         for provider in route.providers:
             client = self._provider_client(provider)

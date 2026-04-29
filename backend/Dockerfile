@@ -22,8 +22,10 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Copy Prisma and generate client
 COPY prisma ./prisma/
-# pip --prefix=/install does not install a python binary under /install/bin; use image python3 + PYTHONPATH
-RUN PYTHONPATH=/install/lib/python3.11/site-packages python3 -m prisma generate
+# pip --prefix puts console scripts in /install/bin; prisma-client-py generator must be on PATH
+RUN PATH="/install/bin:${PATH}" \
+    PYTHONPATH=/install/lib/python3.11/site-packages \
+    python3 -m prisma generate
 
 # --- STAGE 2: Runtime ---
 FROM python:3.11-slim

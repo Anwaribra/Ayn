@@ -33,6 +33,24 @@ class NotificationService:
                     "isRead": False
                 }
             )
+            try:
+                from app.core.events import event_bus
+
+                await event_bus.emit(
+                    request.userId,
+                    "notification",
+                    {
+                        "id": notification.id,
+                        "type": notification.type,
+                        "title": notification.title,
+                        "message": notification.message,
+                        "relatedEntityId": notification.relatedEntityId,
+                        "relatedEntityType": notification.relatedEntityType,
+                    },
+                    source="notifications",
+                )
+            except Exception as emit_err:
+                logger.debug("Notification realtime emit skipped: %s", emit_err)
             # Map 'isRead' to response which expects 'isRead' (model updated)
             return NotificationResponse.model_validate(notification)
         except Exception as e:

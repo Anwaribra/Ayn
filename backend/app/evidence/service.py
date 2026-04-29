@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, status, UploadFile, BackgroundTasks
 from typing import List, Optional
 from app.core.db import get_db
-from app.core.storage import upload_file_to_supabase, delete_file_from_supabase
+from app.core.storage import upload_file_to_supabase, delete_file_from_supabase, create_signed_url
 from app.core.config import settings
 from app.evidence.models import (
     EvidenceResponse,
@@ -18,6 +18,8 @@ from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.activity.service import ActivityService
 from app.core.redis import redis_client
+from app.core.jobs import enqueue_job, register_job_handler
+from app.core.job_files import cleanup_job_file, read_job_file, write_job_file
 import logging
 import asyncio
 
@@ -33,6 +35,22 @@ MAX_FILE_SIZE = 25 * 1024 * 1024
 
 class EvidenceService:
     """Service for evidence management business logic."""
+
+    @staticmethod
+    def _evidence_scope(current_user: dict) -> dict:
+        institution_id = current_user.get("institutionId")
+        if not institution_id:
+            return {"uploadedById": current_user["id"]}
+        return {"ownerId": institution_id}
+
+    @staticmethod
+    def _evidence_access_where(evidence_id: str, current_user: dict) -> dict:
+        return {
+            "AND": [
+                {"id": evidence_id},
+                EvidenceService._evidence_scope(current_user),
+            ]
+        }
 
     @staticmethod
     async def list_archived_evidence(current_user: dict):
@@ -106,7 +124,7 @@ class EvidenceService:
         try:
             # 2. Critical Path: Storage + DB
             # Upload to Supabase
-            public_url, _ = await upload_file_to_supabase(
+            storage_path, _ = await upload_file_to_supabase(
                 file_content=file_content,
                 filename=file.filename,
                 content_type=file.content_type
@@ -115,12 +133,12 @@ class EvidenceService:
             # Create Record
             evidence = await db.evidence.create(
                 data={
-                    "fileUrl": public_url, 
+                    "fileUrl": storage_path,
                     "uploadedById": current_user["id"],
                     "ownerId": current_user.get("institutionId"), # Use institutionId as ownerId for isolation
                     "originalFilename": file.filename,
                     "title": file.filename, # Default title is filename until AI analysis completes
-                    "status": "processing"
+                    "status": "uploaded"
                 }
             )
             try:
@@ -143,7 +161,7 @@ class EvidenceService:
                             "status": evidence.status,
                             "documentType": evidence.documentType,
                             "confidenceScore": evidence.confidenceScore,
-                            "fileUrl": evidence.fileUrl,
+                            "storagePath": evidence.fileUrl,
                         }
                     },
                 )
@@ -185,21 +203,9 @@ class EvidenceService:
             except Exception as e:
                 logger.error(f"Failed to record event: {e}")
             
-            # 3. Non-Critical Path: Background Analysis
-            # We assume text/pdf/image analysis.
-            try:
-                background_tasks.add_task(
-                    EvidenceService.analyze_evidence_task,
-                    evidence_id=evidence.id,
-                    file_content=file_content,
-                    filename=file.filename,
-                    mime_type=file.content_type,
-                    user_id=current_user["id"]
-                )
-                analysis_triggered = True
-            except Exception as bg_error:
-                logger.error(f"Failed to schedule background analysis: {bg_error}")
-                analysis_triggered = False
+            # Security + Domain Freeze: uploaded evidence is immutable and no AI job is
+            # allowed to mutate evidence, mapping, gap, report, or remediation state.
+            analysis_triggered = False
 
             return UploadEvidenceResponse(
                 success=True,
@@ -217,6 +223,24 @@ class EvidenceService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail={"error": "Valid upload failed", "stage": "persistence", "detail": str(e)}
             )
+
+    @staticmethod
+    async def queue_evidence_analysis(
+        *,
+        evidence_id: str,
+        file_content: bytes,
+        filename: str,
+        mime_type: str,
+        user_id: str,
+        background_tasks: BackgroundTasks | None = None,
+    ) -> bool:
+        logger.warning("Evidence AI analysis is disabled during Security + Domain Freeze.")
+        return False
+
+    @staticmethod
+    async def analyze_evidence_job(payload: dict):
+        cleanup_job_file(payload.get("job_file_path"))
+        logger.warning("Skipped legacy evidence AI job during Security + Domain Freeze.")
 
     @staticmethod
     async def _chat_with_files_with_retry(client, message: str, files_payload: List[dict], retries: int = 2) -> str:
@@ -238,282 +262,8 @@ class EvidenceService:
         Background task: Analyze evidence using AI and update state.
         Never throws exceptions to the caller — all errors are caught and logged.
         """
-        from app.ai.service import get_gemini_client
-        from app.platform_state.service import StateService
-        from app.core.db import db as prisma_client
-
-        logger.info(f"Starting background analysis for {evidence_id}")
-
-        try:
-            # Ensure DB is connected (singleton, usually already connected)
-            if not prisma_client.is_connected():
-                await prisma_client.connect()
-
-            # 1. AI Analysis
-            client = get_gemini_client()
-
-            prompt = """
-            Analyze this uploaded evidence file for educational accreditation compliance (ISO 21001 / NAQAAE).
-
-            Identify:
-            1. Document Type (e.g., Policy, Meeting Minutes, Strategic Plan, Student Record)
-            2. Specific Standards & Clauses it likely supports.
-            3. A confidence score (0-100) based on content relevance.
-            4. A clear, concise summary of the document content.
-            5. overall_score (0-100)
-            6. key_findings (List of strengths and weaknesses strings)
-            7. improvement_suggestions (List of actionable steps format strings)
-
-            CRITICAL: Return ONLY valid JSON. No markdown. No code blocks.
-            Format:
-            {
-               "document_type": "string",
-               "related_standard": "string (e.g. ISO 21001)",
-               "mapped_criteria": ["clause_number_or_id"],
-               "confidence": number,
-               "risk_flag": boolean,
-               "summary": "string",
-               "title": "Suggested Title (e.g. 'Strategic Plan 2024')",
-               "overall_score": number,
-               "key_findings": ["string"],
-               "improvement_suggestions": ["string"]
-            }
-            """
-
-            b64_data = base64.b64encode(file_content).decode("utf-8")
-            files_payload = [{
-                "type": "image" if mime_type.startswith("image") else "text",
-                "mime_type": mime_type,
-                "data": b64_data,
-                "filename": filename
-            }]
-
-            # FIX P1.1: chat_with_files is async — await it directly, never wrap in asyncio.to_thread
-            raw_response = await EvidenceService._chat_with_files_with_retry(client, prompt, files_payload, retries=2)
-
-            # 2. Parse Response
-            match = re.search(r'(\{.*\}|\[.*\])', raw_response, re.DOTALL)
-            if not match:
-                logger.warning(f"No JSON found in AI response for {evidence_id}")
-                await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
-                await EvidenceService._notify_error(user_id, evidence_id, f"AI could not extract data from '{filename}'.")
-                return
-
-            try:
-                parsed = json.loads(match.group(1))
-            except json.JSONDecodeError:
-                logger.error(f"AI returned invalid JSON for {evidence_id}")
-                await prisma_client.evidence.update(where={"id": evidence_id}, data={"status": "failed"})
-                await EvidenceService._notify_error(user_id, evidence_id, f"AI could not analyze '{filename}'. Invalid response format.")
-                return
-
-            doc_type = parsed.get("document_type", "Unknown")
-            summary = parsed.get("summary", "No summary provided.")
-            title = parsed.get("title", filename)
-            confidence = float(parsed.get("overall_score", parsed.get("confidence", 0)))
-            
-            # Format the robust findings into the markdown summary so it can be viewed natively in the Vault
-            key_findings = parsed.get("key_findings", [])
-            improvement_suggestions = parsed.get("improvement_suggestions", [])
-            
-            if key_findings or improvement_suggestions:
-                summary += "\n\n### Key Findings\n" + "\n".join([f"- {f}" for f in key_findings])
-                summary += "\n\n### Improvement Suggestions\n" + "\n".join([f"- {i}" for i in improvement_suggestions])
-
-            # 3. Update Evidence Record with AI results
-            await prisma_client.evidence.update(
-                where={"id": evidence_id},
-                data={
-                    "title": title,
-                    "summary": summary,
-                    "documentType": doc_type,
-                    "confidenceScore": confidence,
-                    "status": "analyzed",
-                    "updatedAt": datetime.now(timezone.utc)
-                }
-            )
-            try:
-                updated_evidence = await prisma_client.evidence.find_unique(where={"id": evidence_id})
-                if updated_evidence:
-                    await ActivityService.log_activity(
-                        user_id=user_id,
-                        type="evidence_snapshot_updated",
-                        title=f"Evidence analyzed: {updated_evidence.title or updated_evidence.id}",
-                        description=f"Status changed to {updated_evidence.status}",
-                        entity_id=evidence_id,
-                        entity_type="evidence",
-                        metadata={
-                            "snapshot": {
-                                "id": updated_evidence.id,
-                                "title": updated_evidence.title,
-                                "summary": updated_evidence.summary,
-                                "status": updated_evidence.status,
-                                "documentType": updated_evidence.documentType,
-                                "confidenceScore": updated_evidence.confidenceScore,
-                            }
-                        },
-                    )
-            except Exception as e:
-                logger.warning(f"Failed to log evidence analysis activity for {evidence_id}: {e}")
-
-            # 3.5 RAG Indexing - index AI analysis + raw PDF text when available
-            try:
-                from app.rag.service import RagService
-                ev = await prisma_client.evidence.find_unique(where={"id": evidence_id})
-                institution_id = getattr(ev, "ownerId", None) if ev else None
-                rag = RagService()
-                rag_content = f"Title: {title}\nType: {doc_type}\n\n{summary}"
-                if raw_response:
-                    rag_content += f"\n\nFull Analysis:\n{raw_response[:3000]}"
-                # Index raw PDF text for better retrieval (in addition to AI analysis)
-                if mime_type == "application/pdf" and file_content:
-                    try:
-                        from pypdf import PdfReader
-                        import io
-                        reader = PdfReader(io.BytesIO(file_content))
-                        raw_text_parts = []
-                        for page in reader.pages[:50]:  # Limit to 50 pages
-                            raw_text_parts.append(page.extract_text() or "")
-                        raw_text = "\n".join(raw_text_parts).strip()[:15000]  # Limit chars
-                        if raw_text:
-                            rag_content += f"\n\n--- Raw Document Text ---\n{raw_text}"
-                    except Exception as pdf_err:
-                        logger.debug(f"PDF text extraction skipped for {evidence_id}: {pdf_err}")
-                await rag.index_document(
-                    rag_content,
-                    document_id=evidence_id,
-                    user_id=user_id,
-                    institution_id=institution_id,
-                )
-                logger.info(f"RAG indexed evidence {evidence_id}")
-            except Exception as e:
-                logger.warning(f"RAG indexing failed for {evidence_id}: {e}")
-
-            # 4. Criteria Mapping
-            mapped_codes = parsed.get("mapped_criteria", [])
-            standard_name = parsed.get("related_standard", "")
-            mapping_status = "unmapped"
-            matched_criteria_ids = []
-
-            if mapped_codes:
-                standard = None
-                if standard_name:
-                    standards = await prisma_client.standard.find_many(
-                        where={"title": {"contains": standard_name, "mode": "insensitive"}}
-                    )
-                    if standards:
-                        standard = standards[0]
-
-                criteria_query = {"standardId": standard.id} if standard else {}
-                all_criteria = await prisma_client.criterion.find_many(where=criteria_query)
-
-                for code in mapped_codes:
-                    norm_code = str(code).strip().lower()
-                    for crit in all_criteria:
-                        if crit.title and crit.title.strip().lower().startswith(norm_code):
-                            matched_criteria_ids.append(crit.id)
-                            break
-
-                if matched_criteria_ids:
-                    mapping_status = "analyzed"
-                    for crit_id in set(matched_criteria_ids):
-                        try:
-                            await prisma_client.evidencecriterion.create(
-                                data={"evidenceId": evidence_id, "criterionId": crit_id}
-                            )
-                        except Exception as e:
-                            logger.debug(f"Duplicate evidence-criterion link skipped: {e}")
-
-            await prisma_client.evidence.update(
-                where={"id": evidence_id},
-                data={"status": mapping_status}
-            )
-
-            await ActivityService.log_activity(
-                user_id=user_id,
-                type="analysis_finished",
-                title="AI Analysis Complete",
-                description=f"Evidence '{title}' analyzed and mapped to {len(matched_criteria_ids)} criteria.",
-                entity_id=evidence_id,
-                entity_type="evidence",
-                metadata={"confidence": confidence, "docType": doc_type, "criteriaCount": len(matched_criteria_ids)}
-            )
-
-            if mapping_status == "analyzed":
-                logger.info(f"Evidence {evidence_id} mapped to {len(matched_criteria_ids)} criteria.")
-            else:
-                logger.warning(f"Evidence {evidence_id} analyzed but unmapped (codes: {mapped_codes})")
-
-            # 5. Auto-address matching open gaps
-            state_service = StateService(prisma_client)
-            gaps_addressed = 0
-
-            if standard_name and mapped_codes:
-                for code in mapped_codes:
-                    matching_gaps = await state_service.find_open_gaps_for_evidence(
-                        user_id=user_id,
-                        standard_name=standard_name,
-                        clause_code=code
-                    )
-                    for gap in matching_gaps:
-                        await state_service.record_gap_addressed(gap.id, evidence_id)
-                        gaps_addressed += 1
-                        logger.info(f"Gap {gap.id} addressed by evidence {evidence_id}")
-
-            # 6. Update Metrics
-            await state_service.record_metric_update(
-                user_id=user_id,
-                metric_id="evidence_processed",
-                name="Evidence Processed",
-                value=1,
-                source_module="ai_worker"
-            )
-
-            if gaps_addressed > 0:
-                await state_service.record_metric_update(
-                    user_id=user_id,
-                    metric_id="gaps_addressed_by_ai",
-                    name="Gaps Auto-Addressed",
-                    value=gaps_addressed,
-                    source_module="ai_worker"
-                )
-                try:
-                    await NotificationService.create_notification(NotificationCreateRequest(
-                        userId=user_id,
-                        type="success",
-                        title="Gap Addressed",
-                        message=f"{gaps_addressed} gap(s) were addressed by '{title}'.",
-                        relatedEntityId=evidence_id,
-                        relatedEntityType="gap"
-                    ))
-                except Exception as e:
-                    logger.warning(f"Failed to send gap-addressed notification for {evidence_id}: {e}")
-
-            # 7. Notify success
-            try:
-                await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=user_id,
-                    type="success",
-                    title="Analysis Complete",
-                    message=f"'{title}' analyzed successfully. Confidence: {confidence:.0f}%.",
-                    relatedEntityId=evidence_id,
-                    relatedEntityType="evidence"
-                ))
-            except Exception as e:
-                logger.warning(f"Failed to send analysis-complete notification for {evidence_id}: {e}")
-
-        except Exception as e:
-            # Top-level safety net — never crash the background worker
-            logger.error(f"Background analysis failed for {evidence_id}: {e}", exc_info=True)
-            try:
-                if prisma_client.is_connected():
-                    await prisma_client.evidence.update(
-                        where={"id": evidence_id},
-                        data={"status": "failed"}
-                    )
-                    await EvidenceService._notify_error(user_id, evidence_id, f"System error while processing '{filename}'.")
-            except Exception as inner_e:
-                logger.error(f"Failed to update evidence status to 'failed' for {evidence_id}: {inner_e}")
+        logger.warning("Legacy evidence AI mutation blocked for evidence %s.", evidence_id)
+        return
 
     @staticmethod
     async def _notify_error(user_id: str, evidence_id: str, message: str):
@@ -534,12 +284,9 @@ class EvidenceService:
     async def delete_evidence(evidence_id: str, current_user: dict):
         """Delete evidence."""
         db = get_db()
-        evidence = await db.evidence.find_unique(where={"id": evidence_id})
+        evidence = await db.evidence.find_first(where=EvidenceService._evidence_access_where(evidence_id, current_user))
         if not evidence:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-        
-        if current_user["role"] != "ADMIN" and evidence.uploadedById != current_user["id"]:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         
         try:
             try:
@@ -557,7 +304,7 @@ class EvidenceService:
                             "status": evidence.status,
                             "documentType": evidence.documentType,
                             "confidenceScore": evidence.confidenceScore,
-                            "fileUrl": evidence.fileUrl,
+                            "storagePath": evidence.fileUrl,
                         }
                     },
                 )
@@ -571,15 +318,7 @@ class EvidenceService:
             except Exception as e:
                 logger.warning(f"RAG cleanup failed for {evidence_id}: {e}")
 
-            file_url = evidence.fileUrl
-            file_path = None
-            if "/public/" in file_url:
-                file_path = file_url.split("/public/")[-1]
-            elif settings.SUPABASE_BUCKET in file_url:
-                file_path = file_url.split(settings.SUPABASE_BUCKET + "/")[-1]
-            
-            if file_path:
-                await delete_file_from_supabase(file_path)
+            await delete_file_from_supabase(evidence.fileUrl)
                 
             await db.evidence.delete(where={"id": evidence_id})
             try:
@@ -596,12 +335,9 @@ class EvidenceService:
     async def attach_evidence(evidence_id: str, request: AttachEvidenceRequest, current_user: dict) -> AttachEvidenceResponse:
         """Attach evidence to a criterion."""
         db = get_db()
-        evidence = await db.evidence.find_unique(where={"id": evidence_id})
+        evidence = await db.evidence.find_first(where=EvidenceService._evidence_access_where(evidence_id, current_user))
         if not evidence:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-            
-        if current_user["role"] != "ADMIN" and evidence.uploadedById != current_user["id"]:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
             
         if not await db.criterion.find_unique(where={"id": request.criterionId}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Criterion not found")
@@ -643,28 +379,30 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Attach failed")
 
     @staticmethod
-    async def get_evidence(evidence_id: str) -> EvidenceResponse:
+    async def get_evidence(evidence_id: str, current_user: dict) -> EvidenceResponse:
         """Get evidence metadata."""
         db = get_db()
-        evidence = await db.evidence.find_unique(where={"id": evidence_id})
+        evidence = await db.evidence.find_first(where=EvidenceService._evidence_access_where(evidence_id, current_user))
         if not evidence:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         return EvidenceResponse.model_validate(evidence)
+
+    @staticmethod
+    async def get_signed_url(evidence_id: str, current_user: dict) -> dict:
+        """Return a short-lived signed URL after tenant-scoped evidence lookup."""
+        db = get_db()
+        evidence = await db.evidence.find_first(where=EvidenceService._evidence_access_where(evidence_id, current_user))
+        if not evidence:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        signed_url = await create_signed_url(evidence.fileUrl, expires_in=300)
+        return {"url": signed_url, "expiresIn": 300}
 
     @staticmethod
     async def list_evidence(current_user: dict, page: int = 1, limit: int = 20) -> List[EvidenceResponse]:
         """List evidence with isolation and pagination."""
         db = get_db()
         try:
-            # Isolation: Admin sees all, User sees their own or their institution's
-            if current_user["role"] == "ADMIN":
-                where = {}
-            else:
-                institution_id = current_user.get("institutionId")
-                if institution_id:
-                    where = {"OR": [{"uploadedById": current_user["id"]}, {"ownerId": institution_id}]}
-                else:
-                    where = {"uploadedById": current_user["id"]}
+            where = EvidenceService._evidence_scope(current_user)
 
             skip = (page - 1) * limit
             evidence_list = await db.evidence.find_many(
@@ -678,3 +416,6 @@ class EvidenceService:
         except Exception as e:
             logger.error(f"List error: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="List failed")
+
+
+register_job_handler("evidence.analyze", EvidenceService.analyze_evidence_job)

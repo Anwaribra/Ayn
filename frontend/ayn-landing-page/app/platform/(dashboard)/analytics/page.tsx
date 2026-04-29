@@ -8,7 +8,7 @@ import { useMemo, useState, useEffect } from "react"
 import {
   Target, Download, RefreshCw,
   TrendingUp, Activity, FileText, AlertTriangle,
-  Microscope, ArrowUpRight, ShieldCheck,
+  Microscope, ArrowUpRight, ShieldCheck, Brain, ArrowRight, Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -21,9 +21,12 @@ import {
   ScoreHeatmap,
 } from "@/components/platform/analytics/analytics-charts"
 import { useUiLanguage } from "@/lib/ui-language-context"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 /* ─── Types & Constants ──────────────────────────────────────── */
 type PeriodKey = "7d" | "30d" | "90d" | "all"
+type HorusAnalyticsInsight = Awaited<ReturnType<typeof api.horusAnalyticsInsights>>
+type HorusPageExplanation = Awaited<ReturnType<typeof api.horusExplainAnalyticsPage>>
 
 const PERIOD_OPTIONS: { key: PeriodKey; days: number | null }[] = [
   { key: "7d", days: 7 },
@@ -339,6 +342,206 @@ async function exportAnalyticsReportPdf(params: {
   doc.save(params.filename)
 }
 
+function HorusAnalyticsPanel({
+  intelligence,
+  onNavigate,
+}: {
+  intelligence?: HorusAnalyticsInsight
+  onNavigate: (href: string) => void
+}) {
+  if (!intelligence) return null
+
+  const severityClass = (severity: string) => {
+    if (severity === "critical") return "border-red-500/25 bg-red-500/[0.06] text-red-400"
+    if (severity === "warning") return "border-amber-500/25 bg-amber-500/[0.06] text-amber-400"
+    if (severity === "positive") return "border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-400"
+    return "border-primary/20 bg-primary/[0.05] text-primary"
+  }
+
+  return (
+    <section className="glass-panel glass-border relative overflow-hidden rounded-[28px] p-5 sm:p-6 lg:p-7">
+      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.85),transparent)] opacity-70" />
+      <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="relative z-10">
+        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+              <Brain className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Horus Intelligence</p>
+              <h2 className="mt-1 text-lg font-bold text-foreground">Analytics Summary</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{intelligence.directAnswer}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Confidence: <span className="text-foreground">{intelligence.confidence}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {intelligence.topRisks.slice(0, 4).map((insight) => (
+            <div key={insight.id} className={cn("rounded-2xl border p-4", severityClass(insight.severity))}>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground">{insight.title}</h3>
+                {insight.metric && (
+                  <span className="rounded-full border border-current/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]">
+                    {insight.metric}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">{insight.description}</p>
+              {!!insight.actions?.length && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {insight.actions.slice(0, 3).map((action) => (
+                    <button
+                      key={`${insight.id}-${action.label}`}
+                      type="button"
+                      onClick={() => onNavigate(action.href)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
+                    >
+                      {action.label}
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {intelligence.nextActions.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Next 3 Actions</p>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              {intelligence.nextActions.slice(0, 3).map((action, index) => (
+                <div key={action} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                  <span className="mr-2 font-mono text-primary">{index + 1}</span>
+                  {action}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function HorusExplainSheet({
+  open,
+  onOpenChange,
+  explanation,
+  isLoading,
+  onNavigate,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  explanation: HorusPageExplanation | null
+  isLoading: boolean
+  onNavigate: (href: string) => void
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="inset-y-4 right-4 h-auto w-[min(520px,calc(100vw-32px))] overflow-y-auto rounded-3xl border border-[var(--glass-border)] bg-background/96 p-0 text-foreground shadow-2xl backdrop-blur-xl">
+        <SheetHeader className="border-b border-[var(--glass-border)] p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+              <Brain className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <SheetTitle>Explain This Page</SheetTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Read-only explanation from the analytics data already loaded in this page.</p>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="space-y-6 p-6">
+          {isLoading ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              Horus is explaining the current analytics state...
+            </div>
+          ) : explanation ? (
+            <>
+              <section>
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Summary</h3>
+                <div className="space-y-2">
+                  {explanation.summary.map((line) => (
+                    <p key={line} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Top 3 Problems</h3>
+                <div className="space-y-2">
+                  {explanation.topProblems.map((problem, index) => (
+                    <div key={problem} className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                      <span className="mr-2 font-mono font-bold text-amber-400">{index + 1}</span>
+                      {problem}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Impact</h3>
+                <p className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                  {explanation.impact}
+                </p>
+              </section>
+
+              <section>
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Recommended Plan</h3>
+                <div className="space-y-2">
+                  {explanation.recommendedPlan.slice(0, 3).map((action, index) => (
+                    <div key={action} className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                      <span className="mr-2 font-mono font-bold text-emerald-400">{index + 1}</span>
+                      {action}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Go Fix This</h3>
+                  <span className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    {explanation.confidence} confidence
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {explanation.links.map((link) => (
+                    <button
+                      key={link.href}
+                      type="button"
+                      onClick={() => {
+                        onNavigate(link.href)
+                        onOpenChange(false)
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-[var(--glass-strong-bg)]"
+                    >
+                      {link.label}
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          ) : (
+            <p className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 text-sm text-muted-foreground">
+              Click “Explain this page” to generate a read-only analytics explanation.
+            </p>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 /* ─── Main Export ────────────────────────────────────────────── */
 export default function AnalyticsPage() {
   return (
@@ -355,6 +558,9 @@ function AnalyticsContent() {
   const router = useRouter()
   const [period, setPeriod] = useState<PeriodKey>("30d")
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [explainOpen, setExplainOpen] = useState(false)
+  const [explainLoading, setExplainLoading] = useState(false)
+  const [pageExplanation, setPageExplanation] = useState<HorusPageExplanation | null>(null)
   const copy = useMemo(() => ({
     title: isArabic ? "التحليلات" : "Analytics",
     refresh: isArabic ? "تحديث" : "Refresh",
@@ -437,10 +643,63 @@ function AnalyticsContent() {
       revalidateIfStale: false,        // don't auto-refetch on mount when data is cached
     }
   )
+  const { data: horusAnalytics, mutate: mutateHorusAnalytics } = useSWR(
+    user ? [`horus-analytics-insights`, user.id] : null,
+    () => api.horusAnalyticsInsights(),
+    {
+      refreshInterval: 300_000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60_000,
+      revalidateIfStale: false,
+    }
+  )
 
   useEffect(() => {
     if (analytics) setLastUpdated(new Date())
   }, [analytics])
+
+  const refreshAnalytics = () => {
+    mutate()
+    mutateHorusAnalytics()
+  }
+
+  const handleExplainPage = async () => {
+    if (!analytics) {
+      toast.info("Analytics data is still loading.")
+      return
+    }
+    setExplainOpen(true)
+    setExplainLoading(true)
+    try {
+      const explanation = await api.horusExplainAnalyticsPage({
+        analytics: {
+          totalReports: analytics.totalReports ?? 0,
+          avgScore: analytics.avgScore ?? 0,
+          growth: analytics.growth ?? null,
+          totalEvidence: analytics.totalEvidence ?? 0,
+          alignmentPercentage: analytics.alignmentPercentage ?? 0,
+          alignedCriteria: analytics.alignedCriteria ?? 0,
+          totalCriteria: analytics.totalCriteria ?? 0,
+          standardPerformance: analytics.standardPerformance ?? [],
+          statusBreakdown: analytics.statusBreakdown ?? [],
+          anomalies: analytics.anomalies ?? [],
+        },
+        horus: horusAnalytics
+          ? {
+              counts: horusAnalytics.counts,
+              analysis: horusAnalytics.analysis,
+              confidence: horusAnalytics.confidence,
+            }
+          : {},
+      })
+      setPageExplanation(explanation)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to explain analytics page")
+    } finally {
+      setExplainLoading(false)
+    }
+  }
 
   /* ════════════════════════════════════════════════════════════
      KPI CARDS (from backend-computed data)
@@ -459,6 +718,7 @@ function AnalyticsContent() {
         trend: (analytics.totalReports ?? 0) > 0 ? "up" as const : "neutral" as const,
         trendValue: (analytics.totalReports ?? 0) > 0 ? copy.hasData : copy.noDataYet,
         description: isArabic ? "تقارير تحليل الفجوات في هذه الفترة" : "Gap analysis reports in this period",
+        horusInsight: horusAnalytics?.cardInsights?.["total-reports"],
       },
       {
         id: "avg-score",
@@ -470,6 +730,7 @@ function AnalyticsContent() {
         trend: avg >= 70 ? "up" as const : avg >= 40 ? "neutral" as const : "down" as const,
         trendValue: avg >= 70 ? copy.healthy : avg >= 40 ? copy.needsWork : copy.atRisk,
         description: isArabic ? `تفاوت النتائج: ±${analytics.stdDeviation ?? 0}٪ عبر التقارير` : `Score spread: ±${analytics.stdDeviation ?? 0}% across reports`,
+        horusInsight: horusAnalytics?.cardInsights?.["avg-score"],
       },
       {
         id: "growth",
@@ -481,6 +742,7 @@ function AnalyticsContent() {
         trend: growth >= 0 ? "up" as const : "down" as const,
         trendValue: analytics.growth?.direction === "up" ? copy.improving : analytics.growth?.direction === "down" ? copy.declining : copy.stable,
         description: `${analytics.growth?.previousPeriodAvg ?? 0}% → ${analytics.growth?.currentPeriodAvg ?? 0}%`,
+        horusInsight: horusAnalytics?.cardInsights?.growth,
       },
       {
         id: "evidence",
@@ -491,9 +753,10 @@ function AnalyticsContent() {
         trend: (analytics.totalEvidence ?? 0) > 0 ? "up" as const : "neutral" as const,
         trendValue: `${analytics.alignmentPercentage ?? 0}% ${copy.aligned}`,
         description: isArabic ? `${analytics.alignedCriteria ?? 0}/${analytics.totalCriteria ?? 0} معايير مغطاة` : `${analytics.alignedCriteria ?? 0}/${analytics.totalCriteria ?? 0} criteria covered`,
+        horusInsight: horusAnalytics?.cardInsights?.evidence,
       },
     ]
-  }, [analytics, copy, isArabic])
+  }, [analytics, copy, horusAnalytics, isArabic])
 
   /* ════════════════════════════════════════════════════════════
      CHART DATA (from backend — no client-side computation)
@@ -690,6 +953,14 @@ function AnalyticsContent() {
      ════════════════════════════════════════════════════════════ */
   return (
     <div className="animate-fade-in-up pb-20">
+      <HorusExplainSheet
+        open={explainOpen}
+        onOpenChange={setExplainOpen}
+        explanation={pageExplanation}
+        isLoading={explainLoading}
+        onNavigate={(href) => router.push(href)}
+      />
+
       {/* ─── Header ─── */}
       <header className="mb-8 pt-6 px-4">
         <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-panel glass-border p-5 sm:p-7 lg:p-8">
@@ -712,7 +983,7 @@ function AnalyticsContent() {
                 ))}
               </div>
               <div className="flex flex-col items-end gap-0.5">
-                <button onClick={() => mutate()} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground">
+                <button onClick={refreshAnalytics} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] glass-panel rounded-xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground">
                   <RefreshCw className="w-3 h-3" /> {copy.refresh}
                 </button>
                 {lastUpdated && (
@@ -727,6 +998,14 @@ function AnalyticsContent() {
                 className="flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)] transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
               >
                 <Download className="w-3 h-3" /> {copy.exportReport}
+              </button>
+              <button
+                onClick={handleExplainPage}
+                disabled={!analytics || explainLoading}
+                className="flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/15 disabled:opacity-40 disabled:pointer-events-none"
+              >
+                {explainLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+                Explain this page
               </button>
               <button
                 onClick={handleExportData}
@@ -780,13 +1059,15 @@ function AnalyticsContent() {
           <div className="flex flex-col items-center justify-center py-16 rounded-2xl glass-panel glass-border">
             <AlertTriangle className="w-10 h-10 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-center mb-4">{copy.failedLoad}</p>
-            <button type="button" onClick={() => mutate()} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">{copy.retry}</button>
+            <button type="button" onClick={refreshAnalytics} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">{copy.retry}</button>
           </div>
         </div>
       ) : !hasData ? (
         <div className="mt-20"><EmptyState type="reports" /></div>
       ) : (
         <div className="px-4 space-y-8">
+          <HorusAnalyticsPanel intelligence={horusAnalytics} onNavigate={(href) => router.push(href)} />
+
           {/* ─── KPI Cards ─── */}
           <AnalyticsKpiCards cards={kpiCards} />
 

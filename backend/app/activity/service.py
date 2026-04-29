@@ -28,7 +28,7 @@ class ActivityService:
             }
         )
         
-        # Emit to real-time event bus
+        # Emit to Redis Stream-backed real-time bus and durable outbox.
         try:
             from app.core.events import event_bus
             await event_bus.emit(user_id, "activity", {
@@ -37,8 +37,9 @@ class ActivityService:
                 "title": title,
                 "description": description,
                 "entityId": entity_id,
-                "entityType": entity_type
-            })
+                "entityType": entity_type,
+                "metadata": metadata or {},
+            }, source="activity")
         except Exception as e:
             print(f"Failed to emit event: {e}")
 

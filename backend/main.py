@@ -12,27 +12,17 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.activity.router import router as activity_router
-from app.ai.router import router as ai_router
 from app.analytics.router import router as analytics_router
 from app.auth.router import router as auth_router
-from app.bootstrap.debug_routes import register_debug_routes
 from app.bootstrap.standards_seed import seed_missing_standards
-from app.calendar.router import router as calendar_router
-from app.compliance.router import router as compliance_router
 from app.core.config import settings
 from app.core.db import connect_db, disconnect_db
 from app.core.middlewares import request_timing_middleware
 from app.core.rate_limit import limiter
-from app.dashboard.router import router as dashboard_router
-from app.deepagents.router import router as deepagents_router
-from app.drafts.router import router as drafts_router
 from app.evidence.router import router as evidence_router
 from app.gap_analysis.router import router as gap_analysis_router
 from app.horus.router import router as horus_router
 from app.institutions.router import router as institutions_router
-from app.notifications.router import router as notifications_router
-from app.platform_state.router import router as platform_state_router
 from app.standards.router import router as standards_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -95,20 +85,9 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(institutions_router, prefix="/api/institutions", tags=["Institutions"])
 app.include_router(standards_router, prefix="/api/standards", tags=["Standards"])
 app.include_router(evidence_router, prefix="/api/evidence", tags=["Evidence"])
-app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
-app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
-app.include_router(ai_router, prefix="/api/ai", tags=["AI"])
 app.include_router(gap_analysis_router, prefix="/api/gap-analysis", tags=["Gap Analysis"])
-app.include_router(platform_state_router, prefix="/api", tags=["Platform State"])
 app.include_router(horus_router, prefix="/api", tags=["Horus"])
-app.include_router(activity_router, prefix="/api", tags=["Activities"])
-app.include_router(compliance_router, prefix="/api", tags=["Compliance"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
-app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])
-app.include_router(drafts_router, prefix="/api/drafts", tags=["Drafts"])
-app.include_router(deepagents_router, prefix="/api", tags=["DeepAgents"])
-
-register_debug_routes(app)
 
 
 @app.get("/")

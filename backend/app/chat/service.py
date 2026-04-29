@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
+import json
 from typing import List, Optional, Any
 from app.core.db import get_db
 from prisma.models import Chat, Message
@@ -121,12 +123,36 @@ class ChatService:
         }
         if metadata:
             data["metadata"] = metadata
-        message = await db.message.create(data=data)
-        await db.chat.update(
-            where={"id": chat_id},
-            data={"updatedAt": datetime.now(timezone.utc)}
-        )
-        return message
+        try:
+            rows = await db.query_raw(
+                """
+                WITH inserted AS (
+                  INSERT INTO "Message" ("id", "chatId", "userId", "role", "content", "metadata", "timestamp")
+                  VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5::jsonb, NOW())
+                  RETURNING "id", "chatId", "userId", "role", "content", "metadata", "timestamp"
+                )
+                UPDATE "Chat" c
+                SET "updatedAt" = NOW()
+                FROM inserted
+                WHERE c."id" = inserted."chatId"
+                RETURNING inserted."id", inserted."chatId", inserted."userId", inserted."role",
+                          inserted."content", inserted."metadata", inserted."timestamp"
+                """,
+                chat_id,
+                user_id,
+                role,
+                content,
+                json.dumps(metadata or {}),
+            )
+            row = list(rows or [])[0]
+            return SimpleNamespace(**row)
+        except Exception:
+            message = await db.message.create(data=data)
+            await db.chat.update(
+                where={"id": chat_id},
+                data={"updatedAt": datetime.now(timezone.utc)}
+            )
+            return message
 
     @staticmethod
     async def set_goal(user_id: str, goal: str, chat_id: Optional[str] = None) -> Chat:

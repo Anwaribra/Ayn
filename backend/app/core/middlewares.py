@@ -17,12 +17,10 @@ async def get_current_user(
 ) -> dict:
     """Get the current authenticated user from JWT token."""
     token = None
-    if credentials:
+    if request.cookies.get("ayn_session"):
+        token = request.cookies.get("ayn_session")
+    elif credentials:
         token = credentials.credentials
-    
-    # Fallback for SSE/EventSource which doesn't support headers
-    if not token:
-        token = request.query_params.get("token")
         
     if not token:
         raise HTTPException(

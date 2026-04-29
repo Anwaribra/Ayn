@@ -33,31 +33,6 @@ type MiniMessage = {
   isSystem?: boolean
 }
 
-const MINI_MESSAGES_KEY = "horus-mini-messages-v1"
-const MINI_CHAT_ID_KEY = "horus-mini-chat-id-v1"
-
-function loadMiniMessages(): MiniMessage[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = sessionStorage.getItem(MINI_MESSAGES_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter((m) => m?.role && typeof m.content === "string")
-  } catch {
-    return []
-  }
-}
-
-function saveMiniMessages(messages: MiniMessage[]) {
-  if (typeof window === "undefined") return
-  try {
-    sessionStorage.setItem(MINI_MESSAGES_KEY, JSON.stringify(messages.slice(-18)))
-  } catch {
-    // ignore storage errors
-  }
-}
-
 function getPageContext(pathname: string | null) {
   if (!pathname) return ""
   if (pathname.includes("/gap-analysis")) {
@@ -71,6 +46,9 @@ function getPageContext(pathname: string | null) {
   }
   if (pathname.includes("/dashboard") || pathname.includes("/overview")) {
     return "User is in Dashboard. Prioritize high-impact blockers and fast actions."
+  }
+  if (pathname.includes("/analytics")) {
+    return "User is in Analytics. Explain metrics with evidence coverage, mappings, gaps, report trends, and tenant-scoped traceability."
   }
   return "User is in platform workspace. Provide concise actionable guidance."
 }
@@ -104,6 +82,13 @@ function getQuickActions(pathname: string | null): Array<{ label: string; prompt
       { label: "Readiness", prompt: "How ready are we for this standard and why?", icon: Target },
     ]
   }
+  if (pathname.includes("/analytics")) {
+    return [
+      { label: "Risks", prompt: "What are the top analytics risks and the records behind them?", icon: Target },
+      { label: "Coverage", prompt: "Explain evidence coverage and uncovered criteria.", icon: FileSearch },
+      { label: "Next", prompt: "What are the next 3 actions from analytics?", icon: ListChecks },
+    ]
+  }
   return [
     { label: "Top risks", prompt: "What are the top compliance blockers right now?", icon: Target },
     { label: "Action plan", prompt: "Build a short practical action plan for this page.", icon: ListChecks },
@@ -129,7 +114,6 @@ const FloatingAIBarComponent = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState<MiniMessage[]>([])
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [showTooltip, setShowTooltip] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -141,45 +125,25 @@ const FloatingAIBarComponent = () => {
   const quickActions = getQuickActions(pathname)
 
   useEffect(() => {
-    const storedMessages = loadMiniMessages()
-    const storedChatId = sessionStorage.getItem(MINI_CHAT_ID_KEY)
-
-    if (storedMessages.length > 0) {
-      setMessages(storedMessages)
-    } else {
-      setMessages([
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "Bridge established. I am Horus, your platform integration layer. How can I help now?",
-          isSystem: true,
-        },
-      ])
-    }
-
-    if (storedChatId) setCurrentChatId(storedChatId)
+    setMessages([
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content:
+          "Bridge established. I can explain this page using current tenant-scoped evidence, mappings, gaps, and reports.",
+        isSystem: true,
+      },
+    ])
   }, [])
-
-  useEffect(() => {
-    if (messages.length > 0) saveMiniMessages(messages)
-  }, [messages])
-
-  useEffect(() => {
-    if (!currentChatId || typeof window === "undefined") return
-    sessionStorage.setItem(MINI_CHAT_ID_KEY, currentChatId)
-  }, [currentChatId])
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isLoading])
 
   useEffect(() => {
-    const seen = sessionStorage.getItem("horus-mini-seen")
-    if (!seen && !isHorusPage) {
+    if (!isHorusPage) {
       const timer = setTimeout(() => {
         setShowTooltip(true)
-        sessionStorage.setItem("horus-mini-seen", "1")
         setTimeout(() => setShowTooltip(false), 3200)
       }, 1000)
       return () => clearTimeout(timer)
@@ -241,13 +205,9 @@ const FloatingAIBarComponent = () => {
         await api.horusChatStream(
           payload,
           undefined,
-          currentChatId || undefined,
+          undefined,
           (chunk: string) => {
-            if (chunk.startsWith("__CHAT_ID__:")) {
-              const id = chunk.split(":")[1]?.trim()
-              if (id) setCurrentChatId(id)
-              return
-            }
+            if (chunk.startsWith("__CHAT_ID__:")) return
             if (chunk.startsWith("__")) return
 
             accumulated += chunk
@@ -281,7 +241,7 @@ const FloatingAIBarComponent = () => {
         abortControllerRef.current = null
       }
     },
-    [isLoading, pathname, currentChatId],
+    [isLoading, pathname],
   )
 
   const handleSend = useCallback(async () => {
@@ -291,12 +251,9 @@ const FloatingAIBarComponent = () => {
   }, [query, send])
 
   const handleOpenFull = useCallback(() => {
-    const target = currentChatId
-      ? `/platform/horus-ai?chat=${encodeURIComponent(currentChatId)}`
-      : "/platform/horus-ai"
-    router.push(target)
+    router.push("/platform/horus-ai")
     setIsOpen(false)
-  }, [router, currentChatId])
+  }, [router])
 
   const handleToggle = () => {
     setIsOpen((v) => !v)

@@ -1,5 +1,5 @@
 """Pydantic models for evidence."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Optional, List, Any
 from datetime import datetime
 
@@ -41,6 +41,10 @@ class EvidenceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer("fileUrl")
+    def _hide_storage_path(self, value: str) -> str:
+        return "private"
 
 
 class UploadEvidenceResponse(BaseModel):

@@ -13,17 +13,97 @@ from app.gap_analysis.models import (
     ArchiveRequest,
     UserDTO,
 )
-from app.notifications.service import NotificationService
-from app.notifications.models import NotificationCreateRequest
 from app.core.redis import redis_client
-from app.gap_analysis.ai_service import generate_gap_analysis as ai_generate_gap_analysis
-from app.standards.mapping_service import analyze_standard_criteria
 
 logger = logging.getLogger(__name__)
 SUMMARY_META_PREFIX = "[[gap-meta:"
 
 class GapAnalysisService:
     """Service for gap analysis business logic."""
+
+    @staticmethod
+    async def _generate_deterministic_report(
+        db,
+        *,
+        standard_id: str,
+        institution_id: str,
+        user_id: str,
+        analysis_scope: str,
+        evidence_ids: list[str] | None,
+    ) -> dict:
+        """Derive gaps from approved/manual evidence links only; no AI writes."""
+        criteria, evidence = await GapAnalysisService._resolve_evidence_scope(
+            db=db,
+            user_id=user_id,
+            institution_id=institution_id,
+            standard_id=standard_id,
+            analysis_scope=analysis_scope,
+            evidence_ids=evidence_ids or [],
+        )
+        scoped_evidence_ids = {ev.id for ev in evidence}
+
+        links = []
+        criterion_ids = [c.id for c in criteria]
+        if criterion_ids:
+            links = await db.evidencecriterion.find_many(
+                where={"criterionId": {"in": criterion_ids}},
+                include={"evidence": True},
+            )
+
+        linked_by_criterion: dict[str, list[str]] = {criterion_id: [] for criterion_id in criterion_ids}
+        for link in links:
+            linked_evidence = getattr(link, "evidence", None)
+            if not linked_evidence or linked_evidence.id not in scoped_evidence_ids:
+                continue
+            linked_by_criterion.setdefault(link.criterionId, []).append(linked_evidence.id)
+
+        sorted_criteria = sorted(criteria, key=lambda c: ((c.title or "").lower(), c.id))
+        gaps = []
+        aligned_count = 0
+        for criterion in sorted_criteria:
+            evidence_for_criterion = sorted(set(linked_by_criterion.get(criterion.id, [])))
+            is_aligned = len(evidence_for_criterion) > 0
+            if is_aligned:
+                aligned_count += 1
+
+            gaps.append(
+                {
+                    "criterionId": criterion.id,
+                    "criterionTitle": criterion.title,
+                    "status": "aligned" if is_aligned else "no_evidence",
+                    "currentState": (
+                        f"{len(evidence_for_criterion)} linked evidence item(s): {', '.join(evidence_for_criterion)}"
+                        if is_aligned
+                        else "No approved evidence is linked to this criterion."
+                    ),
+                    "gap": "" if is_aligned else "Approved evidence is missing for this criterion.",
+                    "recommendation": (
+                        "No remediation required."
+                        if is_aligned
+                        else "Upload and approve evidence that directly supports this criterion."
+                    ),
+                    "priority": "low" if is_aligned else "high",
+                }
+            )
+
+        total = len(sorted_criteria)
+        score = round((aligned_count / total) * 100, 2) if total else 0.0
+        missing = total - aligned_count
+        return {
+            "overallScore": score,
+            "summary": (
+                f"Deterministic report for {total} criteria: {aligned_count} aligned, "
+                f"{missing} without approved evidence."
+            ),
+            "gaps": gaps,
+            "recommendations": [
+                "Review criteria with no approved evidence.",
+                "Attach tenant-scoped evidence to each missing criterion.",
+            ]
+            if missing
+            else ["All criteria have at least one approved evidence link."],
+            "evidenceCount": len(scoped_evidence_ids),
+        }
 
     @staticmethod
     def _encode_summary(
@@ -260,20 +340,14 @@ class GapAnalysisService:
                 evidence_ids=evidence_ids,
             )
 
-            result = None
-            last_error = None
-            for attempt in range(3):
-                try:
-                    result = await ai_generate_gap_analysis(standard, criteria, evidence)
-                    break
-                except Exception as ai_err:
-                    last_error = ai_err
-                    if attempt < 2:
-                        await asyncio.sleep(1.5 * (attempt + 1))
-                        continue
-                    raise
-            if result is None:
-                raise RuntimeError(f"Gap analysis failed after retries: {last_error}")
+            result = await GapAnalysisService._generate_deterministic_report(
+                db,
+                standard_id=standard_id,
+                institution_id=institution_id,
+                user_id=user_id,
+                analysis_scope=analysis_scope,
+                evidence_ids=evidence_ids,
+            )
 
             # Update the stub record with real results
             await db.gapanalysis.update(
@@ -283,8 +357,8 @@ class GapAnalysisService:
                     "summary": GapAnalysisService._encode_summary(
                         result["summary"],
                         analysis_scope,
-                        len(evidence),
-                        result.get("isFallback", False),
+                        result["evidenceCount"],
+                        False,
                     ),
                     "status": "completed",
                     "gapsJson": json.dumps(result["gaps"]),
@@ -295,25 +369,6 @@ class GapAnalysisService:
                 redis_client.invalidate_dashboard_cache()
             except Exception as cache_err:
                 logger.warning(f"Failed to invalidate dashboard cache after gap analysis completion: {cache_err}")
-
-            # Recalculate standard coverage mapping
-            try:
-                await analyze_standard_criteria(standard_id, institution_id)
-            except Exception as mapping_err:
-                logger.error(f"Failed standard coverage recalculation: {mapping_err}")
-
-            # Notify the user so the SSE stream / notification bell picks it up
-            try:
-                await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=user_id,
-                    type="success",
-                    title="Gap Analysis Ready",
-                    message=f"Gap analysis for '{standard.title}' is complete. Click to view.",
-                    relatedEntityId=job_id,
-                    relatedEntityType="report"
-                ))
-            except Exception as notify_err:
-                logger.error(f"Failed to send completion notification: {notify_err}")
 
             logger.info(f"Background gap analysis {job_id} completed successfully.")
 
@@ -333,14 +388,6 @@ class GapAnalysisService:
                     redis_client.invalidate_dashboard_cache()
                 except Exception as cache_err:
                     logger.warning(f"Failed to invalidate dashboard cache after gap analysis failure: {cache_err}")
-                await NotificationService.create_notification(NotificationCreateRequest(
-                    userId=user_id,
-                    type="error",
-                    title="Gap Analysis Failed",
-                    message="The gap analysis could not be completed. Please try again.",
-                    relatedEntityId=job_id,
-                    relatedEntityType="report"
-                ))
             except Exception:
                 pass  # Last resort — never crash the background worker
 

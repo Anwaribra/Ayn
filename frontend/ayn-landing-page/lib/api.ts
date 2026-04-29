@@ -1,7 +1,6 @@
 // API client for Horus Engine Platform
 
 import { log } from "./logger"
-import { isDemoMode, getMockResponse } from "./demo"
 
 // Use relative /api path so requests go through Next.js rewrites (same-origin, no CORS).
 // The rewrite in next.config.mjs proxies /api/* to the configured backend URL.
@@ -9,44 +8,27 @@ const API_BASE_URL = "/api"
 
 class ApiClient {
   private getToken(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem("access_token")
+    return null
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = this.getToken()
-
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...options.headers,
     }
 
-    if (token) {
-      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
-    }
-
     const fullUrl = `${API_BASE_URL}${endpoint}`
     log(`[API Request] ${options.method || "GET"} ${fullUrl}`)
-
-    if (isDemoMode() && endpoint.startsWith("/ai/")) {
-      log(`[Demo Mode] Intercepting AI request to ${endpoint}`)
-      // Return a mock response for common AI endpoints
-      return {
-        content: getMockResponse(options.body ? JSON.parse(options.body as string).prompt || "" : ""),
-        status: "success",
-        timestamp: Date.now()
-      } as any
-    }
 
     const response = await fetch(fullUrl, {
       ...options,
       headers,
+      credentials: "include",
     })
 
     if (!response.ok) {
       log(`[API Error] ${response.status} ${response.statusText} for ${fullUrl}`)
       if (response.status === 401) {
-        localStorage.removeItem("access_token")
         localStorage.removeItem("user")
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("auth:unauthorized"))
@@ -79,7 +61,6 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ email, password }),
     })
-    localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
     return response
   }
@@ -93,7 +74,6 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ id_token: idToken }),
     })
-    localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
     return response
   }
@@ -109,7 +89,6 @@ class ApiClient {
       body: JSON.stringify({ access_token: supabaseToken }),
     })
     log("[API] Supabase sync successful, storing tokens...")
-    localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
     log("[API] User logged in:", response.user.email)
     return response
@@ -130,14 +109,12 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(data),
     })
-    localStorage.setItem("access_token", response.access_token)
     localStorage.setItem("user", JSON.stringify(response.user))
     return response
   }
 
   async logout() {
     await this.request("/auth/logout", { method: "POST" }).catch(() => { })
-    localStorage.removeItem("access_token")
     localStorage.removeItem("user")
   }
 
@@ -283,23 +260,17 @@ class ApiClient {
   }
 
   async importStandardPDF(file: File) {
-    const token = this.getToken()
     const formData = new FormData()
     formData.append("file", file)
 
     const response = await fetch(`${API_BASE_URL}/standards/import-pdf`, {
       method: "POST",
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : undefined,
+      credentials: "include",
       body: formData,
     })
 
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem("access_token")
         localStorage.removeItem("user")
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("auth:unauthorized"))
@@ -342,15 +313,12 @@ class ApiClient {
   }
 
   async uploadEvidence(file: File) {
-    const token = this.getToken()
     const formData = new FormData()
     formData.append("file", file)
 
     const response = await fetch(`${API_BASE_URL}/evidence/upload`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
     })
 
@@ -647,6 +615,41 @@ class ApiClient {
     return this.request("/horus/state/evidence")
   }
 
+  async horusAnalyticsInsights() {
+    return this.request<{
+      directAnswer: string
+      topRisks: Array<{
+        id: string
+        severity: "positive" | "warning" | "critical" | "info"
+        title: string
+        description: string
+        metric?: string
+        actions?: Array<{ label: string; href: string }>
+      }>
+      nextActions: string[]
+      cardInsights: Record<string, string>
+      confidence: "High" | "Medium" | "Low"
+      counts: Record<string, number>
+      analysis: any
+      timestamp: number
+      state_hash: string
+    }>("/horus/analytics/insights")
+  }
+
+  async horusExplainAnalyticsPage(payload: { analytics: any; horus?: any }) {
+    return this.request<{
+      summary: string[]
+      topProblems: string[]
+      impact: string
+      recommendedPlan: string[]
+      links: Array<{ label: string; href: string }>
+      confidence: "High" | "Medium" | "Low"
+    }>("/horus/analytics/explain", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // NOTIFICATION APIs
   // ═══════════════════════════════════════════════════════════════════════════
@@ -680,7 +683,6 @@ class ApiClient {
   }
 
   async chatWithFiles(message: string, files: File[]) {
-    const token = this.getToken()
     const formData = new FormData()
     formData.append("message", message)
 
@@ -691,9 +693,7 @@ class ApiClient {
 
     const response = await fetch(`${API_BASE_URL}/horus/chat`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
     })
 
@@ -706,7 +706,6 @@ class ApiClient {
   }
 
   async horusChat(message: string, files?: File[], chatId?: string) {
-    const token = this.getToken()
     const formData = new FormData()
     formData.append("message", message)
     if (chatId) formData.append("chat_id", chatId)
@@ -719,9 +718,7 @@ class ApiClient {
 
     const response = await fetch(`${API_BASE_URL}/horus/chat`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
     })
 
@@ -740,7 +737,6 @@ class ApiClient {
     onChunk?: (chunk: string) => void,
     signal?: AbortSignal
   ) {
-    const token = this.getToken()
     const formData = new FormData()
     formData.append("message", message)
     if (chatId) formData.append("chat_id", chatId)
@@ -751,25 +747,9 @@ class ApiClient {
       })
     }
 
-    if (isDemoMode()) {
-      log(`[Demo Mode] Intercepting chat stream`)
-      const mockText = getMockResponse(message)
-      if (onChunk) onChunk("__THINKING__:Analyzing platform state...\n")
-      await new Promise(r => setTimeout(r, 800))
-      
-      const words = mockText.split(" ")
-      for (let i = 0; i < words.length; i++) {
-        if (onChunk) onChunk(words[i] + (i === words.length - 1 ? "" : " "))
-        await new Promise(r => setTimeout(r, 20))
-      }
-      return mockText
-    }
-
     const response = await fetch(`${API_BASE_URL}/horus/chat/stream`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
       body: formData,
       signal,
     })
@@ -1022,11 +1002,8 @@ class ApiClient {
   }
 
   async downloadGapAnalysisReport(id: string) {
-    const token = this.getToken()
     const response = await fetch(`${API_BASE_URL}/gap-analysis/${id}/export`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
     })
     if (!response.ok) throw new Error("Download failed")
     const blob = await response.blob()
@@ -1121,10 +1098,9 @@ class ApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
 
   async downloadAnalyticsCSV(periodDays?: number) {
-    const token = this.getToken()
     const query = periodDays != null ? `?period=${periodDays}` : ""
     const response = await fetch(`${API_BASE_URL}/analytics/export/csv${query}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
     if (!response.ok) throw new Error("Download failed")
     const blob = await response.blob()
@@ -1139,9 +1115,8 @@ class ApiClient {
   }
 
   async downloadEvidenceCSV() {
-    const token = this.getToken()
     const response = await fetch(`${API_BASE_URL}/evidence/export/csv`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
     if (!response.ok) throw new Error("Download failed")
     const blob = await response.blob()

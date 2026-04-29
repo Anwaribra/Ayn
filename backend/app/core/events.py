@@ -1,113 +1,225 @@
+"""Realtime platform events backed by Redis Streams.
+
+The public `event_bus` API intentionally remains small and compatible with the
+old in-memory bus. Redis Streams are used when configured; local development and
+tests fall back to process-local queues.
+"""
+
+from __future__ import annotations
+
 import asyncio
-from typing import Dict, List, Any
 import json
 import logging
+import os
 import time
+from dataclasses import dataclass
+from typing import Any, AsyncGenerator
+
+from app.core.redis import redis_client
 
 logger = logging.getLogger(__name__)
 
-# Maximum SSE subscribers per user — beyond this, evict the oldest queue
-MAX_SUBSCRIBERS_PER_USER = 3
+MAX_SUBSCRIBERS_PER_USER = int(os.getenv("HORUS_MAX_SSE_SUBSCRIBERS_PER_USER", "3"))
+HEARTBEAT_INTERVAL = int(os.getenv("HORUS_EVENT_HEARTBEAT_SECONDS", "30"))
+STREAM_PREFIX = os.getenv("HORUS_EVENT_STREAM_PREFIX", "horus:events:user:")
+STREAM_MAXLEN = int(os.getenv("HORUS_EVENT_STREAM_MAXLEN", "1000"))
 
-# Heartbeat interval (seconds) — stale queues are pruned if no heartbeat received
-HEARTBEAT_INTERVAL = 30
+
+@dataclass(frozen=True)
+class StreamEvent:
+    id: str
+    payload: dict[str, Any]
 
 
 class EventBus:
-    """
-    Real-time platform event bus for real-time updates.
-    Supports per-user event streams with automatic cleanup.
-    """
-    def __init__(self):
-        # user_id -> list of queues
-        self.subscribers: Dict[str, List[asyncio.Queue]] = {}
-        # Track last-active timestamps: id(queue) -> timestamp
-        self._last_active: Dict[int, float] = {}
+    """Per-user realtime event bus with Redis Streams and local fallback."""
+
+    def __init__(self) -> None:
+        self.subscribers: dict[str, list[asyncio.Queue]] = {}
+        self._last_active: dict[int, float] = {}
+
+    @staticmethod
+    def stream_key(user_id: str) -> str:
+        return f"{STREAM_PREFIX}{user_id}"
 
     async def subscribe(self, user_id: str) -> asyncio.Queue:
-        """Subscribe to events for a specific user."""
-        queue: asyncio.Queue = asyncio.Queue()
-        if user_id not in self.subscribers:
-            self.subscribers[user_id] = []
-
-        user_queues = self.subscribers[user_id]
-
-        # Evict oldest queues if at capacity
-        while len(user_queues) >= MAX_SUBSCRIBERS_PER_USER:
-            evicted = user_queues.pop(0)
+        """Backward-compatible process-local subscription for tests/dev."""
+        queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+        queues = self.subscribers.setdefault(user_id, [])
+        while len(queues) >= MAX_SUBSCRIBERS_PER_USER:
+            evicted = queues.pop(0)
             self._last_active.pop(id(evicted), None)
-            # Signal the evicted consumer to stop
             try:
                 evicted.put_nowait({"type": "__evicted__"})
             except asyncio.QueueFull:
                 pass
-            logger.info(
-                f"User {user_id}: evicted oldest SSE subscriber (was at {len(user_queues) + 1})"
-            )
-
-        user_queues.append(queue)
+        queues.append(queue)
         self._last_active[id(queue)] = time.monotonic()
-        logger.info(
-            f"User {user_id} subscribed to event bus. "
-            f"Total subscribers: {len(user_queues)}"
-        )
         return queue
 
-    def unsubscribe(self, user_id: str, queue: asyncio.Queue):
-        """Unsubscribe from events."""
+    def unsubscribe(self, user_id: str, queue: asyncio.Queue) -> None:
         self._last_active.pop(id(queue), None)
-        if user_id in self.subscribers:
-            try:
-                self.subscribers[user_id].remove(queue)
-                if not self.subscribers[user_id]:
-                    del self.subscribers[user_id]
-                logger.info(
-                    f"User {user_id} unsubscribed. "
-                    f"Active subscribers: {len(self.subscribers.get(user_id, []))}"
-                )
-            except ValueError:
-                pass
+        queues = self.subscribers.get(user_id)
+        if not queues:
+            return
+        try:
+            queues.remove(queue)
+        except ValueError:
+            return
+        if not queues:
+            self.subscribers.pop(user_id, None)
 
-    def touch(self, queue: asyncio.Queue):
-        """Mark a queue as active (called on each heartbeat)."""
+    def touch(self, queue: asyncio.Queue) -> None:
         self._last_active[id(queue)] = time.monotonic()
 
-    def prune_stale(self, max_idle_seconds: float = 90.0):
-        """Remove queues that haven't been touched within the timeout."""
+    def prune_stale(self, max_idle_seconds: float = 90.0) -> None:
         now = time.monotonic()
-        pruned = 0
         for user_id in list(self.subscribers.keys()):
-            surviving: List[asyncio.Queue] = []
-            for q in self.subscribers[user_id]:
-                last = self._last_active.get(id(q), 0)
-                if now - last > max_idle_seconds:
-                    self._last_active.pop(id(q), None)
-                    pruned += 1
-                else:
-                    surviving.append(q)
-            if surviving:
-                self.subscribers[user_id] = surviving
+            queues = [
+                q for q in self.subscribers[user_id]
+                if now - self._last_active.get(id(q), 0) <= max_idle_seconds
+            ]
+            if queues:
+                self.subscribers[user_id] = queues
             else:
-                del self.subscribers[user_id]
-        if pruned:
-            logger.info(f"EventBus: pruned {pruned} stale subscriber(s)")
+                self.subscribers.pop(user_id, None)
 
-    async def emit(self, user_id: str, event_type: str, data: Any):
-        """Emit an event to all subscribers for a user."""
-        if user_id in self.subscribers:
-            event = {
-                "type": event_type,
-                "data": data,
-                "timestamp": asyncio.get_event_loop().time()
-            }
-            # Use list copy to avoid modification during iteration
-            for queue in self.subscribers[user_id][:]:
+    async def emit(
+        self,
+        user_id: str,
+        event_type: str,
+        data: Any,
+        *,
+        durable: bool = True,
+        source: str = "backend",
+    ) -> dict[str, Any]:
+        """Publish an event to Redis Streams, local subscribers, and outbox."""
+        event = {
+            "type": event_type,
+            "data": data,
+            "source": source,
+            "timestamp": time.time(),
+        }
+
+        stream_id: str | None = None
+        if redis_client.enabled:
+            stream_id = await asyncio.to_thread(self._xadd, user_id, event)
+            if stream_id:
+                event["streamId"] = stream_id
+
+        await self._emit_local(user_id, event)
+
+        if durable:
+            try:
+                from app.core.event_outbox import append_event
+
+                await append_event(
+                    user_id=user_id,
+                    event_type=event_type,
+                    payload=data if isinstance(data, dict) else {"value": data},
+                    stream_id=stream_id,
+                    source=source,
+                )
+            except Exception as exc:
+                logger.debug("Event outbox append skipped: %s", exc)
+
+        return event
+
+    def _xadd(self, user_id: str, event: dict[str, Any]) -> str | None:
+        try:
+            client = redis_client.redis
+            if not client:
+                return None
+            result = client.xadd(
+                self.stream_key(user_id),
+                {"event": json.dumps(event, separators=(",", ":"), default=str)},
+                maxlen=STREAM_MAXLEN,
+                approximate=True,
+            )
+            return str(result) if result else None
+        except TypeError:
+            try:
+                result = redis_client.redis.xadd(
+                    self.stream_key(user_id),
+                    {"event": json.dumps(event, separators=(",", ":"), default=str)},
+                )
+                return str(result) if result else None
+            except Exception as exc:
+                logger.warning("Redis XADD failed: %s", exc)
+                return None
+        except Exception as exc:
+            logger.warning("Redis XADD failed: %s", exc)
+            return None
+
+    async def _emit_local(self, user_id: str, event: dict[str, Any]) -> None:
+        for queue in list(self.subscribers.get(user_id, [])):
+            try:
+                queue.put_nowait(event)
+            except asyncio.QueueFull:
+                logger.warning("EventBus local queue full for user %s", user_id)
+
+    async def stream(
+        self,
+        user_id: str,
+        *,
+        last_id: str = "$",
+        heartbeat_interval: int = HEARTBEAT_INTERVAL,
+    ) -> AsyncGenerator[StreamEvent | None, None]:
+        """Yield Redis Stream events; yield None for heartbeat ticks."""
+        if not redis_client.enabled:
+            queue = await self.subscribe(user_id)
+            try:
+                while True:
+                    try:
+                        item = await asyncio.wait_for(queue.get(), timeout=heartbeat_interval)
+                    except asyncio.TimeoutError:
+                        self.touch(queue)
+                        yield None
+                        continue
+                    self.touch(queue)
+                    if isinstance(item, dict) and item.get("type") == "__evicted__":
+                        return
+                    yield StreamEvent(id=str(item.get("streamId") or time.time()), payload=item)
+            finally:
+                self.unsubscribe(user_id, queue)
+            return
+
+        current_id = last_id or "$"
+        while True:
+            rows = await asyncio.to_thread(self._xread, user_id, current_id, heartbeat_interval)
+            if not rows:
+                yield None
+                continue
+            for event_id, payload in rows:
+                current_id = event_id
+                yield StreamEvent(id=event_id, payload=payload)
+
+    def _xread(self, user_id: str, last_id: str, heartbeat_interval: int) -> list[tuple[str, dict[str, Any]]]:
+        try:
+            client = redis_client.redis
+            if not client:
+                return []
+            response = client.xread(
+                {self.stream_key(user_id): last_id},
+                count=25,
+                block=max(1000, heartbeat_interval * 1000),
+            )
+        except Exception as exc:
+            logger.warning("Redis XREAD failed: %s", exc)
+            return []
+
+        parsed: list[tuple[str, dict[str, Any]]] = []
+        for _stream_name, entries in response or []:
+            for event_id, fields in entries or []:
+                raw = fields.get("event") if isinstance(fields, dict) else None
+                if isinstance(raw, bytes):
+                    raw = raw.decode("utf-8")
                 try:
-                    queue.put_nowait(event)
-                except asyncio.QueueFull:
-                    logger.warning(
-                        f"EventBus: queue full for user {user_id}, dropping event"
-                    )
+                    payload = json.loads(raw or "{}")
+                except json.JSONDecodeError:
+                    payload = {"type": "event", "data": raw}
+                parsed.append((str(event_id), payload))
+        return parsed
 
-# Global Event Bus Instance
+
 event_bus = EventBus()

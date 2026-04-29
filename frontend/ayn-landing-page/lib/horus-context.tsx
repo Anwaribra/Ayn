@@ -148,7 +148,7 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
     const lastUserMessageRef = useRef<{ text: string; files?: File[]; responseMode?: HorusResponseMode } | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
     const streamRemainderRef = useRef("")
-    const sseRef = useRef<EventSource | null>(null)
+    const sseAbortRef = useRef<AbortController | null>(null)
     const sseConnectingRef = useRef(false)
 
     const prefersArabicUi = () => {
@@ -181,12 +181,11 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         // isInitialized.current = true // Removed as per instruction
     }, [])
 
-    // 2. Persistent SSE Event Listener with reconnection
+    // 2. Persistent SSE listener with reconnection (fetch + Authorization / cookies — no query tokens)
     useEffect(() => {
         const isHorusPage = pathname?.startsWith("/platform/horus-ai")
         if (!user || !isHorusPage) return
 
-        // Guard against React strict-mode double-mount
         if (sseConnectingRef.current) return
         sseConnectingRef.current = true
 
@@ -195,68 +194,108 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
         const MAX_RETRIES = 10
         let disposed = false
 
-        function connect() {
-            if (disposed) return
-            // Close previous connection if any
-            sseRef.current?.close()
-
-            const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-            const sseUrl = `/api/horus/events${token ? `?token=${token}` : ''}`;
-            const es = new EventSource(sseUrl)
-            sseRef.current = es
-
-            es.onopen = () => {
-                retryCount = 0
-            }
-
-            es.onmessage = (e) => {
-                try {
-                    const event = JSON.parse(e.data)
-                    if (event.type === "activity") {
-                        const sysMsg: Message = {
-                            id: `sys-${event.data.id}-${Date.now()}`,
-                            role: "system",
-                            content: `Event: ${event.data.title}. ${event.data.description || ""}`,
-                            timestamp: Date.now()
-                        }
-                        setMessages(prev => [...prev, sysMsg])
-
-                        toast(event.data.title, {
-                            description: event.data.description,
-                            icon: "🧠"
-                        })
+        const dispatchSseData = (dataLine: string) => {
+            if (!dataLine || dataLine === "[DONE]") return
+            try {
+                const event = JSON.parse(dataLine)
+                if (event.type === "activity") {
+                    const sysMsg: Message = {
+                        id: `sys-${event.data.id}-${Date.now()}`,
+                        role: "system",
+                        content: `Event: ${event.data.title}. ${event.data.description || ""}`,
+                        timestamp: Date.now(),
                     }
-                } catch (err) {
-                    console.error("Global Horus SSE Error:", err)
-                }
-            }
+                    setMessages((prev) => [...prev, sysMsg])
 
-            es.onerror = () => {
-                es.close()
-                if (sseRef.current === es) sseRef.current = null
-                if (!disposed && retryCount < MAX_RETRIES) {
-                    const delay = Math.min(1000 * Math.pow(2, retryCount), 30000)
-                    retryCount++
-                    retryTimer = setTimeout(connect, delay)
+                    toast(event.data.title, {
+                        description: event.data.description,
+                        icon: "🧠",
+                    })
                 }
+            } catch (err) {
+                console.error("Global Horus SSE Error:", err)
             }
         }
 
-        // Clean close on tab unload
+        async function connect() {
+            if (disposed) return
+
+            sseAbortRef.current?.abort()
+            const ac = new AbortController()
+            sseAbortRef.current = ac
+
+            const token =
+                typeof window !== "undefined" ? localStorage.getItem("access_token") : null
+            const headers: HeadersInit = {
+                Accept: "text/event-stream",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            }
+
+            try {
+                const res = await fetch("/api/horus/events", {
+                    credentials: "include",
+                    headers,
+                    signal: ac.signal,
+                    cache: "no-store",
+                })
+
+                if (!res.ok || !res.body) {
+                    throw new Error(`SSE HTTP ${res.status}`)
+                }
+
+                retryCount = 0
+                const reader = res.body.getReader()
+                const decoder = new TextDecoder()
+                let buffer = ""
+
+                while (!disposed) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    buffer += decoder.decode(value, { stream: true })
+                    let sep: number
+                    while ((sep = buffer.indexOf("\n\n")) >= 0) {
+                        const rawBlock = buffer.slice(0, sep)
+                        buffer = buffer.slice(sep + 2)
+                        let dataPayload = ""
+                        for (const line of rawBlock.split("\n")) {
+                            if (line.startsWith("data:")) {
+                                dataPayload += line.slice(5).trimStart() + "\n"
+                            }
+                        }
+                        dispatchSseData(dataPayload.trimEnd())
+                    }
+                }
+            } catch (err: unknown) {
+                const name = err instanceof Error ? err.name : ""
+                if (name === "AbortError" || (err instanceof DOMException && err.name === "AbortError")) {
+                    return
+                }
+                console.error("Horus SSE connection error:", err)
+            } finally {
+                if (sseAbortRef.current === ac) sseAbortRef.current = null
+            }
+
+            if (!disposed && retryCount < MAX_RETRIES) {
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 30000)
+                retryCount++
+                retryTimer = setTimeout(connect, delay)
+            }
+        }
+
         const onBeforeUnload = () => {
-            sseRef.current?.close()
-            sseRef.current = null
+            sseAbortRef.current?.abort()
+            sseAbortRef.current = null
         }
-        window.addEventListener('beforeunload', onBeforeUnload)
+        window.addEventListener("beforeunload", onBeforeUnload)
 
-        connect()
+        void connect()
 
         return () => {
             disposed = true
             sseConnectingRef.current = false
-            window.removeEventListener('beforeunload', onBeforeUnload)
-            sseRef.current?.close()
-            sseRef.current = null
+            window.removeEventListener("beforeunload", onBeforeUnload)
+            sseAbortRef.current?.abort()
+            sseAbortRef.current = null
             if (retryTimer) clearTimeout(retryTimer)
         }
     }, [user, pathname])

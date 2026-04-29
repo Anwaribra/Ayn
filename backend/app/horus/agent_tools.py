@@ -2,6 +2,9 @@
 Horus Agent Tools
 
 Typed tool registry used by the Horus planner/executor loop.
+
+All exposed tools are read-only: they fetch existing tenant-scoped snapshots and
+never create or update mappings, gaps, reports, or evidence.
 """
 
 from __future__ import annotations
@@ -15,10 +18,7 @@ logger = logging.getLogger(__name__)
 TOOL_RETRY_ATTEMPTS = 2
 TOOL_RETRY_BASE_DELAY_SEC = 1
 
-from app.evidence.models import AttachEvidenceRequest
-from app.evidence.service import EvidenceService
-from app.gap_analysis.models import GapAnalysisRequest, UserDTO
-from app.gap_analysis.service import GapAnalysisService
+from app.horus.agent_graph import ConstrainedAgentExecutionGraph
 from app.horus.agent_actions import ACTION_REGISTRY
 from app.horus.agent_context import build_agent_context
 
@@ -77,89 +77,6 @@ async def tool_generate_remediation_report(
     )
 
 
-async def tool_start_gap_analysis_run(
-    *,
-    db: Any,
-    user_id: str,
-    institution_id: str | None,
-    current_user: dict,
-    args: dict,
-) -> dict:
-    standard_id = args.get("standard_id")
-    if not standard_id:
-        return {
-            "type": "action_error",
-            "payload": {
-                "message": "Missing required argument: standard_id",
-                "suggested_fix": "Go to Standards Hub and select which standard to analyze.",
-                "recovery_url": "/platform/standards",
-            },
-        }
-
-    if not institution_id:
-        return {
-            "type": "action_error",
-            "payload": {
-                "message": "No institution is associated with this user.",
-                "suggested_fix": "Set up your institution profile in Settings before running analysis.",
-                "recovery_url": "/platform/settings",
-            },
-        }
-
-    user_dto = UserDTO(
-        id=user_id,
-        institutionId=institution_id,
-        role=current_user.get("role", "USER"),
-        email=current_user.get("email", "unknown"),
-    )
-    req = GapAnalysisRequest(standardId=standard_id)
-
-    job = await GapAnalysisService.queue_report(req, user_dto)
-    asyncio.create_task(
-        GapAnalysisService.run_report_background(
-            job_id=job["jobId"],
-            user_id=user_id,
-            institution_id=institution_id,
-            standard_id=standard_id,
-            current_user=user_dto,
-        )
-    )
-
-    return {
-        "type": "job_started",
-        "payload": {
-            "job_id": job["jobId"],
-            "status": job["status"],
-            "standard_id": standard_id,
-        },
-    }
-
-
-async def tool_link_evidence_to_criterion(
-    *,
-    db: Any,
-    user_id: str,
-    institution_id: str | None,
-    current_user: dict,
-    args: dict,
-) -> dict:
-    evidence_id = args.get("evidence_id")
-    criterion_id = args.get("criterion_id")
-    if not evidence_id or not criterion_id:
-        return {
-            "type": "action_error",
-            "payload": {
-                "message": "Missing required arguments: evidence_id and criterion_id",
-                "suggested_fix": "Specify both the evidence ID and the criterion ID to link them.",
-                "recovery_url": "/platform/evidence-vault",
-            },
-        }
-
-    req = AttachEvidenceRequest(criterionId=criterion_id)
-    result = await EvidenceService.attach_evidence(evidence_id, req, current_user)
-    return {"type": "link_result", "payload": result.model_dump()}
-
-
 async def tool_generate_report_export_link(
     *,
     db: Any,
@@ -183,108 +100,51 @@ async def tool_generate_report_export_link(
     }
 
 
-async def tool_get_analytics_report(
-    *,
-    db: Any,
-    user_id: str,
-    institution_id: str | None,
-    current_user: dict,
-    args: dict,
-) -> dict:
-    """Fetch full analytics computed from real data for the current user."""
-    from app.analytics.service import AnalyticsService
-
-    period_days = args.get("period_days", 30)
-    if period_days is not None:
-        try:
-            period_days = int(period_days)
-        except (ValueError, TypeError):
-            period_days = 30
-
-    analytics = await AnalyticsService.get_analytics(current_user, period_days=period_days)
-    data = analytics.model_dump()
-    # Convert datetimes to ISO strings for JSON serialization
-    if data.get("generatedAt"):
-        data["generatedAt"] = data["generatedAt"].isoformat()
-    for a in data.get("anomalies", []):
-        if a.get("createdAt"):
-            a["createdAt"] = a["createdAt"].isoformat() if hasattr(a["createdAt"], "isoformat") else str(a["createdAt"])
-
-    return {"type": "analytics_report", "payload": data}
-
-
 TOOL_REGISTRY: Dict[str, dict[str, Any]] = {
     "get_platform_snapshot": {
         "mutating": False,
         "title": "Read platform snapshot",
         "prepare_text": "a full platform snapshot",
-        "description": "Fetch a complete platform snapshot for the current user/institution.",
+        "description": "Fetch a complete read-only snapshot for the current user/institution.",
         "args_schema": {},
         "estimated_duration_ms": 2000,
         "handler": tool_get_platform_snapshot,
     },
     "run_full_audit": {
         "mutating": False,
-        "title": "Run full audit",
-        "prepare_text": "a full compliance audit report",
-        "description": "Generate an audit report card from existing institution analysis data.",
+        "title": "Summarize latest reports & mappings",
+        "prepare_text": "an audit-style summary from existing reports",
+        "description": "Summarize completed gap-analysis reports and criteria mappings already in the system (no new analysis run).",
         "args_schema": {},
         "estimated_duration_ms": 5000,
         "handler": tool_run_full_audit,
     },
     "check_compliance_gaps": {
         "mutating": False,
-        "title": "Check compliance gaps",
-        "prepare_text": "the compliance gap table",
-        "description": "Return criteria-level compliance gap rows for the institution.",
+        "title": "List compliance gaps from mappings",
+        "prepare_text": "the criteria mapping / gap table",
+        "description": "Return criteria-level rows from existing CriteriaMapping data (explains why items appear as gaps or met).",
         "args_schema": {},
         "estimated_duration_ms": 3000,
         "handler": tool_check_compliance_gaps,
     },
     "generate_remediation_report": {
         "mutating": False,
-        "title": "Generate remediation report",
-        "prepare_text": "the remediation action plan",
-        "description": "Generate remediation actions for current open platform gaps.",
+        "title": "Suggest remediation actions",
+        "prepare_text": "action-oriented remediation suggestions",
+        "description": "Read open PlatformGap records and produce natural-language remediation suggestions only (does not change gaps or reports).",
         "args_schema": {},
         "estimated_duration_ms": 8000,
         "handler": tool_generate_remediation_report,
     },
-    "start_gap_analysis_run": {
-        "mutating": True,
-        "title": "Start gap analysis run",
-        "prepare_text": "a new gap analysis run",
-        "description": "Queue and run a new gap analysis for a specific standard id.",
-        "args_schema": {"standard_id": "string"},
-        "estimated_duration_ms": 15000,
-        "handler": tool_start_gap_analysis_run,
-    },
-    "link_evidence_to_criterion": {
-        "mutating": True,
-        "title": "Link evidence to criterion",
-        "prepare_text": "evidence-to-criterion linking",
-        "description": "Attach one evidence item to one criterion.",
-        "args_schema": {"evidence_id": "string", "criterion_id": "string"},
-        "estimated_duration_ms": 1500,
-        "handler": tool_link_evidence_to_criterion,
-    },
     "generate_report_export_link": {
         "mutating": False,
-        "title": "Generate report export link",
-        "prepare_text": "the report export link",
-        "description": "Create an export link for an existing gap analysis report id.",
+        "title": "Open report export link",
+        "prepare_text": "a link to export an existing report",
+        "description": "Return the export URL for an existing gap-analysis report id the user already has.",
         "args_schema": {"report_id": "string"},
         "estimated_duration_ms": 1000,
         "handler": tool_generate_report_export_link,
-    },
-    "get_analytics_report": {
-        "mutating": False,
-        "title": "Get analytics report",
-        "prepare_text": "the compliance analytics report",
-        "description": "Fetch comprehensive analytics: KPIs, score trends, standard performance, anomaly detection, growth metrics, evidence trends, and auto-generated insights. Use this when the user asks for analytics, reports, statistics, trends, or performance summaries.",
-        "args_schema": {"period_days": "integer (optional, default 30)"},
-        "estimated_duration_ms": 4000,
-        "handler": tool_get_analytics_report,
     },
 }
 
@@ -324,6 +184,8 @@ async def execute_tool(
     user_id: str,
     institution_id: str | None,
     current_user: dict,
+    request_mode: str | None = None,
+    confirmed: bool = False,
 ) -> dict:
     spec = TOOL_REGISTRY.get(tool_name)
     if not spec:
@@ -334,6 +196,22 @@ async def execute_tool(
                 "suggested_fix": "Check the available tools using the slash command palette.",
             },
         }
+    decision = ConstrainedAgentExecutionGraph.evaluate(
+        tool_name=tool_name,
+        args=args or {},
+        request_mode=request_mode,
+        confirmed=confirmed or not spec.get("mutating"),
+    )
+    if not decision.allowed:
+        return {
+            "type": "action_error",
+            "payload": {
+                "message": decision.reason,
+                "suggested_fix": _default_suggested_fix(tool_name, decision.reason),
+            },
+            "_meta": {"tool": tool_name, "graph": "blocked"},
+        }
+
     handler: ToolFn = spec["handler"]
     last_error: str | None = None
     start_time = time.monotonic()
@@ -412,13 +290,10 @@ async def execute_tool(
 def _default_suggested_fix(tool_name: str, error_msg: str | None) -> str:
     """Generate a default recovery suggestion based on the tool and error."""
     fixes: dict[str, str] = {
-        "run_full_audit": "Ensure your institution has completed at least one gap analysis run first.",
-        "check_compliance_gaps": "Link your institution to standards and map criteria before checking gaps.",
-        "generate_remediation_report": "Run a gap analysis first to generate gaps that need remediation.",
-        "start_gap_analysis_run": "Go to Standards Hub and select the standard you want to analyze against.",
-        "link_evidence_to_criterion": "Upload evidence in the Evidence Vault first, then specify both IDs.",
-        "generate_report_export_link": "Run an audit or gap analysis first to have a report to export.",
-        "get_analytics_report": "Complete some gap analyses to generate analytics data.",
+        "run_full_audit": "Run a gap analysis from the main Gap Analysis workflow first so reports exist to summarize.",
+        "check_compliance_gaps": "Link your institution to standards and complete mapping in the core workflow before viewing gap rows.",
+        "generate_remediation_report": "Run a gap analysis first so platform gaps exist to base suggestions on.",
+        "generate_report_export_link": "Use a report id from an existing completed gap-analysis report.",
+        "get_platform_snapshot": "Ensure your account is linked to an institution with data in the system.",
     }
     return fixes.get(tool_name, "Try again or contact support if the issue persists.")
-

@@ -1,7 +1,7 @@
 """Analytics router — dedicated endpoints for the analytics dashboard."""
 import csv
 import io
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from typing import Optional
 
@@ -96,3 +96,12 @@ async def get_analytics_all_time(
     Get all-time analytics (no period filter).
     """
     return await AnalyticsService.get_analytics(current_user, period_days=None)
+
+
+@router.get("/ai")
+async def get_ai_analytics(
+    period: int = Query(30, ge=1, le=365),
+    current_user: dict = Depends(get_current_user),
+):
+    """AI analytics are disabled in enterprise core mode."""
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="AI analytics are disabled in core analytics mode.")

@@ -28,9 +28,7 @@ function getInitialAuthSnapshot() {
   }
 
   const storedUser = localStorage.getItem("user")
-  const token = localStorage.getItem("access_token")
-
-  if (!storedUser || !token) {
+  if (!storedUser) {
     return { user: null as User | null, isLoading: false, hasToken: false }
   }
 
@@ -43,7 +41,6 @@ function getInitialAuthSnapshot() {
     }
   } catch {
     localStorage.removeItem("user")
-    localStorage.removeItem("access_token")
     return { user: null as User | null, isLoading: false, hasToken: false }
   }
 }
@@ -54,16 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
-    const token = localStorage.getItem("access_token")
 
-    if (storedUser && token) {
+    if (storedUser) {
       let parsedUser: User | null = null
       try {
         parsedUser = JSON.parse(storedUser)
       } catch {
         console.error('[AuthContext] Failed to parse stored user, clearing localStorage')
         localStorage.removeItem("user")
-        localStorage.removeItem("access_token")
         setIsLoading(false)
         return
       }
@@ -84,10 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .catch((error) => {
           console.error('[AuthContext] Token verification failed:', error)
-          // Don't auto-logout - keep the user logged in with cached data
-          // localStorage.removeItem("user")
-          // localStorage.removeItem("access_token")
-          // setUser(null)
+          localStorage.removeItem("user")
+          setUser(null)
         })
         .finally(() => setIsLoading(false))
     } else {

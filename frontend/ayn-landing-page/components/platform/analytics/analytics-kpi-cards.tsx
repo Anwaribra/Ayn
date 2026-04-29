@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react"
+import { Brain, TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface KpiCardData {
@@ -16,6 +16,7 @@ export interface KpiCardData {
   trend?: "up" | "down" | "neutral"
   trendValue?: string
   description?: string
+  horusInsight?: string
 }
 
 interface KpiCardsProps {
@@ -57,6 +58,15 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{card.label}</p>
               {card.description && (
                 <p className="mt-3 max-w-[22rem] text-[11px] text-muted-foreground leading-relaxed">{card.description}</p>
+              )}
+              {card.horusInsight && (
+                <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.04] px-3 py-2.5">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-primary">
+                    <Brain className="h-3 w-3" />
+                    <span className="text-[9px] font-bold uppercase tracking-[0.16em]">Horus</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">{card.horusInsight}</p>
+                </div>
               )}
             </div>
           </motion.div>

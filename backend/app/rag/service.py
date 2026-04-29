@@ -3,14 +3,22 @@ RAG Service - Semantic Search and Document Indexing
 """
 
 import logging
+import asyncio
+import hashlib
+import json
 from typing import List, Dict, Any, Optional, Tuple
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.ai.service import get_gemini_client
 from app.core.db import db as prisma_client
+from app.core.redis import redis_client
+from app.core.jobs import enqueue_job, register_job_handler
 
 logger = logging.getLogger(__name__)
 
 _VECTOR_DOCUMENT_COLUMNS: Optional[set[str]] = None
+RAG_CACHE_TTL_SECONDS = 5 * 60
+RAG_CACHE_PREFIX = "rag:ctx:"
+_LOCAL_RAG_CACHE: dict[str, tuple[str, list[dict[str, Any]]]] = {}
 
 class RagService:
     """Handles Vector Embeddings, Chunking, and Retrieval for Horus AI."""
@@ -60,39 +68,49 @@ class RagService:
         logger.info(f"RAG: Split document into {len(chunks)} chunks for embedding.")
         columns = await self._get_vector_document_columns()
 
-        for i, chunk in enumerate(chunks):
+        async def embed_chunk(i: int, chunk: str):
             try:
-                # 1. Generate Embedding
                 embedding = await self.ai_client.create_embedding(chunk)
                 if not embedding:
                     logger.warning(f"RAG: Empty embedding returned for document {document_id}, chunk {i}. Skipping chunk.")
-                    continue
-                
-                # 2. Insert into pgvector with user/institution scoping
-                embedding_str = "[" + ",".join(map(str, embedding)) + "]"
-                insert_columns = ['"id"', '"content"', '"embedding"', '"documentId"', '"standardId"', '"chunkIndex"', '"updatedAt"']
-                insert_values = ["gen_random_uuid()", "$1", "$2::vector", "$3", "$4", "$5", "NOW()"]
-                params: List[Any] = [chunk, embedding_str, document_id, standard_id, i]
-                param_idx = 6
-
-                if "userId" in columns:
-                    insert_columns.append('"userId"')
-                    insert_values.append(f"${param_idx}")
-                    params.append(user_id)
-                    param_idx += 1
-                if "institutionId" in columns:
-                    insert_columns.append('"institutionId"')
-                    insert_values.append(f"${param_idx}")
-                    params.append(institution_id)
-
-                query = f"""
-                INSERT INTO "VectorDocument" ({", ".join(insert_columns)})
-                VALUES ({", ".join(insert_values)})
-                """
-                await prisma_client.execute_raw(query, *params)
-                
+                    return None
+                return i, chunk, "[" + ",".join(map(str, embedding)) + "]"
             except Exception as e:
                 logger.error(f"RAG: Failed to index chunk {i} for document {document_id}: {str(e)}")
+                return None
+
+        semaphore = asyncio.Semaphore(6)
+
+        async def bounded_embed(i: int, chunk: str):
+            async with semaphore:
+                return await embed_chunk(i, chunk)
+
+        embedded = await asyncio.gather(*(bounded_embed(i, chunk) for i, chunk in enumerate(chunks)))
+        rows = [row for row in embedded if row is not None]
+        if not rows:
+            return
+
+        for i, chunk, embedding_str in rows:
+            insert_columns = ['"id"', '"content"', '"embedding"', '"documentId"', '"standardId"', '"chunkIndex"', '"updatedAt"']
+            insert_values = ["gen_random_uuid()", "$1", "$2::vector", "$3", "$4", "$5", "NOW()"]
+            params: List[Any] = [chunk, embedding_str, document_id, standard_id, i]
+            param_idx = 6
+
+            if "userId" in columns:
+                insert_columns.append('"userId"')
+                insert_values.append(f"${param_idx}")
+                params.append(user_id)
+                param_idx += 1
+            if "institutionId" in columns:
+                insert_columns.append('"institutionId"')
+                insert_values.append(f"${param_idx}")
+                params.append(institution_id)
+
+            query = f"""
+            INSERT INTO "VectorDocument" ({", ".join(insert_columns)})
+            VALUES ({", ".join(insert_values)})
+            """
+            await prisma_client.execute_raw(query, *params)
 
 
     async def delete_document(self, document_id: str):
@@ -117,6 +135,16 @@ class RagService:
         """Embeds a query, searches the vector DB, and returns relevant text chunks.
         Scoped by user_id and/or institution_id when provided for multi-tenant security."""
         try:
+            cache_key = self._retrieve_cache_key(query, limit, document_id, user_id, institution_id)
+            cached = redis_client.get(cache_key)
+            if cached:
+                try:
+                    raw = json.loads(cached)
+                    return raw.get("context", ""), raw.get("sources", [])
+                except json.JSONDecodeError:
+                    pass
+            if cache_key in _LOCAL_RAG_CACHE:
+                return _LOCAL_RAG_CACHE[cache_key]
             # 1. Generate query embedding (requires Gemini; OpenRouter-only has no embeddings)
             try:
                 query_embedding = await self.ai_client.create_embedding(query)
@@ -198,7 +226,10 @@ class RagService:
                     s["title"] = s["title"] or f"Source {len(sources)}"
                 
             combined_context = "\n...[Document Chunk]...\n".join(context_blocks)
-            return f"\n[RELEVANT RETRIEVED KNOWLEDGE]\n{combined_context}\n", sources
+            response = f"\n[RELEVANT RETRIEVED KNOWLEDGE]\n{combined_context}\n", sources
+            redis_client.set(cache_key, json.dumps({"context": response[0], "sources": response[1]}), ex=RAG_CACHE_TTL_SECONDS)
+            _LOCAL_RAG_CACHE[cache_key] = response
+            return response
             
         except Exception as e:
             logger.error(f"RAG Retrieval failed: {e}")
@@ -214,3 +245,61 @@ class RagService:
     ) -> Tuple[str, List[Dict[str, Any]]]:
         """Same as retrieve_context but returns (context_str, sources) for citation UI."""
         return await self.retrieve_context(query, limit, document_id, user_id, institution_id)
+
+    @staticmethod
+    def _retrieve_cache_key(
+        query: str,
+        limit: int,
+        document_id: Optional[str],
+        user_id: Optional[str],
+        institution_id: Optional[str],
+    ) -> str:
+        normalized = " ".join((query or "").lower().split())
+        digest = hashlib.sha256(
+            json.dumps(
+                {
+                    "q": normalized,
+                    "limit": limit,
+                    "document_id": document_id,
+                    "user_id": user_id,
+                    "institution_id": institution_id,
+                },
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+        return f"{RAG_CACHE_PREFIX}{digest}"
+
+    @staticmethod
+    async def index_document_job(payload: dict):
+        rag = RagService()
+        await rag.index_document(
+            payload.get("content") or "",
+            document_id=payload.get("document_id"),
+            standard_id=payload.get("standard_id"),
+            user_id=payload.get("user_id"),
+            institution_id=payload.get("institution_id"),
+        )
+
+    @staticmethod
+    async def enqueue_index_document(
+        content: str,
+        *,
+        document_id: Optional[str] = None,
+        standard_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        institution_id: Optional[str] = None,
+    ) -> str:
+        return await enqueue_job(
+            "rag.index_document",
+            {
+                "content": content,
+                "document_id": document_id,
+                "standard_id": standard_id,
+                "user_id": user_id,
+                "institution_id": institution_id,
+            },
+            priority=80,
+        )
+
+
+register_job_handler("rag.index_document", RagService.index_document_job)

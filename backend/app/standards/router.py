@@ -79,7 +79,10 @@ async def import_standard(
     """
     Import a standard from document text (AI-assisted).
     """
-    return await StandardService.import_standard_from_document(request.text, current_user["email"])
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="AI-assisted standard import is disabled during Security + Domain Freeze.",
+    )
 
 @router.post("/import-pdf", response_model=StandardResponse)
 async def import_standard_pdf(
@@ -89,8 +92,10 @@ async def import_standard_pdf(
     """
     Import a standard from a PDF file (AI-assisted, Admin only).
     """
-    file_bytes = await file.read()
-    return await StandardService.import_standard_from_pdf(file_bytes, file.filename)
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="AI-assisted standard PDF import is disabled during Security + Domain Freeze.",
+    )
 
 
 # ==================== Criteria Endpoints ====================
@@ -171,33 +176,10 @@ async def start_standard_analysis(
     current_user: dict = Depends(get_current_user)
 ):
     """Start background AI analysis for criteria mapping."""
-    institution_id = current_user.get("institutionId")
-    if not institution_id:
-        raise HTTPException(status_code=400, detail="User does not have an institution associated.")
-        
-    db = get_db()
-    for _ in [1]:
-        # Resolve standard by id or code
-        standard = await db.standard.find_first(
-            where={
-                "OR": [
-                    {"id": standard_id},
-                    {"code": standard_id},
-                    {"code": standard_id.upper()}
-                ]
-            }
-        )
-        if not standard:
-            raise HTTPException(status_code=404, detail=f"Standard '{standard_id}' not found")
-
-        resolved_uuid = standard.id
-        logger.info(f"Resolved standard_id '{standard_id}' -> '{resolved_uuid}' for analysis")
-
-        evidence_ids = request.evidence_ids if request else None
-        force = request.force_reanalyze if request else False
-        
-        background_tasks.add_task(analyze_standard_criteria, resolved_uuid, institution_id, evidence_ids, force)
-        return {"status": "analyzing", "message": "Analysis started"}
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="AI-driven criteria analysis is disabled during Security + Domain Freeze.",
+    )
 
 @router.get("/{standard_id}/mappings")
 async def get_standard_mappings(

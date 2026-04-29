@@ -4,7 +4,6 @@ from app.core.config import settings
 import logging
 import uuid
 from typing import Optional
-from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ async def upload_file_to_supabase(
         folder: Folder path in the bucket
     
     Returns:
-        tuple: (public_url, file_path)
+        tuple: (storage_path, file_path)
     """
     import asyncio
     client = get_supabase_client()
@@ -63,7 +62,7 @@ async def upload_file_to_supabase(
 
             if not bucket_exists:
                 try:
-                    client.storage.create_bucket(settings.SUPABASE_BUCKET, options={"public": True})
+                    client.storage.create_bucket(settings.SUPABASE_BUCKET, options={"public": False})
                 except Exception as e:
                     logger.warning(f"Bucket creation failed/exists: {e}")
 
@@ -78,11 +77,8 @@ async def upload_file_to_supabase(
             
         await asyncio.to_thread(_ensure_and_upload)
         
-        # Construct public URL
-        public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_BUCKET}/{file_path}"
-        
         logger.info(f"File uploaded successfully: {file_path}")
-        return public_url, file_path
+        return file_path, file_path
     
     except Exception as e:
         logger.error(f"Error uploading file to Supabase: {e}")
@@ -113,3 +109,27 @@ async def delete_file_from_supabase(file_path: str) -> bool:
         logger.error(f"Error deleting file from Supabase: {e}")
         return False
 
+
+async def create_signed_url(file_path: str, expires_in: int = 300) -> str:
+    """Create a short-lived signed URL for a private evidence object."""
+    import asyncio
+
+    client = get_supabase_client()
+
+    try:
+        def _sign():
+            result = client.storage.from_(settings.SUPABASE_BUCKET).create_signed_url(
+                file_path,
+                expires_in,
+            )
+            if isinstance(result, dict):
+                return result.get("signedURL") or result.get("signedUrl") or result.get("signed_url")
+            return getattr(result, "signed_url", None) or getattr(result, "signedURL", None)
+
+        signed_url = await asyncio.to_thread(_sign)
+        if not signed_url:
+            raise RuntimeError("Storage provider did not return a signed URL")
+        return signed_url
+    except Exception as e:
+        logger.error(f"Error creating signed URL for {file_path}: {e}")
+        raise Exception("Failed to create signed evidence URL")

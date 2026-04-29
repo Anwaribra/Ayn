@@ -3,11 +3,13 @@ from app.core.config import settings
 import logging
 import httpx
 import json
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import os
 import asyncio
 import time
 from fastapi import HTTPException, status
+from app.ai.model_router import MultiModelAIRouter
+from app.core.metrics import estimate_tokens, record_ai_usage
 
 logger = logging.getLogger(__name__)
 
@@ -363,8 +365,7 @@ class DifyClient:
         for f in files:
             if f.get("type") == "text":
                 try:
-                    import base64
-                    decoded = base64.b64decode(f.get("data", "")).decode("utf-8", errors="replace")
+                    decoded = _file_item_bytes(f).decode("utf-8", errors="replace")
                     text_parts.append(f"\n\n--- File: {f.get('filename', '?')} ---\n{decoded}")
                 except Exception:
                     text_parts.append(f"\n\n--- File: {f.get('filename', '?')} ---\n[Binary]")
@@ -520,7 +521,7 @@ class OpenRouterClient:
         for file_item in files:
             if file_item["type"] == "image" or (file_item.get("mime_type") or "").startswith("image/"):
                 mt = file_item.get("mime_type") or "image/jpeg"
-                data_url = f"data:{mt};base64,{file_item['data']}"
+                data_url = f"data:{mt};base64,{_file_item_base64(file_item)}"
                 image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
             else:
                 text_content = _openrouter_append_file_text(text_content, file_item)
@@ -577,7 +578,7 @@ class OpenRouterClient:
         for file_item in files:
             if file_item["type"] == "image" or (file_item.get("mime_type") or "").startswith("image/"):
                 mt = file_item.get("mime_type") or "image/jpeg"
-                data_url = f"data:{mt};base64,{file_item['data']}"
+                data_url = f"data:{mt};base64,{_file_item_base64(file_item)}"
                 image_urls.append({"type": "image_url", "image_url": {"url": data_url}})
             else:
                 text_content = _openrouter_append_file_text(text_content, file_item)
@@ -625,18 +626,38 @@ class OpenRouterClient:
                                 pass
 
 
+def _file_item_bytes(file_item: Dict) -> bytes:
+    body = file_item.get("body")
+    if isinstance(body, bytes):
+        return body
+    raw_b64 = file_item.get("data") or ""
+    try:
+        return __import__("base64").b64decode(raw_b64) if raw_b64 else b""
+    except Exception:
+        return b""
+
+
+def _file_item_base64(file_item: Dict) -> str:
+    raw_b64 = file_item.get("data")
+    if raw_b64:
+        return raw_b64
+    body = file_item.get("body")
+    if isinstance(body, bytes):
+        return __import__("base64").b64encode(body).decode("utf-8")
+    return ""
+
+
 def _openrouter_append_file_text(message: str, file_item: Dict) -> str:
     """Append file contents as text for OpenRouter (images handled separately by caller)."""
     fname = file_item.get("filename") or "file"
     fnlow = fname.lower()
     mime = (file_item.get("mime_type") or "").split(";")[0].strip().lower()
     ftype = file_item.get("type") or "text"
-    raw_b64 = file_item.get("data") or ""
-    try:
-        data_bytes = __import__("base64").b64decode(raw_b64) if raw_b64 else b""
-    except Exception:
-        data_bytes = b""
+    data_bytes = _file_item_bytes(file_item)
     if not data_bytes:
+        extracted = file_item.get("extracted_text")
+        if extracted:
+            return f"{message}\n\n--- Extracted text from {fname} ---\n{str(extracted)[:200000]}\n"
         return message
     # PDF → extract text for providers without native PDF
     is_pdf = (
@@ -645,6 +666,9 @@ def _openrouter_append_file_text(message: str, file_item: Dict) -> str:
         or (ftype == "document" and data_bytes[:4] == b"%PDF")
     )
     if is_pdf:
+        extracted = file_item.get("extracted_text")
+        if extracted:
+            return f"{message}\n\n--- PDF: {fname} ---\n{str(extracted)[:120000]}\n"
         try:
             from pypdf import PdfReader
             import io as _io
@@ -681,11 +705,7 @@ def _gemini_multimodal_parts(message: str, files: List[Dict]):
         fname = (file_item.get("filename") or "file").lower()
         mime = (file_item.get("mime_type") or "").split(";")[0].strip().lower()
         ftype = file_item.get("type") or "text"
-        raw_b64 = file_item.get("data") or ""
-        try:
-            data_bytes = __import__("base64").b64decode(raw_b64) if raw_b64 else b""
-        except Exception:
-            data_bytes = b""
+        data_bytes = _file_item_bytes(file_item)
         if not data_bytes:
             logger.warning("Gemini: skipping empty attachment %s", file_item.get("filename"))
             continue
@@ -708,6 +728,12 @@ def _gemini_multimodal_parts(message: str, files: List[Dict]):
             parts.append(
                 genai_types.Part.from_text(
                     text=f"\n\n--- File: {file_item.get('filename', 'file')} ---\n{text}\n"
+                )
+            )
+        elif file_item.get("extracted_text"):
+            parts.append(
+                genai_types.Part.from_text(
+                    text=f"\n\n--- Extracted text from {file_item.get('filename', 'file')} ---\n{file_item['extracted_text'][:200000]}\n"
                 )
             )
         else:
@@ -1148,88 +1174,137 @@ class HorusAIClient:
         if not self.gemini and not self.openrouter and not self.dify:
             raise ValueError("No AI provider configured (Gemini, OpenRouter, or Dify).")
     
+    def _route_for(self, method_name: str, kwargs: dict[str, Any]):
+        return MultiModelAIRouter.route(
+            method_name,
+            messages=kwargs.get("messages"),
+            message=kwargs.get("message") or kwargs.get("prompt"),
+            files=kwargs.get("files"),
+            context=kwargs.get("context"),
+        )
+
+    def _provider_client(self, provider: str):
+        return {
+            "gemini": self.gemini,
+            "openrouter": self.openrouter,
+            "dify": self.dify,
+        }.get(provider)
+
+    async def _record_route_metric(
+        self,
+        *,
+        method_name: str,
+        provider: str,
+        model: str | None,
+        route,
+        started: float,
+        response_text: str = "",
+        stream_chunks: list[str] | None = None,
+    ) -> None:
+        output = response_text or "".join(stream_chunks or [])
+        output_tokens = estimate_tokens(output)
+        total_tokens = route.estimated_input_tokens + output_tokens
+        rate = MultiModelAIRouter.provider_rate(provider, model)
+        await record_ai_usage(
+            operation=method_name,
+            provider=provider,
+            model=model,
+            route_reason=route.reason,
+            input_tokens=route.estimated_input_tokens,
+            output_tokens=output_tokens,
+            estimated_cost_usd=round((total_tokens / 1_000_000) * rate, 8),
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            metadata={"task": route.task},
+        )
+
     async def _call_with_fallback(self, method_name: str, *args, **kwargs) -> str:
-        """Call a method with fallback: Gemini -> OpenRouter -> Dify."""
+        """Call a method with policy routing and fallback."""
         global _GEMINI_COOLDOWN_UNTIL
         last_error = None
+        route = self._route_for(method_name, kwargs)
 
-        # 1. Gemini
-        if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
+        for provider in route.providers:
+            client = self._provider_client(provider)
+            if not client:
+                continue
+            if provider == "gemini" and time.time() < _GEMINI_COOLDOWN_UNTIL:
+                continue
+            old_model = None
             try:
-                method = getattr(self.gemini, method_name)
-                return await method(*args, **kwargs)
+                if provider == "openrouter" and route.openrouter_model and hasattr(client, "model"):
+                    old_model = client.model
+                    client.model = route.openrouter_model
+                method = getattr(client, method_name)
+                started = time.perf_counter()
+                result = await method(*args, **kwargs)
+                await self._record_route_metric(
+                    method_name=method_name,
+                    provider=provider,
+                    model=getattr(client, "model_name", None) or getattr(client, "model", None),
+                    route=route,
+                    started=started,
+                    response_text=result,
+                )
+                return result
             except Exception as e:
                 last_error = e
-                if _gemini_model_invalid(e):
+                if provider == "gemini" and _gemini_model_invalid(e):
                     _GEMINI_COOLDOWN_UNTIL = time.time() + 24 * 3600
                     logger.error(f"Gemini model invalid — skipping for 24h: {e}")
-                elif _gemini_rate_limited(e):
+                elif provider == "gemini" and _gemini_rate_limited(e):
                     cooldown = 2 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
-                logger.warning(f"Gemini {method_name} failed: {e}. Trying OpenRouter...")
-
-        # 2. OpenRouter
-        if self.openrouter:
-            try:
-                method = getattr(self.openrouter, method_name)
-                return await method(*args, **kwargs)
-            except Exception as e:
-                last_error = e
-                logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
-
-        # 3. Dify
-        if self.dify:
-            try:
-                method = getattr(self.dify, method_name, None)
-                if method:
-                    return await method(*args, **kwargs)
-            except Exception as e:
-                last_error = e
-                logger.error(f"Dify {method_name} failed: {e}")
+                logger.warning("%s %s failed: %s. Trying next route...", provider, method_name, e)
+            finally:
+                if old_model is not None:
+                    client.model = old_model
         raise Exception(f"All AI providers failed: {str(last_error)}")
     
     async def _stream_with_fallback(self, method_name: str, *args, **kwargs):
-        """Call a streaming method with fallback: Gemini -> OpenRouter -> Dify."""
+        """Call a streaming method with policy routing and fallback."""
         global _GEMINI_COOLDOWN_UNTIL
+        route = self._route_for(method_name, kwargs)
 
-        # 1. Gemini
-        if self.gemini and time.time() >= _GEMINI_COOLDOWN_UNTIL:
+        for provider in route.providers:
+            client = self._provider_client(provider)
+            if not client:
+                continue
+            if provider == "gemini" and time.time() < _GEMINI_COOLDOWN_UNTIL:
+                continue
+            old_model = None
+            chunks: list[str] = []
+            started = time.perf_counter()
             try:
-                method = getattr(self.gemini, method_name)
+                if provider == "openrouter" and route.openrouter_model and hasattr(client, "model"):
+                    old_model = client.model
+                    client.model = route.openrouter_model
+                method = getattr(client, method_name)
                 async for chunk in method(*args, **kwargs):
+                    if chunk:
+                        chunks.append(chunk)
                     yield chunk
+                await self._record_route_metric(
+                    method_name=method_name,
+                    provider=provider,
+                    model=getattr(client, "model_name", None) or getattr(client, "model", None),
+                    route=route,
+                    started=started,
+                    stream_chunks=chunks,
+                )
                 return
             except Exception as e:
-                if _gemini_model_invalid(e):
+                if provider == "gemini" and _gemini_model_invalid(e):
                     _GEMINI_COOLDOWN_UNTIL = time.time() + 24 * 3600
                     logger.error(f"Gemini model invalid — skipping for 24h: {e}")
-                elif _gemini_rate_limited(e):
+                elif provider == "gemini" and _gemini_rate_limited(e):
                     cooldown = 2 * 3600 if _gemini_daily_quota_exhausted(e) else 60
                     _GEMINI_COOLDOWN_UNTIL = time.time() + cooldown
                     logger.warning(f"Gemini quota hit — cooldown {cooldown}s.")
-                logger.warning(f"Gemini {method_name} failed: {e}. Falling back...")
-
-        # 2. OpenRouter
-        if self.openrouter:
-            try:
-                method = getattr(self.openrouter, method_name)
-                async for chunk in method(*args, **kwargs):
-                    yield chunk
-                return
-            except Exception as e:
-                logger.warning(f"OpenRouter {method_name} failed: {e}. Trying Dify...")
-
-        # 3. Dify
-        if self.dify:
-            try:
-                method = getattr(self.dify, method_name, None)
-                if method:
-                    async for chunk in method(*args, **kwargs):
-                        yield chunk
-                    return
-            except Exception as e:
-                logger.error(f"Dify {method_name} failed: {e}")
+                logger.warning("%s %s failed: %s. Trying next route...", provider, method_name, e)
+            finally:
+                if old_model is not None:
+                    client.model = old_model
         raise Exception("No streaming AI provider available.")
 
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:

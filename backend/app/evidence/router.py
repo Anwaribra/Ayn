@@ -56,6 +56,21 @@ async def export_evidence_csv(current_user: dict = Depends(get_current_user)):
     )
 
 
+@router.get("/archive/list", status_code=status.HTTP_200_OK)
+async def list_archived_evidence(current_user: dict = Depends(get_current_user)):
+    """List deleted evidence snapshots for archive view."""
+    return await EvidenceService.list_archived_evidence(current_user)
+
+
+@router.get("/{evidence_id}/signed-url", status_code=status.HTTP_200_OK)
+async def get_evidence_signed_url(
+    evidence_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return a short-lived signed URL after tenant-scoped evidence access is verified."""
+    return await EvidenceService.get_signed_url(evidence_id, current_user)
+
+
 @router.delete("/{evidence_id}", status_code=status.HTTP_200_OK)
 async def delete_evidence(
     evidence_id: str,
@@ -87,7 +102,7 @@ async def get_evidence(
     """
     Get evidence by ID.
     """
-    return await EvidenceService.get_evidence(evidence_id)
+    return await EvidenceService.get_evidence(evidence_id, current_user)
 
 
 @router.get("", response_model=List[EvidenceResponse])
@@ -100,9 +115,3 @@ async def list_evidence(
     List evidence files with pagination.
     """
     return await EvidenceService.list_evidence(current_user, page=page, limit=limit)
-
-
-@router.get("/archive/list", status_code=status.HTTP_200_OK)
-async def list_archived_evidence(current_user: dict = Depends(get_current_user)):
-    """List deleted evidence snapshots for archive view."""
-    return await EvidenceService.list_archived_evidence(current_user)

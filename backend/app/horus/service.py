@@ -9,6 +9,7 @@ import json
 import logging
 import asyncio
 import mimetypes
+import time
 from types import SimpleNamespace
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -21,8 +22,6 @@ from app.notifications.service import NotificationService
 from app.notifications.models import NotificationCreateRequest
 from app.chat.service import ChatService
 from app.activity.service import ActivityService
-from app.gap_analysis.service import GapAnalysisService
-from app.gap_analysis.models import GapAnalysisRequest, UserDTO
 from app.rag.service import RagService
 from app.horus.agent_context import build_agent_context
 from app.horus.agent_tools import (
@@ -33,6 +32,11 @@ from app.horus.agent_tools import (
     requires_explicit_confirmation,
 )
 from app.core.redis import redis_client
+from app.horus.extraction import extract_text_cached
+from app.horus.progressive_analysis import ProgressiveFileAnalysis
+from app.horus.retrieval import SmartRetrievalPlanner
+from app.horus.context_cache import HorusContextCache
+from app.horus.memory import HorusMemoryService
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +46,10 @@ AYN_PLATFORM_DESCRIPTION = (
     "designed for educational institutions (schools, universities, and training centres). "
     "It helps institutions prepare for and achieve accreditation against international "
     "frameworks such as NCAAA (Saudi Arabia), ISO 21001, QAA (UK), AdvancED, and UAE MoE standards. "
-    "Core features include: Gap Analysis (identifying compliance gaps against accreditation criteria), "
-    "Evidence Vault (storing and linking supporting documents), Standards Hub (browsing frameworks), "
-    "Analytics (tracking compliance scores over time), and Horus AI (this assistant). "
-    "Horus is the built-in AI compliance advisor — not a general AI chatbot."
+    "Core features include: Gap Analysis, Evidence Vault, Standards Hub, and Horus AI (this assistant). "
+    "Horus is a read-only AI analyst: it explains existing reports, mappings, and gaps using data already "
+    "produced by the platform. It never creates or alters mappings, gaps, reports, or evidence — users do that "
+    "through the main workflows."
 )
 
 # Pending confirmations: Redis (persistent, survives restarts) or in-memory fallback.
@@ -53,7 +57,17 @@ AYN_PLATFORM_DESCRIPTION = (
 PENDING_CONFIRMATION_TTL_SECONDS = 15 * 60
 _PENDING_ACTION_CONFIRMATIONS_FALLBACK: dict[str, dict[str, Any]] = {}  # Used when Redis disabled
 PENDING_CONFIRM_KEY_PREFIX = "horus:confirm:"
-STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "job_started", "analytics_report", "link_result", "report_export", "action_error"}
+STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "report_export", "action_error"}
+CONTEXT_BUDGETS_SECONDS = {
+    "identity": 0.15,
+    "goal": 0.15,
+    "state_summary": 0.30,
+    "recent_activities": 0.25,
+    "mappings": 0.30,
+    "history": 0.25,
+    "memory": 0.25,
+    "rag": 0.70,
+}
 
 
 def _pending_set(confirm_id: str, data: dict[str, Any]) -> None:
@@ -130,6 +144,136 @@ class HorusService:
         self.state_manager = state_manager
 
     @staticmethod
+    def _timing_ms(start: float) -> int:
+        return int((time.perf_counter() - start) * 1000)
+
+    @staticmethod
+    async def _with_budget(
+        label: str,
+        awaitable,
+        *,
+        default=None,
+        correlation_id: str | None = None,
+        budget_seconds: float | None = None,
+    ):
+        """Run optional context work with a hard latency budget."""
+        budget = budget_seconds if budget_seconds is not None else CONTEXT_BUDGETS_SECONDS.get(label, 0.25)
+        start = time.perf_counter()
+        try:
+            result = await asyncio.wait_for(awaitable, timeout=budget)
+            logger.info(
+                "Horus context task completed",
+                extra={"context_task": label, "duration_ms": HorusService._timing_ms(start), "correlation_id": correlation_id},
+            )
+            return result
+        except asyncio.TimeoutError:
+            logger.info(
+                "Horus context task skipped after budget",
+                extra={"context_task": label, "budget_ms": int(budget * 1000), "correlation_id": correlation_id},
+            )
+            return default
+        except Exception as err:
+            logger.debug("Horus context task failed: %s: %s", label, err, extra={"correlation_id": correlation_id})
+            return default
+
+    @staticmethod
+    def _default_user_identity(current_user: Any = None) -> Dict[str, str]:
+        if isinstance(current_user, dict):
+            name = current_user.get("name") or ""
+            email = current_user.get("email") or ""
+            role = current_user.get("role") or "USER"
+        else:
+            name = getattr(current_user, "name", "") if current_user is not None else ""
+            email = getattr(current_user, "email", "") if current_user is not None else ""
+            role = getattr(current_user, "role", "USER") if current_user is not None else "USER"
+        display_name = (name or "").strip()
+        if not display_name and email and "@" in email:
+            local = email.split("@", 1)[0]
+            alpha = "".join(c for c in local if c.isalpha())
+            display_name = (alpha[:5].capitalize() if alpha else "") or "User"
+        return {"name": display_name or "User", "email": email or "", "role": str(role or "USER"), "institution": ""}
+
+    @staticmethod
+    def _read_buffered_body(part: dict[str, Any]) -> bytes:
+        body = part.get("body")
+        if isinstance(body, bytes):
+            return body
+        temp_path = part.get("temp_path")
+        if temp_path:
+            with open(temp_path, "rb") as handle:
+                return handle.read()
+        return b""
+
+    @staticmethod
+    def _file_size(part: Any) -> int | None:
+        if isinstance(part, dict):
+            size = part.get("size")
+            return int(size) if isinstance(size, int) or (isinstance(size, str) and size.isdigit()) else None
+        return None
+
+    @staticmethod
+    def _file_storage(part: Any) -> str:
+        if isinstance(part, dict):
+            return str(part.get("storage") or ("memory" if part.get("body") is not None else "stream"))
+        return "stream"
+
+    @staticmethod
+    def _part_content_type(part: Any) -> str:
+        if isinstance(part, dict):
+            return (part.get("content_type") or part.get("mime_type") or "").strip()
+        return (getattr(part, "content_type", None) or "").strip()
+
+    @staticmethod
+    def _build_file_payload(part: dict[str, Any], *, include_base64: bool = False) -> Dict[str, Any]:
+        content = HorusService._read_buffered_body(part)
+        fname = part.get("filename") or "file"
+        if fname.lower().endswith(".pdf"):
+            ct = "application/pdf"
+        else:
+            ct = (part.get("content_type") or "").strip()
+            if not ct or ct not in ALLOWED_FILE_TYPES:
+                guessed, _ = mimetypes.guess_type(fname)
+                if guessed:
+                    ct = guessed.strip()
+        payload: Dict[str, Any] = {
+            "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+            "mime_type": ct or "application/octet-stream",
+            "filename": fname,
+            "evidenceId": None,
+            "size": part.get("size") or len(content),
+            "sha256": part.get("sha256"),
+            "storage": part.get("storage") or ("memory" if part.get("body") is not None else "tempfile"),
+        }
+        if include_base64:
+            payload["data"] = base64.b64encode(content).decode("utf-8")
+        else:
+            payload["body"] = content
+        return payload
+
+    @staticmethod
+    def _should_use_rag(message: str | None) -> bool:
+        return SmartRetrievalPlanner.plan(message).should_retrieve
+
+    @staticmethod
+    def _minimal_context(message: str | None, user_identity: Dict[str, str] | None = None, goal: str | None = None) -> str:
+        lang = HorusService._detect_language(message)
+        language_directive = (
+            "The user is writing in Arabic. Respond in Arabic."
+            if lang == "ar"
+            else "Respond in English. If the user writes in Arabic, switch to Arabic."
+        )
+        user_line = ""
+        if user_identity:
+            user_line = f"The user is {user_identity.get('name') or 'User'} ({user_identity.get('role') or 'USER'})."
+        goal_line = f"Active goal: {goal}." if goal else ""
+        return (
+            "You are Horus, the AI compliance advisor inside Ayn. "
+            "Answer immediately, clearly, and concisely. "
+            "Do not claim you saved or permanently stored uploaded files unless the user explicitly requested saving. "
+            f"{language_directive} {user_line} {goal_line}"
+        ).strip()
+
+    @staticmethod
     def _build_attachment_metadata(files: List[Any] | None) -> List[Dict[str, str]]:
         if not files:
             return []
@@ -138,17 +282,24 @@ class HorusService:
             if isinstance(item, dict):
                 filename = item.get("filename") or "file"
                 content_type = (item.get("content_type") or "").strip()
+                size = item.get("size")
+                storage = item.get("storage")
             else:
                 filename = getattr(item, "filename", None) or "file"
                 content_type = (getattr(item, "content_type", None) or "").strip()
+                size = None
+                storage = None
             attachment_type = "image" if content_type.startswith("image/") else "document"
-            attachments.append(
-                {
-                    "name": filename,
-                    "type": attachment_type,
-                    "mime_type": content_type,
-                }
-            )
+            meta = {
+                "name": filename,
+                "type": attachment_type,
+                "mime_type": content_type,
+            }
+            if size is not None:
+                meta["size"] = size
+            if storage:
+                meta["storage"] = storage
+            attachments.append(meta)
         return attachments
 
     @staticmethod
@@ -339,10 +490,7 @@ class HorusService:
         if not files:
             return False
         for f in files:
-            if isinstance(f, dict):
-                ct = f.get("content_type") or ""
-            else:
-                ct = getattr(f, "content_type", "") or ""
+            ct = HorusService._part_content_type(f)
             if not ct.startswith("image/"):
                 return False
         return True
@@ -450,7 +598,7 @@ class HorusService:
             store_as_evidence = False
             for file in files:
                 if store_as_evidence:
-                    content = await file.read()
+                    content = self._read_buffered_body(file) if isinstance(file, dict) else await file.read()
                     upload_result = await EvidenceService.upload_evidence(
                         file=file,
                         current_user=current_user,
@@ -474,14 +622,17 @@ class HorusService:
                             entity_type="evidence"
                         )
                 else:
-                    content = await file.read()
-                    ct = file.content_type or ""
-                    file_references.append({
-                        "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
-                        "mime_type": ct,
-                        "data": base64.b64encode(content).decode("utf-8"),
-                        "filename": file.filename
-                    })
+                    if isinstance(file, dict):
+                        file_references.append(self._build_file_payload(file))
+                    else:
+                        content = await file.read()
+                        ct = file.content_type or ""
+                        file_references.append({
+                            "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
+                            "mime_type": ct,
+                            "body": content,
+                            "filename": file.filename
+                        })
 
         # 5. AI Interaction
         client = get_gemini_client()
@@ -523,6 +674,9 @@ class HorusService:
 
     async def _resolve_user_identity(self, user_id: str, current_user: Any = None) -> Dict[str, str]:
         """Fetch user name/email/role/institution for AI context injection."""
+        cached = HorusContextCache.get(user_id)
+        if cached:
+            return cached
         name = getattr(current_user, "name", None) or (current_user.get("name") if isinstance(current_user, dict) else None)
         email = getattr(current_user, "email", None) or (current_user.get("email") if isinstance(current_user, dict) else None)
         role = getattr(current_user, "role", None) or (current_user.get("role") if isinstance(current_user, dict) else None)
@@ -557,17 +711,26 @@ class HorusService:
         display_name = (name or "User").strip()
         if display_name and display_name.lower() != "user" and " " in display_name:
             display_name = display_name.split()[0]
-        return {
+        resolved = {
             "name": display_name or "User",
             "email": email or "",
             "role": str(role or "USER"),
             "institution": institution_name or "",
         }
+        HorusContextCache.set(user_id, resolved)
+        return resolved
 
     async def _get_conversation_memory(self, user_id: str, exclude_chat_id: str | None = None) -> str:
         """Build a lightweight memory string from recent chat summaries."""
         try:
             from app.core.db import db as prisma_client
+            institution_id = None
+            try:
+                user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+                institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
+            except Exception:
+                institution_id = None
+            durable_memory = await HorusMemoryService.get_context(user_id, institution_id=institution_id)
             recent_chats = await prisma_client.chat.find_many(
                 where={"userId": user_id},
                 order={"updatedAt": "desc"},
@@ -595,11 +758,34 @@ class HorusService:
                     break
 
             if not memory_lines:
-                return ""
-            return "Recent conversation memory (past sessions):\n" + "\n".join(memory_lines)
+                return durable_memory
+            recent_memory = "Recent conversation memory (past sessions):\n" + "\n".join(memory_lines)
+            return "\n\n".join(part for part in [durable_memory, recent_memory] if part)
         except Exception as e:
             logger.error(f"Failed to build conversation memory: {e}")
             return ""
+
+    async def _remember_exchange_async(
+        self,
+        *,
+        user_id: str,
+        chat_id: str | None,
+        user_message: str | None,
+        assistant_response: str | None,
+    ) -> None:
+        try:
+            from app.core.db import db as prisma_client
+            user_obj = await prisma_client.user.find_unique(where={"id": user_id})
+            institution_id = getattr(user_obj, "institutionId", None) if user_obj else None
+            await HorusMemoryService.remember_exchange(
+                user_id=user_id,
+                institution_id=institution_id,
+                chat_id=chat_id,
+                user_message=user_message,
+                assistant_response=assistant_response,
+            )
+        except Exception as exc:
+            logger.debug("Horus memory update skipped: %s", exc)
 
     async def _generate_chat_title(self, message: str, response: str, background_tasks: Any, chat_id: str) -> None:
         """Generate a smart 3-5 word title for a chat using AI (only on first exchange)."""
@@ -649,6 +835,7 @@ class HorusService:
         can render as a typed card component.
         """
         corr_id = correlation_id or str(uuid4())
+        request_started = time.perf_counter()
         logger.info("Horus stream_chat started", extra={"correlation_id": corr_id, "user_id": user_id, "chat_id": chat_id})
 
         async def _yield_text_chunks(text: str, chunk_size: int = 32):
@@ -663,7 +850,7 @@ class HorusService:
         # Vercel / some ASGI stacks finalize the request body once streaming starts;
         # a later UploadFile.read() then raises "I/O operation on closed file".
         if files:
-            if all(isinstance(f, dict) and "body" in f for f in files):
+            if all(isinstance(f, dict) and ("body" in f or "temp_path" in f) for f in files):
                 buffered_parts = list(files)
                 files = buffered_parts
             else:
@@ -693,6 +880,7 @@ class HorusService:
             chat = await ChatService.create_chat(user_id, title=message[:50] if message else "New Conversation")
             chat_id = chat.id
             yield f"__CHAT_ID__:{chat_id}\n"
+            await asyncio.sleep(0)
         user_metadata = {"responseMode": request_mode} if request_mode else {}
         attachment_metadata = self._build_attachment_metadata(files)
         if attachment_metadata:
@@ -724,6 +912,22 @@ class HorusService:
         # Disabled automatic evidence upload in chat flow to vastly improve latency
         store_as_evidence = False
         agent_intent = self._classify_agent_intent(message=message, files=files, request_mode=request_mode)
+
+        if files:
+            yield "__HORUS_UPLOAD_MODE__:ephemeral\n"
+            for f in files:
+                fn = self._buffered_part_filename(f)
+                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'received', 'storage': self._file_storage(f), 'size': self._file_size(f)})}\n"
+            logger.info(
+                "Horus ephemeral upload accepted",
+                extra={
+                    "correlation_id": corr_id,
+                    "user_id": user_id,
+                    "file_count": len(files),
+                    "elapsed_ms": self._timing_ms(request_started),
+                },
+            )
+            await asyncio.sleep(0)
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if fast_path:
@@ -782,24 +986,34 @@ class HorusService:
                     assistant_meta = {"citations": rag_sources} if rag_sources else None
                     if full_response and background_tasks:
                         background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response, assistant_meta)
+                        background_tasks.add_task(self._remember_exchange_async, user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response)
                         if message:
                             background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
                     elif full_response:
                         await ChatService.save_message(chat_id, user_id, "assistant", full_response, assistant_meta)
+                        asyncio.create_task(self._remember_exchange_async(user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response))
                         if message:
                             asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
                     return
 
-                # RAG in Fast Path: when platform keywords present, inject document context
+                # RAG in Fast Path: Smart planner avoids embedding calls for general chat.
                 rag_fast = ""
-                compliance_kw = ["gap", "compliance", "standard", "criteria", "ncaaa", "iso", "accreditation", "analysis", "evidence", "فجوة", "امتثال", "معيار"]
-                if message and any(kw in (message or "").lower() for kw in compliance_kw):
+                retrieval_plan = SmartRetrievalPlanner.plan(message)
+                if retrieval_plan.should_retrieve:
                     try:
                         from app.core.db import db as _prisma
                         _u = await _prisma.user.find_unique(where={"id": user_id})
                         _inst = getattr(_u, "institutionId", None) if _u else None
                         rag = RagService()
-                        rag_fast, rag_sources = await rag.retrieve_context(message, limit=3, user_id=user_id, institution_id=_inst)
+                        rag_fast, rag_sources = await asyncio.wait_for(
+                            rag.retrieve_context(
+                                message,
+                                limit=retrieval_plan.limit,
+                                user_id=user_id,
+                                institution_id=_inst,
+                            ),
+                            timeout=retrieval_plan.budget_seconds,
+                        )
                         if rag_fast:
                             rag_fast = "\n" + rag_fast
                     except Exception as e:
@@ -856,6 +1070,10 @@ class HorusService:
                 else:
                     if first:
                         full_response += first
+                        logger.info(
+                            "Horus first fast-path token",
+                            extra={"correlation_id": corr_id, "elapsed_ms": self._timing_ms(request_started)},
+                        )
                         yield first
                     async for chunk in gen:
                         if chunk == CONTEXT_LIMIT_SENTINEL:
@@ -912,29 +1130,51 @@ class HorusService:
             if full_response and background_tasks:
                 assistant_meta = {"citations": rag_sources} if rag_sources else None
                 background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response, assistant_meta)
+                background_tasks.add_task(self._remember_exchange_async, user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response)
                 if message:
                     background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
             elif full_response:
                 assistant_meta = {"citations": rag_sources} if rag_sources else None
                 await ChatService.save_message(chat_id, user_id, "assistant", full_response, assistant_meta)
+                asyncio.create_task(self._remember_exchange_async(user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response))
                 if message:
                     asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
             return
 
-        user_identity = await self._resolve_user_identity(user_id, current_user)
-        active_goal = await self._get_active_goal(user_id, chat_id)
-
-        # Yield immediately so user sees progress before any heavy work
+        # First visible stream event for non-fast paths must not wait for DB/context work.
         if agent_intent:
             yield f"__AGENT_RUN__:{json.dumps(agent_intent)}\n"
             await asyncio.sleep(0)
         yield "__THINKING__:Preparing your request...\n"
         await asyncio.sleep(0)
 
+        user_identity_task = asyncio.create_task(self._resolve_user_identity(user_id, current_user))
+        active_goal_task = asyncio.create_task(self._get_active_goal(user_id, chat_id))
+        user_identity = await self._with_budget(
+            "identity",
+            user_identity_task,
+            default=self._default_user_identity(current_user),
+            correlation_id=corr_id,
+        )
+        active_goal = await self._with_budget("goal", active_goal_task, default=None, correlation_id=corr_id)
+
         # ── AGENT PLANNER + TOOL EXECUTION ────────────────────────────────────
         # Allow agent with files when: Agent mode selected, or message has platform keywords (e.g. "حلل", "analyze", "gaps")
         allow_agent_with_files = agent_intent.get("intent") in {"platform_action", "multi_step_workflow"}
-        if message and request_mode != "think" and (not files or allow_agent_with_files):
+        is_confirmation_control = bool(
+            message
+            and (
+                message.startswith("__CONFIRM_ACTION__:")
+                or message.startswith("__CANCEL_ACTION__:")
+            )
+        )
+        should_run_agent_planner = bool(
+            message
+            and request_mode == "agent"
+            and request_mode != "think"
+            and (not files or allow_agent_with_files)
+        )
+        if message and (is_confirmation_control or should_run_agent_planner):
             try:
                 prisma_client = db
                 user_obj = await prisma_client.user.find_unique(where={"id": user_id})
@@ -976,6 +1216,7 @@ class HorusService:
                             current_user=current_user_dict,
                             background_tasks=background_tasks,
                             correlation_id=corr_id,
+                            confirmed=True,
                         )
                         _pending_pop(confirm_id)
                         if plan_output["last_structured"]:
@@ -996,6 +1237,8 @@ class HorusService:
                             user_id=user_id,
                             institution_id=institution_id,
                             current_user=current_user_dict,
+                            request_mode=request_mode,
+                            confirmed=True,
                         )
                         _pending_pop(confirm_id)
 
@@ -1117,6 +1360,8 @@ class HorusService:
                             user_id=user_id,
                             institution_id=institution_id,
                             current_user=current_user_dict,
+                            request_mode=request_mode,
+                            confirmed=False,
                         )
                         yield f"__TOOL_STEP__:{json.dumps({'step': 1, 'total': 1, 'tool': tool_name, 'title': tool_meta['title'], 'status': 'done' if tool_result.get('type') != 'action_error' else 'error', 'result_type': tool_result.get('type', 'unknown')})}\n"
 
@@ -1208,6 +1453,7 @@ class HorusService:
                                 background_tasks=background_tasks,
                                 yield_chunk=put_chunk,
                                 correlation_id=corr_id,
+                                confirmed=False,
                             )
 
                         plan_task = asyncio.create_task(run_plan())
@@ -1272,27 +1518,20 @@ class HorusService:
         
         # 2. Parallelize ALL initial operations for speed
         async def process_file(part: dict[str, Any]):
-            content = part["body"]
-            fname = part.get("filename") or "file"
-            # Gemini requires application/pdf; browsers often send octet-stream for PDFs.
-            if fname.lower().endswith(".pdf"):
-                ct = "application/pdf"
-            else:
-                ct = (part.get("content_type") or "").strip()
-                if not ct or ct not in ALLOWED_FILE_TYPES:
-                    guessed, _ = mimetypes.guess_type(fname)
-                    if guessed:
-                        ct = guessed.strip()
-            mime_for_upload = ct if ct in ALLOWED_FILE_TYPES else (ct or "application/octet-stream")
-            file_payload = {
-                "type": "image" if ct.startswith("image/") else "document" if ct == "application/pdf" else "text",
-                "mime_type": ct or mime_for_upload,
-                "data": base64.b64encode(content).decode("utf-8"),
-                "filename": fname,
-                "evidenceId": None,
-            }
+            content = self._read_buffered_body(part)
+            file_payload = self._build_file_payload(part)
+            extraction = extract_text_cached(
+                content=content,
+                filename=file_payload["filename"],
+                mime_type=file_payload["mime_type"],
+                sha256=file_payload.get("sha256"),
+            )
+            if extraction.get("text"):
+                file_payload["extracted_text"] = extraction["text"]
+                file_payload["extraction_cache_hit"] = extraction.get("cache_hit", False)
+            mime_for_upload = file_payload["mime_type"] if file_payload["mime_type"] in ALLOWED_FILE_TYPES else "application/octet-stream"
             if store_as_evidence and content:
-                meta = SimpleNamespace(filename=fname, content_type=mime_for_upload)
+                meta = SimpleNamespace(filename=file_payload["filename"], content_type=mime_for_upload)
                 try:
                     upload_result = await EvidenceService.upload_evidence(
                         meta,  # duck-typed; body passed as file_content
@@ -1326,11 +1565,13 @@ class HorusService:
                 logger.error(f"Failed to fetch criteria mappings context: {e}")
             return ""
 
-        tasks = [
-            self.state_manager.get_state_summary(user_id),
-            ActivityService.get_recent_activities(user_id, limit=5),
-            fetch_mappings_context(user_id),
-        ]
+        tasks = []
+        if not files:
+            tasks.extend([
+                self._with_budget("state_summary", self.state_manager.get_state_summary(user_id), default=None, correlation_id=corr_id),
+                self._with_budget("recent_activities", ActivityService.get_recent_activities(user_id, limit=5), default=[], correlation_id=corr_id),
+                self._with_budget("mappings", fetch_mappings_context(user_id), default="", correlation_id=corr_id),
+            ])
         
         # Add file processing tasks if any
         if files:
@@ -1348,24 +1589,24 @@ class HorusService:
             yield "__THINKING__:Got it, analyzing your file...\n"
             for f in files:
                 fn = self._buffered_part_filename(f)
-                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'uploading'})}\n"
+                yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'routing', 'storage': self._file_storage(f), 'size': self._file_size(f)})}\n"
             await asyncio.sleep(0)
         else:
             yield "__THINKING__:Checking your platform context...\n"
             await asyncio.sleep(0)
 
-        results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks) if tasks else []
 
         if files:
             yield "__THINKING__:Processing attached files...\n"
             await asyncio.sleep(0)
 
-        summary = results[0]
-        recent_activities = results[1]
-        mapping_context = results[2]
+        summary = None if files else results[0]
+        recent_activities = [] if files else results[1]
+        mapping_context = "" if files else results[2]
         
         # Handle dynamic results (files)
-        offset = 3
+        offset = 0 if files else 3
         file_results = []
         if files:
             file_results = [r for r in results[offset:offset+len(files)] if r is not None]
@@ -1374,6 +1615,26 @@ class HorusService:
                 yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'done'})}\n"
                 yield f"__FILE__:{fn}\n"
                 await asyncio.sleep(0)
+                if res.get("temp_attachment_id"):
+                    try:
+                        if background_tasks:
+                            background_tasks.add_task(
+                                ProgressiveFileAnalysis.enqueue,
+                                user_id=user_id,
+                                attachment=res,
+                                message=message,
+                            )
+                        else:
+                            asyncio.create_task(
+                                ProgressiveFileAnalysis.enqueue(
+                                    user_id=user_id,
+                                    attachment=res,
+                                    message=message,
+                                )
+                            )
+                        yield f"__FILE_STATUS__:{json.dumps({'filename': fn, 'status': 'background_queued'})}\n"
+                    except Exception as progressive_err:
+                        logger.debug("Progressive file analysis enqueue skipped: %s", progressive_err)
 
         # Log file uploads in background
         for res in file_results:
@@ -1389,19 +1650,31 @@ class HorusService:
                 )
 
         # 3. AI Interaction (Streaming)
-        memory_task = asyncio.create_task(self._get_conversation_memory(user_id, exclude_chat_id=chat_id))
-        context_task = asyncio.create_task(self._prepare_context_sync(
-            summary,
-            recent_activities,
-            message=message,
-            mapping_context=mapping_context,
-            user_identity=user_identity,
-            goal=active_goal,
-            user_id=user_id,
-        ))
-        memory, context = await asyncio.gather(memory_task, context_task)
-        if memory:
-            context = memory + "\n\n" + context
+        # File requests use a minimal context so the model call is not blocked by
+        # platform state, RAG, or memory lookups. Text requests still get bounded
+        # context enrichment.
+        if files:
+            context = self._minimal_context(message, user_identity=user_identity, goal=active_goal)
+            memory = ""
+        else:
+            memory_task = asyncio.create_task(self._get_conversation_memory(user_id, exclude_chat_id=chat_id))
+            context_task = asyncio.create_task(self._prepare_context_sync(
+                summary,
+                recent_activities,
+                message=message,
+                mapping_context=mapping_context,
+                user_identity=user_identity,
+                goal=active_goal,
+                user_id=user_id,
+                allow_rag=self._should_use_rag(message),
+                correlation_id=corr_id,
+            ))
+            memory, context = await asyncio.gather(
+                self._with_budget("memory", memory_task, default="", correlation_id=corr_id),
+                context_task,
+            )
+            if memory:
+                context = memory + "\n\n" + context
         
         full_response = ""
         
@@ -1411,11 +1684,12 @@ class HorusService:
         if file_results:
             # Multimodal path only sends the current turn + files to Gemini — inject prior
             # chat text so follow-ups (e.g. summarize) still see the last assistant answer.
-            try:
-                history_for_files = await history_task
-            except Exception as hist_err:
-                logger.warning("Horus: could not load chat history for file follow-up: %s", hist_err)
-                history_for_files = None
+            history_for_files = await self._with_budget(
+                "history",
+                history_task,
+                default=None,
+                correlation_id=corr_id,
+            )
             prior_transcript = self._format_prior_messages_for_file_model(
                 getattr(history_for_files, "messages", None) if history_for_files else None,
                 current_user_message=message,
@@ -1554,6 +1828,10 @@ class HorusService:
                 else:
                     if first:
                         full_response += first
+                        logger.info(
+                            "Horus first file token",
+                            extra={"correlation_id": corr_id, "elapsed_ms": self._timing_ms(request_started)},
+                        )
                         yield first
                     async for chunk in gen:
                         if chunk == CONTEXT_LIMIT_SENTINEL:
@@ -1634,7 +1912,7 @@ class HorusService:
             if request_mode == "agent":
                 yield f"__AGENT_RUN__:{json.dumps({'mode': 'agent', 'intent': (agent_intent or {}).get('intent', 'agent_chat'), 'route': 'chat', 'goal': (agent_intent or {}).get('goal') or self._infer_agent_goal(message, files), 'reason': 'No tool or file workflow was necessary, so Horus is answering directly in Agent mode.'})}\n"
                 await asyncio.sleep(0)
-            history = await history_task
+            history = await self._with_budget("history", history_task, default=None, correlation_id=corr_id)
             yield "__THINKING__:Reviewing conversation history...\n"
             await asyncio.sleep(0)
             raw_messages = [{"role": m.role, "content": m.content} for m in (history.messages if history else [])]
@@ -1694,6 +1972,10 @@ class HorusService:
                 else:
                     if first:
                         full_response += first
+                        logger.info(
+                            "Horus first text token",
+                            extra={"correlation_id": corr_id, "elapsed_ms": self._timing_ms(request_started)},
+                        )
                         yield first
                     async for chunk in gen:
                         if chunk == CONTEXT_LIMIT_SENTINEL:
@@ -1752,128 +2034,40 @@ class HorusService:
         # 5. Save Assistant Response in Background to release the generator faster
         if full_response and background_tasks:
             background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", full_response)
+            background_tasks.add_task(self._remember_exchange_async, user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response)
             if message:
                 background_tasks.add_task(self._generate_chat_title, message, full_response, None, chat_id)
         elif full_response:
             await ChatService.save_message(chat_id, user_id, "assistant", full_response)
+            asyncio.create_task(self._remember_exchange_async(user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response))
             if message:
                 asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
 
     async def _execute_brain_pipeline(self, user_id, current_user, file_results, db, needs_analysis: bool = False):
-        """
-        Executes the full processor pipeline: OCR -> Evidence Analysis.
-        Optionally runs Gap Analysis if requested.
-        Returns the findings for AI injection.
-        """
-        results = {
-            "files_analyzed": len(file_results),
+        """Legacy hook: Horus no longer runs evidence writes or gap jobs from chat (read-only assistant)."""
+        logger.info(
+            "Horus brain pipeline skipped (read-only mode)",
+            extra={"user_id": user_id, "files": len(file_results or [])},
+        )
+        return {
+            "files_analyzed": len(file_results or []),
             "gap_reports": [],
-            "dashboard_updated": True
+            "dashboard_updated": False,
         }
-        
-        # 1. Evidence Analysis (Synchronous for Brain Mode)
-        for res in file_results:
-            try:
-                # We reuse the background logic but await it directly
-                # Res already contains data and mime_type
-                # filename, data, mime_type
-                content = base64.b64decode(res["data"])
-                await EvidenceService.analyze_evidence_task(
-                    evidence_id=res["evidenceId"],
-                    file_content=content,
-                    filename=res["filename"],
-                    mime_type=res["mime_type"],
-                    user_id=user_id
-                )
-                
-                # IMPORTANT: Rag Indexing (scoped by user/institution)
-                if res["mime_type"] == "text/plain" or res["mime_type"] == "text/markdown":
-                    from app.core.db import db as _prisma
-                    _user = await _prisma.user.find_unique(where={"id": user_id})
-                    _inst_id = getattr(_user, "institutionId", None) if _user else None
-                    rag = RagService()
-                    await rag.index_document(
-                        content.decode("utf-8"),
-                        document_id=res["evidenceId"],
-                        user_id=user_id,
-                        institution_id=_inst_id,
-                    )
-                    
-            except Exception as e:
-                logger.error(f"Brain Pipeline Step 1 (Evidence/RAG) failed: {e}")
 
-        if not needs_analysis:
-            logger.info("Skipping explicit Gap Analysis Trigger; user did not request analysis.")
-            return results
-
-        # 2. Gap Analysis Trigger
-        try:
-            # Find the user's institution
-            from app.core.db import db as prisma_client
-            user = await prisma_client.user.find_unique(
-                where={"id": user_id},
-                include={"institution": True}
-            )
-            
-            if user and user.institution:
-                institution_id = user.institution.id
-                
-                # Fetch standard to analyze (latest or most comprehensive)
-                # For now, we analyze against ALL standards linked to the institution
-                standards = await prisma_client.standard.find_many(
-                    where={
-                        "criteria": {
-                            "some": {
-                                "evidenceCriteria": {
-                                    "some": {
-                                        "evidence": {
-                                            "ownerId": institution_id
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                )
-                
-                gap_service = GapAnalysisService()
-                user_dto = UserDTO(
-                    id=user_id,
-                    institutionId=institution_id,
-                    role=getattr(user, "role", "USER"),
-                    email=getattr(user, "email", "unknown")
-                )
-                
-                for standard in standards:
-                    try:
-                        queued = await gap_service.queue_report(
-                            GapAnalysisRequest(standardId=standard.id),
-                            user_dto
-                        )
-                        await gap_service.run_report_background(
-                            job_id=queued["jobId"],
-                            user_id=user_id,
-                            institution_id=institution_id,
-                            standard_id=standard.id,
-                            current_user=user_dto,
-                        )
-                        report = await prisma_client.gapanalysis.find_unique(where={"id": queued["jobId"]})
-                        if not report:
-                            continue
-                        results["gap_reports"].append({
-                            "id": queued["jobId"],
-                            "title": standard.title,
-                            "score": report.overallScore,
-                            "gaps": [],
-                        })
-                    except Exception as e:
-                        logger.error(f"Brain Pipeline Step 2 (Gap) failed for {standard.title}: {e}")
-        except Exception as e:
-            logger.error(f"Brain Pipeline Step 2 (Gap) outer failed: {e}")
-
-        return results
-
-    async def _prepare_context_sync(self, summary, recent_activities, brain_results=None, message: str = "", mapping_context: str = "", user_identity: Dict[str, str] | None = None, goal: str | None = None, user_id: str | None = None) -> str:
+    async def _prepare_context_sync(
+        self,
+        summary,
+        recent_activities,
+        brain_results=None,
+        message: str = "",
+        mapping_context: str = "",
+        user_identity: Dict[str, str] | None = None,
+        goal: str | None = None,
+        user_id: str | None = None,
+        allow_rag: bool = True,
+        correlation_id: str | None = None,
+    ) -> str:
         """Build a clean, deliberate system prompt for Horus. Instructions come first so the
         model always knows who it is before reading any data."""
 
@@ -1900,9 +2094,13 @@ class HorusService:
 
         goal_line = f"Active session goal: {goal}" if goal else ""
 
-        instructions = f"""You are Horus (حورس), the AI compliance advisor built into the Ayn platform.
+        instructions = f"""You are Horus (حورس), the read-only AI compliance advisor built into the Ayn platform.
 {AYN_PLATFORM_DESCRIPTION}
-Your role: answer questions, analyze documents, and help the user navigate their compliance programme.
+Your role: answer questions, analyze attachments for explanation only, and interpret existing platform data.
+
+Hard limits:
+- You do not run new gap analysis, create reports, link evidence to criteria, or change any database state.
+- Direct users to the appropriate Ayn screens when they need to perform write operations.
 
 {user_line}
 {goal_line}
@@ -1949,14 +2147,27 @@ Behavioral rules:
             parts.append(mapping_context.strip())
 
         # ── RAG: retrieve relevant document excerpts ──────────────────────────
-        if message and user_id:
+        retrieval_plan = SmartRetrievalPlanner.plan(message)
+        if allow_rag and message and user_id and retrieval_plan.should_retrieve:
             try:
-                from app.core.db import db as _prisma
-                _user = await _prisma.user.find_unique(where={"id": user_id})
-                _inst_id = getattr(_user, "institutionId", None) if _user else None
-                rag = RagService()
-                rag_context, _ = await rag.retrieve_context(
-                    message, limit=4, user_id=user_id, institution_id=_inst_id
+                async def retrieve_rag_with_scope():
+                    from app.core.db import db as _prisma
+                    _user = await _prisma.user.find_unique(where={"id": user_id})
+                    _inst_id = getattr(_user, "institutionId", None) if _user else None
+                    rag = RagService()
+                    return await rag.retrieve_context(
+                        message,
+                        limit=retrieval_plan.limit,
+                        user_id=user_id,
+                        institution_id=_inst_id,
+                    )
+
+                rag_context, _ = await self._with_budget(
+                    "rag",
+                    retrieve_rag_with_scope(),
+                    default=("", []),
+                    budget_seconds=retrieval_plan.budget_seconds,
+                    correlation_id=correlation_id,
                 )
                 if rag_context and rag_context.strip():
                     parts.append(f"Relevant document excerpts:\n{rag_context.strip()}")
@@ -2346,9 +2557,9 @@ Behavioral rules:
             })
 
         suggestions.append({
-            "id": "gap_analysis",
-            "label": "Run gap analysis",
-            "prompt": "Run a gap analysis using this document as evidence and show which criteria are covered vs still missing",
+            "id": "gap_snapshot",
+            "label": "Compare to current gaps",
+            "prompt": "Using my institution's existing criteria mappings and latest reports in Ayn, what in this document relates to open vs covered criteria?",
             "icon": "bar-chart-2",
         })
 
@@ -2370,9 +2581,9 @@ Behavioral rules:
 
         if any(kw in resp for kw in ["score", "compliance", "percentage", "aligned", "readiness"]):
             suggestions.append({
-                "id": "gap_analysis",
-                "label": "Run full gap analysis",
-                "prompt": "Run a full gap analysis against our active standards and show detailed findings",
+                "id": "gap_snapshot",
+                "label": "Summarize latest gap findings",
+                "prompt": "Summarize my latest gap analysis reports and criteria mappings — which areas are weakest and why?",
                 "icon": "bar-chart-2",
             })
 
@@ -2471,14 +2682,14 @@ Available tools:
 
 Decision rules:
 1. Choose mode "tool" when a single tool gives a materially better answer than a text reply.
-   - Prefer "tool" when the user asks for gap analysis, audit report, remediation plan, or platform analytics.
+   - Prefer "tool" when the user asks for summaries of existing reports/mappings, gap explanations, remediation suggestions, or an export link for a report they already have.
+   - All tools are read-only; none create or update platform records.
    - Do NOT choose a tool when the user is asking a general question that does not require platform data.
 2. Choose mode "plan" only when the user explicitly asks for two or more distinct outcomes in one request.
    - A plan can have at most 3 steps.
    - Do not create a plan for a request a single tool already covers.
 3. Choose mode "chat" when no tool adds value — conversational questions, explanations, general compliance advice.
-4. For tools that mutate data (write/create/delete), only choose them when user intent is clearly explicit.
-5. When the classified intent is "file_analysis" or "agent_chat", prefer mode "chat" unless the user has clearly asked for a platform action.
+4. When the classified intent is "file_analysis" or "agent_chat", prefer mode "chat" unless the user has clearly asked for a platform action.
 
 Return ONLY valid JSON in this exact format (no markdown, no commentary):
 {{
@@ -2558,7 +2769,7 @@ Return ONLY valid JSON:
 Rules:
 - If a tool failed, consider an alternative tool or different arguments.
 - If no alternative helps, use mode "chat" and explain the failure to the user.
-- Plan can contain up to 3 steps.
+- Plan can contain up to 3 steps. All tools are read-only.
 """
         raw = await client.generate_text(prompt=planner_prompt)
         parsed = self._extract_json_block(raw)
@@ -2593,8 +2804,8 @@ Rules:
         if result_type == "job_started":
             job_id = result.get("jobId") or result.get("job_id") or payload.get("jobId")
             if job_id:
-                return f"The job is now running in the background (ID: `{job_id}`). You will be notified when it completes."
-            return "The task has been queued and is running in the background."
+                return f"A background job id `{job_id}` appeared in an older message; new analyses must be started from Gap Analysis in the app."
+            return "Background jobs are started from the main Gap Analysis workflow, not from Horus."
 
         if result_type == "audit_report":
             score = payload.get("score") or payload.get("overallScore")
@@ -2602,18 +2813,17 @@ Rules:
             return f"Your audit report is ready{score_str}. Review the findings above to see which criteria need attention."
 
         if result_type == "gap_table":
-            gap_count = len(payload.get("gaps") or [])
-            high = sum(1 for g in (payload.get("gaps") or []) if (g.get("priority") or "").lower() == "high")
-            detail = f"{gap_count} criteria reviewed" + (f", {high} high-priority" if high else "")
-            return f"Gap analysis complete — {detail}. See the table above for the full breakdown."
+            rows = payload.get("rows") or []
+            gap_count = sum(1 for r in rows if (r.get("status") or "").lower() != "met")
+            return f"Here are **{len(rows)}** mapping rows ({gap_count} non-met). See the table above for details."
 
         if result_type == "remediation_plan":
-            steps = len(payload.get("steps") or [])
-            steps_str = f" with {steps} recommended steps" if steps else ""
-            return f"Remediation plan ready{steps_str}. Each step above includes a specific action and deadline."
+            rows = payload.get("rows") or []
+            steps_str = f" with {len(rows)} suggested actions" if rows else ""
+            return f"Remediation suggestions ready{steps_str}. Each row is advisory only — confirm changes in the main app."
 
         if result_type == "analytics_report":
-            return "Analytics report generated. The charts and trend data are attached above."
+            return "Legacy analytics card — use Gap Analysis / Reports in the app for authoritative data."
 
         # Fallback: use any message the tool returned
         msg = result.get("message") or payload.get("message") or ""
@@ -2653,6 +2863,7 @@ Rules:
         background_tasks: Any = None,
         yield_chunk: Callable[[str], Any] | None = None,
         correlation_id: Optional[str] = None,
+        confirmed: bool = False,
     ) -> dict:
         """Execute plan steps with ReAct-style feedback: emit __TOOL_STEP__ per step,
         retry on failure, emit __ACTION_RESULT__ for each successful step."""
@@ -2679,6 +2890,8 @@ Rules:
                 user_id=user_id,
                 institution_id=institution_id,
                 current_user=current_user,
+                request_mode="agent",
+                confirmed=confirmed,
             )
 
             tool_results.append({"tool": tool_name, "result": result})
@@ -2780,95 +2993,3 @@ Rules:
                 metadata=metadata,
             )
 
-    async def _trigger_gap_analysis_after_upload(
-        self,
-        user_id: str,
-        current_user: Any,
-        db: Any
-    ):
-        """
-        P2.1: Auto-trigger gap analysis after files are uploaded via Horus chat.
-        Waits briefly for the evidence analysis background task to complete,
-        then runs gap analysis for all standards the institution has evidence for.
-        """
-        import asyncio as _asyncio
-        # Wait for evidence analysis background task to process the file
-        await _asyncio.sleep(30)
-
-        try:
-            from app.core.db import db as prisma_client
-
-            # Find the user's institution
-            user = await prisma_client.user.find_unique(
-                where={"id": user_id},
-                include={"institution": True}
-            )
-            if not user or not user.institution:
-                logger.warning(f"Horus gap trigger: No institution found for user {user_id}")
-                return
-
-            institution_id = user.institution.id
-
-            # Find all standards that have evidence linked to this institution
-            standards_with_evidence = await prisma_client.standard.find_many(
-                where={
-                    "criteria": {
-                        "some": {
-                            "evidenceCriteria": {
-                                "some": {
-                                    "evidence": {
-                                        "ownerId": institution_id
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            )
-
-            if not standards_with_evidence:
-                logger.info(f"Horus gap trigger: No standards with evidence for institution {institution_id}")
-                return
-
-            logger.info(f"Horus gap trigger: Running gap analysis for {len(standards_with_evidence)} standard(s)")
-
-            gap_service = GapAnalysisService()
-            for standard in standards_with_evidence:
-                try:
-                    request = GapAnalysisRequest(
-                        standardId=standard.id,
-                    )
-                    user_dto = UserDTO(
-                        id=user_id,
-                        institutionId=institution_id,
-                        role=getattr(user, "role", "USER"),
-                        email=getattr(user, "email", "unknown")
-                    )
-                    queued = await gap_service.queue_report(request, user_dto)
-                    await gap_service.run_report_background(
-                        job_id=queued["jobId"],
-                        user_id=user_id,
-                        institution_id=institution_id,
-                        standard_id=standard.id,
-                        current_user=user_dto,
-                    )
-                    report = await prisma_client.gapanalysis.find_unique(where={"id": queued["jobId"]})
-                    if not report:
-                        continue
-                    logger.info(f"Horus gap trigger: Gap analysis complete for standard '{standard.title}' — score: {report.overallScore}%")
-
-                    # Notify the user
-                    await NotificationService.create_notification(NotificationCreateRequest(
-                        userId=user_id,
-                        type="info",
-                        title="Gap Analysis Updated",
-                        message=f"Horus auto-ran gap analysis for '{standard.title}' after your file upload. Score: {report.overallScore:.0f}%.",
-                        relatedEntityId=queued["jobId"],
-                        relatedEntityType="gap_analysis"
-                    ))
-
-                except Exception as e:
-                    logger.error(f"Horus gap trigger: Failed for standard '{standard.title}': {e}")
-
-        except Exception as e:
-            logger.error(f"Horus gap trigger: Unexpected error for user {user_id}: {e}", exc_info=True)

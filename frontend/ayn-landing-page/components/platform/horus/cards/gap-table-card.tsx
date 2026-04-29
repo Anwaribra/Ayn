@@ -28,7 +28,7 @@ export function GapTableCard({ payload }: { payload: GapTablePayload }) {
           </div>
           <h3 className="font-bold text-foreground text-[14px]">Compliance Gaps</h3>
         </div>
-        <p className="text-[13px] text-muted-foreground">No criteria mappings found. Run a gap analysis first to see detailed compliance status.</p>
+        <p className="text-[13px] text-muted-foreground">No criteria mappings found yet. Complete mapping and gap analysis in the main workflow to see detailed compliance status here.</p>
       </div>
     )
   }

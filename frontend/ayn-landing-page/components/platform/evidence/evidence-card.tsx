@@ -9,34 +9,56 @@ interface EvidenceCardProps {
     onDelete?: () => void
 }
 
-const STATUS_LABELS: Record<string, string> = {
-    pending: "Pending",
-    processing: "Processing",
-    analyzed: "Analyzed",
-    linked: "Linked",
-    failed: "Failed",
-    complete: "Complete",
-    void: "Voided",
+type StatusTone = "success" | "warning" | "info" | "critical" | "neutral"
+
+const STATUS_META: Record<string, { label: string; labelAr: string; tone: StatusTone; active?: boolean }> = {
+    uploaded: { label: "Uploaded", labelAr: "تم الرفع", tone: "info", active: true },
+    pending: { label: "Queued", labelAr: "قيد الانتظار", tone: "info", active: true },
+    processing: { label: "Analyzing", labelAr: "قيد التحليل", tone: "warning", active: true },
+    analyzed: { label: "Analyzed", labelAr: "تم التحليل", tone: "success" },
+    linked: { label: "Linked", labelAr: "مرتبط", tone: "success" },
+    complete: { label: "Complete", labelAr: "مكتمل", tone: "success" },
+    failed: { label: "Failed", labelAr: "فشل", tone: "critical" },
+    void: { label: "Voided", labelAr: "ملغي", tone: "critical" },
+    orphaned: { label: "Unlinked", labelAr: "غير مرتبط", tone: "warning" },
+    defined: { label: "Defined", labelAr: "محدد", tone: "neutral" },
 }
 
-function getStatusStyle(status: string) {
-    const isSuccess = ["complete", "analyzed", "linked"].includes(status)
-    const isError = ["void", "failed"].includes(status)
-    const isActive = ["pending", "processing"].includes(status)
+const TONE_CLASSES: Record<StatusTone, { badge: string; dot: string }> = {
+    success: {
+        badge: "text-[var(--status-success)] bg-[var(--status-success-bg)] border-[var(--status-success-border)]",
+        dot: "bg-[var(--status-success)]",
+    },
+    warning: {
+        badge: "text-[var(--status-warning)] bg-[var(--status-warning-bg)] border-[var(--status-warning-border)]",
+        dot: "bg-[var(--status-warning)]",
+    },
+    info: {
+        badge: "text-[var(--status-info)] bg-[var(--status-info-bg)] border-[var(--status-info-border)]",
+        dot: "bg-[var(--status-info)]",
+    },
+    critical: {
+        badge: "text-[var(--status-critical)] bg-[var(--status-critical-bg)] border-[var(--status-critical-border)]",
+        dot: "bg-[var(--status-critical)]",
+    },
+    neutral: {
+        badge: "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]",
+        dot: "bg-muted-foreground/60",
+    },
+}
 
+function getStatusStyle(status: string, isArabic: boolean) {
+    const meta = STATUS_META[status] ?? {
+        label: status,
+        labelAr: status,
+        tone: "neutral" as StatusTone,
+    }
+    const tone = TONE_CLASSES[meta.tone]
     return {
-        label: STATUS_LABELS[status] ?? status,
-        badgeClass: isSuccess
-            ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
-            : isError
-            ? "text-destructive bg-destructive/10 border-destructive/25"
-            : "text-amber-500 bg-amber-500/10 border-amber-500/25",
-        dotClass: isSuccess
-            ? "bg-emerald-500"
-            : isError
-            ? "bg-destructive"
-            : "bg-amber-500",
-        animate: isActive,
+        label: isArabic ? meta.labelAr : meta.label,
+        badgeClass: tone.badge,
+        dotClass: tone.dot,
+        animate: Boolean(meta.active),
     }
 }
 
@@ -73,17 +95,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
         ? rawDocType.toUpperCase().replace("VND.OPENXMLFORMATS-OFFICEDOCUMENT.WORDPROCESSINGML.DOCUMENT", "DOCX")
         : isArabic ? "مستند" : "Document"
 
-    const { label, badgeClass, dotClass, animate } = getStatusStyle(status)
-    const localizedLabel =
-        ({
-            Pending: isArabic ? "قيد الانتظار" : "Pending",
-            Processing: isArabic ? "قيد المعالجة" : "Processing",
-            Analyzed: isArabic ? "تم التحليل" : "Analyzed",
-            Linked: isArabic ? "مرتبط" : "Linked",
-            Failed: isArabic ? "فشل" : "Failed",
-            Complete: isArabic ? "مكتمل" : "Complete",
-            Voided: isArabic ? "ملغي" : "Voided",
-        } as Record<string, string>)[label] ?? label
+    const { label, badgeClass, dotClass, animate } = getStatusStyle(status, isArabic)
 
     return (
         <div
@@ -108,7 +120,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                             animate && "animate-pulse",
                         )}
                     />
-                    {localizedLabel}
+                    {label}
                 </span>
                 {/* Date — always visible; no absolute positioning so no overlap */}
                 <span className="text-[10px] text-muted-foreground/70 tabular-nums shrink-0">
@@ -143,7 +155,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                                 : (criteriaCount === 1 ? "criterion linked" : "criteria linked")}
                         </span>
                     ) : (
-                        <span className="italic opacity-60 truncate">{isArabic ? "لم يُحلل بعد" : "Not analyzed"}</span>
+                        <span className="italic opacity-60 truncate">{isArabic ? "غير مرتبط بعد" : "Not linked yet"}</span>
                     )}
                 </div>
 

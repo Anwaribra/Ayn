@@ -21,6 +21,9 @@ from app.core.middlewares import request_timing_middleware
 from app.core.rate_limit import limiter
 from app.evidence.router import router as evidence_router
 from app.gap_analysis.router import router as gap_analysis_router
+from app.dashboard.router import router as dashboard_router
+from app.notifications.router import router as notifications_router
+from app.deepagents.router import router as deepagents_router
 from app.horus.router import router as horus_router
 from app.institutions.router import router as institutions_router
 from app.standards.router import router as standards_router
@@ -86,6 +89,9 @@ app.include_router(institutions_router, prefix="/api/institutions", tags=["Insti
 app.include_router(standards_router, prefix="/api/standards", tags=["Standards"])
 app.include_router(evidence_router, prefix="/api/evidence", tags=["Evidence"])
 app.include_router(gap_analysis_router, prefix="/api/gap-analysis", tags=["Gap Analysis"])
+app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(deepagents_router, prefix="/api", tags=["DeepAgents"])
 app.include_router(horus_router, prefix="/api", tags=["Horus"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 

@@ -30,7 +30,7 @@ class MultiModelAIRouter:
     DIFY_COST = float(os.getenv("AI_COST_DIFY_PER_1M", "0.30"))
 
     FAST_MODEL = os.getenv("OPENROUTER_FAST_MODEL", os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001"))
-    REASONING_MODEL = os.getenv("OPENROUTER_REASONING_MODEL", "anthropic/claude-3.5-sonnet")
+    REASONING_MODEL = os.getenv("OPENROUTER_REASONING_MODEL", "google/gemini-2.0-flash-001")
     VISION_MODEL = os.getenv("OPENROUTER_VISION_MODEL", FAST_MODEL)
 
     @classmethod

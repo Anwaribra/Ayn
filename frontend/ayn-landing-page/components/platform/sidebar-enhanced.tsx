@@ -11,6 +11,7 @@ import {
   Scale,
   Microscope,
   BarChart4,
+  Workflow,
   Settings,
   UserCircle2,
   LogOut,
@@ -56,6 +57,7 @@ const COMPLIANCE_WORKFLOW: NavItemConfig[] = [
   { id: "evidence", icon: FileCheck, label: { en: "Evidence Vault", ar: "مخزن الأدلة" }, href: "/platform/evidence" },
   { id: "standards", icon: Scale, label: { en: "Standards Hub", ar: "المعايير" }, href: "/platform/standards" },
   { id: "gap-analysis", icon: Microscope, label: { en: "Gap Analysis", ar: "تحليل الفجوات" }, href: "/platform/gap-analysis" },
+  { id: "workflows", icon: Workflow, label: { en: "Automation", ar: "الأتمتة" }, href: "/platform/workflows" },
 ]
 
 const INSIGHTS_TOOLS: NavItemConfig[] = [

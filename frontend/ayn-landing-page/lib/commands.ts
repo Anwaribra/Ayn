@@ -22,6 +22,7 @@ import {
   FileCheck,
   GraduationCap,
   Scale,
+  Workflow,
   Lightbulb,
   Monitor,
   Cpu,
@@ -79,6 +80,15 @@ export const navigationCommands: Command[] = [
     href: "/platform/gap-analysis",
     keywords: ["compliance", "gaps", "analysis", "check"],
     badge: "AI",
+  },
+  {
+    id: "automation",
+    title: "Automation",
+    description: "Compliance workflows and run history",
+    icon: Workflow,
+    category: "Navigation",
+    href: "/platform/workflows",
+    keywords: ["workflow", "workflows", "automation", "pipelines", "أتمتة", "سير العمل"],
   },
   {
     id: "standards",

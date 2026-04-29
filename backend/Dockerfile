@@ -20,14 +20,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Store engines outside ~ so we can COPY them into the runtime stage (default ~/.cache is not copied)
-ENV PRISMA_HOME_DIR=/app/.prisma-home
-
-# Copy Prisma, generate client, and download query/migration engines under PRISMA_HOME_DIR
+# Copy Prisma; generate downloads engines to /root/.cache/prisma-python (default)
 COPY prisma ./prisma/
 # pip --prefix puts console scripts in /install/bin; prisma-client-py generator must be on PATH
-RUN mkdir -p /app/.prisma-home \
- && PATH="/install/bin:${PATH}" \
+RUN PATH="/install/bin:${PATH}" \
     PYTHONPATH=/install/lib/python3.11/site-packages \
     python3 -m prisma generate \
  && python3 -m prisma py fetch
@@ -43,15 +39,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatomic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed python packages, Prisma client, and downloaded engine binaries
+# Copy installed python packages and generated Prisma client from builder
 COPY --from=builder /install /usr/local
-COPY --from=builder /app/.prisma-home /app/.prisma-home
+# prisma-client-py resolves engines under $HOME/.cache/prisma-python/... at runtime (see BinaryNotFoundError)
+COPY --from=builder /root/.cache/prisma-python /root/.cache/prisma-python
 
 # Copy application code
 COPY . .
 
 # Environment variables
-ENV PRISMA_HOME_DIR=/app/.prisma-home
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
@@ -59,4 +55,3 @@ EXPOSE 8000
 
 # Run the application
 CMD uvicorn main:app --host 0.0.0.0 --port $PORT
-

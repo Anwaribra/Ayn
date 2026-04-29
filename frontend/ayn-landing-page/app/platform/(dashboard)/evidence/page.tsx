@@ -114,6 +114,12 @@ function EvidenceContent() {
     total: isArabic ? "الإجمالي" : "Total",
     analyzed: isArabic ? "تم التحليل" : "Analyzed",
     linked: isArabic ? "مرتبط" : "Linked",
+    queued: isArabic ? "قيد الانتظار" : "Queued",
+    uploaded: isArabic ? "تم الرفع" : "Uploaded",
+    analyzing: isArabic ? "قيد التحليل" : "Analyzing",
+    failedStatus: isArabic ? "فشل" : "Failed",
+    complete: isArabic ? "مكتمل" : "Complete",
+    statusUnknown: isArabic ? "غير معروف" : "Unknown",
     confidence: isArabic ? "الثقة" : "Confidence",
     failedLoad: isArabic ? "فشل تحميل الأدلة." : "Failed to load evidence.",
     retry: isArabic ? "إعادة المحاولة" : "Retry",
@@ -137,7 +143,9 @@ function EvidenceContent() {
     linkedCriteria: isArabic ? "المعايير المرتبطة" : "Linked Criteria",
     standard: isArabic ? "المعيار" : "Standard",
     noCriteria: isArabic ? "لا توجد معايير مرتبطة بعد." : "No criteria linked yet.",
-    runAnalysisMap: isArabic ? "شغّل التحليل لربط هذا الملف بمعاييرك." : "Run an analysis to map this file against your standards.",
+    runAnalysisMap: isArabic ? "حلل هذا الملف أو افتح تحليل الفجوات لتحديد المعيار المناسب." : "Analyze this file or open Gap Analysis to attach the right standard.",
+    analyzeNow: isArabic ? "حلل الآن" : "Analyze now",
+    openGapAnalysisCta: isArabic ? "فتح تحليل الفجوات" : "Open Gap Analysis",
     bulkTitle: isArabic ? "تشغيل تحليل الفجوات على الملفات المحددة" : "Run Gap Analysis on Selected Files",
     bulkSubtitle: isArabic ? "اختر معيارًا الآن، أو اتركه فارغًا وحدده داخل صفحة تحليل الفجوات." : "Choose a standard now, or leave it blank and pick the standard inside Gap Analysis.",
     targetStandard: isArabic ? "المعيار المستهدف" : "Target Standard",
@@ -148,13 +156,40 @@ function EvidenceContent() {
     analyzeEvidence: isArabic ? "تحليل الدليل" : "Analyze Evidence",
     selectFramework: isArabic ? "اختر الإطار الذي تريد المطابقة عليه." : "Select framework to map against.",
     allStandards: isArabic ? "كل المعايير المتاحة" : "All Available Standards",
-    processing: isArabic ? "جارٍ التنفيذ..." : "Processing...",
+    processing: isArabic ? "جارٍ التحليل..." : "Analyzing...",
     runAnalysis: isArabic ? "تشغيل التحليل" : "Run Analysis",
     deleteEvidence: isArabic ? "حذف الدليل" : "Delete Evidence",
     confirmDelete: isArabic ? "تأكيد الحذف" : "Confirm Delete",
     previewLoading: isArabic ? "جارٍ تحميل المعاينة…" : "Loading preview…",
     previewFailed: isArabic ? "تعذّر تحميل الملف. حاول مرة أخرى." : "Could not load the file. Please try again.",
   }), [isArabic])
+
+  type EvidenceStatusTone = "success" | "warning" | "info" | "critical" | "neutral"
+  const statusToneClasses: Record<EvidenceStatusTone, string> = {
+    success: "text-[var(--status-success)] bg-[var(--status-success-bg)] border-[var(--status-success-border)]",
+    warning: "text-[var(--status-warning)] bg-[var(--status-warning-bg)] border-[var(--status-warning-border)]",
+    info: "text-[var(--status-info)] bg-[var(--status-info-bg)] border-[var(--status-info-border)]",
+    critical: "text-[var(--status-critical)] bg-[var(--status-critical-bg)] border-[var(--status-critical-border)]",
+    neutral: "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]",
+  }
+  const evidenceStatusMeta = useMemo(() => ({
+    uploaded: { label: copy.uploaded, tone: "info" as EvidenceStatusTone, animate: true },
+    pending: { label: copy.queued, tone: "info" as EvidenceStatusTone, animate: true },
+    processing: { label: copy.analyzing, tone: "warning" as EvidenceStatusTone, animate: true },
+    analyzed: { label: copy.analyzed, tone: "success" as EvidenceStatusTone },
+    linked: { label: copy.linked, tone: "success" as EvidenceStatusTone },
+    complete: { label: copy.complete, tone: "success" as EvidenceStatusTone },
+    failed: { label: copy.failedStatus, tone: "critical" as EvidenceStatusTone },
+  }), [copy])
+  const resolveEvidenceStatus = (status?: string | null) => {
+    const fallback = { label: copy.statusUnknown, tone: "neutral" as EvidenceStatusTone, animate: false }
+    const meta = (status && evidenceStatusMeta[status]) ? evidenceStatusMeta[status] : fallback
+    return {
+      label: meta.label,
+      badgeClass: statusToneClasses[meta.tone],
+      animate: Boolean(meta.animate),
+    }
+  }
  
   const [isUploading, setIsUploading] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null)
@@ -728,17 +763,20 @@ function EvidenceContent() {
                 <h3 className="font-semibold text-sm text-foreground truncate leading-tight">
                   {selectedEvidence.title || selectedEvidence.originalFilename}
                 </h3>
-                <span className={cn(
-                  "mt-0.5 inline-block rounded px-1.5 py-px text-[10px] font-semibold capitalize border",
-                  ["linked", "analyzed", "complete"].includes(selectedEvidence.status)
-                    ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
-                    : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
-                )}>
-                    {selectedEvidence.status === "analyzed" ? copy.analyzed
-                    : selectedEvidence.status === "linked" ? copy.linked
-                    : selectedEvidence.status === "pending" ? (isArabic ? "قيد الانتظار" : "Pending")
-                    : selectedEvidence.status}
-                </span>
+                {(() => {
+                  const statusMeta = resolveEvidenceStatus(selectedEvidence.status)
+                  return (
+                    <span
+                      className={cn(
+                        "mt-0.5 inline-block rounded px-1.5 py-px text-[10px] font-semibold capitalize border",
+                        statusMeta.badgeClass,
+                        statusMeta.animate && "animate-pulse",
+                      )}
+                    >
+                      {statusMeta.label}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -919,6 +957,24 @@ function EvidenceContent() {
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       {copy.runAnalysisMap}
                     </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAnalyzeModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {copy.analyzeNow}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleOpenGapAnalysisForEvidence}
+                        className="inline-flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3.5 py-2 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {copy.openGapAnalysisCta}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

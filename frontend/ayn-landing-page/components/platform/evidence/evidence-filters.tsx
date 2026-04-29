@@ -7,12 +7,13 @@ import useSWR from "swr"
 import { api } from "@/lib/api"
 import { useUiLanguage } from "@/lib/ui-language-context"
 
-const STATUSES = ["pending", "processing", "analyzed", "linked", "failed"] as const
+const STATUSES = ["uploaded", "pending", "processing", "analyzed", "linked", "failed"] as const
 type Status = typeof STATUSES[number]
 
 const STATUS_LABELS: Record<Status, string> = {
-    pending: "Pending",
-    processing: "Processing",
+    uploaded: "Uploaded",
+    pending: "Queued",
+    processing: "Analyzing",
     analyzed: "Analyzed",
     linked: "Linked",
     failed: "Failed",
@@ -46,8 +47,9 @@ export function EvidenceFilters({
 
     const hasActiveFilters = activeStatus !== "" || activeStandard !== ""
     const statusLabels: Record<Status, string> = {
-        pending: isArabic ? "قيد الانتظار" : "Pending",
-        processing: isArabic ? "قيد المعالجة" : "Processing",
+        uploaded: isArabic ? "تم الرفع" : "Uploaded",
+        pending: isArabic ? "قيد الانتظار" : "Queued",
+        processing: isArabic ? "قيد التحليل" : "Analyzing",
         analyzed: isArabic ? "تم التحليل" : "Analyzed",
         linked: isArabic ? "مرتبط" : "Linked",
         failed: isArabic ? "فشل" : "Failed",

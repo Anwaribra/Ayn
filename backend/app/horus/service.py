@@ -38,6 +38,7 @@ from app.horus.retrieval import SmartRetrievalPlanner
 from app.horus.context_cache import HorusContextCache
 from app.horus.memory import HorusMemoryService
 
+from app.core.db import Prisma
 logger = logging.getLogger(__name__)
 
 # ── Platform identity constant ────────────────────────────────────────────────

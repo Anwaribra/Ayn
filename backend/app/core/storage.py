@@ -4,8 +4,32 @@ from app.core.config import settings
 import logging
 import uuid
 from typing import Optional
+from urllib.parse import urlparse, unquote
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_storage_object_path(raw: str) -> str:
+    """
+    Return the object key inside SUPABASE_BUCKET (e.g. evidence/uuid.pdf).
+
+    Legacy DB rows sometimes store a full public Storage URL. Supabase
+    ``create_signed_url`` expects only the path after
+    ``/object/public/<bucket>/`` (not the entire URL).
+    """
+    if not raw:
+        return raw
+    s = raw.strip()
+    bucket = settings.SUPABASE_BUCKET
+
+    if s.startswith("http://") or s.startswith("https://"):
+        path = unquote(urlparse(s).path or "")
+        for kind in ("public", "authenticated", "sign"):
+            prefix = f"/storage/v1/object/{kind}/{bucket}/"
+            if path.startswith(prefix):
+                return path[len(prefix) :].lstrip("/")
+
+    return s
 
 # Initialize Supabase client
 supabase: Optional[Client] = None
@@ -98,6 +122,7 @@ async def delete_file_from_supabase(file_path: str) -> bool:
     client = get_supabase_client()
     
     try:
+        file_path = normalize_storage_object_path(file_path)
         # Remove the bucket prefix if present
         if file_path.startswith(settings.SUPABASE_BUCKET + "/"):
             file_path = file_path[len(settings.SUPABASE_BUCKET + "/"):]
@@ -115,6 +140,7 @@ async def create_signed_url(file_path: str, expires_in: int = 300) -> str:
     import asyncio
 
     client = get_supabase_client()
+    file_path = normalize_storage_object_path(file_path)
 
     try:
         def _sign():

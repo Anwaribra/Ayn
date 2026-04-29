@@ -176,10 +176,10 @@ function EvidenceContent() {
     uploaded: { label: copy.uploaded, tone: "info" as EvidenceStatusTone, animate: true },
     pending: { label: copy.queued, tone: "info" as EvidenceStatusTone, animate: true },
     processing: { label: copy.analyzing, tone: "warning" as EvidenceStatusTone, animate: true },
-    analyzed: { label: copy.analyzed, tone: "success" as EvidenceStatusTone },
-    linked: { label: copy.linked, tone: "success" as EvidenceStatusTone },
-    complete: { label: copy.complete, tone: "success" as EvidenceStatusTone },
-    failed: { label: copy.failedStatus, tone: "critical" as EvidenceStatusTone },
+    analyzed: { label: copy.analyzed, tone: "success" as EvidenceStatusTone, animate: false },
+    linked: { label: copy.linked, tone: "success" as EvidenceStatusTone, animate: false },
+    complete: { label: copy.complete, tone: "success" as EvidenceStatusTone, animate: false },
+    failed: { label: copy.failedStatus, tone: "critical" as EvidenceStatusTone, animate: false },
   }), [copy])
   type EvidenceStatusKey = keyof typeof evidenceStatusMeta
   const resolveEvidenceStatus = (status?: string | null) => {

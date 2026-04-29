@@ -17,6 +17,8 @@ export function WorkflowRunsSection({
   workflowRuns,
   runsLoading,
   runsError,
+  runsErrorDetail,
+  onRetryRuns,
   runsList,
   successRate,
   avgDuration,
@@ -27,6 +29,8 @@ export function WorkflowRunsSection({
   workflowRuns: WorkflowRunItem[] | undefined
   runsLoading: boolean
   runsError: unknown
+  runsErrorDetail?: string
+  onRetryRuns?: () => void
   runsList: WorkflowRunItem[]
   successRate: string
   avgDuration: string
@@ -77,6 +81,18 @@ export function WorkflowRunsSection({
             <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
             <h4 className="text-sm font-bold text-foreground">Failed to load runs</h4>
             <p className="text-xs text-muted-foreground mt-1">Try refreshing in a moment.</p>
+            {runsErrorDetail ? (
+              <p className="text-[11px] text-muted-foreground/90 mt-3 font-mono break-all max-w-lg mx-auto">{runsErrorDetail}</p>
+            ) : null}
+            {onRetryRuns ? (
+              <button
+                type="button"
+                className="mt-4 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"
+                onClick={onRetryRuns}
+              >
+                Retry
+              </button>
+            ) : null}
           </div>
         ) : !workflowRuns || workflowRuns.length === 0 ? (
           <div className="glass-panel rounded-2xl p-10 glass-border text-center">

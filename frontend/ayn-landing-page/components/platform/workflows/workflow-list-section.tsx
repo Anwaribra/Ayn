@@ -27,6 +27,7 @@ export function WorkflowListSection({
   availableTriggers,
   isLoading,
   error,
+  errorDetail,
   onRetry,
   filteredWorkflows,
   runBusyId,
@@ -44,6 +45,7 @@ export function WorkflowListSection({
   availableTriggers: string[]
   isLoading: boolean
   error: unknown
+  errorDetail?: string
   onRetry: () => void
   filteredWorkflows: WorkflowData[]
   runBusyId: string | null
@@ -145,6 +147,9 @@ export function WorkflowListSection({
             <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
             <h4 className="text-sm font-bold text-foreground">Failed to load automations</h4>
             <p className="text-xs text-muted-foreground mt-1">Try refreshing the page.</p>
+            {errorDetail ? (
+              <p className="text-[11px] text-muted-foreground/90 mt-3 font-mono break-all max-w-lg mx-auto">{errorDetail}</p>
+            ) : null}
             <button
               type="button"
               className="mt-4 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors"

@@ -360,7 +360,33 @@ class ComplianceService:
             entity_type="workflow_run",
             metadata={"run": run.model_dump(mode="json")},
         )
-        return run
+        # Manual runs from the UI are recorded as immediately completed so Activity reflects a finished audit entry.
+        end = datetime.now(timezone.utc)
+        await ActivityService.log_activity(
+            user_id=user_id,
+            type="workflow_run_updated",
+            title=f"Workflow completed: {body.workflowName}",
+            description=body.message,
+            entity_id=run.id,
+            entity_type="workflow_run",
+            metadata={
+                "patch": {
+                    "status": "success",
+                    "endedAt": end.isoformat(),
+                }
+            },
+        )
+        return WorkflowRun(
+            id=run.id,
+            workflowName=run.workflowName,
+            status="success",
+            trigger=run.trigger,
+            startedAt=run.startedAt,
+            endedAt=end,
+            startedBy=run.startedBy,
+            message=run.message,
+            metadata=run.metadata,
+        )
 
     @staticmethod
     async def update_workflow_run(run_id: str, body: WorkflowRunUpdateRequest, current_user: dict) -> WorkflowRun:

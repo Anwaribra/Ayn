@@ -39,11 +39,16 @@ export default function WorkflowsPage() {
 
   const templates = useMemo(() => getDefaultWorkflowTemplates(), [])
 
-  const { data: workflows, isLoading, error, mutate } = useSWR<WorkflowData[]>("workflows", () => api.getWorkflows(), {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    dedupingInterval: 30_000,
-  })
+  const { data: workflows, isLoading, error, mutate } = useSWR<WorkflowData[]>(
+    "workflows",
+    () => api.getWorkflows(),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30_000,
+      shouldRetryOnError: true,
+    },
+  )
   const { data: workflowRuns, isLoading: runsLoading, error: runsError, mutate: mutateRuns } = useSWR<WorkflowRunItem[]>(
     "workflow-runs",
     () => api.getWorkflowRuns(),
@@ -51,6 +56,7 @@ export default function WorkflowsPage() {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 30_000,
+      shouldRetryOnError: true,
     },
   )
 
@@ -180,7 +186,7 @@ export default function WorkflowsPage() {
         message: "Manual run",
         metadata: { source: "ui" },
       })
-      mutateRuns((prev) => [run, ...(prev ?? [])], { revalidate: false })
+      mutateRuns()
       handleStatusUpdate(workflow.id, "active")
       toast.success(`"${workflow.name}" started`)
     } catch {
@@ -226,6 +232,7 @@ export default function WorkflowsPage() {
         setLocalWorkflows((prev) => [created, ...(prev ?? workflows ?? [])])
         toast.success("Automation saved as draft")
       }
+      await mutate()
       closeBuilder()
     } catch {
       toast.error("Failed to save workflow")
@@ -247,11 +254,8 @@ export default function WorkflowsPage() {
                   </span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">Automation</h1>
-                <p className="text-sm text-muted-foreground max-w-xl">
-                  Run repeatable compliance pipelines when evidence changes, analysis completes, or you start a run manually—same audit trail, less busywork.
-                </p>
-                <p className="text-xs text-muted-foreground max-w-xl">
-                  Here, &quot;automation&quot; means a named workflow plus trigger; deep scheduling and custom step editors will arrive in a later release.
+                <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+                  Triggers, templates, and run history backed by your workspace—start a manual run or save a custom automation (Beta).
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -317,6 +321,7 @@ export default function WorkflowsPage() {
                 availableTriggers={availableTriggers}
                 isLoading={isLoading}
                 error={error}
+                errorDetail={error instanceof Error ? error.message : error ? String(error) : undefined}
                 onRetry={() => mutate()}
                 filteredWorkflows={filteredWorkflows}
                 runBusyId={runBusyId}
@@ -333,6 +338,8 @@ export default function WorkflowsPage() {
               workflowRuns={workflowRuns}
               runsLoading={runsLoading}
               runsError={runsError}
+              runsErrorDetail={runsError instanceof Error ? runsError.message : runsError ? String(runsError) : undefined}
+              onRetryRuns={() => mutateRuns()}
               runsList={runsList}
               successRate={successRate}
               avgDuration={avgDuration}

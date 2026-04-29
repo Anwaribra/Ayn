@@ -22,13 +22,12 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Copy Prisma; generate downloads engines to /root/.cache/prisma-python (default)
 COPY prisma ./prisma/
-# pip --prefix puts console scripts in /install/bin; prisma-client-py generator must be on PATH.
-# /app/prisma holds only schema.prisma but shadows the real prisma package on sys.path when cwd is /app.
+# pip --prefix puts scripts in /install/bin; /app/prisma(schema) shadows package "prisma" if cwd is /app.
 RUN cd /tmp \
- && export PATH="/install/bin:$$PATH" \
+ && export PATH="/install/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin" \
  && export PYTHONPATH=/install/lib/python3.11/site-packages \
- && python3 -m prisma generate --schema /app/prisma/schema.prisma \
- && python3 -m prisma py fetch
+ && /usr/local/bin/python3 -m prisma generate --schema /app/prisma/schema.prisma \
+ && /usr/local/bin/python3 -m prisma py fetch
 
 # --- STAGE 2: Runtime ---
 FROM python:3.11-slim

@@ -23,10 +23,10 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # Copy Prisma; generate downloads engines to /root/.cache/prisma-python (default)
 COPY prisma ./prisma/
 # pip --prefix puts console scripts in /install/bin; prisma-client-py generator must be on PATH.
-# /app/prisma holds only schema.prisma but Python resolves it as top-level package "prisma" and shadows the real client.
-RUN PATH="/install/bin:${PATH}" \
-    PYTHONPATH=/install/lib/python3.11/site-packages \
-    cd /tmp \
+# /app/prisma holds only schema.prisma but shadows the real prisma package on sys.path when cwd is /app.
+RUN cd /tmp \
+ && export PATH="/install/bin:$$PATH" \
+ && export PYTHONPATH=/install/lib/python3.11/site-packages \
  && python3 -m prisma generate --schema /app/prisma/schema.prisma \
  && python3 -m prisma py fetch
 

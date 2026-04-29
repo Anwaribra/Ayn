@@ -18,7 +18,7 @@ import { AnalyticsKpiCards, type KpiCardData } from "@/components/platform/analy
 import { AnalyticsInsights, type Insight } from "@/components/platform/analytics/analytics-insights"
 import {
   TrendAreaChart, DistributionBarChart, DonutChart,
-  ScoreHeatmap,
+  ScoreHeatmap, ScoreDistributionPanel,
 } from "@/components/platform/analytics/analytics-charts"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -352,11 +352,11 @@ function HorusAnalyticsPanel({
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Horus Intelligence</p>
-              <h2 className="mt-1 text-lg font-bold text-foreground">Analytics Summary</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{intelligence.directAnswer}</p>
+              <h2 className="mt-1 text-base font-bold text-foreground">Analytics Summary</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/75">{intelligence.directAnswer}</p>
             </div>
           </div>
-          <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-foreground/55">
             Confidence: <span className="text-foreground">{intelligence.confidence}</span>
           </div>
         </div>
@@ -372,7 +372,7 @@ function HorusAnalyticsPanel({
                   </span>
                 )}
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{insight.description}</p>
+              <p className="text-xs leading-relaxed text-foreground/72">{insight.description}</p>
               {!!insight.actions?.length && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {insight.actions.slice(0, 3).map((action) => (
@@ -394,10 +394,10 @@ function HorusAnalyticsPanel({
 
         {intelligence.nextActions.length > 0 && (
           <div className="mt-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Next 3 Actions</p>
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/55">Next 3 Actions</p>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               {intelligence.nextActions.slice(0, 3).map((action, index) => (
-                <div key={action} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                <div key={action} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-foreground/75">
                   <span className="mr-2 font-mono text-primary">{index + 1}</span>
                   {action}
                 </div>
@@ -548,6 +548,7 @@ function AnalyticsContent() {
     refresh: isArabic ? "تحديث" : "Refresh",
     updated: isArabic ? "آخر تحديث" : "Updated",
     exportReport: isArabic ? "تصدير تقرير" : "Export Report",
+    explainPage: isArabic ? "اشرح هذه الصفحة" : "Explain this page",
     csvTitle: isArabic ? "تنزيل البيانات الخام بصيغة CSV" : "Download raw data as CSV",
     noDataExport: isArabic ? "لا توجد بيانات للتصدير في هذه الفترة" : "No data to export for this period",
     exportedData: isArabic ? "تم تصدير بيانات التحليلات" : "Analytics data exported",
@@ -598,7 +599,7 @@ function AnalyticsContent() {
     unusualReportsSub: isArabic ? "العناصر التي خرجت عن النمط المعتاد في هذا الإطار الزمني" : "Items that deviated from the normal pattern in this time window",
     noAnomalies: isArabic ? "لا توجد شذوذات في هذه الفترة." : "No anomalies detected in this period.",
     scoreDistribution: isArabic ? "توزيع النتائج" : "Score Distribution",
-    scoreDistributionSub: isArabic ? "عدد التقارير داخل كل نطاق نتيجة" : "How many reports fall into each score band",
+    scoreDistributionSub: isArabic ? "نسبة التقارير في كل نطاق من إجمالي الفترة" : "Each band’s share of reports this period (%)",
   }), [isArabic])
   const periodLabels: Record<PeriodKey, string> = useMemo(() => ({
     "7d": isArabic ? "7 أيام" : "7 Days",
@@ -875,7 +876,12 @@ function AnalyticsContent() {
       {
         label: copy.scoreTrend,
         value: growth > 0 ? `+${growth}% ${copy.thisPeriod}` : growth < 0 ? `${growth}% ${copy.thisPeriod}` : copy.stable,
-        tone: growth > 0 ? "text-[var(--status-success)]" : growth < 0 ? "text-[var(--status-critical)]" : "text-muted-foreground",
+        tone:
+          growth > 0
+            ? "text-[var(--status-success)]"
+            : growth < 0
+              ? "text-orange-400 dark:text-orange-300"
+              : "text-foreground/65",
         icon: TrendingUp,
       },
     ]
@@ -912,31 +918,36 @@ function AnalyticsContent() {
       />
 
       {/* ─── Header ─── */}
-      <header className="mb-8 pt-6 px-4">
-        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-panel glass-border p-5 sm:p-7 lg:p-8">
+      <header className="mb-6 pt-4 px-4">
+        <div className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] glass-panel glass-border p-4 sm:p-5 lg:p-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_35%),radial-gradient(circle_at_78%_18%,rgba(16,185,129,0.10),transparent_26%)] pointer-events-none" />
           <div className="absolute -right-14 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className={cn("space-y-3 max-w-3xl", isArabic && "text-right")}>
-              <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/60 leading-tight">
+          <div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className={cn("min-w-0 space-y-2 max-w-3xl flex-1", isArabic && "text-right")}>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-snug">
                 {copy.title}
               </h1>
-              <p className="max-w-2xl text-sm sm:text-base text-muted-foreground/90 leading-relaxed font-medium">
+              <p className="max-w-2xl text-sm sm:text-[0.9375rem] text-foreground/78 leading-relaxed">
                 {executiveSummary}
               </p>
             </div>
 
-            <div className={cn("flex flex-wrap items-center gap-3", isArabic && "flex-row-reverse")}>
-              <div className="p-1.5 glass-panel rounded-2xl glass-border flex items-center gap-1 bg-background/20 backdrop-blur-md">
+            <div
+              className={cn(
+                "flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:flex-nowrap xl:max-w-xl xl:justify-end xl:items-start",
+                isArabic && "sm:flex-row-reverse",
+              )}
+            >
+              <div className="p-1 glass-panel rounded-2xl glass-border inline-flex flex-wrap items-center gap-0.5 bg-background/30 backdrop-blur-md">
                 {PERIOD_OPTIONS.map((option) => (
                   <button 
                     key={option.key} 
                     onClick={() => setPeriod(option.key)} 
                     className={cn(
-                      "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 min-h-[38px]", 
+                      "px-3 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-wide transition-all duration-200 min-h-[36px] sm:min-h-[38px]",
                       period === option.key 
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+                        : "text-foreground/55 hover:text-foreground hover:bg-white/8"
                     )}
                   >
                     {periodLabels[option.key]}
@@ -944,47 +955,47 @@ function AnalyticsContent() {
                 ))}
               </div>
               
-              <div className="flex flex-col items-end gap-1">
+              <div className={cn("flex flex-col gap-1", isArabic ? "items-end sm:items-start" : "items-start sm:items-end")}>
                 <button 
                   onClick={refreshAnalytics} 
-                  className="group flex items-center gap-2.5 px-5 py-3 min-h-[46px] glass-panel rounded-2xl glass-border text-[10px] font-bold uppercase tracking-widest transition-all text-muted-foreground hover:text-foreground hover:bg-white/5 active:scale-95"
+                  className="group inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] glass-panel rounded-2xl glass-border text-[11px] font-semibold uppercase tracking-wide transition-all text-foreground/70 hover:text-foreground hover:bg-white/8 active:scale-[0.98]"
                 >
-                  <RefreshCw className={cn("w-3.5 h-3.5 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} /> 
+                  <RefreshCw className={cn("w-3.5 h-3.5 shrink-0 transition-transform group-hover:rotate-180 duration-500", isLoading && "animate-spin")} /> 
                   {copy.refresh}
                 </button>
                 {lastUpdated && (
-                  <span className="text-[9px] font-bold text-muted-foreground/60 px-2 uppercase tracking-tighter">
+                  <span className="text-[10px] font-medium text-foreground/50 px-0.5 uppercase tracking-wide">
                     {copy.updated} {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 )}
               </div>
 
-              <button
-                onClick={handleExplainPage}
-                disabled={!analytics || explainLoading}
-                className="group flex min-h-[46px] items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/10 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-primary/5"
-              >
-                {explainLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4 group-hover:animate-pulse" />}
-                {isArabic ? "اشرح هذه الصفحة" : "Explain this page"}
-              </button>
+              <div className={cn("flex flex-wrap gap-2 sm:flex-nowrap", isArabic && "flex-row-reverse")}>
+                <button
+                  onClick={handleExplainPage}
+                  disabled={!analytics || explainLoading}
+                  className="group inline-flex flex-1 min-w-[9rem] justify-center items-center gap-2 rounded-2xl border border-primary/35 bg-primary/12 px-4 py-2.5 min-h-[40px] text-[11px] font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/22 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  {explainLoading ? <Loader2 className="h-4 w-4 animate-spin shrink-0" /> : <Brain className="h-4 w-4 group-hover:animate-pulse shrink-0" />}
+                  <span className="truncate">{copy.explainPage}</span>
+                </button>
 
-              <button
-                onClick={handleExportReport}
-                disabled={!analytics || (analytics.totalReports ?? 0) === 0}
-                className="flex min-h-[46px] items-center gap-2.5 rounded-2xl bg-primary px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_20px_40px_-15px_rgba(37,99,235,0.4)] transition-all hover:scale-105 hover:shadow-primary/50 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <Download className="w-3.5 h-3.5" /> {copy.exportReport}
-              </button>
-
-
+                <button
+                  onClick={handleExportReport}
+                  disabled={!analytics || (analytics.totalReports ?? 0) === 0}
+                  className="inline-flex flex-1 min-w-[9rem] justify-center items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 min-h-[40px] text-[11px] font-semibold uppercase tracking-wide text-primary-foreground shadow-lg shadow-primary/25 transition-colors hover:bg-primary/92 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <Download className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{copy.exportReport}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {executiveNotes.map((note, idx) => (
               <div 
                 key={note.label} 
-                className="group relative overflow-hidden rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 transition-all hover:-translate-y-1 hover:bg-[var(--glass-strong-bg)]"
+                className="group relative overflow-hidden rounded-[20px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4 sm:p-5 transition-all hover:-translate-y-0.5 hover:bg-[var(--glass-strong-bg)]"
               >
                 {/* Subtle background gradient based on index */}
                 <div className={cn(
@@ -995,23 +1006,29 @@ function AnalyticsContent() {
                   idx === 3 && "bg-gradient-to-br from-purple-500 to-transparent"
                 )} />
                 
-                <div className="relative z-10 flex flex-col justify-between h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">
+                <div className="relative z-10 flex min-h-[7.5rem] flex-col justify-between">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/55">
                       {note.label}
                     </p>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-background/50 group-hover:border-primary/30 group-hover:bg-primary/5 transition-colors">
-                      <note.icon className="w-4.5 h-4.5 text-primary/70 group-hover:text-primary transition-colors" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-background/50 group-hover:border-primary/30 group-hover:bg-primary/5 transition-colors">
+                      <note.icon className="h-4 w-4 text-primary group-hover:text-primary transition-colors" />
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    <p className={cn("text-xl sm:text-2xl font-black tracking-tight truncate", note.tone)}>
+                  <div className="min-w-0 space-y-1">
+                    <p
+                      className={cn(
+                        "text-lg sm:text-xl font-bold tracking-tight leading-snug break-words",
+                        idx === 1 && "line-clamp-5 sm:line-clamp-6",
+                        note.tone,
+                      )}
+                    >
                       {note.value}
                     </p>
                     <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="h-1 w-1 rounded-full bg-primary" />
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-primary/60">Live Insight</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-primary/70">Live</span>
                     </div>
                   </div>
                 </div>
@@ -1154,32 +1171,12 @@ function AnalyticsContent() {
             </section>
           )}
 
-          {/* ─── Score Distribution (histogram) ─── */}
           {analytics.scoreDistribution && (
-            <section className="glass-panel glass-border relative overflow-hidden rounded-[28px] p-5 sm:p-6 lg:p-7">
-              <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(124,92,224,0.85),transparent)] opacity-70" />
-              <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
-              <div className="relative z-10">
-                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{copy.scoreDistribution}</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em] mb-6">{copy.scoreDistributionSub}</p>
-              </div>
-              <div className="relative z-10 grid grid-cols-2 md:grid-cols-5 gap-3">
-                {analytics.scoreDistribution.map((bucket: any) => {
-                  const maxCount = Math.max(...analytics.scoreDistribution.map((b: any) => b.count), 1)
-                  const heightPct = bucket.count > 0 ? Math.max((bucket.count / maxCount) * 100, 8) : 4
-                  const colors: Record<string, string> = { "0-20": "#c9424a", "21-40": "#b45309", "41-60": "#2563eb", "61-80": "#7c5ce0", "81-100": "#0d9668" }
-                  return (
-                    <div key={bucket.range} className="flex flex-col items-center gap-2 rounded-[22px] border border-white/8 bg-white/[0.03] p-3">
-                      <div className="glass-surface flex h-32 w-full items-end justify-center rounded-xl p-1.5">
-                        <div className="w-full rounded-lg transition-all duration-700" style={{ height: `${heightPct}%`, backgroundColor: colors[bucket.range] || "#2563eb" }} />
-                      </div>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">{bucket.range}%</span>
-                      <span className="text-sm font-bold text-foreground">{bucket.count}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
+            <ScoreDistributionPanel
+              buckets={analytics.scoreDistribution}
+              title={copy.scoreDistribution}
+              subtitle={copy.scoreDistributionSub}
+            />
           )}
         </div>
       )}

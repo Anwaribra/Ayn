@@ -42,7 +42,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
           </div>
           <div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">{isArabic ? "الرؤى" : "Insights"}</h3>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">
+            <p className="text-[10px] font-bold text-foreground/55 uppercase tracking-[0.14em]">
               {isArabic ? "أنماط وتوصيات من بياناتك" : "Patterns and recommendations from your data"}
             </p>
           </div>
@@ -83,7 +83,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                       <span className="glass-pill glass-text-secondary px-2 py-0.5 text-[10px] font-bold">{insight.metric}</span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                  <p className="text-xs text-foreground/75 leading-relaxed">{insight.description}</p>
                   {insight.action && (
                     <p className="text-[10px] font-bold text-primary mt-3 flex items-center gap-1 uppercase tracking-[0.16em]">
                       {insight.action} <ArrowRight className="w-3 h-3" />

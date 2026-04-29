@@ -95,27 +95,27 @@ class DashboardService:
                     except Exception:
                         pass
 
-            alignment_percentage = round((aligned_criteria_count / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
+            criteria_based_pct = (
+                round((aligned_criteria_count / total_criteria) * 100, 2) if total_criteria > 0 else 0.0
+            )
+            alignment_percentage = criteria_based_pct
 
-            # If criterion links are missing but gap analyses exist, surface avg report score
-            # so active workspaces don't show a misleading 0%.
+            # When criteria coverage is 0% or no criteria are linked to the institution yet,
+            # fall back to recent gap-analysis overall scores so-readiness isn't stuck at 0%.
             if (
-                alignment_percentage == 0.0
-                and total_criteria > 0
+                total_gap_analyses > 0
                 and not is_admin
                 and institution_id
-                and total_gap_analyses > 0
+                and (criteria_based_pct < 0.01 or total_criteria == 0)
             ):
                 recent_ga = await db.gapanalysis.find_many(
                     where={"institutionId": institution_id},
                     order={"createdAt": "desc"},
-                    take=10,
+                    take=25,
                 )
                 if recent_ga:
-                    alignment_percentage = round(
-                        sum(float(r.overallScore) for r in recent_ga) / len(recent_ga),
-                        2,
-                    )
+                    avg_gap = sum(float(r.overallScore) for r in recent_ga) / len(recent_ga)
+                    alignment_percentage = round(max(0.0, min(100.0, avg_gap)), 2)
 
             # Record in platform state for Horus and other consumers
             try:

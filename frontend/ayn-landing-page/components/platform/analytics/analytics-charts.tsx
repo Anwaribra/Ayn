@@ -49,7 +49,7 @@ function ChartCardShell({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{title}</h3>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">{subtitle}</p>
+            <p className="text-[10px] font-bold text-foreground/55 uppercase tracking-[0.14em]">{subtitle}</p>
           </div>
           <div className="h-10 w-10 shrink-0 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]" style={{ boxShadow: `0 18px 40px -28px ${accentColor}` }} />
         </div>
@@ -248,6 +248,142 @@ export function ComplianceRadar({ data, title, subtitle }: RadarProps) {
           </RadarChart>
         </ResponsiveContainer>
       </div>
+    </ChartCardShell>
+  )
+}
+
+/* ─── Score distribution (percent of reports per band) ─────────── */
+export interface ScoreDistributionBucket {
+  range: string
+  count: number
+}
+
+const SCORE_BUCKET_COLORS: Record<string, string> = {
+  "0-20": "#c9424a",
+  "21-40": "#b45309",
+  "41-60": "#2563eb",
+  "61-80": "#7c5ce0",
+  "81-100": "#0d9668",
+}
+
+function formatScoreBandLabel(range: string, isArabic: boolean) {
+  const parts = range.split("-")
+  if (parts.length !== 2) return `${range}%`
+  const [lo, hi] = parts
+  return isArabic ? `${lo}–${hi}٪` : `${lo}–${hi}%`
+}
+
+interface ScoreDistributionPanelProps {
+  buckets: ScoreDistributionBucket[]
+  title: string
+  subtitle: string
+}
+
+export function ScoreDistributionPanel({ buckets, title, subtitle }: ScoreDistributionPanelProps) {
+  const { isArabic } = useUiLanguage()
+  const total = useMemo(() => buckets.reduce((s, b) => b.count + s, 0), [buckets])
+
+  const rows = useMemo(() => {
+    return buckets.map((b) => {
+      const share = total > 0 ? (b.count / total) * 100 : 0
+      const rounded = Math.round(share * 10) / 10
+      return {
+        ...b,
+        sharePct: rounded,
+        color: SCORE_BUCKET_COLORS[b.range] ?? PALETTE[0],
+      }
+    })
+  }, [buckets, total])
+
+  const nonEmpty = rows.filter((r) => r.count > 0)
+
+  return (
+    <ChartCardShell title={title} subtitle={subtitle} accentColor="#7c5ce0">
+      {total === 0 ? (
+        <div className="flex min-h-[200px] items-center justify-center text-sm text-foreground/65">
+          {isArabic ? "لا توجد تقارير في هذه الفترة" : "No reports in this period"}
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {/* Segmented strip: composition at a glance */}
+          <div>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-foreground/55">
+              {isArabic ? "توزيع التقارير حسب النطاق" : "Report mix by score band"}
+            </p>
+            <div
+              className="flex h-4 w-full overflow-hidden rounded-full bg-white/[0.06] ring-1 ring-white/10 shadow-inner"
+              role="img"
+              aria-label={isArabic ? "شريط نسب التقارير" : "Stacked share of reports"}
+            >
+              {nonEmpty.map((item, idx) => (
+                  <motion.div
+                    key={item.range}
+                    initial={{ flexGrow: 0 }}
+                    animate={{ flexGrow: item.count }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: idx * 0.04 }}
+                    className={cn(
+                      "h-full min-w-0",
+                      nonEmpty.length === 1 && "rounded-full",
+                      nonEmpty.length > 1 && idx === 0 && "rounded-l-full",
+                      nonEmpty.length > 1 && idx === nonEmpty.length - 1 && "rounded-r-full",
+                    )}
+                    style={{
+                      flexBasis: 0,
+                      minWidth: 0,
+                      backgroundColor: item.color,
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12)`,
+                    }}
+                    title={`${formatScoreBandLabel(item.range, isArabic)}: ${item.sharePct}%`}
+                  />
+                ))}
+            </div>
+          </div>
+
+          {/* Per-band rows: % primary, count secondary */}
+          <ul className="space-y-3">
+            {rows.map((item, i) => (
+              <li
+                key={item.range}
+                className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-3 sm:px-4"
+              >
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white/15"
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden
+                  />
+                  <span className="min-w-[5.5rem] text-sm font-semibold text-foreground/90 sm:min-w-[6.5rem]">
+                    {formatScoreBandLabel(item.range, isArabic)}
+                  </span>
+                  <div className="min-h-[10px] min-w-[120px] flex-1">
+                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, item.sharePct)}%` }}
+                        transition={{ duration: 0.55, delay: i * 0.06, ease: "easeOut" }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: item.color, opacity: 0.92 }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-baseline gap-2 sm:gap-3">
+                    <span
+                      className="tabular-nums text-xl font-bold tracking-tight"
+                      style={{ color: item.color }}
+                    >
+                      {item.sharePct}%
+                    </span>
+                    <span className="whitespace-nowrap text-xs font-medium text-foreground/55">
+                      {item.count}{" "}
+                      {isArabic ? (item.count === 1 ? "تقرير" : "تقارير") : `report${item.count !== 1 ? "s" : ""}`}
+                    </span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </ChartCardShell>
   )
 }

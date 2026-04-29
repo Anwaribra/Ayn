@@ -41,6 +41,20 @@ function formatMetricsSynced(dataUpdatedAt: number, isArabic: boolean): string {
   return isArabic ? `محدّث منذ ${d} يوم` : `Updated ${d}d ago`
 }
 
+/** Hero % pill: color by readiness band */
+function heroPercentClasses(score: number): string {
+  if (score >= 85)
+    return "border-emerald-400/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_28px_-6px_rgba(52,211,153,0.45)]"
+  if (score >= 65)
+    return "border-teal-400/35 bg-teal-500/12 text-teal-200 shadow-[0_0_24px_-8px_rgba(45,212,191,0.35)]"
+  if (score >= 40)
+    return "border-amber-400/40 bg-amber-500/15 text-amber-200 shadow-[0_0_24px_-8px_rgba(251,191,36,0.25)]"
+  if (score >= 15)
+    return "border-orange-400/40 bg-orange-500/12 text-orange-200"
+  if (score > 0) return "border-sky-400/35 bg-sky-500/12 text-sky-200"
+  return "border-white/15 bg-white/[0.06] text-muted-foreground"
+}
+
 
 
 export default function DashboardPage() {
@@ -91,8 +105,11 @@ function DashboardContent() {
   const recentActivities = Array.isArray(safeMetrics?.recentActivities) ? safeMetrics.recentActivities : []
 
   const alignmentScore = safeMetrics?.alignmentPercentage ?? 0
+  const alignedCriteria = safeMetrics?.alignedCriteriaCount ?? 0
   const alertCount = safeMetrics?.unreadNotificationsCount ?? 0
   const analysesCount = safeMetrics?.totalGapAnalyses ?? 0
+  const heroScoreHintGapOnly =
+    alignedCriteria === 0 && analysesCount > 0 && alignmentScore > 0
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -339,21 +356,54 @@ function DashboardContent() {
               <p className="text-muted-foreground font-medium max-w-xl text-sm sm:text-base md:text-lg leading-relaxed">
                 {isArabic ? (
                   <>
-                    حورس نشط ومساحة عملك تعرض حالياً{" "}
-                    <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span>{" "}
-                    امتثالاً عبر{" "}
-                    <span className="text-foreground font-bold">{publicStandards.length}</span> معياراً متتبعاً.
+                    حورس نشط ومساحة عملك تعرض حالياً مؤشر جاهزية{" "}
+                    <span
+                      className={cn(
+                        "inline-flex items-baseline rounded-xl border px-2.5 py-0.5 text-base sm:text-lg font-black tabular-nums align-middle",
+                        heroPercentClasses(alignmentScore),
+                      )}
+                    >
+                      {Math.round(alignmentScore)}%
+                    </span>{" "}
+                    عبر{" "}
+                    <span className="text-foreground font-bold">{publicStandards.length}</span> معياراً متتبعاً
+                    {analysesCount > 0 ? (
+                      <> ويشمل متوسط نتائج أحدث تحليلات الفجوات ({analysesCount}).</>
+                    ) : (
+                      <>.</>
+                    )}
                   </>
                 ) : (
                   <>
-                    Horus is active and your workspace is currently showing{" "}
-                    <span className="text-foreground font-bold">{Math.round(alignmentScore)}%</span>{" "}
-                    compliance alignment across{" "}
-                    <span className="text-foreground font-bold">{publicStandards.length}</span>{" "}
-                    tracked standards.
+                    Horus is active — your workspace readiness score is{" "}
+                    <span
+                      className={cn(
+                        "inline-flex items-baseline rounded-xl border px-2.5 py-0.5 text-base sm:text-lg font-black tabular-nums align-middle",
+                        heroPercentClasses(alignmentScore),
+                      )}
+                    >
+                      {Math.round(alignmentScore)}%
+                    </span>{" "}
+                    across{" "}
+                    <span className="text-foreground font-bold">{publicStandards.length}</span> tracked standards
+                    {analysesCount > 0 ? (
+                      <>
+                        , blending criterion coverage with your latest gap analyses (
+                        <span className="text-foreground font-semibold">{analysesCount}</span> runs).
+                      </>
+                    ) : (
+                      "."
+                    )}
                   </>
                 )}
               </p>
+              {heroScoreHintGapOnly ? (
+                <p className="mt-2 text-xs text-muted-foreground/90 max-w-xl leading-relaxed">
+                  {isArabic
+                    ? "الدرجة تستمد من تقارير تحليل الفجوات الأخيرة لأن معايير المنشأة لم تُربَط بعد بأدلة على مستوى المعيار الفرعي."
+                    : "Score is driven by recent gap-analysis reports while criterion-level evidence mapping is still ramping up."}
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">

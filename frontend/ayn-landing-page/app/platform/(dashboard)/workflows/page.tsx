@@ -249,7 +249,7 @@ export default function WorkflowsPage() {
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-destructive bg-destructive/15 border border-destructive/40">
                     Beta
                   </span>
                 </div>

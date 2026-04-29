@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # OpenRouter (fallback AI provider)
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_MODEL: str = "openrouter/free"
+    # Optional: full URL to POST /chat/completions (OpenAI-compatible). Use your own gateway or LiteLLM.
+    OPENROUTER_BASE_URL: Optional[str] = None
+
+    # Alternate Horus LLM — separate keys from OPENROUTER_* (your own gateway / second provider).
+    # OpenAI-compatible POST …/chat/completions. Horus uses this only when the client sends X-AI-Provider: alt_llm.
+    HORUS_ALT_LLM_API_KEY: Optional[str] = None
+    HORUS_ALT_LLM_MODEL: Optional[str] = None
+    HORUS_ALT_LLM_BASE_URL: Optional[str] = None  # full URL; default same as OpenRouter client default if unset
     
     # OpenAI (speech-to-text)
     OPENAI_API_KEY: Optional[str] = None

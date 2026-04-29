@@ -2434,6 +2434,27 @@ Behavioral rules:
                 "help with standards and evidence, and guide you through gap analysis."
             )
 
+        # Colloquial Arabic "who are you" (إنت مين، انت مين يا برو، مين أنت…)
+        _ar_norm = (
+            msg.replace("أ", "ا")
+            .replace("إ", "ا")
+            .replace("آ", "ا")
+            .replace("ى", "ي")
+            .replace("ة", "ه")
+        )
+        _ar_lower = _ar_norm.lower()
+        if is_arabic and (
+            "انت مين" in _ar_lower
+            or "مين انت" in _ar_lower
+            or "انتى مين" in _ar_lower
+            or "مين انتا" in _ar_lower
+        ):
+            name_part = f" يا {first_name}" if first_name else ""
+            return (
+                f"أنا Horus{name_part}، مساعد منصة Ayn للامتثال والجودة. "
+                "أقدر أجاوب على أسئلتك، ألخّص ملفاتك، وأوجّهك في الأدلة والمعايير وتحليل الفجوات."
+            )
+
         if (
             msg.startswith("من انت") or msg.startswith("من أنت")
             or "ماذا تستطيع" in msg

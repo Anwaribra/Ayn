@@ -395,13 +395,15 @@ class DifyClient:
 # ─── OpenRouter Client ────────────────────────────────────────────────────────
 class OpenRouterClient:
     """OpenRouter API client (OpenAI-compatible) as fallback AI provider."""
-    
-    BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-    
-    def __init__(self, api_key: str, model: str = "openrouter/free"):
+
+    DEFAULT_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+    def __init__(self, api_key: str, model: str = "openrouter/free", base_url: Optional[str] = None):
         self.api_key = api_key
         self.model = model
-        logger.info(f"OpenRouter client initialized with model: {model}")
+        u = (base_url or "").strip()
+        self.base_url = u if u else self.DEFAULT_BASE_URL
+        logger.info(f"OpenRouter client initialized model={model} base_url={self.base_url[:48]}...")
     
     async def _call(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
         """Make a request to OpenRouter API."""
@@ -421,7 +423,7 @@ class OpenRouterClient:
         
         client = get_shared_client()
         response = await client.post(
-            self.BASE_URL,
+            self.base_url,
             json=payload,
             headers=headers,
             timeout=60.0,
@@ -490,7 +492,7 @@ class OpenRouterClient:
             "X-Title": "Ayn Platform - Horus AI",
         }
         client = get_shared_client()
-        async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+        async with client.stream("POST", self.base_url, json=payload, headers=headers, timeout=120.0) as response:
             if response.status_code >= 400:
                 body = await response.aread()
                 logger.error(f"OpenRouter stream error {response.status_code} model={self.model}: {body.decode()[:500]}")
@@ -573,7 +575,7 @@ class OpenRouterClient:
         
         client = get_shared_client()
         response = await client.post(
-            self.BASE_URL,
+            self.base_url,
             json=payload,
             headers=headers,
             timeout=120.0,
@@ -616,7 +618,7 @@ class OpenRouterClient:
             "X-Title": "Ayn Platform - Horus AI",
         }
         client = get_shared_client()
-        async with client.stream("POST", self.BASE_URL, json=payload, headers=headers, timeout=120.0) as response:
+        async with client.stream("POST", self.base_url, json=payload, headers=headers, timeout=120.0) as response:
             response.raise_for_status()
             buffer = ""
             async for chunk in response.aiter_text():
@@ -1155,6 +1157,7 @@ class HorusAIClient:
     def __init__(self):
         self.gemini: Optional[GeminiClient] = None
         self.openrouter: Optional[OpenRouterClient] = None
+        self.alt_llm: Optional[OpenRouterClient] = None
         self.dify: Optional[DifyClient] = None
         self._provider = "none"
         
@@ -1171,9 +1174,17 @@ class HorusAIClient:
         openrouter_key = getattr(settings, 'OPENROUTER_API_KEY', None) or os.getenv('OPENROUTER_API_KEY')
         if openrouter_key:
             model = getattr(settings, 'OPENROUTER_MODEL', None) or "google/gemini-2.0-flash-001"
-            self.openrouter = OpenRouterClient(api_key=openrouter_key, model=model)
+            or_base = getattr(settings, "OPENROUTER_BASE_URL", None) or os.getenv("OPENROUTER_BASE_URL")
+            self.openrouter = OpenRouterClient(api_key=openrouter_key, model=model, base_url=or_base)
             if self._provider == "none":
                 self._provider = "openrouter"
+
+        alt_key = getattr(settings, "HORUS_ALT_LLM_API_KEY", None) or os.getenv("HORUS_ALT_LLM_API_KEY")
+        alt_model = getattr(settings, "HORUS_ALT_LLM_MODEL", None) or os.getenv("HORUS_ALT_LLM_MODEL")
+        alt_base = getattr(settings, "HORUS_ALT_LLM_BASE_URL", None) or os.getenv("HORUS_ALT_LLM_BASE_URL")
+        if alt_key and alt_model:
+            self.alt_llm = OpenRouterClient(api_key=alt_key, model=alt_model, base_url=alt_base)
+            logger.info("Horus alternate LLM (HORUS_ALT_LLM_*) enabled.")
         
         dify_key = getattr(settings, 'DIFY_API_KEY', None) or os.getenv('DIFY_API_KEY')
         dify_url = getattr(settings, 'DIFY_BASE_URL', None) or os.getenv('DIFY_BASE_URL')
@@ -1182,8 +1193,8 @@ class HorusAIClient:
             if self._provider == "none":
                 self._provider = "dify"
         
-        if not self.gemini and not self.openrouter and not self.dify:
-            raise ValueError("No AI provider configured (Gemini, OpenRouter, or Dify).")
+        if not self.gemini and not self.openrouter and not self.alt_llm and not self.dify:
+            raise ValueError("No AI provider configured (Gemini, OpenRouter, alt LLM, or Dify).")
     
     def _route_for(self, method_name: str, kwargs: dict[str, Any]):
         return MultiModelAIRouter.route(
@@ -1198,6 +1209,7 @@ class HorusAIClient:
         return {
             "gemini": self.gemini,
             "openrouter": self.openrouter,
+            "alt_llm": self.alt_llm,
             "dify": self.dify,
         }.get(provider)
 

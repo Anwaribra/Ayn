@@ -8,21 +8,39 @@ from typing import Optional
 from app.ai.model_router import ModelRoute
 
 request_ai_provider: ContextVar[Optional[str]] = ContextVar("request_ai_provider", default=None)
+# When "single", only the preferred provider is tried (no Gemini↔OpenRouter fallback for that request).
+request_ai_provider_mode: ContextVar[str] = ContextVar("request_ai_provider_mode", default="fallback")
 
 
 def apply_provider_preference(route: ModelRoute) -> ModelRoute:
-    """Move preferred provider (gemini / openrouter) to the front of the fallback chain when set."""
+    """Reorder fallback chain for gemini/openrouter; optionally use a single provider only."""
     pref = request_ai_provider.get()
-    if pref not in ("gemini", "openrouter"):
-        return route
+    mode = request_ai_provider_mode.get() or "fallback"
+
+    if pref == "alt_llm":
+        return ModelRoute(
+            ("alt_llm",),
+            None,
+            route.task,
+            route.reason,
+            route.estimated_input_tokens,
+            route.estimated_cost_usd,
+        )
+
     providers = list(route.providers)
-    if pref not in providers:
+    if pref in ("gemini", "openrouter") and pref in providers:
+        providers = [pref] + [p for p in providers if p != pref]
+    elif pref not in ("gemini", "openrouter"):
         return route
-    new_order = (pref,) + tuple(p for p in providers if p != pref)
-    if new_order == route.providers:
+
+    if mode == "single" and pref in ("gemini", "openrouter") and pref in providers:
+        providers = [pref]
+
+    new_tuple = tuple(providers)
+    if new_tuple == route.providers:
         return route
     return ModelRoute(
-        new_order,
+        new_tuple,
         route.openrouter_model,
         route.task,
         route.reason,

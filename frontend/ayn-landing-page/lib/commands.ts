@@ -371,10 +371,10 @@ export const allCommands: Command[] = [
 const AI_PROVIDER_SECRET_COMMAND: Command = {
   id: "open-ai-provider-picker",
   title: "AI provider route",
-  description: "Prefer Gemini or OpenRouter in this browser (server still falls back if needed).",
+  description: "Prefer Gemini, OpenRouter, or alternate LLM (HORUS_ALT_*) in this browser.",
   icon: Cpu,
   category: "Preferences",
-  keywords: ["ayn:ai", "ayn:model"],
+  keywords: ["ayn:ai", "ayn:model", "ayn:alt"],
   action: () => {
     window.dispatchEvent(new CustomEvent(OPEN_AI_PROVIDER_PICKER_EVENT))
   },
@@ -400,7 +400,9 @@ export const filterCommands = (
 ): Command[] => {
   const normalizedQuery = query.toLowerCase().trim()
   const secretMatch =
-    normalizedQuery === "ayn:ai" || normalizedQuery === "ayn:model"
+    normalizedQuery === "ayn:ai" ||
+    normalizedQuery === "ayn:model" ||
+    normalizedQuery === "ayn:alt"
       ? [AI_PROVIDER_SECRET_COMMAND]
       : []
 

@@ -109,6 +109,8 @@ class MultiModelAIRouter:
             if model == cls.REASONING_MODEL:
                 return cls.OPENROUTER_REASONING_COST
             return cls.OPENROUTER_FAST_COST
+        if provider == "alt_llm":
+            return cls.OPENROUTER_FAST_COST
         if provider == "dify":
             return cls.DIFY_COST
         return cls.GEMINI_FLASH_COST

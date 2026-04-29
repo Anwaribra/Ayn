@@ -33,14 +33,18 @@ export function AiProviderPickerDialog({
   const copy = {
     title: isArabic ? "تفضيل مزود الذكاء الاصطناعي" : "AI provider preference",
     desc: isArabic
-      ? "يُرسل مع الطلبات ليعطِّي أولوية لطريق جيمناي أو أوبن راوتر. إذا فشل المفضّل، يستخدم النظام البديل تلقائياً. التضمين (embeddings) ما يزال عبر جيمناي."
-      : "Sent with each request to try Gemini or OpenRouter first. If that fails, the server falls back automatically. Embeddings still use Gemini.",
+      ? "«تلقائي»: سلسلة الاحتياط المعتادة على الخادم. جيمناي أو أوبن راوتر أو المزود البديل: يُستخدم المزود المختار فقط من هذا المتصفح. التضمين (embeddings) ما يزال عبر جيمناي. أوبن راوتر: OPENROUTER_BASE_URL. المزود البديل: متغيرات HORUS_ALT_LLM_* على الخادم (مفتاح ونموذج وعنوان API منفصلان عن OPENROUTER_*)."
+      : "Auto: normal server fallback. Gemini, OpenRouter, or alternate LLM: only that provider for this browser. Embeddings still use Gemini. OpenRouter: OPENROUTER_BASE_URL. Alternate: HORUS_ALT_LLM_* env vars (separate key/model/base URL from OPENROUTER_*).",
     auto: isArabic ? "تلقائي (افتراضي الخادم)" : "Auto (server default order)",
     gemini: "Gemini",
     openrouter: "OpenRouter",
+    altLlm: isArabic ? "مزود بديل (HORUS_ALT)" : "Alternate LLM (HORUS_ALT)",
+    altLlmSub: isArabic
+      ? "OpenAI-compatible API — لا يغيّر OPENROUTER_*"
+      : "OpenAI-compatible API — leaves your OPENROUTER_* vars untouched",
     hint: isArabic
-      ? "افتح البحث أعلى الصفحة (⌘K أو Ctrl+K) واكتب ayn:ai أو ayn:model"
-      : "Open the top search (⌘K or Ctrl+K), then type ayn:ai or ayn:model",
+      ? "افتح البحث أعلى الصفحة (⌘K أو Ctrl+K) واكتب ayn:ai أو ayn:model أو ayn:alt"
+      : "Open the top search (⌘K or Ctrl+K), then type ayn:ai, ayn:model, or ayn:alt",
   }
 
   const row = (p: AIProviderPref, label: string, sub?: string) => (
@@ -81,6 +85,7 @@ export function AiProviderPickerDialog({
           {row("auto", copy.auto)}
           {row("gemini", copy.gemini, "googleapis / direct")}
           {row("openrouter", copy.openrouter, "openrouter.ai")}
+          {row("alt_llm", copy.altLlm, copy.altLlmSub)}
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">{copy.hint}</p>
       </DialogContent>

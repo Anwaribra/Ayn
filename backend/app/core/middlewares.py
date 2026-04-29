@@ -6,7 +6,7 @@ from app.core.utils import decode_access_token
 from app.core.db import get_db
 import logging
 
-from app.ai.provider_context import request_ai_provider
+from app.ai.provider_context import request_ai_provider, request_ai_provider_mode
 
 logger = logging.getLogger(__name__)
 
@@ -100,14 +100,19 @@ async def request_timing_middleware(request: Request, call_next):
 
 
 async def ai_provider_preference_middleware(request: Request, call_next):
-    """Honor X-AI-Provider: gemini | openrouter to reorder model fallback (still falls back on failure)."""
+    """Honor X-AI-Provider: gemini | openrouter | alt_llm; X-AI-Provider-Mode: single = no cross-provider fallback."""
     raw = (request.headers.get("x-ai-provider") or "").strip().lower()
-    pref = raw if raw in ("gemini", "openrouter") else None
-    token = request_ai_provider.set(pref)
+    pref = raw if raw in ("gemini", "openrouter", "alt_llm") else None
+    mode_raw = (request.headers.get("x-ai-provider-mode") or "").strip().lower()
+    mode = "single" if mode_raw in ("single", "only", "1", "true", "yes") else "fallback"
+
+    t_pref = request_ai_provider.set(pref)
+    t_mode = request_ai_provider_mode.set(mode)
     try:
         return await call_next(request)
     finally:
-        request_ai_provider.reset(token)
+        request_ai_provider_mode.reset(t_mode)
+        request_ai_provider.reset(t_pref)
 
 
 def require_role(allowed_roles: list[str]):

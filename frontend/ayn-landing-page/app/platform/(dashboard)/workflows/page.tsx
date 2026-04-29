@@ -237,8 +237,8 @@ export default function WorkflowsPage() {
       <div className="animate-fade-in-up pb-24">
         <div className="px-4 pb-4 pt-6 md:px-6">
           <div className="glass-panel rounded-[32px] p-6 md:p-8 relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-[120px]" />
-            <div className="absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-[140px]" />
+            <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-[120px] pointer-events-none" />
+            <div className="absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-[140px] pointer-events-none" />
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">

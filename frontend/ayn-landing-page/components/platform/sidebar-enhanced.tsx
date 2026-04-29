@@ -1,5 +1,6 @@
 "use client"
 
+import { useCallback, useMemo, memo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
@@ -26,11 +27,6 @@ import useSWR from "swr"
 import type { Standard } from "@/types"
 import { getStandardDisplayTitle, isStandardHiddenFromNavigation } from "@/lib/standard-display"
 import { AynLogo } from "@/components/ayn-logo"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 interface SidebarProps {
   open: boolean
   onToggle: () => void
@@ -64,7 +60,10 @@ const INSIGHTS_TOOLS: NavItemConfig[] = [
   { id: "analytics", icon: BarChart4, label: { en: "Analytics", ar: "التحليلات" }, href: "/platform/analytics" },
 ]
 
-import React, { useCallback, useMemo, memo } from "react"
+function isNavItemActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true
+  return pathname.startsWith(`${href}/`)
+}
 
 export const SidebarItem = memo(function SidebarItem({
   item,
@@ -78,13 +77,15 @@ export const SidebarItem = memo(function SidebarItem({
   onNavClick: () => void
 }) {
   const { isArabic } = useUiLanguage()
-  const active = pathname.includes(item.id)
+  const active = isNavItemActive(pathname, item.href)
   const label = isArabic ? item.label.ar : item.label.en
 
   const content = (
     <Link
       href={item.href}
       onClick={onNavClick}
+      aria-label={isCollapsed ? label : undefined}
+      title={isCollapsed ? label : undefined}
       className={cn(
         "group relative flex min-h-[46px] items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm transition-all duration-300",
         isCollapsed && "justify-center px-0 mx-auto w-11",
@@ -128,23 +129,6 @@ export const SidebarItem = memo(function SidebarItem({
       )}
     </Link>
   )
-
-  if (isCollapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent side="right" sideOffset={10} className="text-xs font-medium flex items-center gap-2">
-          <span className={cn(isArabic && "font-arabic")}>{label}</span>
-          {item.id === "horus-ai" && (
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--brand)]" />
-            </span>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    )
-  }
 
   return content
 })

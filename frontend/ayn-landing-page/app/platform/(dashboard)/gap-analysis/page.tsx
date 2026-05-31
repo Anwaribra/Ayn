@@ -139,10 +139,13 @@ function GapAnalysisContent() {
     noStandards: isArabic ? "لا توجد معايير متاحة" : "No standards available",
     chooseStandard: isArabic ? "اختر معيارًا…" : "Choose a standard…",
     criteriaChecked: (n: number) => isArabic ? `سيتم فحص ${n} معيارًا فرعيًا.` : `${n} criteria will be checked.`,
+    standardRequiredHint: isArabic ? "اختر معيارًا لفتح اختيار الأدلة." : "Select a standard to unlock evidence choices.",
     evidence: isArabic ? "الأدلة" : "Evidence",
     filterRecent: isArabic ? "فلترة الملفات الحديثة…" : "Filter recent uploads…",
     searchEvidence: isArabic ? "ابحث في الأدلة…" : "Search evidence…",
     selected: isArabic ? "محدد" : "selected",
+    linkedEvidenceHint: isArabic ? "سيستخدم حورس الأدلة المرتبطة مسبقًا بهذا المعيار." : "Horus will use evidence already linked to this standard.",
+    evidenceRequiredHint: isArabic ? "اختر ملفًا واحدًا على الأقل لهذا النطاق." : "Select at least one file for this scope.",
     noRecentMatch: isArabic ? "لا توجد ملفات حديثة تطابق الفلترة." : "No recent uploads match your filter.",
     noEvidenceMatch: isArabic ? "لا توجد أدلة تطابق البحث." : "No evidence matched your search.",
     run: isArabic ? "تشغيل تحليل الفجوات" : "Run Gap Analysis",
@@ -168,6 +171,11 @@ function GapAnalysisContent() {
     previousRuns: isArabic ? "التشغيلات السابقة" : "Previous runs",
     analyzing: isArabic ? "جارٍ التحليل…" : "Analyzing…",
     failedShort: isArabic ? "فشل" : "Failed",
+    resultsTitle: isArabic ? "النتائج" : "Results",
+    resultsHint: isArabic ? "افتح تقريرًا لعرض النتائج وتصدير PDF." : "Open a report to review findings and export PDF.",
+    viewReport: isArabic ? "عرض التقرير" : "View report",
+    reportQueuedHint: isArabic ? "التقرير قيد التشغيل." : "Report is still running.",
+    reportFailedHint: isArabic ? "فشل التقرير — أعد التشغيل للمحاولة مجددًا." : "Report failed — rerun to try again.",
     deletePrompt: isArabic ? "هل تريد حذف هذا التقرير؟" : "Delete this report?",
     cannotUndo: isArabic ? "لا يمكن التراجع عن هذا الإجراء." : "This cannot be undone.",
     cancel: isArabic ? "إلغاء" : "Cancel",
@@ -413,6 +421,15 @@ function GapAnalysisContent() {
   const selectedStandardObject = standards?.find((s) => s.id === selectedStandard) ?? null
   const sortedEvidence = useMemo(() => sortEvidenceNewestFirst(evidenceList ?? []), [evidenceList])
   const recentEvidence = useMemo(() => sortedEvidence.slice(0, 8), [sortedEvidence])
+  const runDisabledReason = useMemo(() => {
+    if (generating) return ""
+    if (!standards || standards.length === 0) return copy.noStandards
+    if (!selectedStandard) return copy.standardRequiredHint
+    if ((analysisScope === "recent" || analysisScope === "selected") && selectedEvidenceIds.length === 0) {
+      return copy.evidenceRequiredHint
+    }
+    return ""
+  }, [generating, standards, selectedStandard, analysisScope, selectedEvidenceIds.length, copy])
   const evidenceOptions = useMemo(() => {
     const pool = analysisScope === "recent" ? recentEvidence : sortedEvidence
     const query = evidenceSearchQuery.trim().toLowerCase()
@@ -488,11 +505,15 @@ function GapAnalysisContent() {
                   </option>
                 ))}
               </select>
-              {selectedStandardObject && (
+              {selectedStandardObject ? (
                 <p className="text-xs text-muted-foreground">
                   {copy.criteriaChecked(selectedStandardObject.criteriaCount)}
                 </p>
-              )}
+              ) : standards && standards.length > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {copy.standardRequiredHint}
+                </p>
+              ) : null}
             </div>
 
             {/* Evidence scope */}
@@ -518,6 +539,14 @@ function GapAnalysisContent() {
                   </button>
                 ))}
               </div>
+              {analysisScope === "linked" && (
+                <div className="flex items-start gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3">
+                  <Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">
+                    {copy.linkedEvidenceHint}
+                  </p>
+                </div>
+              )}
 
               {/* File picker — only for non-linked scopes */}
               {analysisScope !== "linked" && (
@@ -587,6 +616,12 @@ function GapAnalysisContent() {
                       })
                     )}
                   </div>
+                  {selectedEvidenceIds.length === 0 && (
+                    <p className="flex items-center gap-2 text-xs text-[var(--status-warning)]">
+                      <Info className="h-3.5 w-3.5" />
+                      {copy.evidenceRequiredHint}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -610,6 +645,11 @@ function GapAnalysisContent() {
                   </>
                 )}
               </button>
+              {runDisabledReason && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {runDisabledReason}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -649,6 +689,11 @@ function GapAnalysisContent() {
           </div>
         ) : (
           <>
+            <div className="px-4 mb-4">
+              <h2 className="text-lg font-semibold text-foreground">{copy.resultsTitle}</h2>
+              <p className="text-xs text-muted-foreground">{copy.resultsHint}</p>
+            </div>
+
             {/* ── Active report ── */}
             {activeReport && (
               <div className="mb-8 px-4">
@@ -861,6 +906,10 @@ function GapAnalysisContent() {
                           report.status === "running" ||
                           report.id === pendingJobId
                         const isFailed = report.status === "failed"
+                        const viewDisabledReason = isQueued ? copy.reportQueuedHint : isFailed ? copy.reportFailedHint : ""
+                        const exportDisabledReason = isQueued ? copy.reportQueuedHint : isFailed ? copy.reportFailedHint : ""
+                        const isExportDisabled = isQueued || isFailed
+                        const isViewDisabled = isQueued || isFailed
 
                         return (
                           <GlassCard
@@ -918,15 +967,28 @@ function GapAnalysisContent() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-3 self-end sm:self-auto">
+                            <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
                               <button
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  handleExportSnapshot(report.id)
+                                  if (!isViewDisabled) handleViewReport(report.id)
                                 }}
-                                disabled={isFailed || isQueued}
-                                className="text-[11px] font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity disabled:text-muted-foreground/40 disabled:pointer-events-none"
+                                disabled={isViewDisabled}
+                                title={viewDisabledReason || copy.viewReport}
+                                className="rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1 text-[11px] font-semibold text-muted-foreground transition hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
+                              >
+                                {copy.viewReport}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (!isExportDisabled) handleExportSnapshot(report.id)
+                                }}
+                                disabled={isExportDisabled}
+                                title={exportDisabledReason || copy.exportPdf}
+                                className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/20 disabled:text-muted-foreground/40 disabled:border-[var(--glass-border)] disabled:bg-[var(--glass-soft-bg)] disabled:pointer-events-none"
                               >
                                 {copy.exportPdf}
                               </button>
@@ -935,11 +997,10 @@ function GapAnalysisContent() {
                                   e.stopPropagation()
                                   setDeleteConfirm(report.id)
                                 }}
-                                className="text-[11px] font-semibold text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                                className="text-[11px] font-semibold text-muted-foreground transition-opacity hover:text-destructive"
                               >
                                 {copy.delete}
                               </button>
-                              <Play className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
                           </GlassCard>
                         )

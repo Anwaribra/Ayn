@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AynLogo } from "@/components/ayn-logo"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, RefreshCw, Home } from "lucide-react"
 
 export default function Error({
   error,
@@ -20,22 +20,31 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
-      <div className="flex flex-col items-center text-center max-w-md">
-        <AynLogo size="md" withGlow={false} className="mb-8" />
-        <div className="rounded-full bg-destructive/10 p-4 mb-6">
-          <AlertCircle className="w-10 h-10 text-destructive" aria-hidden />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-destructive/5 to-transparent pointer-events-none" />
+
+      <div className="flex flex-col items-center text-center max-w-sm relative z-10">
+        <AynLogo size="md" withGlow={false} className="mb-6" />
+        
+        <div className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center mb-5">
+          <AlertCircle className="w-5 h-5 text-destructive" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Something went wrong</h1>
-        <p className="text-muted-foreground mb-8">
-          We ran into an error. You can try again or go back home.
+
+        <h1 className="text-xl font-bold text-foreground mb-2">Something went wrong</h1>
+        <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+          We ran into an unexpected error. Try again or head back home.
         </p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Button onClick={reset} variant="default">
+
+        <div className="flex gap-3">
+          <Button onClick={reset} variant="default" className="gap-2">
+            <RefreshCw className="w-4 h-4" />
             Try again
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/">Go home</Link>
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/">
+              <Home className="w-4 h-4" />
+              Go home
+            </Link>
           </Button>
         </div>
       </div>

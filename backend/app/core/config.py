@@ -62,6 +62,14 @@ class Settings(BaseSettings):
     GOOGLE_ALLOWED_DOMAINS: Optional[str] = None
     FRONTEND_URL: str = "https://ayn.vercel.app"
     
+    # SMTP Email Configuration
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: Optional[str] = None
+    DEMO_REQUEST_RECIPIENT: str = "anwarmousa100@gmail.com"
+    
     # Application
     APP_NAME: str = "Ayn Platform"
     APP_VERSION: str = "1.0.0"

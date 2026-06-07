@@ -156,7 +156,7 @@ export function HorusMarkdown({
     return (
         <div
             dir="auto"
-            className="prose prose-sm max-w-none text-[14px] leading-7 text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:my-0 prose-p:text-[0.97rem] prose-p:leading-7 prose-p:text-foreground/88 prose-strong:font-semibold prose-strong:text-foreground prose-a:font-semibold prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-ul:my-4 prose-ul:space-y-2 prose-ul:ps-5 prose-ol:my-4 prose-ol:space-y-2 prose-ol:ps-5 prose-li:marker:text-primary prose-code:rounded-md prose-code:border prose-code:border-border prose-code:bg-muted/60 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[12px] prose-code:text-foreground prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-[var(--border-subtle)] prose-pre:bg-muted/30 prose-pre:p-4 prose-blockquote:my-4 prose-blockquote:rounded-r-2xl prose-blockquote:border-s-2 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-3 prose-blockquote:text-foreground/78 prose-hr:my-5 prose-hr:border-[var(--border-subtle)] prose-table:my-5 prose-table:w-full prose-table:overflow-hidden prose-table:rounded-xl prose-table:border prose-table:border-[var(--border-subtle)] prose-th:border prose-th:border-[var(--border-subtle)] prose-th:bg-muted/50 prose-th:px-3 prose-th:py-2.5 prose-th:text-start prose-th:text-xs prose-th:font-semibold prose-th:text-foreground/80 prose-td:border prose-td:border-[var(--border-subtle)] prose-td:px-3 prose-td:py-2.5 prose-td:align-top prose-td:text-[13px]"
+            className="prose prose-sm max-w-none text-[15px] leading-7 text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:my-0 prose-p:text-[0.97rem] prose-p:leading-7 prose-p:text-foreground/88 prose-strong:font-semibold prose-strong:text-foreground prose-a:font-semibold prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-ul:my-3 prose-ul:space-y-1 prose-ul:ps-5 prose-ol:my-3 prose-ol:space-y-1 prose-ol:ps-5 prose-li:marker:text-primary prose-code:rounded-md prose-code:border prose-code:border-border prose-code:bg-muted/60 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[12px] prose-code:text-foreground prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-[var(--border-subtle)] prose-pre:bg-muted/30 prose-pre:p-4 prose-blockquote:my-4 prose-blockquote:rounded-e-2xl prose-blockquote:border-s-2 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-3 prose-blockquote:text-foreground/78 prose-hr:my-5 prose-hr:border-[var(--border-subtle)] prose-table:my-5 prose-table:w-full prose-table:overflow-hidden prose-table:rounded-xl prose-table:border prose-table:border-[var(--border-subtle)] prose-th:border prose-th:border-[var(--border-subtle)] prose-th:bg-muted/50 prose-th:px-3 prose-th:py-2.5 prose-th:text-start prose-th:text-xs prose-th:font-semibold prose-th:text-foreground/80 prose-td:border prose-td:border-[var(--border-subtle)] prose-td:px-3 prose-td:py-2.5 prose-td:align-top prose-td:text-[13px]"
         >
             <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -166,7 +166,7 @@ export function HorusMarkdown({
                     p: ({ children }: any) => <p className="mb-3 last:mb-0 text-foreground/88">{children}</p>,
                     ul: ({ children }: any) => <ul className="mb-3 space-y-2 text-foreground/82">{children}</ul>,
                     ol: ({ children }: any) => <ol className="mb-3 space-y-2 text-foreground/82">{children}</ol>,
-                    li: ({ children }: any) => <li className="ps-1">{children}</li>,
+                    li: ({ children }: any) => <li className="ps-1 leading-relaxed py-0.5">{children}</li>,
                     code: ({ className, children, ...props }: any) => {
                         const isBlock = /language-/.test(className || "")
                         return isBlock ? (
@@ -180,21 +180,21 @@ export function HorusMarkdown({
                         )
                     },
                     table: ({ children }: any) => (
-                        <div className="my-6 w-full overflow-hidden rounded-2xl border border-border shadow-sm">
+                        <div className="my-6 w-full overflow-hidden rounded-xl border border-border shadow-sm">
                             <div className="w-full overflow-x-auto">
-                                <table className="w-full text-left text-sm border-collapse">
+                                <table className="w-full text-start text-sm border-collapse">
                                     {children}
                                 </table>
                             </div>
                         </div>
                     ),
                     thead: ({ children }: any) => (
-                        <thead className="bg-muted/50 text-xs uppercase text-foreground/80 border-b border-border">
+                        <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
                             {children}
                         </thead>
                     ),
                     tbody: ({ children }: any) => (
-                        <tbody className="divide-y divide-border bg-background/50">
+                        <tbody className="divide-y divide-border/60 bg-background">
                             {children}
                         </tbody>
                     ),
@@ -209,7 +209,7 @@ export function HorusMarkdown({
                         </th>
                     ),
                     td: ({ children }: any) => (
-                        <td className="px-4 py-3 align-top text-[13.5px] leading-relaxed text-foreground/90">
+                        <td className="px-4 py-3 align-top text-[13.5px] leading-relaxed text-foreground/85 border-b border-border/30">
                             {children}
                         </td>
                     ),
@@ -228,12 +228,12 @@ export function HorusMarkdown({
                                 >
                                     <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                                         <FileText className="w-4 h-4 text-primary" />
-                                        <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                        <span className="absolute -bottom-0.5 -end-0.5 flex h-2.5 w-2.5">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
                                             <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: "var(--status-success)" }}></span>
                                         </span>
                                     </div>
-                                    <div className="flex flex-col min-w-0 pr-2">
+                                    <div className="flex flex-col min-w-0 pe-2">
                                         <span className="line-clamp-1 text-xs font-semibold text-foreground transition-colors group-hover:text-primary">{children}</span>
                                         <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                             {type === 'view_gap' ? 'View Document' : type === 'gap_report' ? 'Gap Report' : type.replace('_', ' ')}
@@ -257,7 +257,7 @@ export function HorusMarkdown({
                                         {children}
                                     </a>
                                   </HoverCardTrigger>
-                                  <HoverCardContent side="top" align="start" className="w-64 z-[60] bg-[var(--surface-modal)]/95 backdrop-blur-md border-[var(--border-subtle)] shadow-xl p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
+                                  <HoverCardContent side="top" align="start" className="w-64 z-[60] bg-popover border-[var(--border-subtle)] shadow-xl p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
                                      <div className="flex items-start gap-3">
                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                                          <FileText className="w-4 h-4 text-primary" />

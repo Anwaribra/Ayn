@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { domainToUnicode } from "node:url"
 
 type AnimatedThemeToggleProps = {
   className?: string
@@ -79,14 +78,13 @@ export function AnimatedThemeToggle({
         aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         title={isDark ? "Light mode" : "Dark mode"}
         className={cn(
-          "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent transition-all duration-200 hover:-translate-y-0.5",
+          "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent transition-colors duration-150",
           isDark
-            ? "bg-[linear-gradient(180deg,rgba(245,158,11,0.16),rgba(245,158,11,0.05))] text-[var(--status-warning)] shadow-[0_10px_24px_-16px_rgba(245,158,11,0.7)]"
-            : "bg-[linear-gradient(180deg,rgba(37,99,235,0.12),rgba(37,99,235,0.04))] text-[var(--status-info)] shadow-[0_10px_24px_-16px_rgba(37,99,235,0.5)]",
+            ? "bg-[var(--status-warning-bg)] text-[var(--status-warning)]"
+            : "bg-[var(--status-info-bg)] text-[var(--status-info)]",
           className,
         )}
       >
-        <span className="absolute inset-0 rounded-[16px] border border-white/20 opacity-40" />
         <motion.span
           initial={false}
           animate={{

@@ -57,9 +57,9 @@ export function EvidenceSelector({ open, onOpenChange, onSelect }: EvidenceSelec
 
                 <div className="p-4 border-b border-[var(--border-subtle)] bg-[var(--surface-subtle)]">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
-                            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
+                            className="w-full bg-[var(--surface)] border border-[var(--border-subtle)] rounded-xl py-2 ps-9 pe-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
                             placeholder="Search evidence..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}

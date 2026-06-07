@@ -21,7 +21,6 @@ export default function GlobalLoading() {
           ease: "easeInOut",
         }}
         className={cn("relative flex flex-col items-center", isArabic && "font-arabic")}
-        dir={isArabic ? "rtl" : "ltr"}
       >
         <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
         <AynLogo size="lg" withGlow={true} />

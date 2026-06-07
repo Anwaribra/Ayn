@@ -148,6 +148,23 @@ class ApiClient {
     return this.request<any>(`/analytics${query}`)
   }
 
+  async downloadAnalyticsReportPdf(periodDays?: number | null) {
+    const query = periodDays != null ? `?period=${periodDays}` : ""
+    const response = await fetch(`${API_BASE_URL}/analytics/export/pdf${query}`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw new Error("Download failed")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `ayn-analytics-report-${periodDays ?? 'all'}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
   // Institutions
   async getInstitutions() {
     return this.request<import("./types").Institution[]>("/institutions")
@@ -1139,6 +1156,223 @@ class ApiClient {
     a.click()
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACCESS REQUEST APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async createAccessRequest(data: {
+    name: string
+    email: string
+    institution: string
+    role: string
+    type: "demo" | "pricing"
+    message?: string
+  }) {
+    return this.request<{
+      status: string
+      message: string
+      request_id: string
+      email_sent: boolean
+    }>("/access-requests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getMyAccessRequest() {
+    return this.request<{
+      id: string
+      status: string
+      reviewNote: string | null
+      createdAt: string
+    } | null>("/access-requests/me")
+  }
+
+  async getAccessRequests(params?: { status?: string; skip?: number; take?: number }) {
+    const query = new URLSearchParams()
+    if (params?.status) query.set("status", params.status)
+    if (params?.skip !== undefined) query.set("skip", String(params.skip))
+    if (params?.take !== undefined) query.set("take", String(params.take))
+    const qs = query.toString()
+    return this.request<{
+      requests: Array<{
+        id: string
+        userId: string | null
+        name: string
+        email: string
+        institution: string
+        role: string
+        type: string
+        message: string | null
+        status: string
+        reviewedBy: string | null
+        reviewNote: string | null
+        reviewedAt: string | null
+        createdAt: string
+        updatedAt: string
+      }>
+      total: number
+    }>(`/access-requests${qs ? `?${qs}` : ""}`)
+  }
+
+  async reviewAccessRequest(requestId: string, data: { action: "approve" | "reject"; note?: string }) {
+    return this.request<{
+      id: string
+      status: string
+      reviewedBy: string
+      reviewNote: string | null
+      reviewedAt: string
+    }>(`/access-requests/${requestId}/review`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // V2 — ACTION CENTER APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async v2GetActionCenterSummary() {
+    return this.request<{
+      open_tasks: number
+      overdue_tasks: number
+      open_risks: number
+      critical_risks: number
+      missing_evidence: number
+      needs_review: number
+      expiring_soon: number
+      overall_readiness: number
+    }>("/v2/validation/action-center")
+  }
+
+  async v2GetRisks(params?: { status?: string; severity?: string; limit?: number }) {
+    const query = new URLSearchParams()
+    if (params?.status) query.set("status", params.status)
+    if (params?.severity) query.set("severity", params.severity)
+    if (params?.limit !== undefined) query.set("limit", String(params.limit))
+    const qs = query.toString()
+    return this.request<any[]>(`/v2/validation/risks${qs ? `?${qs}` : ""}`)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // V2 — TASKS APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async v2GetTasks(params?: {
+    status?: string
+    priority?: string
+    assigned_to?: string
+    reference_type?: string
+    limit?: number
+    offset?: number
+  }) {
+    const query = new URLSearchParams()
+    if (params?.status) query.set("status", params.status)
+    if (params?.priority) query.set("priority", params.priority)
+    if (params?.assigned_to) query.set("assigned_to", params.assigned_to)
+    if (params?.reference_type) query.set("reference_type", params.reference_type)
+    if (params?.limit !== undefined) query.set("limit", String(params.limit))
+    if (params?.offset !== undefined) query.set("offset", String(params.offset))
+    const qs = query.toString()
+    return this.request<any[]>(`/v2/tasks${qs ? `?${qs}` : ""}`)
+  }
+
+  async v2CreateTask(data: {
+    title: string
+    description?: string
+    priority?: "low" | "medium" | "high" | "critical"
+    due_date?: string
+    assigned_to?: string
+    reference_type?: string
+    reference_id?: string
+  }) {
+    return this.request<any>("/v2/tasks", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async v2UpdateTask(taskId: string, data: {
+    title?: string
+    description?: string
+    status?: "open" | "in_progress" | "blocked" | "done" | "archived"
+    priority?: "low" | "medium" | "high" | "critical"
+    due_date?: string
+    assigned_to?: string
+  }) {
+    return this.request<any>(`/v2/tasks/${taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async v2DeleteTask(taskId: string) {
+    return this.request(`/v2/tasks/${taskId}`, { method: "DELETE" })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // V2 — EVIDENCE APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async v2GetEvidence(params?: {
+    status?: string
+    file_type?: string
+    search?: string
+    limit?: number
+    offset?: number
+  }) {
+    const query = new URLSearchParams()
+    if (params?.status) query.set("status", params.status)
+    if (params?.file_type) query.set("file_type", params.file_type)
+    if (params?.search) query.set("search", params.search)
+    if (params?.limit !== undefined) query.set("limit", String(params.limit))
+    if (params?.offset !== undefined) query.set("offset", String(params.offset))
+    const qs = query.toString()
+    return this.request<any[]>(`/v2/evidence${qs ? `?${qs}` : ""}`)
+  }
+
+  async v2DeleteEvidence(evidenceId: string) {
+    return this.request(`/v2/evidence/${evidenceId}`, { method: "DELETE" })
+  }
+
+  async v2UploadEvidence(file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+    const response = await fetch(`${API_BASE_URL}/v2/evidence/upload`, {
+      method: "POST",
+      credentials: "include",
+      headers: { ...getAIProviderFetchHeaders() },
+      body: formData,
+    })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "Upload failed" }))
+      throw new Error(error.detail || "Upload failed")
+    }
+    return response.json()
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // V2 — STANDARDS APIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async v2GetStandardsTree(params?: { include_scores?: boolean }) {
+    const query = new URLSearchParams()
+    if (params?.include_scores) query.set("include_scores", "true")
+    const qs = query.toString()
+    return this.request<any[]>(`/v2/standards/tree${qs ? `?${qs}` : ""}`)
+  }
+
+  async v2GetStandardTree(standardId: string) {
+    return this.request<any>(`/v2/standards/${standardId}/tree`)
+  }
+
+  async v2GetStandardDetail(standardId: string) {
+    return this.request<any>(`/v2/standards/${standardId}`)
+  }
+
+  async v2GetStandardRequirements(standardId: string) {
+    return this.request<any[]>(`/v2/standards/${standardId}/requirements`)
   }
 }
 

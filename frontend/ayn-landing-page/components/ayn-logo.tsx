@@ -2,79 +2,135 @@
 
 import { cn } from "@/lib/utils"
 
+/** Background the logo sits on — drives light vs dark wordmark treatment (matches landing navbar). */
+export type AynLogoVariant = "on-light" | "on-dark" | "auto"
+
 interface AynLogoProps {
   className?: string
-  size?: "sm" | "md" | "lg" | "xl"
+  /** xs/sm for platform chrome; md+ for marketing hero */
+  size?: "xs" | "sm" | "nav" | "md" | "lg" | "xl"
+  /** Legacy — prefer variant; glow off by default in platform */
   withGlow?: boolean
   animated?: boolean
-  /** Match hero style: gradient from foreground to primary (blue) like the hero headline */
+  /** Gradient wordmark like landing hero (foreground → primary) */
   heroStyle?: boolean
+  /** Single-letter mark for collapsed sidebar */
+  markOnly?: boolean
+  isArabic?: boolean
+  /** Adaptive styling: light wordmark on dark surfaces, dark on light */
+  variant?: AynLogoVariant
+}
+
+const sizeClasses = {
+  xs: "text-lg leading-none",
+  sm: "text-xl leading-none",
+  nav: "text-[1.35rem] leading-none",
+  md: "text-4xl leading-none",
+  lg: "text-6xl leading-none",
+  xl: "text-8xl leading-none",
+} as const
+
+function Wordmark({
+  isArabic,
+  markOnly,
+  heroStyle,
+  variant,
+}: Pick<AynLogoProps, "isArabic" | "markOnly" | "heroStyle" | "variant">) {
+  const gradientClass =
+    variant === "on-dark"
+      ? "bg-gradient-to-r from-white via-white/90 to-primary"
+      : variant === "on-light" || heroStyle
+        ? "bg-gradient-to-r from-foreground via-foreground/95 to-primary"
+        : "bg-gradient-to-r from-foreground via-foreground/90 to-primary"
+
+  const useGradient = heroStyle || variant === "on-light" || variant === "on-dark"
+
+  if (markOnly) {
+    const letter = isArabic ? "ع" : "A"
+    return useGradient ? (
+      <span className={cn("bg-clip-text font-bold tracking-tight text-transparent", gradientClass)}>
+        {letter}
+      </span>
+    ) : (
+      <span className="font-bold tracking-tight text-foreground">
+        {isArabic ? (
+          <>
+            <span>ع</span>
+            <span className="text-primary">ي</span>
+          </>
+        ) : (
+          <>
+            A<span className="text-primary">y</span>
+          </>
+        )}
+      </span>
+    )
+  }
+
+  if (useGradient) {
+    return (
+      <span className={cn("bg-clip-text font-bold tracking-tight text-transparent", gradientClass)}>
+        {isArabic ? "عين" : "Ayn"}
+      </span>
+    )
+  }
+
+  return (
+    <span className="font-bold tracking-tight text-foreground">
+      {isArabic ? (
+        <>
+          عي<span className="text-primary">ن</span>
+        </>
+      ) : (
+        <>
+          Ay<span className="text-primary">n</span>
+        </>
+      )}
+    </span>
+  )
 }
 
 export function AynLogo({
   className,
   size = "md",
-  withGlow = true,
+  withGlow = false,
   animated = false,
   heroStyle = false,
+  markOnly = false,
+  isArabic = false,
+  variant = "auto",
 }: AynLogoProps) {
-  const sizeClasses = {
-    sm: "text-3xl",
-    md: "text-5xl",
-    lg: "text-7xl",
-    xl: "text-9xl",
-  }
-
   return (
-    <div className={cn("relative inline-flex items-center justify-center", className)}>
-      {withGlow && !heroStyle && (
-        <>
-          <div
-            className={cn(
-              "absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-full scale-150",
-              animated && "animate-pulse",
-            )}
-            style={{ animationDuration: animated ? "3s" : undefined }}
-          />
-          {animated && (
-            <>
-              <div
-                className="absolute inset-0 blur-3xl opacity-30 bg-gradient-to-br from-primary/20 via-primary/40 to-primary/20 rounded-full scale-125 animate-pulse"
-                style={{ animationDuration: "4s", animationDelay: "0.5s" }}
-              />
-              <div
-                className="absolute inset-0 blur-xl opacity-20 bg-primary/20 rounded-full scale-100 animate-ping"
-                style={{ animationDuration: "6s" }}
-              />
-            </>
-          )}
-        </>
+    <div
+      className={cn(
+        "relative inline-flex items-center justify-center font-display select-none",
+        className,
       )}
+      aria-hidden={markOnly ? undefined : false}
+    >
+      {withGlow && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-primary/30 via-primary/15 to-primary/30 opacity-30 blur-2xl",
+            animated && "animate-float",
+          )}
+        />
+      )}
+
       <span
         className={cn(
-          "relative flex font-bold tracking-tight z-10",
-          animated && "animate-float",
+          "relative z-10",
           sizeClasses[size],
-          heroStyle
-            ? "bg-gradient-to-r from-foreground via-foreground/95 to-primary/90 bg-clip-text text-transparent"
-            : "text-foreground",
+          animated && "animate-float",
         )}
-        style={
-          heroStyle
-            ? undefined
-            : {
-                textShadow:
-                  "0 0 30px rgba(var(--primary), 0.3), 0 0 60px rgba(var(--primary), 0.2)",
-                filter: animated
-                  ? "drop-shadow(0 0 20px rgba(var(--primary),0.4))"
-                  : "drop-shadow(0 0 15px rgba(var(--primary),0.3))",
-                opacity: 1,
-              }
-        }
       >
-        Ayn
+        <Wordmark
+          isArabic={isArabic}
+          markOnly={markOnly}
+          heroStyle={heroStyle}
+          variant={variant}
+        />
       </span>
     </div>
   )
 }
-

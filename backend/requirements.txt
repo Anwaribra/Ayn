@@ -53,3 +53,10 @@ pypdf>=4.0.0
 
 # RAG & Embeddings
 langchain-text-splitters>=0.3.0
+
+# V2 Database
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+asyncpg>=0.29.0
+greenlet>=3.0.0
+

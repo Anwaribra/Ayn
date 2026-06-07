@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
+import { XIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -48,8 +49,11 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  showCloseButton?: boolean
+}) {
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -67,6 +71,15 @@ function DrawerContent({
       >
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
+        {showCloseButton && (
+          <DrawerPrimitive.Close
+            data-slot="drawer-close"
+            className="absolute right-4 top-4 rounded-xl p-2 text-muted-foreground opacity-70 transition-all duration-200 hover:bg-black/5 hover:text-foreground hover:opacity-100 disabled:pointer-events-none dark:hover:bg-white/10"
+          >
+            <XIcon className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DrawerPrimitive.Close>
+        )}
       </DrawerPrimitive.Content>
     </DrawerPortal>
   )

@@ -27,10 +27,10 @@ function getStatusStyle(status: string) {
     return {
         label: STATUS_LABELS[status] ?? status,
         badgeClass: isSuccess
-            ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
+            ? "text-emerald-600 dark:text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
             : isError
-            ? "text-destructive bg-destructive/10 border-destructive/25"
-            : "text-amber-500 bg-amber-500/10 border-amber-500/25",
+            ? "text-red-600 dark:text-destructive bg-destructive/10 border-destructive/25"
+            : "text-amber-600 dark:text-amber-500 bg-amber-500/10 border-amber-500/25",
         dotClass: isSuccess
             ? "bg-emerald-500"
             : isError
@@ -88,7 +88,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
     return (
         <div
             onClick={onClick}
-            className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5"
+            className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-white dark:bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5"
         >
             {/* Top accent line on hover */}
             <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.5),transparent)] opacity-0 transition-opacity group-hover:opacity-100 rounded-t-[22px]" />
@@ -127,7 +127,7 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
                 {confidence != null && confidence > 0 && (
                     <>
                         <span className="opacity-30">·</span>
-                        <span className="text-emerald-500 font-medium">{Math.round(confidence)}% {isArabic ? "تطابق" : "match"}</span>
+                        <span className="text-emerald-600 dark:text-emerald-500 font-medium">{Math.round(confidence)}% {isArabic ? "تطابق" : "match"}</span>
                     </>
                 )}
             </div>

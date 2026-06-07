@@ -1,78 +1,44 @@
 "use client"
 
-import { useEffect } from "react"
-import { motion }    from "framer-motion"
-import { supabase }  from "@/lib/supabase"
-import { api }       from "@/lib/api"
-import { log }       from "@/lib/logger"
-
-import { CursorGlow }              from "@/components/landing/landing-utils"
+import { useState } from "react"
+import { SessionChecker } from "@/components/landing/SessionChecker"
+import dynamic from "next/dynamic"
 import { LandingNavbar }           from "@/components/landing/LandingNavbar"
 import { Hero }                    from "@/components/landing/Hero"
-import { StandardsStrip }          from "@/components/landing/StandardsStrip"
-import { HorusIntelligenceSection} from "@/components/landing/HorusIntelligenceSection"
-import { HowItWorksSection }       from "@/components/landing/HowItWorksSection"
-import { AnalysisEngineFeatures }  from "@/components/landing/AnalysisEngineFeatures"
-import { AboutSection }            from "@/components/landing/AboutSection"
-import { PricingSection }           from "@/components/landing/PricingSection"
-import { LandingFaqAccordion }     from "@/components/landing/LandingFaqAccordion"
-import { FinalCtaSection }         from "@/components/landing/FinalCtaSection"
-import { LandingFooter }           from "@/components/landing/LandingFooter"
-import { ScrollDrivenExpansion }   from "@/components/landing/scroll-driven-expansion"
+import { DarkCardReveal }          from "@/components/landing/dark-card-reveal"
+import { SectionSkeleton } from "@/components/landing/landing-utils"
+
+const HorusIntelligenceSection = dynamic(() => import("@/components/landing/HorusIntelligenceSection").then(mod => mod.HorusIntelligenceSection), { loading: () => <SectionSkeleton /> })
+const AnalysisEngineFeatures = dynamic(() => import("@/components/landing/AnalysisEngineFeatures").then(mod => mod.AnalysisEngineFeatures), { loading: () => <SectionSkeleton /> })
+const HowItWorksSection = dynamic(() => import("@/components/landing/HowItWorksSection").then(mod => mod.HowItWorksSection), { loading: () => <SectionSkeleton /> })
+const ComparisonTable = dynamic(() => import("@/components/landing/ComparisonTable").then(mod => mod.ComparisonTable), { loading: () => <SectionSkeleton /> })
+const AboutSection = dynamic(() => import("@/components/landing/AboutSection").then(mod => mod.AboutSection), { loading: () => <SectionSkeleton /> })
+const SecurityStrip = dynamic(() => import("@/components/landing/SecurityStrip").then(mod => mod.SecurityStrip), { loading: () => <SectionSkeleton /> })
+const PricingSection = dynamic(() => import("@/components/landing/PricingSection").then(mod => mod.PricingSection), { loading: () => <SectionSkeleton /> })
+const LandingFaqAccordion = dynamic(() => import("@/components/landing/LandingFaqAccordion").then(mod => mod.LandingFaqAccordion), { loading: () => <SectionSkeleton /> })
+const FinalCtaSection = dynamic(() => import("@/components/landing/FinalCtaSection").then(mod => mod.FinalCtaSection), { loading: () => <SectionSkeleton /> })
+const LandingFooter = dynamic(() => import("@/components/landing/LandingFooter").then(mod => mod.LandingFooter), { loading: () => <SectionSkeleton /> })
+
+const NeuralVortexBackground = dynamic(() => import("@/components/ui/interactive-neural-vortex-background").then(mod => mod.NeuralVortexBackground), { ssr: false })
+const DemoModal = dynamic(() => import("@/components/landing/DemoModal").then(mod => mod.DemoModal), { ssr: false })
+const HorusLandingAssistant = dynamic(() => import("@/components/landing/HorusLandingAssistant").then(mod => mod.HorusLandingAssistant), { ssr: false })
+
 
 /** Transparent page background to let globals.css gradient shine */
 const PAGE_BG = "transparent"
 
-/**
- * Dark card colour — same as the Hero's Spline scene bg.
- * Shared by hero, core-features, and footer cards.
- */
-const DARK_BG = "#050810"
-
-/** Shared base style for every dark rounded card */
-const darkCardBase: React.CSSProperties = {
-  borderRadius: "1.75rem",
-  overflow    : "hidden",
-  backgroundColor: DARK_BG,
-  boxShadow   : "0 10px 60px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.04)",
-}
-
-/**
- * Scroll-triggered reveal for dark cards.
- * Replaces the static motion.div reveal with strict scroll-driven 
- * scrubbed values using framer-motion useScroll and useTransform.
- */
-function DarkCardReveal({ children }: { children: React.ReactNode }) {
-  return (
-    <ScrollDrivenExpansion bgMatchClass="bg-transparent" className="dark-card-base">
-      <div style={darkCardBase}>
-        {children}
-      </div>
-    </ScrollDrivenExpansion>
-  )
-}
-
 export default function Home() {
-  useEffect(() => {
-    const checkSession = async () => {
-      if (!supabase) return
-      log("[Home] Checking for Supabase session...")
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        try {
-          await api.syncWithSupabase(session.access_token)
-          await supabase.auth.signOut()
-          window.location.href = "/platform/dashboard"
-        } catch (err) {
-          console.error("[Home] Sync failed:", err)
-        }
-      }
-    }
-    checkSession()
-  }, [])
+  const [demoOpen, setDemoOpen] = useState(false)
+  const [demoType, setDemoType] = useState<"demo" | "pricing">("demo")
+
+  const triggerDemo = (type: "demo" | "pricing" = "demo") => {
+    setDemoType(type)
+    setDemoOpen(true)
+  }
 
   return (
     <div style={{ backgroundColor: PAGE_BG, minHeight: "100vh" }}>
+      <SessionChecker />
 
       {/* Skip-nav */}
       <a
@@ -82,80 +48,77 @@ export default function Home() {
         Skip to main content
       </a>
 
-      <CursorGlow />
-      <LandingNavbar />
+      <LandingNavbar onOpenDemo={triggerDemo} />
 
-      {/*
-      ═══════════════════════════════════════════════════════════
-        INVERSE LAYOUT
-        Page bg = off-white.
-        Three dark rounded cards: hero · core-features · footer.
-        Everything else sits on the same off-white.
-        Dark cards animate into view on scroll (scale + y + fade).
-      ═══════════════════════════════════════════════════════════
-      */}
-
-      {/* ── CARD 1: Dark Hero (Spline animation inside) ── */}
-      <div className="px-3 md:px-5 pt-[76px] pb-4">
-        {/* Hero doesn't need the scroll reveal as it's the first thing visible */}
-        <div id="main-content" style={darkCardBase} data-section-theme="dark">
-          <Hero />
-        </div>
+      {/* ── Hero ── */}
+      <div id="main-content" className="relative scroll-mt-28 pt-24 md:pt-28 text-foreground overflow-hidden">
+        <NeuralVortexBackground
+          opacity={0.35}
+          intensity={0.48}
+          textVignette={false}
+          colorScheme="default"
+        />
+        <Hero onOpenDemo={triggerDemo} />
       </div>
 
-      {/* ── Standards Trust Strip (between hero and light sections) ── */}
-      <div style={{ backgroundColor: PAGE_BG }}>
-        <StandardsStrip />
-      </div>
-
-      {/* ── Light sections ── */}
-      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
-        <HorusIntelligenceSection />
-      </div>
-
-      {/* ── CARD 2: Dark Core Features (scroll-reveal) ── */}
-      <div className="px-3 md:px-5 py-4">
+      {/* ── Dark: Horus + Features ── */}
+      <div className="px-3 sm:px-6 md:px-8 pt-4 pb-2 md:pt-6 md:pb-6">
         <DarkCardReveal>
-          <div className="dark-features-card" data-section-theme="dark">
-            <HowItWorksSection />
+          <div className="dark-features-card group transition-transform duration-500 hover:shadow-[0_20px_80px_rgba(0,0,0,0.4)]" data-section-theme="dark">
+            <HorusIntelligenceSection />
             <AnalysisEngineFeatures />
           </div>
         </DarkCardReveal>
       </div>
 
-      {/* ── Light sections ── */}
-      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
+      {/* ── How It Works ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground py-4 md:py-8">
+        <HowItWorksSection />
+      </div>
+
+      {/* ── Comparison Table ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground py-4 md:py-8">
+        <ComparisonTable />
+      </div>
+
+      {/* ── About ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground py-4 md:py-8">
         <AboutSection />
+      </div>
+
+      {/* ── Security strip ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
+        <SecurityStrip />
+      </div>
+
+      {/* ── Early Access / Demo ── */}
+      <div className="px-3 sm:px-6 md:px-8 py-2 md:py-6">
+        <DarkCardReveal>
+          <div data-section-theme="dark" className="transition-transform duration-500 hover:shadow-[0_20px_80px_rgba(0,0,0,0.4)]">
+            <PricingSection onOpenDemo={triggerDemo} />
+          </div>
+        </DarkCardReveal>
+      </div>
+
+      {/* ── FAQ ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground py-4 md:py-8">
         <LandingFaqAccordion />
       </div>
 
-      {/* ── CARD: Dark Pricing & Testimonials (scroll-reveal) ── */}
-      <div className="px-3 md:px-5 py-4">
+      {/* ── Final CTA ── */}
+      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
+        <FinalCtaSection onOpenDemo={triggerDemo} />
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="px-3 sm:px-6 md:px-8 pb-6 md:pb-8">
         <DarkCardReveal>
           <div data-section-theme="dark">
-            <PricingSection />
+            <LandingFooter onOpenDemo={triggerDemo} />
           </div>
         </DarkCardReveal>
       </div>
 
-      {/* ── Light sections ── */}
-      <div style={{ backgroundColor: PAGE_BG }} className="text-foreground">
-        <FinalCtaSection />
-      </div>
-
-      {/* ── CARD 3: Dark Footer (scroll-reveal) ── */}
-      <div className="px-3 md:px-5 py-4">
-        <DarkCardReveal>
-          <div data-section-theme="dark" style={{ borderRadius: "1.75rem", overflow: "hidden" }}>
-            <LandingFooter />
-          </div>
-        </DarkCardReveal>
-      </div>
-
-      {/*
-        Force dark styles inside .dark-features-card without requiring
-        a global dark-mode class (page is always in light mode).
-      */}
       <style>{`
         .dark-features-card {
           position: relative;
@@ -170,6 +133,9 @@ export default function Home() {
             radial-gradient(circle at 85% 85%, rgba(14,165,233,0.08), transparent 40%);
         }
       `}</style>
+
+      <DemoModal isOpen={demoOpen} onClose={() => setDemoOpen(false)} defaultType={demoType} />
+      <HorusLandingAssistant />
     </div>
   )
 }

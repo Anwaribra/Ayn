@@ -5,6 +5,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from collections import defaultdict
+import io
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
 
 from fastapi import HTTPException, status
 from app.core.db import get_db
@@ -543,3 +548,102 @@ class AnalyticsService:
             periodDays=period_days,
             generatedAt=now,
         )
+
+    @staticmethod
+    def generate_analytics_pdf(data: AnalyticsResponse, period_label: str) -> io.BytesIO:
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=30,
+            leftMargin=30,
+            topMargin=30,
+            bottomMargin=30,
+        )
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Title
+        title_style = styles["Heading1"]
+        title_style.textColor = colors.HexColor("#0f172a")
+        elements.append(Paragraph("Ayn Compliance Platform - Analytics Report", title_style))
+        
+        subtitle_style = styles["Normal"]
+        subtitle_style.textColor = colors.HexColor("#64748b")
+        generated_date = data.generatedAt.strftime("%B %d, %Y")
+        elements.append(Paragraph(f"{period_label} · Generated {generated_date}", subtitle_style))
+        elements.append(Spacer(1, 20))
+
+        # Key Metrics
+        metrics_data = [
+            ["Avg Score", "Reports", "Growth", "Evidence"],
+            [
+                f"{data.avgScore}%",
+                str(data.totalReports),
+                f"{'+' if data.growth.growthPercent >= 0 else ''}{data.growth.growthPercent}%",
+                str(data.totalEvidence),
+            ],
+        ]
+        t = Table(metrics_data, colWidths=[100, 100, 100, 100])
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f8fafc")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#64748b")),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 1), (-1, 1), 14),
+            ("TEXTCOLOR", (0, 1), (0, 1), colors.HexColor("#0d9668") if data.avgScore >= 70 else colors.HexColor("#b45309")),
+            ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#2563eb")),
+            ("TEXTCOLOR", (2, 1), (2, 1), colors.HexColor("#0d9668") if data.growth.growthPercent >= 0 else colors.HexColor("#c9424a")),
+            ("TEXTCOLOR", (3, 1), (3, 1), colors.HexColor("#7c5ce0")),
+            ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),
+            ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 20))
+
+        # Standards Overview
+        if data.standardPerformance:
+            elements.append(Paragraph("Standards Overview", styles["Heading2"]))
+            elements.append(Spacer(1, 10))
+            std_data = [["Standard", "Avg Score", "Min", "Max", "Reports", "Trend"]]
+            for sp in data.standardPerformance:
+                std_data.append([
+                    sp.standardTitle[:34],
+                    f"{sp.avgScore}%",
+                    f"{sp.minScore}%",
+                    f"{sp.maxScore}%",
+                    str(sp.reportCount),
+                    sp.trend.capitalize(),
+                ])
+            
+            std_table = Table(std_data, colWidths=[180, 70, 50, 50, 60, 60])
+            std_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f8fafc")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#64748b")),
+                ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),
+                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e2e8f0")),
+            ]))
+            elements.append(std_table)
+            elements.append(Spacer(1, 20))
+
+        # Insights
+        if data.insights:
+            elements.append(Paragraph("Insights & Recommendations", styles["Heading2"]))
+            elements.append(Spacer(1, 10))
+            for insight in data.insights:
+                elements.append(Paragraph(f"<b>{insight.title}</b> ({insight.severity.upper()})", styles["Normal"]))
+                elements.append(Paragraph(insight.description, styles["Normal"]))
+                if insight.action:
+                    elements.append(Paragraph(f"<i>Action: {insight.action}</i>", styles["Normal"]))
+                elements.append(Spacer(1, 10))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer

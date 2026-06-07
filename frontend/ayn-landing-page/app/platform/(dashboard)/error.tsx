@@ -3,8 +3,9 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Header } from "@/components/platform/header"
 import { AlertCircle } from "lucide-react"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { cn } from "@/lib/utils"
 
 export default function DashboardError({
   error,
@@ -13,6 +14,8 @@ export default function DashboardError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const { isArabic } = useUiLanguage()
+
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       console.error(error)
@@ -20,25 +23,26 @@ export default function DashboardError({
   }, [error])
 
   return (
-    <div className="min-h-screen bg-[var(--surface)]">
-      <Header title="Something went wrong" />
-      <div className="p-4 md:p-[var(--spacing-content)] flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center text-center max-w-md">
-          <div className="rounded-full bg-destructive/10 p-4 mb-6">
-            <AlertCircle className="w-10 h-10 text-destructive" aria-hidden />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Something went wrong</h2>
-          <p className="text-muted-foreground mb-8">
-            We ran into an error in this section. You can try again or go back to the dashboard.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Button onClick={reset} variant="default">
-              Try again
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/platform/dashboard">Back to dashboard</Link>
-            </Button>
-          </div>
+    <div className={cn("flex min-h-[60vh] flex-col items-center justify-center px-4 py-16", isArabic && "font-arabic")}>
+      <div className="flex max-w-md flex-col items-center text-center">
+        <div className="mb-6 rounded-full bg-destructive/10 p-4">
+          <AlertCircle className="h-10 w-10 text-destructive" aria-hidden />
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-foreground">
+          {isArabic ? "حدث خطأ" : "Something went wrong"}
+        </h2>
+        <p className="mb-8 text-sm text-muted-foreground">
+          {isArabic
+            ? "واجهنا مشكلة في هذا القسم. جرّب مرة أخرى أو ارجع للوحة التحكم."
+            : "We ran into an error in this section. Try again or return to the dashboard."}
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button onClick={reset} variant="default">
+            {isArabic ? "إعادة المحاولة" : "Try again"}
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/platform/dashboard">{isArabic ? "لوحة التحكم" : "Dashboard"}</Link>
+          </Button>
         </div>
       </div>
     </div>

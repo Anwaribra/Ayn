@@ -12,50 +12,102 @@ import { cn } from "@/lib/utils"
 import {
   ChevronRight,
   Activity,
-  ArrowUpRight,
+  ArrowRight,
   FileText,
-  AlertTriangle,
   Sparkles,
   Brain,
   UploadCloud,
   Microscope,
-  BellRing
+  BookOpen,
+  ShieldCheck,
+  AlertTriangle,
+  Clock,
+  Download,
+  Cpu,
+  AlertCircle,
+  Search,
 } from "lucide-react"
-import type { DashboardMetrics, Standard } from "@/types"
+import type { DashboardMetrics } from "@/types"
 import { DashboardPageSkeleton } from "@/components/platform/skeleton-loader"
-import { SystemLog } from "@/components/platform/system-log"
-import { StatusTiles } from "@/components/platform/status-tiles"
+import { ReadinessRing } from "@/components/ui/ReadinessRing"
+import { ComplianceHealthBar } from "@/components/ui/ComplianceHealthBar"
 
-function formatMetricsSynced(dataUpdatedAt: number, isArabic: boolean): string {
-  if (!dataUpdatedAt) return ""
-  const sec = Math.max(0, Math.floor((Date.now() - dataUpdatedAt) / 1000))
-  if (sec < 15) return isArabic ? "محدّث للتو" : "Updated just now"
-  const min = Math.floor(sec / 60)
-  if (min < 1) return isArabic ? "محدّث منذ لحظات" : "Updated moments ago"
-  if (min === 1) return isArabic ? "محدّث منذ دقيقة" : "Updated 1 min ago"
-  if (min < 60) return isArabic ? `محدّث منذ ${min} د` : `Updated ${min} min ago`
-  const hr = Math.floor(min / 60)
-  if (hr === 1) return isArabic ? "محدّث منذ ساعة" : "Updated 1 hour ago"
-  if (hr < 24) return isArabic ? `محدّث منذ ${hr} س` : `Updated ${hr} hours ago`
-  const d = Math.floor(hr / 24)
-  return isArabic ? `محدّث منذ ${d} يوم` : `Updated ${d}d ago`
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+// ─── Component: ReportsGauge ───────────────────────────────────────────────
+function ReportsGauge({ value, total }: { value: number; total: number }) {
+  const radius = 18
+  const strokeWidth = 3.5
+  const circumference = 2 * Math.PI * radius
+  const percent = Math.min((value / Math.max(total, 1)) * 100, 100)
+  const offset = circumference - (percent / 100) * circumference
+
+  return (
+    <div className="relative flex items-center justify-center h-12 w-12 shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 44 44">
+        <circle
+          className="text-muted/30 dark:text-muted/10"
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="22"
+          cy="22"
+        />
+        <circle
+          className="text-emerald-500"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="22"
+          cy="22"
+        />
+      </svg>
+      <span className="absolute text-xs font-bold text-foreground">{value}</span>
+    </div>
+  )
 }
 
-/** Hero % pill: color by readiness band */
-function heroPercentClasses(score: number): string {
-  if (score >= 85)
-    return "border-emerald-400/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_28px_-6px_rgba(52,211,153,0.45)]"
-  if (score >= 65)
-    return "border-teal-400/35 bg-teal-500/12 text-teal-200 shadow-[0_0_24px_-8px_rgba(45,212,191,0.35)]"
-  if (score >= 40)
-    return "border-amber-400/40 bg-amber-500/15 text-amber-200 shadow-[0_0_24px_-8px_rgba(251,191,36,0.25)]"
-  if (score >= 15)
-    return "border-orange-400/40 bg-orange-500/12 text-orange-200"
-  if (score > 0) return "border-sky-400/35 bg-sky-500/12 text-sky-200"
-  return "border-white/15 bg-white/[0.06] text-muted-foreground"
+// ─── Component: ComplianceGauge ────────────────────────────────────────────
+function ComplianceGauge({ value }: { value: number }) {
+  const radius = 16
+  const strokeWidth = 3
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (value / 100) * circumference
+
+  return (
+    <div className="relative flex items-center justify-center h-10 w-10 shrink-0">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 38 38">
+        <circle
+          className="text-muted/30 dark:text-muted/10"
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="19"
+          cy="19"
+        />
+        <circle
+          className="text-emerald-500"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="19"
+          cy="19"
+        />
+      </svg>
+      <span className="absolute text-xs font-bold text-foreground">{value}</span>
+    </div>
+  )
 }
-
-
 
 export default function DashboardPage() {
   return (
@@ -70,11 +122,14 @@ function DashboardContent() {
   const { isArabic } = useUiLanguage()
   usePageTitle(isArabic ? "لوحة التحكم" : "Dashboard")
 
-  const { data: metrics, isLoading, error, mutate } = useSWR<DashboardMetrics>(
+  const isAdmin = user?.role === "ADMIN"
+  const campusId = user?.institutionId || "00000000-0000-0000-0000-000000000000"
+
+  const { data: metrics, isLoading, isValidating } = useSWR<DashboardMetrics>(
     user ? [`dashboard-metrics`, user.id] : null,
     () => api.getDashboardMetrics(),
     {
-      refreshInterval: 300_000, // 5-minute auto-refresh; user can always hit Retry manually
+      refreshInterval: 300_000,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60_000,
@@ -82,14 +137,24 @@ function DashboardContent() {
     }
   )
 
-  const { data: standards } = useSWR<Standard[]>(
-    user ? [`standards-dashboard`, user.id] : null,
-    () => api.getStandards(),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 30000,
-    }
+  const { data: v2Standards } = useSWR<any[]>(
+    campusId ? `/api/v2/standards?campus_id=${campusId}` : null,
+    fetcher
+  )
+
+  const { data: v2Summary } = useSWR<any>(
+    campusId ? `/api/v2/validation/action-center?campus_id=${campusId}` : null,
+    fetcher
+  )
+
+  const { data: latestBriefing } = useSWR<any>(
+    campusId ? `/api/v2/horus/briefings/latest?campus_id=${campusId}` : null,
+    fetcher
+  )
+
+  const { data: institution } = useSWR<any>(
+    campusId ? [`institution`, campusId] : null,
+    () => api.getInstitution(campusId)
   )
 
   const safeMetrics =
@@ -101,15 +166,14 @@ function DashboardContent() {
   useEffect(() => {
     if (safeMetrics) setLastMetricsSyncAt(Date.now())
   }, [safeMetrics])
-  const safeStandards = Array.isArray(standards) ? standards : []
-  const recentActivities = Array.isArray(safeMetrics?.recentActivities) ? safeMetrics.recentActivities : []
 
-  const alignmentScore = safeMetrics?.alignmentPercentage ?? 0
-  const alignedCriteria = safeMetrics?.alignedCriteriaCount ?? 0
-  const alertCount = safeMetrics?.unreadNotificationsCount ?? 0
-  const analysesCount = safeMetrics?.totalGapAnalyses ?? 0
-  const heroScoreHintGapOnly =
-    alignedCriteria === 0 && analysesCount > 0 && alignmentScore > 0
+  const readinessPercentage = useMemo(() => {
+    if (v2Standards && v2Standards.length > 0) {
+      const sum = v2Standards.reduce((acc, std) => acc + (std.readiness_score || 0), 0)
+      return Math.round((sum / v2Standards.length) * 100)
+    }
+    return Math.round(safeMetrics?.alignmentPercentage ?? 0)
+  }, [v2Standards, safeMetrics])
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -123,491 +187,301 @@ function DashboardContent() {
     return "Good evening"
   })()
 
-  const publicStandards = useMemo(
-    () =>
-      safeStandards.filter(
-        (s: Standard | null | undefined) => !!s && (s as Standard).isPublic && !!(s as Standard).id
-      ) as Standard[],
-    [safeStandards]
-  )
-
-
-
-  const dashboardStats = useMemo(() => {
-    const alertIsCritical = (safeMetrics?.unreadNotificationsCount ?? 0) > 0
-    const complianceOk = alignmentScore > 80
-    if (isArabic) {
-      return [
-        {
-          label: "إجمالي الأدلة",
-          value: safeMetrics?.evidenceCount?.toString() || "0",
-          icon: FileText,
-          status: "warning" as const,
-          statusLabel: "تحذير",
-        },
-        {
-          label: "تنبيهات نشطة",
-          value: safeMetrics?.unreadNotificationsCount?.toString() || "0",
-          icon: AlertTriangle,
-          status: (alertIsCritical ? "critical" : "success") as "critical" | "success",
-          statusLabel: alertIsCritical ? "حرج" : "جيد",
-        },
-        {
-          label: "درجة الامتثال",
-          value: `${Math.round(alignmentScore)}%`,
-          icon: Activity,
-          status: (complianceOk ? "success" : "warning") as "success" | "warning",
-          statusLabel: complianceOk ? "جيد" : "تحذير",
-        },
-        {
-          label: "إجمالي التحليلات",
-          value: safeMetrics?.totalGapAnalyses?.toString() || "0",
-          icon: Microscope,
-          status: "neutral" as const,
-          statusLabel: "محايد",
-        },
-      ]
-    }
-    return [
-      {
-        label: "Total Evidence",
-        value: safeMetrics?.evidenceCount?.toString() || "0",
-        icon: FileText,
-        status: "warning" as const,
-        statusLabel: "WARNING",
-      },
-      {
-        label: "Active Alerts",
-        value: safeMetrics?.unreadNotificationsCount?.toString() || "0",
-        icon: AlertTriangle,
-        status: (alertIsCritical ? "critical" : "success") as "critical" | "success",
-        statusLabel: alertIsCritical ? "WARNING" : "SUCCESS",
-      },
-      {
-        label: "Compliance Score",
-        value: `${Math.round(alignmentScore)}%`,
-        icon: Activity,
-        status: (complianceOk ? "success" : "warning") as "success" | "warning",
-        statusLabel: complianceOk ? "SUCCESS" : "WARNING",
-      },
-      {
-        label: "Total Analyses",
-        value: safeMetrics?.totalGapAnalyses?.toString() || "0",
-        icon: Microscope,
-        status: "neutral" as const,
-        statusLabel: "NEUTRAL",
-      },
-    ]
-  }, [metrics, alignmentScore, isArabic, safeMetrics?.evidenceCount, safeMetrics?.unreadNotificationsCount, safeMetrics?.totalGapAnalyses])
-
   const quickActions = useMemo(
     () =>
       isArabic
         ? [
-            {
-              title: "رفع أدلة",
-              description: "أضف مستندات مؤسسية جديدة ودع حورس يعالجها.",
-              href: "/platform/evidence/upload",
-              icon: UploadCloud,
-            },
-            {
-              title: "تشغيل تحليل الفجوات",
-              description: "أنشئ تقرير جاهزية حديثاً مقابل معاييرك.",
-              href: "/platform/gap-analysis",
-              icon: Microscope,
-            },
-            {
-              title: "اسأل حورس",
-              description: "افتح مساحة الذكاء للخطوات التالية والمسودات.",
-              href: "/platform/horus-ai",
-              icon: Brain,
-            },
-            {
-              title: "مراجعة التنبيهات",
-              description: "اطلع على أحداث المنصة والإشعارات غير المقروءة.",
-              href: "/platform/notifications",
-              icon: BellRing,
-            },
+            { title: "رفع أدلة", description: "أضف مستندات ودع حورس يعالجها", href: "/platform/evidence", icon: UploadCloud },
+            { title: "تحليل الفجوات", description: "تقرير جاهزية مقابل معاييرك", href: "/platform/gap-analysis", icon: Microscope },
+            { title: "مساعد حورس", description: "مساحة الذكاء للخطوات التالية", href: "/platform/horus-ai", icon: Brain },
           ]
         : [
-            {
-              title: "Upload Evidence",
-              description: "Add new institutional proof and let Horus process it.",
-              href: "/platform/evidence/upload",
-              icon: UploadCloud,
-            },
-            {
-              title: "Run Gap Analysis",
-              description: "Generate a fresh readiness report against your standards.",
-              href: "/platform/gap-analysis",
-              icon: Microscope,
-            },
-            {
-              title: "Ask Horus",
-              description: "Open the AI workspace for next-step guidance and drafting.",
-              href: "/platform/horus-ai",
-              icon: Brain,
-            },
-            {
-              title: "Review Alerts",
-              description: "Check active platform events and unread notifications.",
-              href: "/platform/notifications",
-              icon: BellRing,
-            },
+            { title: "Upload Evidence", description: "Add proof and let Horus process it", href: "/platform/evidence", icon: UploadCloud },
+            { title: "Gap Analysis", description: "Generate a fresh readiness report", href: "/platform/gap-analysis", icon: Microscope },
+            { title: "Horus AI", description: "Open the AI workspace for guidance", href: "/platform/horus-ai", icon: Brain },
           ],
-    [isArabic],
+    [isArabic]
   )
 
-  const scoreTone =
-    alignmentScore >= 85
-      ? isArabic
-        ? "محاذاة قوية"
-        : "Strong alignment"
-      : alignmentScore >= 65
-        ? isArabic
-          ? "وضع يتحسّن"
-          : "Improving posture"
-        : isArabic
-          ? "يحتاج متابعة"
-          : "Needs attention"
+  if (!user) return <DashboardPageSkeleton />
 
-
-
-  const formatEvidenceDate = (value?: string | null) => {
-    if (!value) return isArabic ? "أضيف مؤخراً" : "Recently added"
-
-    const parsed = new Date(value)
-    if (Number.isNaN(parsed.getTime())) return isArabic ? "أضيف مؤخراً" : "Recently added"
-
-    return parsed.toLocaleDateString(isArabic ? "ar-EG" : undefined, {
-      month: "short",
-      day: "numeric",
-    })
+  const getStatValue = (key: string): number => {
+    switch (key) {
+      case "evidenceCount": return safeMetrics?.evidenceCount ?? 0
+      case "standardsCount": return v2Standards?.length ?? 0
+      case "needsReview": return v2Summary?.needs_review_count ?? 0
+      case "missing": return v2Summary?.missing_evidence_count ?? 0
+      default: return 0
+    }
   }
 
-  if (!user) {
-    return <DashboardPageSkeleton />
-  }
-
-  if (error) {
-    return (
-      <div className="animate-fade-in-up flex flex-col items-center justify-center py-20 px-4">
-        <p className="text-muted-foreground text-center mb-4">
-          {isArabic ? "تعذر تحميل لوحة التحكم." : "Failed to load dashboard."}
-        </p>
-        <button
-          type="button"
-          onClick={() => mutate()}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-        >
-          {isArabic ? "إعادة المحاولة" : "Retry"}
-        </button>
-      </div>
-    )
-  }
+  const standardsCount = v2Standards?.length ?? 0
+  const evidenceCount = safeMetrics?.evidenceCount ?? 0
+  const openAlerts = v2Summary?.needs_review_count ?? 0
+  const gapAnalyses = safeMetrics?.totalGapAnalyses ?? 0
+  const reportsCount = gapAnalyses
+  const reportsTotal = 8
 
   return (
-    <div
-      className={cn(
-        "animate-fade-in-up space-y-6 sm:space-y-8 pb-16 sm:pb-20 relative",
-        isArabic && "font-arabic",
+    <div id="dashboard-report-content" className={cn("mx-auto platform-container-wide space-y-5 py-2", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
+      {/* Top Header Row with Refresh */}
+      {lastMetricsSyncAt !== null && !isLoading && (
+        <div className={cn("flex items-center gap-1.5 py-1 text-xs text-muted-foreground/70", isArabic && "flex-row-reverse")}>
+          <Activity className="h-3 w-3" />
+          <span>{lastMetricsSyncAt ? (isArabic ? "محدّث للتو" : "Updated just now") : ""}</span>
+        </div>
       )}
-    >
-      <div id="dashboard-report-content" className="space-y-6 sm:space-y-8">
-      {/* Header Section with Gauges */}
-      <section>
-        {/* Main Welcome Card */}
-        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] glass-card p-5 sm:p-8 md:p-12 flex flex-col justify-between min-h-[320px] sm:min-h-[340px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.12),transparent_28%)] pointer-events-none" />
-          <div className="absolute -right-20 -top-14 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="absolute left-10 bottom-6 h-24 w-24 rounded-full border border-white/10 bg-white/5 blur-2xl pointer-events-none" />
-          <div className="relative z-10 space-y-6 sm:space-y-8">
-            <div className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full status-success border w-fit", isArabic && "flex-row-reverse")}>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--status-success)" }}></span>
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--status-success)" }}></span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                {isArabic ? "عين — الدماغ نشط" : "Ayn Brain Live"}
-              </span>
-            </div>
-            {isLoading && (
-              <div className={cn("inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground", isArabic && "flex-row-reverse")}>
-                <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-                {isArabic ? "جارٍ مزامنة لوحة التحكم" : "Syncing dashboard"}
-              </div>
-            )}
-            {lastMetricsSyncAt !== null && !isLoading && (
-              <p className={cn("text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/90", isArabic && "text-right")}>
-                {isArabic ? "المقاييس — " : "Metrics — "}
-                {formatMetricsSynced(lastMetricsSyncAt, isArabic)}
-              </p>
-            )}
 
-            <div className={cn("max-w-2xl", isArabic && "text-right ms-auto")} dir={isArabic ? "rtl" : "ltr"}>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-tight">
-                {greeting}
-                {isArabic ? "، " : ", "}
-                <br />
-                <span className="text-muted-foreground font-light" dir="ltr">
-                  {user?.name?.split(" ")[0] ?? (isArabic ? "ضيفنا" : "there")}.
-                </span>
-              </h1>
-              <p className="text-muted-foreground font-medium max-w-xl text-sm sm:text-base md:text-lg leading-relaxed">
-                {isArabic ? (
-                  <>
-                    حورس نشط ومساحة عملك تعرض حالياً مؤشر جاهزية{" "}
-                    <span
-                      className={cn(
-                        "inline-flex items-baseline rounded-xl border px-2.5 py-0.5 text-base sm:text-lg font-black tabular-nums align-middle",
-                        heroPercentClasses(alignmentScore),
-                      )}
-                    >
-                      {Math.round(alignmentScore)}%
-                    </span>{" "}
-                    عبر{" "}
-                    <span className="text-foreground font-bold">{publicStandards.length}</span> معياراً متتبعاً
-                    {analysesCount > 0 ? (
-                      <> ويشمل متوسط نتائج أحدث تحليلات الفجوات ({analysesCount}).</>
-                    ) : (
-                      <>.</>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    Horus is active — your workspace readiness score is{" "}
-                    <span
-                      className={cn(
-                        "inline-flex items-baseline rounded-xl border px-2.5 py-0.5 text-base sm:text-lg font-black tabular-nums align-middle",
-                        heroPercentClasses(alignmentScore),
-                      )}
-                    >
-                      {Math.round(alignmentScore)}%
-                    </span>{" "}
-                    across{" "}
-                    <span className="text-foreground font-bold">{publicStandards.length}</span> tracked standards
-                    {analysesCount > 0 ? (
-                      <>
-                        , blending criterion coverage with your latest gap analyses (
-                        <span className="text-foreground font-semibold">{analysesCount}</span> runs).
-                      </>
-                    ) : (
-                      "."
-                    )}
-                  </>
-                )}
-              </p>
-              {heroScoreHintGapOnly ? (
-                <p className="mt-2 text-xs text-muted-foreground/90 max-w-xl leading-relaxed">
-                  {isArabic
-                    ? "الدرجة تستمد من تقارير تحليل الفجوات الأخيرة لأن معايير المنشأة لم تُربَط بعد بأدلة على مستوى المعيار الفرعي."
-                    : "Score is driven by recent gap-analysis reports while criterion-level evidence mapping is still ramping up."}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {isArabic ? "نبرة الجاهزية" : "Readiness Tone"}
-                </p>
-                <p className="mt-2 text-lg font-bold text-foreground">{scoreTone}</p>
-              </div>
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {isArabic ? "تنبيهات مفتوحة" : "Open Alerts"}
-                </p>
-                <p className="mt-2 text-lg font-bold text-foreground">{alertCount}</p>
-              </div>
-              <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-3.5 backdrop-blur-sm sm:p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {isArabic ? "تحليلات منفّذة" : "Analyses Run"}
-                </p>
-                <p className="mt-2 text-lg font-bold text-foreground">{analysesCount}</p>
-              </div>
-            </div>
+      {/* Top Row: Welcome Card + System Health + Reports */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Card 1: Welcome Card */}
+        <div className="md:col-span-6 rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between min-h-[120px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {isArabic ? "نشط" : "HORUS ACTIVE"}
+            </span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              {institution?.name || (isArabic ? "المؤسسة التعليمية" : "YOUR INSTITUTION")}
+            </span>
           </div>
-
-          <div className={cn("relative z-10 mt-6 sm:mt-8 flex flex-wrap items-center gap-3", isArabic && "justify-end")}>
-            <Link
-              href="/platform/horus-ai"
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl bg-primary px-4 sm:px-5 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-[0_18px_40px_-22px_rgba(37,99,235,0.65)] transition-transform hover:-translate-y-0.5",
-                isArabic && "flex-row-reverse",
-              )}
-            >
-              <Sparkles className="w-4 h-4" />
-              {isArabic ? "فتح حورس" : "Open Horus"}
-            </Link>
-            <Link
-              href="/platform/gap-analysis"
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors hover:bg-[var(--glass-strong-bg)] sm:px-5 sm:text-xs",
-                isArabic && "flex-row-reverse",
-              )}
-            >
-              {isArabic ? "تشغيل تحليل الفجوات" : "Run Gap Analysis"}
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Status Tiles Grid */}
-      <section className={cn(isLoading && "opacity-60 transition-opacity duration-300")}>
-        <StatusTiles
-          stats={dashboardStats}
-        />
-      </section>
-
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {quickActions.map((action) => (
-          <Link
-            key={action.title}
-            href={action.href}
-            className="group glass-card rounded-[26px] sm:rounded-[28px] p-4 sm:p-5 transition-all hover:-translate-y-0.5"
-          >
-            <div className={cn("flex items-start justify-between gap-4", isArabic && "flex-row-reverse text-right")}>
-              <div className="space-y-3">
-                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]", isArabic && "ms-auto")}>
-                  <action.icon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">{action.title}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{action.description}</p>
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-        ))}
-      </section>
-
-
-
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Recent Evidence List */}
-          <div className="glass-card p-5 sm:p-8 rounded-[28px] sm:rounded-3xl">
-            <div className={cn("flex items-center justify-between mb-8", isArabic && "flex-row-reverse")}>
-              <div className={cn(isArabic && "text-right")}>
-                <h3 className="text-lg font-bold text-foreground">
-                  {isArabic ? "أحدث الأدلة" : "Recent Evidence"}
-                </h3>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium mt-1">
-                  {isArabic ? "آخر المستندات إلى المخزن" : "Latest documents entering the vault"}
-                </p>
-              </div>
-              <Link href="/platform/evidence" className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">
-                {isArabic ? "عرض المخزن" : "View Vault"}
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {(safeMetrics?.recentEvidence?.length ?? 0) === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed glass-border rounded-3xl glass-panel">
-                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                  <p className="text-muted-foreground text-sm font-medium">
-                    {isArabic ? "لا توجد أدلة حديثة" : "No recent evidence"}
-                  </p>
-                  <Link href="/platform/evidence" className="inline-block mt-4 px-5 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-bold rounded-xl uppercase tracking-widest">
-                    {isArabic ? "رفع إلى المخزن" : "Upload to Vault"}
-                  </Link>
-                </div>
+          <div className="mt-3">
+            <h2 className="text-base font-bold text-foreground">
+              {greeting}, <span className="font-normal text-muted-foreground">{user?.name?.split(" ")[0] || "Officer"}</span>
+            </h2>
+            <p className="text-sm text-muted-foreground/85 mt-1 leading-relaxed">
+              {isArabic ? (
+                <>
+                  نسبة الجاهزية <span className="font-semibold text-emerald-600 dark:text-emerald-400">{readinessPercentage}%</span> عبر <span className="font-semibold text-foreground">{standardsCount}</span> معايير تم تتبعها في هذه الدورة.
+                </>
               ) : (
-                safeMetrics?.recentEvidence?.map((ev: any) => (
-                  <Link
-                    key={ev.id}
-                    href={`/platform/evidence?highlight=${encodeURIComponent(ev.id)}`}
-                    className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--surface)] transition-all group cursor-pointer border border-transparent hover:border-[var(--border-subtle)]"
-                  >
-                    <div className="w-10 h-10 rounded-xl status-info border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm text-foreground truncate">{ev.title || ev.originalFilename}</h4>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
-                          {ev.documentType || (isArabic ? "ملف أدلة" : "Evidence file")}
-                        </span>
-                        <span className="h-1 w-1 rounded-full bg-white/20" />
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{formatEvidenceDate(ev.createdAt)}</span>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                        {ev.status || (isArabic ? "مفتوح" : "Open")}
-                      </p>
-                      <ChevronRight className="w-4 h-4 mt-1 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </Link>
-                ))
+                <>
+                  Readiness score <span className="font-semibold text-emerald-600 dark:text-emerald-400">{readinessPercentage}%</span> across <span className="font-semibold text-foreground">{standardsCount}</span> tracked standards this cycle.
+                </>
               )}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: System Health */}
+        <div className="md:col-span-3 rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between">
+            <div className="h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <Cpu className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{isArabic ? "صحة النظام" : "SYSTEM HEALTH"}</span>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{isArabic ? "الحالة" : "Status"}</p>
+            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{isArabic ? "مثالي" : "Optimal"}</p>
+          </div>
+        </div>
+
+        {/* Card 3: Reports */}
+        <div className="md:col-span-3 rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          <div className="flex flex-col justify-between h-full">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{isArabic ? "التقارير" : "REPORTS"}</span>
+            <div className="mt-4">
+              <p className="text-2xl font-bold text-foreground font-sans tracking-tight leading-none">{reportsCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">{isArabic ? `${reportsTotal} إجمالي` : `${reportsTotal} total`}</p>
             </div>
           </div>
+          <div className="flex items-center justify-center">
+            <ReportsGauge value={reportsCount} total={reportsTotal} />
+          </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <Link href="/platform/analytics" className="group glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-7">
-              <div className={cn("flex items-start justify-between gap-4", isArabic && "flex-row-reverse text-right")}>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {isArabic ? "التقارير" : "Reporting"}
-                  </p>
-                  <h3 className="mt-3 text-xl font-bold text-foreground">
-                    {isArabic ? "التحليلات والاتجاهات" : "Analytics & Trends"}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {isArabic
-                      ? "راجع حركة الدرجات وأداء المعايير ونمو الأدلة خلال آخر فترة تقرير."
-                      : "Review score movement, standard performance, and evidence growth across the last reporting window."}
-                  </p>
-                </div>
-                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-              <div className={cn("mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary", isArabic && "flex-row-reverse justify-end")}>
-                {isArabic ? "فتح التحليلات" : "Open Analytics"}{" "}
-                <ArrowUpRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </div>
-            </Link>
+      {/* Row of 4 KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Card 1: Evidence Items */}
+        <Link
+          href="/platform/evidence"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+        >
+          <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
+            <div className={isArabic ? "text-right" : ""}>
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{isArabic ? "على المسار" : "ON TRACK"}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">{isArabic ? "عناصر الأدلة" : "Evidence items"}</p>
+            </div>
+            <div className="h-7 w-7 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+              <FileText className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-4 font-sans tracking-tight">{evidenceCount}</p>
+        </Link>
 
-            <Link href="/platform/notifications" className="group glass-card rounded-[28px] sm:rounded-3xl p-5 sm:p-7">
-              <div className={cn("flex items-start justify-between gap-4", isArabic && "flex-row-reverse text-right")}>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {isArabic ? "قائمة الانتباه" : "Attention Queue"}
-                  </p>
-                  <h3 className="mt-3 text-xl font-bold text-foreground">
-                    {isArabic ? "إشعارات المنصة" : "Platform Notifications"}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {isArabic
-                      ? "راجع التحديثات غير المقروءة وأحداث التقارير الجديدة وإشارات الأدلة أو سير العمل التي تحتاج إجراءً."
-                      : "Review unread updates, new report events, and evidence or workflow signals that need action."}
-                  </p>
-                </div>
-                <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/[0.04] flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-primary" />
-                </div>
+        {/* Card 2: Open Alerts */}
+        <Link
+          href="/platform/gap-analysis"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+        >
+          <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
+            <div className={isArabic ? "text-right" : ""}>
+              <p className="text-xs font-bold text-amber-500 uppercase tracking-wider">{isArabic ? "مراجعة" : "REVIEW"}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">{isArabic ? "تنبيهات مفتوحة" : "Open alerts"}</p>
+            </div>
+            <div className="h-7 w-7 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <AlertCircle className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-4 font-sans tracking-tight">{openAlerts}</p>
+        </Link>
+
+        {/* Card 3: Compliance Score */}
+        <Link
+          href="/platform/standards"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+        >
+          <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
+            <div className={isArabic ? "text-right" : ""}>
+              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{isArabic ? "يتحسن" : "IMPROVING"}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">{isArabic ? "صحة الامتثال" : "Compliance score"}</p>
+            </div>
+            <div className="flex items-center justify-center">
+              <ComplianceGauge value={readinessPercentage} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-4 font-sans tracking-tight">{readinessPercentage}%</p>
+        </Link>
+
+        {/* Card 4: Gap Analyses */}
+        <Link
+          href="/platform/gap-analysis"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+        >
+          <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
+            <div className={isArabic ? "text-right" : ""}>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{isArabic ? "الدورة الحالية" : "THIS CYCLE"}</p>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">{isArabic ? "تحليلات الفجوات" : "Gap analyses"}</p>
+            </div>
+            <div className="h-7 w-7 rounded-full bg-slate-500/10 flex items-center justify-center text-slate-500">
+              <Search className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-4 font-sans tracking-tight">{gapAnalyses}</p>
+        </Link>
+      </div>
+
+      {/* Compliance Health */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              {isArabic ? "صحة الامتثال" : "Compliance Health"}
+            </h3>
+          </div>
+          {v2Summary && (
+            <span className="text-xs text-muted-foreground">
+              {v2Summary.covered_requirements_count ?? 0}/{(v2Summary.covered_requirements_count ?? 0) + (v2Summary.partial_requirements_count ?? 0) + (v2Summary.missing_requirements_count ?? 0)} {isArabic ? "متطلب" : "requirements"}
+            </span>
+          )}
+        </div>
+        <ComplianceHealthBar
+          covered={v2Summary?.covered_requirements_count ?? 0}
+          partial={v2Summary?.partial_requirements_count ?? 0}
+          missing={v2Summary?.missing_requirements_count ?? 0}
+          total={(v2Summary?.covered_requirements_count ?? 0) + (v2Summary?.partial_requirements_count ?? 0) + (v2Summary?.missing_requirements_count ?? 0)}
+        />
+      </div>
+
+      {/* Briefing + Quick Actions */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Horus Briefing */}
+        <div className="md:col-span-2 rounded-xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              {isArabic ? "ملخص حورس" : "Horus Briefing"}
+            </h3>
+            <span className={cn("inline-flex items-center gap-1 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary", isArabic ? "mr-auto" : "ml-auto")}>
+              <Sparkles className="h-2.5 w-2.5" />
+              AI
+            </span>
+          </div>
+          <div
+            className="max-h-[160px] overflow-y-auto rounded-lg border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed text-foreground custom-scrollbar whitespace-pre-wrap"
+            dir={isArabic ? "rtl" : "ltr"}
+          >
+            {latestBriefing ? latestBriefing.summary_content : (
+              <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                <Brain className="mb-2 h-8 w-8 opacity-40" />
+                <span className="text-sm">
+                  {isArabic ? "لا يوجد ملخص اليوم" : "No briefing for today yet"}
+                </span>
               </div>
-              <div className={cn("mt-6 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary", isArabic && "flex-row-reverse justify-end")}>
-                {isArabic ? "فتح الإشعارات" : "Open Notifications"}{" "}
-                <ArrowUpRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </div>
-            </Link>
+            )}
           </div>
         </div>
 
-        {/* System Log */}
-        <div className="h-full">
-          <SystemLog
-            className="h-full min-h-[500px]"
-            maxEntries={8}
-            logs={recentActivities}
-            isLoading={isLoading}
-          />
+        {/* Quick Actions */}
+        <div className="space-y-3">
+          {quickActions.map((action) => (
+            <Link
+              key={action.title}
+              href={action.href}
+              className={cn("group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30 hover:bg-primary/[0.02]", isArabic && "flex-row-reverse")}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 transition-colors group-hover:bg-primary group-hover:text-white">
+                <action.icon className="h-4 w-4 text-primary group-hover:text-white" />
+              </div>
+              <div className={cn("min-w-0 flex-1", isArabic && "text-right")}>
+                <p className="text-sm font-semibold text-foreground">{action.title}</p>
+                <p className="text-xs text-muted-foreground">{action.description}</p>
+              </div>
+              <ArrowRight className={cn("h-4 w-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary", isArabic && "rotate-180")} />
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* Recent Evidence */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              {isArabic ? "أحدث الأدلة" : "Recent Evidence"}
+            </h3>
+          </div>
+          <Link href="/platform/evidence" className="text-xs font-medium text-primary hover:underline">
+            {isArabic ? "عرض المخزن" : "Open Vault"}
+          </Link>
+        </div>
+
+        {(safeMetrics?.recentEvidence?.length ?? 0) === 0 ? (
+          <Link
+            href="/platform/evidence/upload"
+            className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-8 text-center transition-colors hover:border-primary/30 hover:bg-primary/5"
+          >
+            <UploadCloud className="h-8 w-8 text-muted-foreground/50" />
+            <p className="text-sm font-semibold text-foreground">
+              {isArabic ? "ارفَع أول دليل" : "Upload your first evidence"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isArabic ? "اسحب ملفًا أو انقر للرفع" : "Drag and drop or click to upload"}
+            </p>
+          </Link>
+        ) : (
+          <div className="divide-y divide-border">
+            {(safeMetrics as any)?.recentEvidence?.slice(0, 5).map((ev: any) => (
+              <Link
+                key={ev.id}
+                href={`/platform/evidence?highlight=${encodeURIComponent(ev.id)}`}
+                className={cn("flex items-center gap-3 py-2.5 transition-colors hover:bg-muted/30 rounded-lg px-1", isArabic && "flex-row-reverse")}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-background">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className={cn("min-w-0 flex-1", isArabic && "text-right")}>
+                  <p className="truncate text-sm font-medium text-foreground">{ev.title || ev.originalFilename}</p>
+                </div>
+                <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground/50", isArabic && "rotate-180")} />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

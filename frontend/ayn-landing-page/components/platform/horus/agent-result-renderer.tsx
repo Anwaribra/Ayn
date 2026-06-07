@@ -18,7 +18,7 @@ function StructuredResultSkeleton({ type }: { type: string }) {
   const isReport = type === "audit_report" || type === "analytics_report"
   const isTable = type === "gap_table"
   return (
-    <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/80 p-4 space-y-3">
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <Skeleton className="h-5 w-24" />
       {isReport && (
         <>
@@ -133,7 +133,7 @@ export function AgentResultRenderer({ result }: AgentResultRendererProps) {
       return <RemediationPlanCard payload={result.payload} />
     case "job_started":
       return (
-        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+        <div className="rounded-2xl border border-border bg-[var(--surface)]/80 p-4">
           <p className="text-sm font-semibold text-foreground">Gap Analysis Started</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Job <span className="font-mono text-xs">{result.payload?.job_id}</span> is {result.payload?.status || "queued"}.
@@ -144,7 +144,7 @@ export function AgentResultRenderer({ result }: AgentResultRendererProps) {
       return <AnalyticsReportCard payload={result.payload} />
     case "link_result":
       return (
-        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+        <div className="rounded-2xl border border-border bg-[var(--surface)]/80 p-4">
           <p className="text-sm font-semibold text-foreground">Evidence Linked</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Evidence has been linked to the criterion successfully.
@@ -161,7 +161,7 @@ export function AgentResultRenderer({ result }: AgentResultRendererProps) {
       )
     case "report_export":
       return (
-        <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/80 p-4">
+        <div className="rounded-2xl border border-border bg-[var(--surface)]/80 p-4">
           <p className="text-sm font-semibold text-foreground">Report Export Ready</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Your report is ready for download.

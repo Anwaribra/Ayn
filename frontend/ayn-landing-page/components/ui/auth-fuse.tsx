@@ -12,58 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
-import { log } from "@/lib/logger";
-
-// Password Input with visibility toggle
-export interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-}
-
-const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-    ({ className, label, ...props }, ref) => {
-        const id = useId();
-        const [showPassword, setShowPassword] = useState(false);
-        const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
-
-        return (
-            <div className="grid w-full items-center gap-2">
-                <div className="relative">
-                    <Input
-                        id={id}
-                        type={showPassword ? "text" : "password"}
-                        className={cn(
-                            "auth-glass-input peer pe-10 h-11 rounded-xl border-white/12 bg-transparent text-white placeholder:text-transparent focus:border-primary focus:ring-0 transition-all",
-                            className
-                        )}
-                        ref={ref}
-                        {...props}
-                    />
-                    {label && (
-                        <Label
-                            htmlFor={id}
-                            className="auth-floating-label pointer-events-none absolute left-4 top-4 z-10 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-[&:not(:placeholder-shown)]:-top-2.5 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:text-white/80 peer-[&:not(:placeholder-shown)]:px-1.5"
-                        >
-                            {label}
-                        </Label>
-                    )}
-                    <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute inset-y-0 end-0 flex h-full w-10 items-center justify-center text-white/60 transition-colors hover:text-white focus-visible:outline-none"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                        {showPassword ? (
-                            <EyeOff className="h-4 w-4" aria-hidden="true" />
-                        ) : (
-                            <Eye className="h-4 w-4" aria-hidden="true" />
-                        )}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-);
-PasswordInput.displayName = "PasswordInput";
+import { AynLogo } from "@/components/ayn-logo";
+import { DarkCardNeuralBg } from "@/components/landing/dark-card-neural-bg";
+import { useUiLanguage } from "@/lib/ui-language-context";
 
 // Google Icon
 const GoogleIcon = (props: React.ComponentProps<"svg">) => (
@@ -75,18 +26,141 @@ const GoogleIcon = (props: React.ComponentProps<"svg">) => (
     </svg>
 );
 
+// Filled GitHub Icon
+const GithubIcon = (props: React.ComponentProps<"svg">) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+    </svg>
+);
+
+// Magnetic button wrapper
+function Magnetic({ children }: { children: React.ReactNode }) {
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const { clientX, clientY, currentTarget } = e;
+        const { left, top, width, height } = currentTarget.getBoundingClientRect();
+        const centerX = left + width / 2;
+        const centerY = top + height / 2;
+        setPosition({
+            x: (clientX - centerX) * 0.1,
+            y: (clientY - centerY) * 0.1,
+        });
+    };
+
+    const handleMouseLeave = () => {
+        setPosition({ x: 0, y: 0 });
+    };
+
+    return (
+        <motion.div
+            animate={{ x: position.x, y: position.y }}
+            transition={{ type: "spring", stiffness: 200, damping: 18, mass: 0.12 }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="w-full"
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+// Reusable Custom Floating Input with Ayn Colors
+interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+}
+
+const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
+    ({ className, label, ...props }, ref) => {
+        const defaultId = useId();
+        const id = props.id || defaultId;
+
+        return (
+            <div className="relative group w-full">
+                <Input
+                    id={id}
+                    ref={ref}
+                    className={cn(
+                        "auth-glass-input peer h-14 w-full rounded-2xl border px-4 pt-5 pb-2 text-foreground outline-none transition-all duration-200 focus:border-primary/50 placeholder:text-transparent relative z-10 font-dmsans focus:ring-0",
+                        className
+                    )}
+                    {...props}
+                />
+                <Label
+                    htmlFor={id}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 ease-out pointer-events-none z-20 peer-focus:top-2.5 peer-focus:-translate-y-0 peer-focus:text-[10px] peer-focus:tracking-[0.08em] peer-focus:uppercase peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-2.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:tracking-[0.08em] peer-[:not(:placeholder-shown)]:uppercase font-dmsans"
+                >
+                    {label}
+                </Label>
+            </div>
+        );
+    }
+);
+FloatingInput.displayName = "FloatingInput";
+
+// Reusable Custom Floating Password Input with Visibility Toggle and Ayn Colors
+interface FloatingPasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+}
+
+const FloatingPasswordInput = React.forwardRef<HTMLInputElement, FloatingPasswordInputProps>(
+    ({ className, label, ...props }, ref) => {
+        const [showPassword, setShowPassword] = useState(false);
+        const defaultId = useId();
+        const id = props.id || defaultId;
+
+        const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
+
+        return (
+            <div className="relative group w-full">
+                <Input
+                    id={id}
+                    type={showPassword ? "text" : "password"}
+                    ref={ref}
+                    className={cn(
+                        "auth-glass-input peer pe-12 h-14 w-full rounded-2xl border px-4 pt-5 pb-2 text-foreground outline-none transition-all duration-200 focus:border-primary/50 placeholder:text-transparent relative z-10 font-dmsans focus:ring-0",
+                        className
+                    )}
+                    {...props}
+                />
+                <Label
+                    htmlFor={id}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 ease-out pointer-events-none z-20 peer-focus:top-2.5 peer-focus:-translate-y-0 peer-focus:text-[10px] peer-focus:tracking-[0.08em] peer-focus:uppercase peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-2.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:tracking-[0.08em] peer-[:not(:placeholder-shown)]:uppercase font-dmsans"
+                >
+                    {label}
+                </Label>
+                <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute inset-y-0 end-0 z-20 flex h-full w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all hover:bg-accent hover:text-foreground/90 focus-visible:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                    {showPassword ? (
+                        <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
+                    ) : (
+                        <Eye className="h-4.5 w-4.5" aria-hidden="true" />
+                    )}
+                </button>
+            </div>
+        );
+    }
+);
+FloatingPasswordInput.displayName = "FloatingPasswordInput";
 
 // Sign In Form
 function SignInForm(props: {
     handleGoogle: () => void;
+    handleGithub: () => void;
     handleEmail: (email: string, password: string) => void;
     loading: boolean;
     err: string | null;
     toggle: () => void;
 }) {
-    const emailId = useId();
+    const [showEmailLogin, setShowEmailLogin] = useState(false);
+
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (props.loading) return;
         const data = new FormData(event.currentTarget);
         const email = data.get("email") as string;
         const password = data.get("password") as string;
@@ -96,97 +170,156 @@ function SignInForm(props: {
     };
 
     return (
-        <motion.form
+        <form
             onSubmit={onSubmit}
             autoComplete="on"
-            className="flex flex-col gap-6 w-full"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            className="flex flex-col gap-6 w-full font-dmsans"
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <motion.div layout="position">
-                <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Home
-                </Link>
-            </motion.div>
-
-            <motion.div layout="position" className="flex items-center justify-center gap-3">
-                <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
-                    Ayn
-                </span>
-            </motion.div>
-
-            <motion.div layout="position" className="flex flex-col gap-2 text-center">
-                <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
-                <p className="text-sm text-white/72">Sign in to continue to your dashboard</p>
-            </motion.div>
+            <div className="mt-1 flex flex-col gap-1 text-center">
+                <h1 className="text-2xl font-semibold text-foreground tracking-[-0.03em] font-dmsans">Welcome back</h1>
+                <p className="text-sm text-muted-foreground leading-relaxed font-dmsans">Sign in to continue to your dashboard</p>
+            </div>
 
             {props.err && (
-                <motion.div layout="position" id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
+                <div id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm text-center">
                     {props.err}
-                </motion.div>
+                </div>
             )}
 
-            <motion.div layout="position" className="flex flex-col gap-3">
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
-                    <GoogleIcon className="mr-2 h-4 w-4" />
-                    Continue with Google
-                </Button>
-            </motion.div>
+            {!showEmailLogin ? (
+                <>
+                    <div className="flex flex-col gap-3">
+                        <Magnetic>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={props.handleGoogle}
+                                aria-label="Continue with Google"
+                                className="auth-glass-button group relative w-full h-11 overflow-hidden rounded-xl border text-foreground justify-center font-medium font-dmsans transition-all duration-200 hover:scale-[0.99] active:scale-[0.985]"
+                            >
+                                <GoogleIcon className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-105" />
+                                Continue with Google
+                            </Button>
+                        </Magnetic>
+                        <Magnetic>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={props.handleGithub}
+                                aria-label="Continue with GitHub"
+                                className="auth-glass-button group relative w-full h-11 overflow-hidden rounded-xl border text-foreground justify-center font-medium font-dmsans transition-all duration-200 hover:scale-[0.99] active:scale-[0.985]"
+                            >
+                                <GithubIcon className="mr-2 h-4 w-4 text-foreground fill-foreground transition-transform duration-300 group-hover:scale-105" />
+                                Continue with GitHub
+                            </Button>
+                        </Magnetic>
+                    </div>
 
-            <motion.div layout="position" className="relative text-center text-xs">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t auth-divider-line" />
-                </div>
-                <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or sign in with email</span>
-            </motion.div>
+                    <div className="relative flex items-center gap-4 py-1 mt-1">
+                    <span className="flex-1 border-t border-border" />
+                    <span className="text-muted-foreground uppercase tracking-[0.2em] text-xs font-semibold whitespace-nowrap font-sans">Or</span>
+                    <span className="flex-1 border-t border-border" />
+                    </div>
 
-            <motion.div layout="position" className="grid gap-4 mt-2">
-                <div className="relative group">
-                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Email Address</Label>
-                </div>
-                <div className="relative group">
-                    <PasswordInput name="password" label="Password" required placeholder=" " className="h-14 rounded-xl text-white pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                </div>
-                
-                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
-                    {props.loading ? (
-                        <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Signing in...
-                        </div>
-                    ) : "Sign In"}
-                </Button>
-            </motion.div>
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            className="text-xs font-medium text-muted-foreground transition-colors"
+                            onClick={() => setShowEmailLogin(true)}
+                        >
+                            Sign in with email and password instead
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="grid gap-4">
+                        <FloatingInput
+                            name="email"
+                            type="email"
+                            label="Email Address"
+                            required
+                            placeholder=" "
+                        />
+                        
+                        <FloatingPasswordInput
+                            name="password"
+                            label="Password"
+                            required
+                            placeholder=" "
+                        />
+                        
+                        <Button
+                            type="submit"
+                            className={cn(
+                                "auth-cta-button relative overflow-hidden transition-all duration-200 h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.98] font-semibold mt-2 font-dmsans shadow-sm",
+                                props.loading ? "cursor-wait opacity-90" : "cursor-pointer"
+                            )}
+                        >
+                            <AnimatePresence mode="wait">
+                                {props.loading ? (
+                                    <motion.div
+                                        key="loading-spinner"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="flex items-center justify-center w-full h-full"
+                                    >
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                    </motion.div>
+                                ) : (
+                                    <motion.span
+                                        key="cta-text"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.15 }}
+                                    >
+                                        Sign In
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </Button>
+                    </div>
 
-            <motion.div layout="position" className="text-center text-sm text-white/72">
+                    <div className="text-center mt-1">
+                        <button
+                            type="button"
+                            className="text-xs font-semibold text-muted-foreground transition-colors"
+                            onClick={() => setShowEmailLogin(false)}
+                        >
+                            Back to social sign-in
+                        </button>
+                    </div>
+                </>
+            )}
+
+            <div className="text-center text-sm text-muted-foreground mt-2">
                 Don&apos;t have an account?{" "}
-                <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
+                <Link href="/signup/" className="font-semibold text-foreground hover:underline transition-colors">
                     Create account
-                </button>
-            </motion.div>
-        </motion.form>
+                </Link>
+            </div>
+        </form>
     );
 }
 
+// Sign Up Form
 function SignUpForm(props: {
     handleGoogle: () => void;
+    handleGithub: () => void;
     handleEmail: (name: string, email: string, password: string, role?: string) => void;
     loading: boolean;
     err: string | null;
     toggle: () => void;
 }) {
-    const nameId = useId();
-    const emailId = useId();
     const [selectedRole, setSelectedRole] = useState<string>("");
-    const [password, setPassword] = useState("");
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (props.loading) return;
         const data = new FormData(event.currentTarget);
         const name = data.get("name") as string;
         const email = data.get("email") as string;
@@ -197,149 +330,157 @@ function SignUpForm(props: {
     };
 
     return (
-        <motion.form
+        <form
             onSubmit={onSubmit}
             autoComplete="on"
-            className="flex flex-col gap-6 w-full"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            className="flex flex-col gap-6 w-full font-dmsans"
             aria-describedby={props.err ? "auth-form-error" : undefined}
         >
-            <motion.div layout="position">
-                <Link href="/" className="auth-back-link inline-flex items-center gap-2 text-sm text-white/84 hover:text-white">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Home
-                </Link>
-            </motion.div>
-
-            <motion.div layout="position" className="flex items-center justify-center gap-3">
-                <span className="auth-logo-gradient select-none text-2xl font-bold tracking-tight text-white">
-                    Ayn
-                </span>
-            </motion.div>
-
-            <motion.div layout="position" className="flex flex-col gap-2 text-center">
-                <h1 className="text-2xl font-semibold text-white">Create your account</h1>
-                <p className="text-sm text-white/72">Get started with your quality journey</p>
-            </motion.div>
+            <div className="mt-1 flex flex-col gap-1 text-center">
+                <h1 className="text-2xl font-semibold text-foreground tracking-[-0.03em] font-dmsans">Create account</h1>
+                <p className="text-sm text-muted-foreground leading-relaxed font-dmsans">Get started with your quality journey</p>
+            </div>
 
             {props.err && (
-                <motion.div layout="position" id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm">
+                <div id="auth-form-error" role="alert" className="auth-error rounded-xl p-3 text-sm text-center">
                     {props.err}
-                </motion.div>
+                </div>
             )}
 
-            <motion.div layout="position" className="flex flex-col gap-3">
-                <Button variant="outline" type="button" onClick={props.handleGoogle} disabled={props.loading} className="auth-glass-button w-full h-11 rounded-xl border-white/12 text-white transition-colors justify-center font-medium">
-                    <GoogleIcon className="mr-2 h-4 w-4" />
-                    Continue with Google
-                </Button>
-            </motion.div>
-
-            <motion.div layout="position" className="relative text-center text-xs">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t auth-divider-line" />
-                </div>
-                <span className="auth-divider-pill relative z-10 rounded-full px-3 text-xs font-medium uppercase tracking-widest text-white/78">Or create with email</span>
-            </motion.div>
-
-            <motion.div layout="position" className="grid gap-4 mt-2">
-                <div className="relative group">
-                    <Input id={nameId} name="name" type="text" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={nameId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Full Name</Label>
-                </div>
-                <div className="relative group">
-                    <Input id={emailId} name="email" type="email" required placeholder=" " className="auth-glass-input peer h-14 rounded-xl text-white focus:border-primary focus:ring-0 pt-4 pb-2 px-4 transition-all" aria-invalid={!!props.err} disabled={props.loading} />
-                    <Label htmlFor={emailId} className="auth-floating-label absolute left-4 top-4 rounded-md px-1.5 text-sm transition-all peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-primary peer-focus:px-1.5 peer-valid:-top-2.5 peer-valid:text-xs peer-valid:text-white/80 peer-valid:px-1.5 pointer-events-none">Email Address</Label>
-                </div>
-                <div className="relative group">
-                    <PasswordInput
-                        name="password"
-                        label="Password"
-                        required
-                        placeholder=" "
-                        minLength={8}
-                        className="h-14 rounded-xl text-white pt-4 pb-2 px-4 transition-all"
-                        aria-invalid={!!props.err}
-                        disabled={props.loading}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <AnimatePresence>
-                        {password.length > 0 && (
-                            <motion.div 
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
+            <div className="grid gap-4">
+                <FloatingInput
+                    name="name"
+                    type="text"
+                    label="Full Name"
+                    required
+                    placeholder=" "
+                />
+                <FloatingInput
+                    name="email"
+                    type="email"
+                    label="Email Address"
+                    required
+                    placeholder=" "
+                />
+                <FloatingPasswordInput
+                    name="password"
+                    label="Password"
+                    required
+                    placeholder=" "
+                    minLength={8}
+                />
+                
+                <div className="grid gap-2 mt-1 relative w-full">
+                    <Label className="text-xs text-muted-foreground font-medium font-dmsans">Account Role <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                    <div className="relative w-full">
+                        <Select
+                            value={selectedRole || "__skip__"}
+                            onValueChange={(v) => setSelectedRole(v === "__skip__" ? "" : v)}
+                            disabled={props.loading}
+                        >
+                            <SelectTrigger
+                                className="auth-glass-input h-12 w-full rounded-xl border text-foreground/90 focus:ring-0 [&>span]:line-clamp-1 relative z-10 font-dmsans focus:border-primary/50 transition-all"
                             >
-                                <div className="auth-password-rules mt-1 flex flex-col gap-1.5 pt-2">
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", password.length >= 8 ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
-                                            {password.length >= 8 && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                        </div>
-                                        <span className={password.length >= 8 ? "text-emerald-400 font-medium" : "text-white/72"}>At least 8 characters</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[A-Z]/.test(password) ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
-                                            {/[A-Z]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                        </div>
-                                        <span className={/[A-Z]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One uppercase letter</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className={cn("auth-rule-dot flex h-3 w-3 items-center justify-center rounded-full border", /[!@#$%^&*(),.?":{}|<>]/.test(password) ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30" : "")}>
-                                            {/[!@#$%^&*(),.?":{}|<>]/.test(password) && <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                        </div>
-                                        <span className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-emerald-400 font-medium" : "text-white/72"}>One special character</span>
-                                    </div>
-                                </div>
+                                <SelectValue placeholder="Select your role" />
+                            </SelectTrigger>
+                            <SelectContent 
+                                data-section-theme="dark"
+                                className="auth-select-dropdown border-border z-[100] !opacity-100 font-dmsans !bg-popover !backdrop-blur-none"
+                            >
+                                <SelectItem 
+                                    value="__skip__" 
+                                    className="text-foreground/70 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    Select your role
+                                </SelectItem>
+                                <SelectItem 
+                                    value="STUDENT" 
+                                    className="text-foreground/90 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    Student
+                                </SelectItem>
+                                <SelectItem 
+                                    value="UNIVERSITY" 
+                                    className="text-foreground/90 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    University
+                                </SelectItem>
+                                <SelectItem 
+                                    value="INSTITUTION" 
+                                    className="text-foreground/90 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    Institution
+                                </SelectItem>
+                                <SelectItem 
+                                    value="TEACHER" 
+                                    className="text-foreground/90 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    Teacher
+                                </SelectItem>
+                                <SelectItem 
+                                    value="OTHER" 
+                                    className="text-foreground/90 shadow-none cursor-pointer !border-0 !bg-transparent hover:!bg-accent focus:!bg-accent data-[highlighted]:!bg-accent data-[highlighted]:!text-foreground"
+                                    
+                                >
+                                    Other
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <Button
+                    type="submit"
+                    className={cn(
+                        "auth-cta-button relative overflow-hidden transition-all duration-200 h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.98] font-semibold mt-2 font-dmsans shadow-sm",
+                        props.loading ? "cursor-wait opacity-90" : "cursor-pointer"
+                    )}
+                >
+                    <AnimatePresence mode="wait">
+                        {props.loading ? (
+                            <motion.div
+                                key="loading-spinner"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex items-center justify-center w-full h-full"
+                            >
+                                <Loader2 className="h-5 w-5 animate-spin" />
                             </motion.div>
+                        ) : (
+                            <motion.span
+                                key="cta-text"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                Create Account
+                            </motion.span>
                         )}
                     </AnimatePresence>
-                </div>
-                
-                <div className="grid gap-2">
-                    <Label className="text-sm text-white/90">Account Role <span className="text-white/65 font-normal">(Optional)</span></Label>
-                    <Select value={selectedRole || "__skip__"} onValueChange={(v) => setSelectedRole(v === "__skip__" ? "" : v)} disabled={props.loading}>
-                        <SelectTrigger className="auth-glass-input h-12 w-full rounded-xl border-white/12 text-white/90 focus:ring-0 [&>span]:line-clamp-1 bg-transparent !bg-transparent">
-                            <SelectValue placeholder="Select your role" />
-                        </SelectTrigger>
-                        <SelectContent className="dark auth-select-dropdown bg-[#050810] border-white/10 z-[100] !opacity-100">
-                            <SelectItem value="__skip__" className="border-transparent text-white/72 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">
-                                Select your role
-                            </SelectItem>
-                            <SelectItem value="STUDENT" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Student</SelectItem>
-                            <SelectItem value="UNIVERSITY" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">University</SelectItem>
-                            <SelectItem value="INSTITUTION" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Institution</SelectItem>
-                            <SelectItem value="TEACHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Teacher</SelectItem>
-                            <SelectItem value="OTHER" className="border-transparent text-white/90 shadow-none data-[highlighted]:border-transparent data-[highlighted]:bg-white/10 data-[highlighted]:text-white focus:bg-white/10 focus:text-white cursor-pointer">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <Button type="submit" className="auth-cta-button h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2" disabled={props.loading}>
-                    {props.loading ? (
-                        <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Creating account...
-                        </div>
-                    ) : "Create Account"}
                 </Button>
-            </motion.div>
+            </div>
 
-            <motion.div layout="position" className="text-center text-sm text-white/72 mt-2">
+            <div className="text-center text-sm text-muted-foreground mt-2">
                 Already have an account?{" "}
-                <button type="button" className="font-medium text-white hover:underline" onClick={props.toggle}>
+                <Link href="/login/" className="font-semibold text-foreground hover:underline transition-colors">
                     Sign in
-                </button>
-            </motion.div>
-        </motion.form>
+                </Link>
+            </div>
+        </form>
     );
 }
 
 export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "signup" }) {
+    const { isArabic } = useUiLanguage();
+    const logoVariant = "on-dark";
     const [isSignIn, setIsSignIn] = useState(defaultMode === "signin");
     const [isLoading, setIsLoading] = useState(false);
     const prefersReducedMotion = useReducedMotion();
@@ -380,7 +521,7 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
         setError(null);
         setIsLoading(true);
         try {
-            const redirectPath = isSignIn ? "/login" : "/signup";
+            const redirectPath = isSignIn ? "/login/" : "/signup/";
             const { error } = await client.auth.signInWithOAuth({
                 provider: "google",
                 options: { redirectTo: `${window.location.origin}${redirectPath}` },
@@ -388,6 +529,27 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             if (error) throw error;
         } catch (err) {
             setError(err instanceof Error ? err.message : "Google sign-in failed");
+            setIsLoading(false);
+        }
+    };
+
+    const handleGithubSignIn = async () => {
+        if (!supabase) {
+            setError("GitHub sign-in is temporarily unavailable.");
+            return;
+        }
+        const client = supabase;
+        setError(null);
+        setIsLoading(true);
+        try {
+            const redirectPath = isSignIn ? "/login/" : "/signup/";
+            const { error } = await client.auth.signInWithOAuth({
+                provider: "github",
+                options: { redirectTo: `${window.location.origin}${redirectPath}` },
+            });
+            if (error) throw error;
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "GitHub sign-in failed");
             setIsLoading(false);
         }
     };
@@ -415,73 +577,147 @@ export function AuthUI({ defaultMode = "signin" }: { defaultMode?: "signin" | "s
             const response = await api.register({ name, email, password, role });
             localStorage.setItem("access_token", response.access_token);
             localStorage.setItem("user", JSON.stringify(response.user));
-            const redirectPath = sessionStorage.getItem("redirectAfterLogin");
-            sessionStorage.removeItem("redirectAfterLogin");
-            window.location.href = redirectPath || "/platform/dashboard";
+            window.location.href = "/onboarding";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Signup failed - Please try again");
             setIsLoading(false);
         }
     };
 
-    return (
-        <div className="dark relative min-h-screen w-full overflow-hidden bg-background">
-            {/* Cinematic Background */}
-            <div className="absolute inset-0 z-0 overflow-hidden">
-                <div className="absolute inset-0">
-                    <img
-                        src="/dashboard-preview.png"
-                        alt=""
-                        className="auth-bg-image w-full h-full object-cover object-top"
-                        draggable={false}
-                    />
-                </div>
-                {/* Heavy Glass Blur Overlay from Original Design */}
-                <div className="absolute inset-0 auth-backdrop" />
-                <div className="absolute inset-0 auth-tint" />
-                <div className="auth-orb auth-orb-1" />
-                <div className="auth-orb auth-orb-2" />
-                <div className="auth-orb auth-orb-3" />
-            </div>
-
-            {/* Crystal Glass Card Container */}
-            <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
-                <motion.div
-                    layout
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 350, damping: 30 }}
-                    className={cn(
-                        "auth-glass-card relative w-full rounded-3xl p-8 sm:p-10 overflow-hidden",
-                        isSignIn ? "max-w-[420px]" : "max-w-[460px]"
-                    )}
+        return (
+            <div className="relative min-h-screen w-full overflow-hidden" style={{ backgroundColor: "transparent" }}>
+                <div
+                    className="min-h-screen relative flex min-h-screen w-full flex-col bg-[#0A0A0A]"
+                    data-section-theme="dark"
                 >
-                    <div className="pointer-events-none absolute -top-24 left-1/2 h-24 w-2/3 -translate-x-1/2 rounded-full auth-card-highlight blur-2xl" />
+                    <DarkCardNeuralBg />
+                    <div className="dark-card-edge-glow" aria-hidden="true" />
 
-                    <AnimatePresence mode="wait">
-                        {isSignIn ? (
-                            <motion.div key="signin-form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                                <SignInForm
-                                    handleGoogle={handleGoogleSignIn}
-                                    handleEmail={onEmailSignIn}
-                                    loading={isLoading}
-                                    err={error}
-                                    toggle={() => setIsSignIn(false)}
-                                />
-                            </motion.div>
-                        ) : (
-                            <motion.div key="signup-form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                                <SignUpForm
-                                    handleGoogle={handleGoogleSignIn}
-                                    handleEmail={onEmailSignUp}
-                                    loading={isLoading}
-                                    err={error}
-                                    toggle={() => setIsSignIn(true)}
-                                />
-                            </motion.div>
+                {/* Back — top of card, standard UX placement */}
+                <div className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-5 sm:px-8 lg:px-12 lg:pt-6">
+                        <Link
+                            href="/"
+                            className="inline-flex min-h-11 min-w-11 items-center gap-2 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+                            aria-label="Back to home"
+                        >
+                            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                            <span className="hidden sm:inline">Back to home</span>
+                            <span className="sm:hidden">Back</span>
+                        </Link>
+                        <AynLogo size="nav" withGlow={false} variant={logoVariant} isArabic={isArabic} className="lg:hidden" />
+                    </div>
+
+                <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col items-center justify-center px-4 pb-10 pt-2 sm:px-8 lg:px-12 lg:pb-12 xl:px-16">
+                    <motion.div
+                        layout
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.99 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        className={cn(
+                            "auth-glass-card relative w-full overflow-hidden rounded-[28px] md:rounded-[32px]",
+                            !isSignIn && "auth-glass-card-signup"
                         )}
-                    </AnimatePresence>
-                </motion.div>
+                    >
+                        <div className="relative z-10 flex flex-col lg:flex-row lg:items-stretch">
+                            {/* LEFT: Branding (desktop) */}
+                            <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:border-r lg:border-border p-8 xl:p-10 font-dmsans">
+                                <AynLogo size="nav" withGlow={false} variant={logoVariant} isArabic={isArabic} className="mb-6 justify-start" />
+
+                                <h2 className="mb-4 text-4xl font-semibold leading-tight tracking-[-0.03em] text-foreground">
+                                    AI-Powered Quality Assurance & Compliance Excellence
+                                </h2>
+
+                                <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
+                                    Powered by the Horus Engine to seamlessly align institutional curriculums, assessments, and document evidence with ISO 21001 and NAQAAE standards.
+                                </p>
+
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="auth-chip mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                                            <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-foreground">Automated Standards Compliance</h4>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">Validate compliance and prepare academic files for audits in minutes rather than months.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-4">
+                                        <div className="auth-chip mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                                            <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-foreground">Horus AI Gap Analysis</h4>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">Identify structural and informational gaps in courses, programs, and specifications instantly.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-4">
+                                        <div className="auth-chip mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                                            <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-foreground">Actionable Analytics</h4>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">Track institutional performance, course completion indexes, and upload progress via interactive reports.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* RIGHT: Auth form */}
+                            <div className={cn(
+                                "flex w-full flex-1 items-center justify-center p-8 sm:p-9 lg:p-10",
+                                isSignIn ? "lg:max-w-[440px]" : "lg:max-w-[480px]"
+                            )}>
+                                <AnimatePresence mode="wait">
+                                    {isSignIn ? (
+                                        <motion.div
+                                            key="signin-form"
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -15 }}
+                                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                            className="w-full max-w-[92vw] sm:max-w-[420px]"
+                                        >
+                                            <SignInForm
+                                                handleGoogle={handleGoogleSignIn}
+                                                handleGithub={handleGithubSignIn}
+                                                handleEmail={onEmailSignIn}
+                                                loading={isLoading}
+                                                err={error}
+                                                toggle={() => setIsSignIn(false)}
+                                            />
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="signup-form"
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -15 }}
+                                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                            className="w-full max-w-[92vw] sm:max-w-[460px]"
+                                        >
+                                            <SignUpForm
+                                                handleGoogle={handleGoogleSignIn}
+                                                handleGithub={handleGithubSignIn}
+                                                handleEmail={onEmailSignUp}
+                                                loading={isLoading}
+                                                err={error}
+                                                toggle={() => setIsSignIn(true)}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
             </div>
         </div>
     );

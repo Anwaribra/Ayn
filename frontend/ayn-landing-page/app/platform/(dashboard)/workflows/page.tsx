@@ -6,6 +6,7 @@ import { Plus, Workflow, Activity } from "lucide-react"
 import { api } from "@/lib/api"
 import useSWR from "swr"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 import { toast } from "sonner"
 import { getDefaultWorkflowTemplates } from "@/components/platform/workflows/constants"
 import type { WorkflowData, WorkflowTemplate, WorkflowRunItem } from "@/components/platform/workflows/types"
@@ -20,6 +21,7 @@ import { WorkflowRunDetailsModal } from "@/components/platform/workflows/workflo
 import { WorkflowBuilderDialog } from "@/components/platform/workflows/workflow-builder-dialog"
 
 export default function WorkflowsPage() {
+  const { isArabic } = useUiLanguage()
   const [tab, setTab] = useState<"workflows" | "runs">("workflows")
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "draft">("all")
@@ -153,7 +155,7 @@ export default function WorkflowsPage() {
 
   const handleExportLogs = () => {
     if (!workflowRuns?.length) {
-      toast.info("No run history to export")
+      toast.info(isArabic ? "لا يوجد سجل تشغيل للتصدير" : "No run history to export")
       return
     }
     const headers = ["Workflow", "Status", "Trigger", "Started", "Ended", "Duration", "Started By"]
@@ -174,7 +176,7 @@ export default function WorkflowsPage() {
     link.download = `workflow-runs-${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
     URL.revokeObjectURL(url)
-    toast.success("Run history exported")
+    toast.success(isArabic ? "تم تصدير سجل التشغيل" : "Run history exported")
   }
 
   const handleStartRun = async (workflow: WorkflowData) => {
@@ -183,14 +185,14 @@ export default function WorkflowsPage() {
       const run = await api.startWorkflowRun({
         workflowName: workflow.name,
         trigger: workflow.trigger,
-        message: "Manual run",
+        message: isArabic ? "تشغيل يدوي" : "Manual run",
         metadata: { source: "ui" },
       })
       mutateRuns()
       handleStatusUpdate(workflow.id, "active")
-      toast.success(`"${workflow.name}" started`)
+      toast.success(isArabic ? `"${workflow.name}" قيد التشغيل` : `"${workflow.name}" started`)
     } catch {
-      toast.error("Failed to start workflow")
+      toast.error(isArabic ? "فشل في بدء سير العمل" : "Failed to start workflow")
     } finally {
       setRunBusyId(null)
     }
@@ -208,7 +210,7 @@ export default function WorkflowsPage() {
 
   const handleSaveWorkflow = async () => {
     if (!builderName.trim()) {
-      toast.error("Workflow name is required")
+      toast.error(isArabic ? "اسم سير العمل مطلوب" : "Workflow name is required")
       return
     }
     try {
@@ -222,7 +224,7 @@ export default function WorkflowsPage() {
           const base = prev ?? workflows ?? []
           return base.map((w) => (w.id === builderWorkflowId ? { ...w, ...updated } : w))
         })
-        toast.success("Automation updated")
+        toast.success(isArabic ? "تم تحديث الأتمتة" : "Automation updated")
       } else {
         const created = await api.createWorkflowDefinition({
           name: builderName.trim(),
@@ -230,18 +232,18 @@ export default function WorkflowsPage() {
           trigger: builderTrigger,
         })
         setLocalWorkflows((prev) => [created, ...(prev ?? workflows ?? [])])
-        toast.success("Automation saved as draft")
+        toast.success(isArabic ? "تم حفظ الأتمتة كمسودة" : "Automation saved as draft")
       }
       await mutate()
       closeBuilder()
     } catch {
-      toast.error("Failed to save workflow")
+      toast.error(isArabic ? "فشل في حفظ سير العمل" : "Failed to save workflow")
     }
   }
 
   return (
     <ProtectedRoute>
-      <div className="animate-fade-in-up pb-24">
+      <div dir={isArabic ? "rtl" : "ltr"} className={cn("mx-auto platform-container-wide animate-fade-in-up pb-24", isArabic && "font-arabic")}>
         <div className="px-4 pb-4 pt-6 md:px-6">
           <div className="glass-panel rounded-[32px] p-6 md:p-8 relative overflow-hidden">
             <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-[120px] pointer-events-none" />
@@ -249,13 +251,15 @@ export default function WorkflowsPage() {
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-destructive bg-destructive/15 border border-destructive/40">
-                    Beta
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-[0.2em] text-destructive bg-destructive/15 border border-destructive/40">
+                    {isArabic ? "بيتا" : "Beta"}
                   </span>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">Automation</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{isArabic ? "الأتمتة" : "Automation"}</h1>
                 <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                  Triggers, templates, and run history backed by your workspace—start a manual run or save a custom automation (Beta).
+                  {isArabic
+                    ? "المشغلات، القوالب، وسجل التشغيل المدعوم من مساحة عملك—ابدأ تشغيلاً يدوياً أو احفظ أتمتة مخصصة (بيتا)."
+                    : "Triggers, templates, and run history backed by your workspace—start a manual run or save a custom automation (Beta)."}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -265,7 +269,7 @@ export default function WorkflowsPage() {
                   onClick={() => openBuilder()}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  New automation
+                  {isArabic ? "أتمتة جديدة" : "New automation"}
                 </button>
               </div>
             </div>
@@ -282,15 +286,15 @@ export default function WorkflowsPage() {
 
           <div className="glass-panel rounded-2xl p-2 flex flex-wrap gap-2 glass-border">
             {[
-              { key: "workflows" as const, label: "Automations", icon: Workflow },
-              { key: "runs" as const, label: "Activity", icon: Activity },
+              { key: "workflows" as const, label: isArabic ? "الأتمتة" : "Automations", icon: Workflow },
+              { key: "runs" as const, label: isArabic ? "النشاط" : "Activity", icon: Activity },
             ].map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => setTab(item.key)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2",
+                  "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2",
                   tab === item.key ? "bg-primary text-primary-foreground shadow-lg" : "glass-button text-muted-foreground",
                 )}
               >

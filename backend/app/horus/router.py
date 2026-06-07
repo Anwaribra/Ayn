@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_user
+from app.auth.dependencies import require_horus_access
 from app.core.db import get_db, Prisma
 from app.horus.service import HorusService
 from app.ai.service import transcribe_audio
@@ -66,21 +67,16 @@ def _serialize_chat_detail(chat):
     return payload
 
 
-async def _buffer_upload_files(files: List[UploadFile] | None) -> list[dict]:
+async def _buffer_upload_files(files: List[UploadFile] | None, user_id: str = "system") -> list[dict]:
     """Read UploadFile objects into plain dicts before request teardown closes them."""
     buffered: list[dict] = []
     if not files:
         return buffered
 
+    from app.horus.attachments import TemporaryAttachmentService
     for upload in files:
-        content = await upload.read()
-        buffered.append(
-            {
-                "filename": upload.filename or "file",
-                "content_type": upload.content_type or "",
-                "body": content,
-            }
-        )
+        attachment = await TemporaryAttachmentService.create_from_upload(upload, user_id)
+        buffered.append(attachment.as_horus_payload())
     return buffered
 
 
@@ -133,7 +129,7 @@ async def horus_chat_post(
     chat_id: Optional[str] = Form(None),
     files: List[UploadFile] = File(None),
     db: Prisma = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_horus_access)
 ):
     """
     Standard chat with Horus. Returns full response.
@@ -142,7 +138,7 @@ async def horus_chat_post(
         user_id = get_user_id(current_user)
         state_service = StateService(db)
         horus_service = HorusService(state_service)
-        buffered_files = await _buffer_upload_files(files)
+        buffered_files = await _buffer_upload_files(files, user_id)
         
         return await horus_service.chat(
             user_id=user_id,
@@ -165,7 +161,7 @@ async def horus_chat_stream(
     chat_id: Optional[str] = Form(None),
     files: List[UploadFile] = File(None),
     db: Prisma = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_horus_access)
 ):
     """
     Streaming chat with Horus.
@@ -175,7 +171,7 @@ async def horus_chat_stream(
     logger.info("Horus chat/stream request", extra={"correlation_id": correlation_id, "user_id": user_id})
     state_service = StateService(db)
     horus_service = HorusService(state_service)
-    buffered_files = await _buffer_upload_files(files)
+    buffered_files = await _buffer_upload_files(files, user_id)
     
     async def event_generator():
         try:
@@ -210,7 +206,7 @@ async def horus_chat_stream(
 async def horus_speech_to_text(
     audio: UploadFile = File(...),
     language: Optional[str] = Form(None),
-    current_user = Depends(get_current_user),
+    current_user = Depends(require_horus_access),
 ):
     """
     Speech-to-text for Horus voice input.
@@ -279,7 +275,7 @@ async def horus_events_stream(
 async def horus_observe(
     query: Optional[str] = Query(None),
     db: Prisma = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(require_horus_access),
 ):
     """
     Lightweight state observation endpoint for legacy clients.
@@ -488,7 +484,7 @@ async def submit_message_feedback(
 @router.get("/analytics/insights")
 async def horus_analytics_insights(
     db: Prisma = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_horus_access)
 ):
     """
     Get strategic Horus insights for the analytics dashboard.
@@ -503,7 +499,7 @@ async def horus_analytics_insights(
 async def horus_analytics_explain(
     body: AnalyticsExplainRequest,
     db: Prisma = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(require_horus_access)
 ):
     """
     Explain the current analytics page state.

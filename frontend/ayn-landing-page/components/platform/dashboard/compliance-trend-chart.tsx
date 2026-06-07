@@ -32,7 +32,7 @@ export function ComplianceTrendChart({ data, title = "Compliance Trajectory", cl
     const trend = currentScore >= previousScore ? "up" : "down"
 
     return (
-        <div className={cn("glass-panel p-6 rounded-3xl flex flex-col", className)}>
+        <div className={cn("glass-panel flex flex-col rounded-[20px] p-5", className)}>
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-bold text-foreground">{title}</h3>

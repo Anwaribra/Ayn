@@ -1,76 +1,52 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
-import { WorkspaceAuthLoader } from "@/components/platform/workspace-boot-screen"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, refreshUser } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
+  const setupRan = useRef(false)
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return
+    if (!isAuthenticated) {
       if (pathname !== "/login") {
         sessionStorage.setItem("redirectAfterLogin", pathname)
       }
       router.replace("/login")
+      return
     }
-  }, [isAuthenticated, isLoading, mounted, router, pathname])
+  }, [isAuthenticated, isLoading, router, pathname])
 
   useEffect(() => {
+    if (setupRan.current || isLoading || !isAuthenticated) return
+    setupRan.current = true
     const setupInstitution = async () => {
-      if (!mounted) return
-      if (!isLoading && isAuthenticated) {
-        // Check if user has an institutionId, if not, trigger setup
-        const userStr = localStorage.getItem("user")
-        if (userStr) {
-          try {
-            const user = JSON.parse(userStr)
-            if (!user.institutionId) {
-              await api.setupInstitution()
-              const freshUser = await api.getCurrentUser()
-              localStorage.setItem("user", JSON.stringify(freshUser))
-              // Optional: trigger a refresh or event
-            }
-          } catch (error) {
-            console.error("Failed to setup institution:", error)
-          }
+      const userStr = localStorage.getItem("user")
+      if (!userStr) return
+      try {
+        const user = JSON.parse(userStr)
+        if (!user.institutionId) {
+          await api.setupInstitution()
+          const freshUser = await api.getCurrentUser()
+          localStorage.setItem("user", JSON.stringify(freshUser))
         }
+      } catch {
+        // silently fail
       }
     }
     setupInstitution()
-  }, [isAuthenticated, isLoading, mounted])
+  }, [isAuthenticated, isLoading])
 
-  if (!mounted || isLoading) {
-    return (
-      <WorkspaceAuthLoader
-        onRetry={async () => {
-          await refreshUser()
-          router.refresh()
-        }}
-      />
-    )
-  }
+  if (isLoading) return null
 
   if (!isAuthenticated) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-[var(--bg-deep,#07090E)]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
-        </div>
-      </div>
-    )
+    router.replace("/login")
+    return null
   }
 
   return <>{children}</>

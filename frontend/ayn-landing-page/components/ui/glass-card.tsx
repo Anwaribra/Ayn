@@ -22,8 +22,8 @@ export function GlassCard({
     return (
         <div
             className={cn(
-                "glass-card p-6 flex flex-col relative overflow-hidden",
-                hoverEffect && "hover:-translate-y-1 hover:shadow-lg transition-transform duration-300",
+                "glass-card rounded-3xl p-6 flex flex-col relative overflow-hidden",
+                hoverEffect && "hover:shadow-md transition-all duration-200 ease-out",
                 shine && "before:absolute before:inset-0 before:bg-gradient-to-tr before:from-white/5 before:to-transparent before:pointer-events-none",
                 gradient && "after:absolute after:inset-0 after:bg-gradient-to-br after:from-white/10 after:to-transparent after:pointer-events-none dark:after:from-white/5",
                 className

@@ -10,7 +10,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-[var(--surface)]",
+        "animate-glass-shimmer rounded-md border border-[var(--glass-border-subtle)]/40",
         className
       )}
     />
@@ -20,9 +20,9 @@ export function Skeleton({ className }: SkeletonProps) {
 export function DashboardCardSkeleton() {
   return (
     <div className="group">
-      <div className="glass-panel p-8 rounded-[40px] aspect-square flex flex-col justify-between border-white/5">
+      <div className="glass-panel p-8 rounded-[24px] aspect-square flex flex-col justify-between border-white/5">
         <div className="flex justify-between items-start">
-          <Skeleton className="w-14 h-14 rounded-2xl" />
+          <Skeleton className="w-14 h-14 rounded-[18px]" />
           <Skeleton className="w-5 h-5 rounded" />
         </div>
         <div>
@@ -48,9 +48,9 @@ export function DashboardMetricsSkeleton() {
 export function EvidenceCardSkeleton({ viewMode = "grid" }: { viewMode?: "grid" | "list" }) {
   if (viewMode === "list") {
     return (
-      <div className="glass-panel p-4 rounded-2xl flex items-center justify-between border-white/5">
+      <div className="glass-panel p-4 rounded-[24px] flex items-center justify-between border-white/5">
         <div className="flex items-center gap-4">
-          <Skeleton className="w-10 h-10 rounded-xl" />
+          <Skeleton className="w-10 h-10 rounded-[14px]" />
           <div>
             <Skeleton className="h-4 w-40 mb-1" />
             <Skeleton className="h-2 w-24" />
@@ -62,9 +62,9 @@ export function EvidenceCardSkeleton({ viewMode = "grid" }: { viewMode?: "grid" 
   }
 
   return (
-    <div className="glass-panel rounded-3xl p-5 border-white/5">
+    <div className="glass-panel rounded-[24px] p-5 border-white/5">
       <div className="flex justify-between items-start mb-4">
-        <Skeleton className="w-12 h-12 rounded-2xl" />
+        <Skeleton className="w-12 h-12 rounded-[18px]" />
         <Skeleton className="w-4 h-4 rounded" />
       </div>
       <div className="space-y-3">
@@ -98,9 +98,9 @@ export function EvidenceGridSkeleton({ viewMode = "grid", count = 8 }: { viewMod
 
 export function StandardsCardSkeleton() {
   return (
-    <div className="glass-panel rounded-[32px] p-6 border-white/5 aspect-square flex flex-col justify-between">
+    <div className="glass-panel rounded-[24px] p-6 border-white/5 aspect-square flex flex-col justify-between">
       <div className="flex justify-between items-start">
-        <Skeleton className="w-12 h-12 rounded-2xl" />
+        <Skeleton className="w-12 h-12 rounded-[18px]" />
         <Skeleton className="w-4 h-4 rounded" />
       </div>
       <div>
@@ -143,9 +143,9 @@ export function ActivityFeedSkeleton({ count = 5 }: { count?: number }) {
 
 export function SuggestionCardSkeleton() {
   return (
-    <div className="glass-panel p-8 rounded-[36px] border-white/5 flex flex-col justify-between">
+    <div className="glass-panel p-8 rounded-[24px] border-white/5 flex flex-col justify-between">
       <div className="flex items-start justify-between mb-6">
-        <Skeleton className="w-12 h-12 rounded-2xl" />
+        <Skeleton className="w-12 h-12 rounded-[18px]" />
         <Skeleton className="h-2 w-16" />
       </div>
       <div>
@@ -185,8 +185,8 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
 
 export function StatCardSkeleton() {
   return (
-    <div className="glass-panel p-4 rounded-2xl flex items-center gap-4 border-white/5">
-      <Skeleton className="w-10 h-10 rounded-xl" />
+    <div className="glass-panel p-4 rounded-[24px] flex items-center gap-4 border-white/5">
+      <Skeleton className="w-10 h-10 rounded-[14px]" />
       <div>
         <Skeleton className="h-5 w-16 mb-1" />
         <Skeleton className="h-2 w-20" />
@@ -209,8 +209,8 @@ export function DashboardPageSkeleton() {
     <div className="animate-fade-in-up space-y-12 pb-20 pt-6">
       {/* Hero Section Skeleton */}
       <div className="flex flex-col lg:flex-row gap-8">
-        <div className="flex-1 min-h-[350px] md:h-[400px] rounded-[48px] glass-panel border-white/5 animate-pulse" />
-        <div className="w-full lg:w-96 hidden lg:block h-[400px] rounded-[32px] glass-panel border-white/5 animate-pulse" />
+        <div className="flex-1 min-h-[350px] md:h-[400px] rounded-[28px] glass-panel border-white/5 animate-pulse" />
+        <div className="w-full lg:w-96 hidden lg:block h-[400px] rounded-[28px] glass-panel border-white/5 animate-pulse" />
       </div>
 
       {/* Metrics Skeleton */}
@@ -218,8 +218,8 @@ export function DashboardPageSkeleton() {
 
       {/* Bottom Grid Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 h-96 rounded-[48px] glass-panel border-white/5 animate-pulse" />
-        <div className="h-96 rounded-[48px] glass-panel border-white/5 animate-pulse" />
+        <div className="lg:col-span-2 h-96 rounded-[28px] glass-panel border-white/5 animate-pulse" />
+        <div className="h-96 rounded-[28px] glass-panel border-white/5 animate-pulse" />
       </div>
     </div>
   )

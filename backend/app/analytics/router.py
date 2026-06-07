@@ -88,6 +88,24 @@ async def export_analytics_csv(
     )
 
 
+@router.get("/export/pdf")
+async def export_analytics_pdf(
+    period: Optional[int] = Query(30, ge=1, le=365),
+    current_user: dict = Depends(get_current_user),
+):
+    """Export analytics data as a PDF report."""
+    data = await AnalyticsService.get_analytics(current_user, period_days=period)
+    period_label = f"{period} Days" if period else "All Time"
+    
+    pdf_buffer = AnalyticsService.generate_analytics_pdf(data, period_label)
+    
+    return StreamingResponse(
+        iter([pdf_buffer.getvalue()]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=ayn-analytics-{period or 'all'}d.pdf"}
+    )
+
+
 @router.get("/all", response_model=AnalyticsResponse)
 async def get_analytics_all_time(
     current_user: dict = Depends(get_current_user),

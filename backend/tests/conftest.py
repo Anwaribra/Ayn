@@ -22,27 +22,60 @@ if str(BACKEND_DIR) not in sys.path:
 @pytest.fixture(scope="session")
 def mock_db():
     """Mock Prisma client for tests that don't need a real DB."""
+    from datetime import datetime, timezone
+    
+    # Configure mock user
+    user = MagicMock()
+    user.id = "user-1"
+    user.name = "Test"
+    user.email = "test@example.com"
+    user.role = "ADMIN"
+    user.institutionId = None
+    user.createdAt = datetime.now(timezone.utc)
+    user.updatedAt = datetime.now(timezone.utc)
+    
+    # Configure updated user
+    updated_user = MagicMock()
+    updated_user.id = "user-1"
+    updated_user.name = "Test"
+    updated_user.email = "test@example.com"
+    updated_user.role = "ADMIN"
+    updated_user.institutionId = "inst-1"
+    updated_user.createdAt = datetime.now(timezone.utc)
+    updated_user.updatedAt = datetime.now(timezone.utc)
+    
+    # Configure institution
+    institution = MagicMock()
+    institution.id = "inst-1"
+    institution.name = "Test Institution"
+    institution.createdAt = datetime.now(timezone.utc)
+    institution.updatedAt = datetime.now(timezone.utc)
+
     db = MagicMock()
     db.user.find_first = AsyncMock(return_value=None)
     db.user.find_unique = AsyncMock(return_value=None)
-    db.user.create = AsyncMock(return_value=MagicMock(
-        id="user-1",
-        name="Test",
-        email="test@example.com",
-        role="ADMIN",
-        institutionId=None,
-        createdAt=MagicMock(),
-        updatedAt=MagicMock()
-    ))
+    db.user.create = AsyncMock(return_value=user)
+    db.institution.create = AsyncMock(return_value=institution)
+    db.user.update = AsyncMock(return_value=updated_user)
     return db
 
 
 @pytest.fixture(scope="session")
 def client(mock_db):
     """Test client with mocked DB."""
+    import app.core.db as db_module
+    original_prisma = db_module.prisma
+    original_db = db_module.db
+    db_module.prisma = mock_db
+    db_module.db = mock_db
+
     with patch("app.core.db.connect_db", AsyncMock(return_value=None)), \
          patch("app.core.db.disconnect_db", AsyncMock(return_value=None)), \
          patch("app.core.db.get_db", return_value=mock_db):
         from main import app
         with TestClient(app) as c:
             yield c
+
+    db_module.prisma = original_prisma
+    db_module.db = original_db
+

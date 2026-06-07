@@ -32,6 +32,12 @@ class AuthService:
             valid_roles = ["ADMIN", "TEACHER", "AUDITOR", "STUDENT", "UNIVERSITY", "INSTITUTION", "OTHER"]
             if role_candidate in valid_roles:
                 role = role_candidate
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid role: {body.role}"
+                )
+
         
         # Check if user already exists
         existing_user = await db.user.find_unique(where={"email": body.email})

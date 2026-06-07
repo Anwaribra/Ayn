@@ -1,208 +1,122 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, Sparkles, Building2, Crown, Zap, Clock } from "lucide-react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
+import { ArrowRight, Sparkles, Building2, Shield, TrendingUp, Users, CheckCircle } from "lucide-react"
 
-const plans = [
-  {
-    name: "Starter",
-    price: "Free",
-    period: "",
-    description: "For individual educators exploring compliance",
-    icon: Sparkles,
-    features: [
-      "1 Standard framework",
-      "10 Evidence uploads",
-      "Basic Horus AI chat",
-      "Gap analysis (1 per month)",
-      "Community support",
-    ],
-    popular: false,
-    buttonText: "Start for free",
-    buttonHref: "/signup",
-    buttonVariant: "secondary"
-  },
-  {
-    name: "Professional",
-    price: "$49",
-    period: "/month",
-    description: "For institutions serious about accreditation",
-    icon: Building2,
-    features: [
-      "Unlimited standards",
-      "Unlimited evidence uploads",
-      "Full Horus AI with Brain Mode",
-      "Unlimited gap analyses",
-      "Mock audit sessions",
-      "PDF & CSV exports",
-      "Priority support",
-      "5 team members",
-    ],
-    popular: true,
-    buttonText: "Get Started",
-    buttonHref: "/signup",
-    buttonVariant: "primary"
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "For large institutions and university systems",
-    icon: Crown,
-    features: [
-      "Everything in Professional",
-      "Unlimited team members",
-      "Custom integrations (LMS, SIS)",
-      "Dedicated account manager",
-      "On-premise deployment option",
-      "Custom AI training",
-      "SLA guarantee",
-      "Audit trail & compliance logs",
-    ],
-    popular: false,
-    buttonText: "Contact Sales",
-    buttonHref: "mailto:hello@ayn-edu.com",
-    buttonVariant: "outline"
-  },
+const BULLETS = [
+  { icon: Building2, text: "Plans shaped around education institutions and growing teams" },
+  { icon: TrendingUp, text: "Scoped to evidence volume, audit cycles, and team size" },
+  { icon: Shield, text: "Clear costs without hidden fees or surprise limits" },
+  { icon: Users, text: "Guided onboarding for campuses and multi-campus groups" },
 ]
 
-export function PricingSection() {
+export function PricingSection({ onOpenDemo }: { onOpenDemo?: (type: "demo" | "pricing") => void }) {
   return (
-    <section id="pricing" className="relative overflow-hidden bg-transparent py-24 px-6">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 blur-[120px] rounded-full" />
+    <section id="pricing" className="relative overflow-hidden bg-transparent px-6 py-20 md:py-24 scroll-mt-24">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-1/2 h-[700px] w-[900px] -translate-x-1/2 rounded-full bg-primary/8 blur-[160px]" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-20">
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <div className="mb-10 text-center">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 text-xs font-semibold mb-6 tracking-widest uppercase"
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary"
           >
-            <Zap className="w-3 h-3 mr-2 text-primary" />
-            Simple Pricing
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Early Access
           </motion.div>
-          
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
+
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight"
+            className="mb-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl"
           >
-            Scale your <span className="text-white/40">compliance.</span>
+            Book a demo for your institution
           </motion.h2>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-white/50 max-w-xl mx-auto text-lg md:text-xl font-light leading-relaxed"
+            className="mx-auto max-w-2xl text-base font-light leading-relaxed text-muted-foreground md:text-lg"
           >
-            Start free. Upgrade when you need full autonomous capabilities and infinite scale.
+            Tell us how your quality team works today — we&apos;ll walk you through Ayn and align early access to your accreditation timeline.
           </motion.p>
         </div>
 
-        {/* Plans Grid */}
-        <div className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 opacity-30 blur-[4px] pointer-events-none select-none grayscale-[0.3]">
-            {plans.map((plan, i) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
-                className={cn(
-                  "relative flex flex-col rounded-3xl p-8 backdrop-blur-xl transition-all duration-500",
-                  plan.popular 
-                    ? "bg-white/[0.04] border border-white/10 shadow-[0_0_80px_rgba(37,99,235,0.1)]" 
-                    : "bg-white/[0.02] border border-white/5"
-                )}
-              >
-                {/* Animated glow on popular plan */}
-                {plan.popular && (
-                  <div className="absolute inset-0 rounded-3xl border border-primary/20 pointer-events-none">
-                    <div className="absolute top-0 right-1/4 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-                  </div>
-                )}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="light-panel relative border border-border/60 bg-card/40 px-8 py-10 shadow-[0_0_80px_rgba(37,99,235,0.12)] backdrop-blur-3xl transition-shadow duration-700 hover:shadow-[0_0_100px_rgba(37,99,235,0.18)] md:px-12 md:py-12"
+        >
+          <div className="flex flex-col items-center text-center">
+            <h3 className="mb-3 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+              See Horus in your workflow
+            </h3>
+            <p className="mb-8 max-w-2xl text-[15px] font-light leading-relaxed text-muted-foreground md:text-base">
+              We work with quality offices to match onboarding to real evidence volumes, review cycles, and accreditation timelines.
+            </p>
 
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
-                    Most Popular
-                  </div>
-                )}
-
-                <div className="mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                    <plan.icon className="w-5 h-5 text-white/80" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-white/40 text-sm font-light min-h-[40px]">{plan.description}</p>
-                </div>
-
-                <div className="mb-8">
-                  <span className="text-4xl font-extrabold text-white">{plan.price}</span>
-                  {plan.period && <span className="text-white/40 text-sm font-light ml-1">{plan.period}</span>}
-                </div>
-
-                <div
-                  className={cn(
-                    "w-full flex items-center justify-center px-6 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 mb-10",
-                    plan.buttonVariant === "primary" && "bg-white text-black",
-                    plan.buttonVariant === "secondary" && "bg-white/10 text-white",
-                    plan.buttonVariant === "outline" && "border border-white/10 text-white"
-                  )}
-                >
-                  {plan.buttonText}
-                </div>
-
-                <ul className="space-y-4 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-[14px]">
-                      <div className="mt-1 flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-primary" strokeWidth={3} />
-                      </div>
-                      <span className="text-white/60 font-light leading-snug">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Coming Soon Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="relative max-w-md w-full mx-6 rounded-3xl bg-[#090e18]/80 backdrop-blur-3xl border border-white/10 px-8 py-10 text-center shadow-[0_0_80px_rgba(37,99,235,0.15)]"
-            >
-              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/5 bg-white/5">
-                <Clock className="w-6 h-6 text-white/80" />
-              </div>
-              <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Pricing Coming Soon</h3>
-              <p className="text-white/50 mb-10 text-[15px] font-light leading-relaxed">
-                We're crafting the perfect plans for every institution size. Sign up now to get early access and be the first to know when pricing launches.
+            <div className="light-card w-full max-w-2xl border border-border/40 bg-card/30 px-6 py-6 text-left text-sm text-muted-foreground">
+              <p className="mb-4 flex items-center gap-2 font-semibold text-foreground/80">
+                <CheckCircle className="h-4 w-4 text-primary" />
+                What we cover in the demo
               </p>
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center gap-2 w-full rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition-all hover:bg-white/90 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+              <ul className="space-y-3.5">
+                {BULLETS.map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-primary/10 bg-primary/[0.08]">
+                      <Icon className="h-3 w-3 text-primary" />
+                    </span>
+                    <span className="text-muted-foreground">{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-8 flex w-full max-w-lg flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => onOpenDemo?.("demo")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-semibold text-background shadow-[0_0_20px_rgba(255,255,255,0.08)] transition-all hover:scale-[1.02] hover:bg-foreground/90 active:scale-[0.98]"
               >
-                <Sparkles className="w-4 h-4" />
-                Get Early Access — Free
-              </Link>
-            </motion.div>
+                Book a Demo
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenDemo?.("pricing")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/50 bg-card/50 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:scale-[1.02] hover:border-foreground/30 hover:bg-card/80 active:scale-[0.98]"
+              >
+                Request Pricing
+              </button>
+            </div>
+
+            <p className="mt-6 text-xs text-muted-foreground/60">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary/50" />
+                We respond within 24 hours
+              </span>
+            </p>
           </div>
-        </div>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 text-center text-xs text-muted-foreground/50"
+        >
+          Built for quality teams preparing accreditation and compliance workflows
+        </motion.p>
       </div>
     </section>
   )

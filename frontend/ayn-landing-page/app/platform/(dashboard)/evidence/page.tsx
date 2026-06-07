@@ -2,28 +2,70 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import useSWR, { mutate as globalMutate } from "swr"
 import { Evidence } from "@/types"
-import { UploadCloud, X, FileText, ExternalLink, Trash2, Loader2, Sparkles, Check } from "lucide-react"
+import { UploadCloud, X, FileText, ExternalLink, Trash2, Loader2, Sparkles, Check, LayoutGrid, Table2 } from "lucide-react"
 import { EvidenceFilters } from "@/components/platform/evidence/evidence-filters"
 import { EvidenceCard } from "@/components/platform/evidence/evidence-card"
 import { DocumentEditor } from "@/components/platform/document-editor"
-import { GlassCard } from "@/components/ui/glass-card"
 import { EmptyState } from "@/components/platform/empty-state"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
+import { EvidenceVaultV2 } from "@/components/platform/evidence/evidence-vault-v2"
 
 
 export default function EvidencePage() {
   return (
     <ProtectedRoute>
-      <EvidenceContent />
+      <EvidencePageWithTabs />
     </ProtectedRoute>
+  )
+}
+
+function EvidencePageWithTabs() {
+  const [viewMode, setViewMode] = useState<"gallery" | "table">("table")
+  const { isArabic } = useUiLanguage()
+
+  return (
+    <div>
+      {/* View mode toggle */}
+      <div className="flex items-center justify-end mb-4 px-1">
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+          <button
+            onClick={() => setViewMode("table")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+              viewMode === "table"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Table2 className="h-3.5 w-3.5" />
+            {isArabic ? "جدول V2" : "Table (V2)"}
+          </button>
+          <button
+            onClick={() => setViewMode("gallery")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+              viewMode === "gallery"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            {isArabic ? "معرض" : "Gallery"}
+          </button>
+        </div>
+      </div>
+
+      {viewMode === "table" ? <EvidenceVaultV2 /> : <EvidenceContent />}
+    </div>
   )
 }
 
@@ -498,26 +540,24 @@ function EvidenceContent() {
   const canOpenOriginalFile = Boolean(evidenceFileUrl) && !evidenceFileUrlError
 
   return (
-    <div
-      className="animate-fade-in-up pb-20 space-y-6 relative"
+    <div className={cn("animate-fade-in-up pb-20 space-y-6 relative", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
     >
       {isDragOver && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-sm border-4 border-dashed border-primary/40 rounded-none pointer-events-none">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 border-4 border-dashed border-primary/40 rounded-none pointer-events-none">
           <div className="text-center">
             <UploadCloud className="w-16 h-16 text-primary mx-auto mb-3" />
-            <p className="text-xl font-bold text-primary">{copy.dropUpload}</p>
+            <p className="text-xl font-black text-primary">{copy.dropUpload}</p>
           </div>
         </div>
       )}
       <div className="pt-6">
-        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 sm:p-7">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.10),transparent_36%)] pointer-events-none" />
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-border bg-card p-5 sm:p-7 shadow-sm">
           <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
                 {copy.title}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -551,21 +591,21 @@ function EvidenceContent() {
           </div>
 
           <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.total}</p>
-              <p className="mt-1.5 text-xl font-bold text-foreground">{vaultSummary.total}</p>
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{copy.total}</p>
+              <p className="mt-1.5 text-xl font-black text-foreground">{vaultSummary.total}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.analyzed}</p>
-              <p className="mt-1.5 text-xl font-bold text-[var(--status-success)]">{vaultSummary.analyzed}</p>
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{copy.analyzed}</p>
+              <p className="mt-1.5 text-xl font-black text-[var(--status-success)]">{vaultSummary.analyzed}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.linked}</p>
-              <p className="mt-1.5 text-xl font-bold text-primary">{vaultSummary.linked}</p>
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{copy.linked}</p>
+              <p className="mt-1.5 text-xl font-black text-primary">{vaultSummary.linked}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-background/40 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{copy.confidence}</p>
-              <p className="mt-1.5 text-xl font-bold text-foreground">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{copy.confidence}</p>
+              <p className="mt-1.5 text-xl font-black text-foreground">
                 {vaultSummary.avgConfidence > 0 ? `${vaultSummary.avgConfidence}%` : "—"}
               </p>
             </div>
@@ -582,12 +622,12 @@ function EvidenceContent() {
       />
 
       {error ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl glass-panel glass-border">
+        <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-border bg-card shadow-sm">
           <p className="text-muted-foreground text-center mb-4">{copy.failedLoad}</p>
           <button
             type="button"
             onClick={() => localMutate()}
-            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors shadow-sm"
           >
             {copy.retry}
           </button>
@@ -595,22 +635,22 @@ function EvidenceContent() {
       ) : isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="flex flex-col justify-between p-5 rounded-3xl glass-layer-2 animate-pulse h-[220px] border border-[var(--border-subtle)]/60">
+            <div key={i} className="flex flex-col justify-between p-5 rounded-3xl bg-card border border-border animate-pulse h-[220px] shadow-sm">
               <div className="flex justify-between items-start mb-4">
-                <div className="h-6 w-24 bg-[var(--surface)]/60 rounded-full" />
-                <div className="h-6 w-6 rounded-full bg-[var(--surface)]/50" />
+                <div className="h-6 w-24 bg-muted rounded-full" />
+                <div className="h-6 w-6 rounded-full bg-muted/50" />
               </div>
               <div className="space-y-3 mb-4 flex-1 mt-2">
-                <div className="h-5 bg-[var(--surface)]/60 rounded-lg w-3/4" />
-                <div className="h-5 bg-[var(--surface)]/60 rounded-lg w-1/2" />
-                <div className="h-3 bg-[var(--surface)]/50 rounded-lg w-full mt-4" />
+                <div className="h-5 bg-muted rounded-lg w-3/4" />
+                <div className="h-5 bg-muted rounded-lg w-1/2" />
+                <div className="h-3 bg-muted/50 rounded-lg w-full mt-4" />
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] mt-auto">
+              <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
                 <div className="flex -space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-[var(--surface)]/60 border-2 border-[var(--surface-modal)]" />
-                  <div className="w-6 h-6 rounded-full bg-[var(--surface)]/50 border-2 border-[var(--surface-modal)]" />
+                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-background" />
+                  <div className="w-6 h-6 rounded-full bg-muted/50 border-2 border-background" />
                 </div>
-                <div className="h-3 w-16 bg-[var(--surface)]/50 rounded-lg" />
+                <div className="h-3 w-16 bg-muted/50 rounded-lg" />
               </div>
             </div>
           ))}
@@ -633,7 +673,7 @@ function EvidenceContent() {
               <button
                 type="button"
                 onClick={selectAllVisible}
-                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground shadow-sm"
               >
                 {copy.selectAll}
               </button>
@@ -643,14 +683,14 @@ function EvidenceContent() {
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="rounded-lg border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {copy.clear}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsBulkGapModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 shadow-sm"
                   >
                     <Sparkles className="h-3 w-3" />
                     {copy.gapAnalysis}
@@ -671,16 +711,13 @@ function EvidenceContent() {
                 </button>
               </div>
             ) : filteredEvidence.map((evidence: Evidence) => (
-              <GlassCard
+              <div
                 key={evidence.id}
-                variant={2}
-                hoverEffect
-                shine
                 onClick={() => setSelectedEvidence(evidence)}
                 className={cn(
-                  "cursor-pointer group p-0 relative rounded-[28px] overflow-hidden",
-                  selectedEvidenceIds.includes(evidence.id) && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_24px_rgba(var(--primary),0.18)]",
-                  (highlightId === evidence.id || highlightId === evidence.originalFilename || highlightId === evidence.title) && "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all"
+                  "group cursor-pointer relative rounded-[28px] overflow-hidden border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
+                  selectedEvidenceIds.includes(evidence.id) && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                  (highlightId === evidence.id || highlightId === evidence.originalFilename || highlightId === evidence.title) && "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse transition-all"
                 )}
               >
                 <button
@@ -690,17 +727,17 @@ function EvidenceContent() {
                     toggleEvidenceSelection(evidence.id)
                   }}
                   className={cn(
-                    "absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all",
+                    "absolute start-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all",
                     selectedEvidenceIds.includes(evidence.id)
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-[var(--glass-border)] bg-[var(--surface-modal)]/80 text-transparent hover:border-primary/40",
+                      : "border-border bg-card text-transparent hover:border-primary/40",
                   )}
                   aria-label={selectedEvidenceIds.includes(evidence.id) ? copy.deselectEvidence : copy.selectEvidence}
                 >
                   <Check className={cn("h-3.5 w-3.5", selectedEvidenceIds.includes(evidence.id) ? "opacity-100" : "opacity-0")} />
                 </button>
                 {selectedEvidenceIds.includes(evidence.id) && (
-                  <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                  <div className="pointer-events-none absolute end-3 top-3 z-10 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-black uppercase tracking-[0.16em] text-primary">
                     {copy.selected}
                   </div>
                 )}
@@ -709,19 +746,27 @@ function EvidenceContent() {
                   onClick={() => setSelectedEvidence(evidence)}
                   onDelete={() => handleDelete(evidence)}
                 />
-              </GlassCard>
+              </div>
             ))}
           </div>
         </>
       )}
 
       {/* Full-Screen Split-View Evidence Analysis Overlay */}
-      {selectedEvidence && (
-        <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300 bg-[var(--surface-modal)]/95 backdrop-blur-xl" style={{ margin: 0 }}>
+      <AnimatePresence>
+        {selectedEvidence && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[100] flex bg-background"
+            style={{ margin: 0 }}
+          >
           {/* Top bar */}
-          <div className="absolute top-0 left-0 right-0 h-16 border-b border-[var(--border-subtle)] bg-[var(--surface-modal)]/80 backdrop-blur-md flex items-center justify-between px-5 z-20 gap-4">
+          <div className="absolute top-0 inset-x-0 h-16 border-b border-border bg-card flex items-center justify-between px-5 z-20 gap-4 shadow-sm">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card">
                 <FileText className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="min-w-0">
@@ -729,10 +774,10 @@ function EvidenceContent() {
                   {selectedEvidence.title || selectedEvidence.originalFilename}
                 </h3>
                 <span className={cn(
-                  "mt-0.5 inline-block rounded px-1.5 py-px text-[10px] font-semibold capitalize border",
+                  "mt-0.5 inline-block rounded px-1.5 py-px text-xs font-semibold capitalize border",
                   ["linked", "analyzed", "complete"].includes(selectedEvidence.status)
                     ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/25"
-                    : "text-muted-foreground border-[var(--glass-border)] bg-[var(--glass-soft-bg)]"
+                    : "text-muted-foreground border-border bg-card"
                 )}>
                     {selectedEvidence.status === "analyzed" ? copy.analyzed
                     : selectedEvidence.status === "linked" ? copy.linked
@@ -745,14 +790,14 @@ function EvidenceContent() {
               <button
                 type="button"
                 onClick={handleOpenGapAnalysisForEvidence}
-                className="hidden sm:flex px-3 py-2 text-xs font-semibold glass-button text-foreground rounded-lg transition-colors items-center gap-1.5"
+                className="hidden sm:flex px-3 py-2 text-xs font-semibold border border-border bg-card text-foreground rounded-lg transition-colors items-center gap-1.5 hover:bg-muted"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> {copy.gapAnalysis}
               </button>
               <button
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(true)}
-                className="px-3 py-2 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5" /> {isArabic ? "تحليل" : "Analyze"}
               </button>
@@ -765,7 +810,7 @@ function EvidenceContent() {
               </button>
               <button
                 onClick={() => { setSelectedEvidence(null); setActiveHighlightId(null) }}
-                className="p-2 rounded-lg glass-button text-muted-foreground transition-colors"
+                className="p-2 rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted"
                 aria-label={copy.close}
               >
                 <X className="w-4 h-4" />
@@ -774,7 +819,7 @@ function EvidenceContent() {
           </div>
 
           {/* LEFT PANE: Document Viewer */}
-          <div className="w-1/2 h-full pt-16 border-r border-[var(--border-subtle)] flex flex-col bg-[var(--surface-modal)] relative overflow-hidden">
+          <div className="w-1/2 h-full pt-16 border-e border-border flex flex-col bg-background relative overflow-hidden">
             {selectedIsPdf && evidenceFileUrl ? (
               <iframe
                 key={evidenceFileUrl}
@@ -794,8 +839,8 @@ function EvidenceContent() {
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
-                <div className="max-w-3xl mx-auto rounded-xl glass-panel glass-border shadow-2xl p-8 lg:p-12 min-h-full">
-                  <div className="mb-8 pb-6 border-b border-[var(--border-subtle)]">
+                <div className="platform-container-narrow mx-auto rounded-xl border border-border bg-card shadow-sm p-8 lg:p-12 min-h-full">
+                  <div className="mb-8 pb-6 border-b border-border">
                     <h1 className="text-2xl font-bold text-foreground mb-2">{selectedEvidence.title || copy.untitled}</h1>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       {selectedEvidence.documentType && (
@@ -810,7 +855,7 @@ function EvidenceContent() {
                   {selectedEvidence.summary ? (
                     <div className="space-y-5">
                       <div>
-                        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{copy.summary}</h3>
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{copy.summary}</h3>
                         <p className="text-sm text-foreground/80 leading-relaxed">{selectedEvidence.summary}</p>
                       </div>
                       {canOpenOriginalFile && evidenceFileUrl && (
@@ -846,8 +891,7 @@ function EvidenceContent() {
           </div>
 
           {/* RIGHT PANE: Horus AI Analysis */}
-          <div className="w-1/2 h-full pt-16 flex flex-col bg-[var(--surface-modal)]/70 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+          <div className="w-1/2 h-full pt-16 flex flex-col bg-card relative">
             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
               
               <div className="mb-6 flex items-center gap-2">
@@ -857,7 +901,7 @@ function EvidenceContent() {
 
               {/* Confidence Score — only show when a real score exists */}
               {selectedEvidence.confidenceScore != null && selectedEvidence.confidenceScore > 0 && (
-                <div className="mb-6 flex items-center gap-5 rounded-2xl glass-panel glass-border px-5 py-4">
+                <div className="mb-6 flex items-center gap-5 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
                   <div className="w-14 h-14 shrink-0">
                     <svg viewBox="0 0 36 36" className="w-full h-full text-primary -rotate-90">
                       <path
@@ -879,7 +923,7 @@ function EvidenceContent() {
               )}
 
               {/* Linked Criteria */}
-              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
                 {copy.linkedCriteria}
               </h3>
               <div className="space-y-2.5">
@@ -888,10 +932,10 @@ function EvidenceContent() {
                     <div
                       key={criterion.id || idx}
                       className={cn(
-                        "p-4 rounded-2xl border transition-all cursor-pointer hover:bg-[var(--surface)]",
+                        "p-4 rounded-2xl border transition-all cursor-pointer hover:bg-muted",
                         activeHighlightId === criterion.id
                           ? "border-primary bg-primary/5"
-                          : "glass-panel glass-border"
+                          : "border-border bg-card"
                       )}
                       onClick={() => setActiveHighlightId(criterion.id)}
                     >
@@ -900,7 +944,7 @@ function EvidenceContent() {
                           {criterion.title}
                         </h4>
                         {criterion.standardId && (
-                          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border status-info">
+                            <span className="shrink-0 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-info/30 bg-info/10 text-info">
                             {copy.standard}
                           </span>
                         )}
@@ -913,7 +957,7 @@ function EvidenceContent() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed glass-border px-5 py-8 text-center glass-panel">
+                  <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-8 text-center">
                     <FileText className="w-7 h-7 text-muted-foreground/30 mx-auto mb-2.5" />
                     <p className="text-sm text-muted-foreground">{copy.noCriteria}</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
@@ -925,18 +969,19 @@ function EvidenceContent() {
 
             </div>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isBulkGapModalOpen && (
         <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            className="absolute inset-0 bg-background/90 transition-opacity"
             onClick={() => setIsBulkGapModalOpen(false)}
             aria-hidden="true"
           />
           <div
-            className="relative w-full max-w-lg glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
+            className="relative w-full max-w-lg rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border bg-card shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="bulk-gap-modal-title"
@@ -946,7 +991,7 @@ function EvidenceContent() {
               {copy.bulkSubtitle}
             </p>
 
-            <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-3 mb-5">
+            <div className="rounded-2xl border border-border bg-muted/50 px-4 py-3 mb-5">
               <p className="text-sm font-semibold text-foreground">
                 {selectedEvidenceIds.length} file{selectedEvidenceIds.length === 1 ? "" : "s"} selected
               </p>
@@ -956,13 +1001,13 @@ function EvidenceContent() {
             </div>
 
             <div className="space-y-3 mb-8">
-              <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <label className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 {copy.targetStandard}
               </label>
               <select
                 value={bulkStandardId}
                 onChange={(event) => setBulkStandardId(event.target.value)}
-                className="w-full h-11 glass-input text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full h-11 bg-card border border-border text-foreground rounded-xl px-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
               >
                 <option value="">{copy.chooseLater}</option>
                 {standards?.map((standard: any) => (
@@ -982,7 +1027,7 @@ function EvidenceContent() {
               <button
                 type="button"
                 onClick={() => setIsBulkGapModalOpen(false)}
-                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
+                className="flex-1 px-4 py-3 text-sm font-bold border border-border bg-card text-muted-foreground rounded-2xl transition-colors hover:bg-muted"
               >
                 {copy.cancel}
               </button>
@@ -991,7 +1036,7 @@ function EvidenceContent() {
                 onClick={handleOpenGapAnalysisForSelected}
                 className="flex-[2] px-4 py-3 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-primary/20"
               >
-                {copy.openGapAnalysis} <Sparkles className="w-4 h-4 ml-1" />
+                {copy.openGapAnalysis} <Sparkles className="w-4 h-4 ms-1" />
               </button>
             </div>
           </div>
@@ -1002,12 +1047,12 @@ function EvidenceContent() {
       {isAnalyzeModalOpen && selectedEvidence && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            className="absolute inset-0 bg-background/90 transition-opacity"
             onClick={() => !isAnalyzing && setIsAnalyzeModalOpen(false)}
             aria-hidden="true"
           />
           <div 
-            className="relative w-full max-w-sm glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
+            className="relative w-full max-w-sm rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border bg-card shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="analyze-modal-title"
@@ -1016,7 +1061,7 @@ function EvidenceContent() {
             <p className="text-sm font-medium text-muted-foreground mb-6">{copy.selectFramework}</p>
 
             <div className="space-y-3 mb-8">
-              <label className="flex items-center gap-3 p-3 rounded-xl glass-button cursor-pointer transition-colors">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/50 cursor-pointer transition-colors hover:bg-muted">
                 <input
                   type="radio"
                   name="standard"
@@ -1029,7 +1074,7 @@ function EvidenceContent() {
               </label>
 
               {standards?.map((s: any) => (
-                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl glass-button cursor-pointer transition-colors">
+                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/50 cursor-pointer transition-colors hover:bg-muted">
                   <input
                     type="radio"
                     name="standard"
@@ -1040,7 +1085,7 @@ function EvidenceContent() {
                   />
                   <div>
                     <span className="text-sm font-bold block">{s.title}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase opacity-80 font-black">{s.code}</span>
+                    <span className="text-xs text-muted-foreground uppercase opacity-80 font-black">{s.code}</span>
                   </div>
                 </label>
               ))}
@@ -1051,7 +1096,7 @@ function EvidenceContent() {
                 type="button"
                 onClick={() => setIsAnalyzeModalOpen(false)}
                 disabled={isAnalyzing}
-                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 text-sm font-bold border border-border bg-card text-muted-foreground rounded-2xl transition-colors hover:bg-muted disabled:opacity-50"
               >
                 {copy.cancel}
               </button>
@@ -1064,7 +1109,7 @@ function EvidenceContent() {
                 {isAnalyzing ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> {copy.processing}</>
                 ) : (
-                  <>{copy.runAnalysis} <Sparkles className="w-4 h-4 ml-1" /></>
+                  <>{copy.runAnalysis} <Sparkles className="w-4 h-4 ms-1" /></>
                 )}
               </button>
             </div>
@@ -1076,12 +1121,12 @@ function EvidenceContent() {
       {evidenceToDelete && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-[#000000]/80 backdrop-blur-xl transition-opacity"
+            className="absolute inset-0 bg-background/90 transition-opacity"
             onClick={() => setEvidenceToDelete(null)}
             aria-hidden="true"
           />
           <div 
-            className="relative w-full max-w-sm glass-panel rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 glass-border"
+            className="relative w-full max-w-sm rounded-[32px] overflow-hidden flex flex-col p-6 animate-in zoom-in duration-200 border border-border bg-card shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-modal-title"
@@ -1092,7 +1137,7 @@ function EvidenceContent() {
               <button
                 type="button"
                 onClick={() => setEvidenceToDelete(null)}
-                className="flex-1 px-4 py-3 text-sm font-bold glass-button text-muted-foreground rounded-2xl transition-colors"
+                className="flex-1 px-4 py-3 text-sm font-bold border border-border bg-card text-muted-foreground rounded-2xl transition-colors hover:bg-muted"
               >
                 {copy.cancel}
               </button>
@@ -1101,7 +1146,7 @@ function EvidenceContent() {
                 onClick={confirmDelete}
                 className="flex-[2] px-4 py-3 text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-xl shadow-destructive/20"
               >
-                <Trash2 className="w-4 h-4 ml-1" /> {copy.confirmDelete}
+                <Trash2 className="w-4 h-4 ms-1" /> {copy.confirmDelete}
               </button>
             </div>
           </div>

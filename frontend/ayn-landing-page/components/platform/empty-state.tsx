@@ -13,12 +13,47 @@ import {
   Lightbulb,
   Sparkles,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 interface EmptyStateProps {
   type: "evidence" | "standards" | "gap-analysis" | "dashboard" | "reports"
   title?: string
   description?: string
   onDemoLoad?: () => void
+}
+
+const arabicConfig: Record<string, { title: string; description: string; ctaText: string; tip: string }> = {
+  evidence: {
+    title: "جاهز للتدقيق؟",
+    description: "مكتبة الأدلة المؤسسية تنتظر أصولها الأولى. قم برفع السياسات والإجراءات والوثائق لتمكين تحليل الامتثال بواسطة هوروس.",
+    ctaText: "رفع أول دليل",
+    tip: "نصيحة: رفع سياسة الاتصال الخاصة بك يساعد هوروس في تحديد 20% إضافية من فجوات الامتثال تلقائياً.",
+  },
+  standards: {
+    title: "تكوين المعايير",
+    description: "حدد أطر الامتثال الخاصة بك لتفعيل مراقبة هوروس. استورد من مكتبتنا أو أنشئ معايير مخصصة تناسب مؤسستك.",
+    ctaText: "تصفح مكتبة المعايير",
+    tip: "نصيحة: المؤسسات التي لديها 3+ معايير مرتبطة تشهد أوقات تدقيق أسرع بنسبة 45%.",
+  },
+  "gap-analysis": {
+    title: "جاهز للتقييم؟",
+    description: "قم بإجراء أول تقييم امتثال لوضع خط الأساس. سيقوم هوروس بتحديد الثغرات وإنشاء خارطة طريق للعلاج.",
+    ctaText: "بدء التحليل الأول",
+    tip: "نصيحة: إجراء تحليلات الفجوات شهرياً يقلل انحراف الامتثال بنسبة تصل إلى 60%.",
+  },
+  dashboard: {
+    title: "مرحباً بك في عين",
+    description: "مركز قيادة الامتثال المدعوم بالذكاء الاصطناعي جاهز. ابدأ برفع الأدلة أو استيراد المعايير لتفعيل المراقبة الفورية.",
+    ctaText: "دليل البدء السريع",
+    tip: "نصيحة: أكمل ملفك الشخصي وارفع 3 مستندات لفتح التوصيات المخصصة.",
+  },
+  reports: {
+    title: "افتح الرؤى المؤسسية",
+    description: "قم بإنشاء تقارير امتثال شاملة بعد ربط الأدلة والمعايير. قم بالتصدير إلى PDF أو المشاركة مع أصحاب المصلحة.",
+    ctaText: "توليد التقرير",
+    tip: "نصيحة: قم بجدولة تقارير تلقائية شهرية لإبقاء القيادة على اطلاع دون عمل يدوي.",
+  },
 }
 
 const emptyStateConfig = {
@@ -30,7 +65,7 @@ const emptyStateConfig = {
     ctaHref: "/platform/evidence/upload",
     ctaAction: true,
     tip: "Tip: Uploading your communication policy helps Horus AI identify 20% more compliance gaps automatically.",
-    illustration: "evidence",
+    illustration: "evidence" as const,
   },
   standards: {
     icon: BookOpen,
@@ -40,7 +75,7 @@ const emptyStateConfig = {
     ctaHref: "/platform/standards",
     ctaAction: false,
     tip: "Tip: Institutions with 3+ mapped standards see 45% faster audit completion times.",
-    illustration: "standards",
+    illustration: "standards" as const,
   },
   "gap-analysis": {
     icon: Target,
@@ -50,7 +85,7 @@ const emptyStateConfig = {
     ctaHref: "/platform/gap-analysis",
     ctaAction: false,
     tip: "Tip: Running monthly gap analyses reduces compliance drift by up to 60%.",
-    illustration: "analysis",
+    illustration: "analysis" as const,
   },
   dashboard: {
     icon: Sparkles,
@@ -60,7 +95,7 @@ const emptyStateConfig = {
     ctaHref: "/platform/standards",
     ctaAction: true,
     tip: "Tip: Complete your profile and upload 3 documents to unlock personalized AI recommendations.",
-    illustration: "welcome",
+    illustration: "welcome" as const,
   },
   reports: {
     icon: FileText,
@@ -70,11 +105,10 @@ const emptyStateConfig = {
     ctaHref: "/platform/gap-analysis",
     ctaAction: false,
     tip: "Tip: Schedule monthly auto-reports to keep leadership informed without manual work.",
-    illustration: "reports",
+    illustration: "reports" as const,
   },
 }
 
-// SVG Illustrations
 function EvidenceIllustration() {
   return (
     <svg viewBox="0 0 200 160" fill="none" className="w-40 h-32 mb-6 opacity-80">
@@ -132,8 +166,6 @@ function WelcomeIllustration() {
       <path d="M90 85l7 7 15-15" stroke="currentColor" strokeOpacity="0.5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
       <rect x="55" y="55" width="20" height="3" rx="1.5" fill="currentColor" fillOpacity="0.15" />
       <rect x="125" y="110" width="20" height="3" rx="1.5" fill="currentColor" fillOpacity="0.15" />
-      <circle cx="60" cy="110" r="8" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" fill="none" />
-      <circle cx="140" cy="55" r="8" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" fill="none" />
     </svg>
   )
 }
@@ -162,64 +194,46 @@ const illustrations: Record<string, () => React.ReactElement> = {
 }
 
 export function EmptyState({ type, title, description, onDemoLoad }: EmptyStateProps) {
+  const { isArabic } = useUiLanguage()
   const config = emptyStateConfig[type]
+  const arConfig = arabicConfig[type]
   const Icon = config.icon
   const Illustration = illustrations[config.illustration]
 
   return (
-    <div className="col-span-full flex flex-col items-center justify-center py-16 px-8 text-center">
-      {/* Illustration */}
-      <div className="text-[var(--text-tertiary)]">
+    <div className={cn("col-span-full flex flex-col items-center justify-center px-6 py-12 text-center", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
+      <div className="text-muted-foreground">
         <Illustration />
       </div>
-
-      {/* Icon Badge */}
-      <div className="w-16 h-16 rounded-2xl status-info border flex items-center justify-center mb-6">
-        <Icon className="w-8 h-8" />
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[16px] border border-primary/20 bg-primary/5">
+        <Icon className="h-5 w-5 text-primary" />
       </div>
-
-      {/* Title */}
-      <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">
-        {title || config.title}
+      <h3 className="mb-3 text-xl font-semibold text-foreground">
+        {title || (isArabic ? arConfig.title : config.title)}
       </h3>
-
-      {/* Description */}
-      <p className="text-sm text-[var(--text-secondary)] max-w-md mb-8 leading-relaxed">
-        {description || config.description}
+      <p className="mb-7 max-w-md text-sm leading-relaxed text-muted-foreground">
+        {description || (isArabic ? arConfig.description : config.description)}
       </p>
-
-      {/* CTA Button */}
       <Link href={config.ctaHref}>
-        <Button
-          size="lg"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm font-bold rounded-xl shadow-xl transition-all hover:scale-105 active:scale-95"
-        >
+        <Button size="lg" className="rounded-[14px] bg-primary px-6 py-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
           {config.ctaAction ? <Plus className="w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-          {config.ctaText}
+          {isArabic ? arConfig.ctaText : config.ctaText}
         </Button>
       </Link>
-
-      {/* Pro Tip */}
-      <div className="mt-8 flex items-start gap-3 max-w-sm p-4 rounded-xl status-warning border">
-        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
-        <p className="text-xs leading-relaxed">
-          {config.tip}
+      <div className="mt-7 flex max-w-sm items-start gap-3 rounded-[14px] border border-amber-500/20 bg-amber-500/5 p-4">
+        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {isArabic ? arConfig.tip : config.tip}
         </p>
       </div>
-
-      {/* Demo Mode Button */
-      type === "evidence" && onDemoLoad && (
-        <div className="mt-12 pt-8 border-t border-[var(--border-subtle)] w-full max-w-md">
-          <p className="text-xs text-[var(--text-secondary)] mb-3 font-medium uppercase tracking-widest text-center">
-            Live Presentation Mode
+      {type === "evidence" && onDemoLoad && (
+        <div className="mt-12 pt-8 border-t border-border w-full max-w-md">
+          <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-widest text-center">
+            {isArabic ? "وضع العرض المباشر" : "Live Presentation Mode"}
           </p>
-          <Button
-            variant="outline"
-            className="w-full py-6 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--surface-modal)] text-[var(--text-primary)] font-bold text-sm shadow-sm transition-all group"
-            onClick={onDemoLoad}
-          >
-            <Sparkles className="w-4 h-4 mr-2 text-primary group-hover:animate-pulse" />
-            Load Sample ISO 21001 Policy (Demo)
+          <Button variant="outline" className="group w-full rounded-[14px] border border-border py-5 text-sm font-semibold text-foreground hover:bg-muted/50" onClick={onDemoLoad}>
+            <Sparkles className="mr-2 h-4 w-4 text-primary" />
+            {isArabic ? "تحميل نموذج سياسة ISO 21001 (تجريبي)" : "Load Sample ISO 21001 Policy (Demo)"}
           </Button>
         </div>
       )}
@@ -227,24 +241,14 @@ export function EmptyState({ type, title, description, onDemoLoad }: EmptyStateP
   )
 }
 
-export function InlineEmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: React.ElementType
-  title: string
-  description: string
-  action?: React.ReactNode
-}) {
+export function InlineEmptyState({ icon: Icon, title, description, action }: { icon: React.ElementType; title: string; description: string; action?: React.ReactNode }) {
   return (
-    <div className="glass-panel rounded-[32px] p-12 border-[var(--border-subtle)] text-center">
-      <div className="w-14 h-14 rounded-2xl bg-[var(--surface)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-5">
-        <Icon className="w-6 h-6 text-muted-foreground" />
+    <div className="rounded-[20px] border border-border bg-muted/30 p-10 text-center">
+      <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-[16px] border border-border bg-background">
+        <Icon className="h-5 w-5 text-muted-foreground" />
       </div>
-      <h4 className="text-lg font-bold text-[var(--text-primary)] mb-2">{title}</h4>
-      <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-6">{description}</p>
+      <h4 className="mb-2 text-base font-semibold text-foreground">{title}</h4>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">{description}</p>
       {action && <div className="flex justify-center">{action}</div>}
     </div>
   )

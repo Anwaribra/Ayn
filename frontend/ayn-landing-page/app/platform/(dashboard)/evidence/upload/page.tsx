@@ -19,6 +19,8 @@ import useSWR from "swr"
 import { toast } from "sonner"
 import { FileUpload } from "@/components/ui/file-upload"
 import { motion } from "framer-motion"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { cn } from "@/lib/utils"
 
 const ALLOWED_TYPES = [
   ".pdf", ".doc", ".docx", ".xls", ".xlsx",
@@ -27,6 +29,7 @@ const ALLOWED_TYPES = [
 
 export default function UploadEvidencePage() {
   const router = useRouter()
+  const { isArabic } = useUiLanguage()
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadedCount, setUploadedCount] = useState(0)
@@ -80,7 +83,7 @@ export default function UploadEvidencePage() {
         completed++
         setUploadedCount(completed)
       } catch (err) {
-        errors.push(`${file.name}: ${err instanceof Error ? err.message : "Upload failed"}`)
+        errors.push(`${file.name}: ${err instanceof Error ? err.message : (isArabic ? "فشل الرفع" : "Upload failed")}`)
         completed++
         setUploadedCount(completed)
       }
@@ -95,9 +98,15 @@ export default function UploadEvidencePage() {
     setUploading(false)
 
     if (errors.length > 0) {
-      setError(`${errors.length} file(s) failed to upload:\n${errors.join("\n")}`)
+      setError(isArabic
+        ? `فشل رفع ${errors.length} ملف:\n${errors.join("\n")}`
+        : `${errors.length} file(s) failed to upload:\n${errors.join("\n")}`
+      )
     } else {
-      toast.success(`${files.length} file(s) uploaded successfully`)
+      toast.success(isArabic
+        ? `تم رفع ${files.length} ملف بنجاح`
+        : `${files.length} file(s) uploaded successfully`
+      )
       router.push("/platform/evidence")
     }
   }
@@ -108,24 +117,30 @@ export default function UploadEvidencePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen">
+      <div
+        dir={isArabic ? "rtl" : "ltr"}
+        className={cn("min-h-screen", isArabic && "font-arabic")}
+      >
         <Header
-          title="Upload Evidence"
-          description="Upload evidence files for framework alignment"
+          title={isArabic ? "رفع دليل" : "Upload Evidence"}
+          description={isArabic ? "رفع ملفات الدليل لتتوافق مع الإطار" : "Upload evidence files for framework alignment"}
           breadcrumbs={[
-            { label: "Dashboard", href: "/platform/dashboard" },
-            { label: "Evidence", href: "/platform/evidence" },
-            { label: "Upload" },
+            { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
+            { label: isArabic ? "الأدلة" : "Evidence", href: "/platform/evidence" },
+            { label: isArabic ? "رفع" : "Upload" },
           ]}
         />
 
-        <div className="p-4 md:p-[var(--spacing-content)] max-w-3xl mx-auto">
+        <div className="p-4 md:p-[var(--spacing-content)] platform-container-narrow mx-auto">
           <Link
             href="/platform/evidence"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+            className={cn(
+              "inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors",
+              isArabic && "flex-row-reverse"
+            )}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to evidence
+            <ArrowLeft className={cn("w-4 h-4", isArabic && "rtl:rotate-180")} />
+            {isArabic ? "العودة إلى الأدلة" : "Back to evidence"}
           </Link>
 
           <motion.div
@@ -142,10 +157,12 @@ export default function UploadEvidencePage() {
             {/* Optional Criterion Tagging */}
             <div className="space-y-4">
               <h3 className="font-medium text-foreground text-sm">
-                Tag with Criterion (Optional)
+                {isArabic ? "وضع علامة على المعيار (اختياري)" : "Tag with Criterion (Optional)"}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Select a standard and criterion to automatically link uploaded files.
+                {isArabic
+                  ? "اختر معيارًا لربط الملفات المرفوعة به تلقائيًا."
+                  : "Select a standard and criterion to automatically link uploaded files."}
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <Select
@@ -156,7 +173,7 @@ export default function UploadEvidencePage() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select standard" />
+                    <SelectValue placeholder={isArabic ? "اختر المعيار" : "Select standard"} />
                   </SelectTrigger>
                   <SelectContent>
                     {standards?.map((s) => (
@@ -173,7 +190,7 @@ export default function UploadEvidencePage() {
                   disabled={!selectedStandardId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select criterion" />
+                    <SelectValue placeholder={isArabic ? "اختر المعيار الفرعي" : "Select criterion"} />
                   </SelectTrigger>
                   <SelectContent>
                     {criteria?.map((c) => (
@@ -198,7 +215,9 @@ export default function UploadEvidencePage() {
             {files.length > 0 && (
               <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)]">
                 <span className="text-sm text-muted-foreground">
-                  {files.length} file{files.length !== 1 ? "s" : ""} ready to upload
+                  {isArabic
+                    ? `الملف${files.length !== 1 ? "ات" : ""} جاهزة للرفع (${files.length})`
+                    : `${files.length} file${files.length !== 1 ? "s" : ""} ready to upload`}
                 </span>
                 <Button
                   variant="ghost"
@@ -206,7 +225,7 @@ export default function UploadEvidencePage() {
                   onClick={() => setFiles([])}
                   disabled={uploading}
                 >
-                  Clear all
+                  {isArabic ? "مسح الكل" : "Clear all"}
                 </Button>
               </div>
             )}
@@ -216,7 +235,7 @@ export default function UploadEvidencePage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Uploading (parallel)...
+                    {isArabic ? "جارٍ الرفع (بالتوازي)..." : "Uploading (parallel)..."}
                   </span>
                   <span className="text-foreground">
                     {uploadedCount} / {files.length}
@@ -241,22 +260,25 @@ export default function UploadEvidencePage() {
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Uploading...
+                    <Loader2 className={cn("w-4 h-4 animate-spin", isArabic ? "ml-2" : "mr-2")} />
+                    {isArabic ? "جارٍ الرفع..." : "Uploading..."}
                   </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Upload{" "}
+                    <Check className={cn("w-4 h-4", isArabic ? "ml-2" : "mr-2")} />
                     {files.length > 0
-                      ? `${files.length} File${files.length > 1 ? "s" : ""}`
-                      : "Files"}
+                      ? isArabic
+                        ? `رفع ${files.length} ملف`
+                        : `Upload ${files.length} File${files.length > 1 ? "s" : ""}`
+                      : isArabic
+                        ? "رفع الملفات"
+                        : "Upload Files"}
                   </>
                 )}
               </Button>
               <Link href="/platform/evidence">
                 <Button variant="outline" disabled={uploading}>
-                  Cancel
+                  {isArabic ? "إلغاء" : "Cancel"}
                 </Button>
               </Link>
             </div>

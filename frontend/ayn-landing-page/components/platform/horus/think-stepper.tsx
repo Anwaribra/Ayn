@@ -48,7 +48,7 @@ export function ThinkStepper({
       animate={{ opacity: 1 }}
       transition={transition ?? { duration: 0.2 }}
       className={cn(
-        "rounded-2xl border border-[var(--border-subtle)] bg-[var(--glass-panel)]/60 overflow-hidden",
+        "rounded-2xl border border-border bg-card overflow-hidden",
         compact ? "px-3 py-2.5" : "p-4",
         className
       )}
@@ -82,7 +82,7 @@ export function ThinkStepper({
               variants={containerVariants(!!reducedMotion)}
               initial="hidden"
               animate="visible"
-              className="space-y-1.5 pl-0.5 border-l-2 border-[var(--border-subtle)]"
+              className="space-y-1.5 pl-0.5 border-l-2 border-border"
             >
               {steps.map((step, idx) => (
                 <motion.div
@@ -96,7 +96,7 @@ export function ThinkStepper({
                   ) : step.status === "active" ? (
                     <span className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
                   ) : (
-                    <span className="w-3 h-3 rounded-full border border-[var(--border-subtle)] shrink-0" />
+                    <span className="w-3 h-3 rounded-full border border-border shrink-0" />
                   )}
                   <span
                     className={cn(

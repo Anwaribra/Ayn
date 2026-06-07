@@ -15,7 +15,7 @@ interface ComplianceHeatmapProps {
 
 export function ComplianceHeatmap({ items, title = "Standards Health Matrix", className }: ComplianceHeatmapProps) {
     return (
-        <div className={cn("glass-panel p-6 rounded-3xl", className)}>
+        <div className={cn("glass-panel rounded-[20px] p-5", className)}>
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-foreground">{title}</h3>
                 <div className="flex gap-2">
@@ -39,7 +39,7 @@ export function ComplianceHeatmap({ items, title = "Standards Health Matrix", cl
                     <div
                         key={item.id}
                         className={cn(
-                            "aspect-square rounded-lg flex items-center justify-center text-[10px] font-bold transition-all hover:scale-110 cursor-pointer shadow-sm border text-primary-foreground",
+                            "flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-[10px] font-bold text-primary-foreground transition-colors",
                             item.status === "unknown" && "bg-muted text-muted-foreground border-border"
                         )}
                         style={item.status !== "unknown" ? {

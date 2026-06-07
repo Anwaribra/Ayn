@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { useUiLanguage } from "@/lib/ui-language-context"
 import { api } from "@/lib/api"
 import { Play, Send, Loader2, Target, ShieldCheck, Scale, Sparkles } from "lucide-react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
@@ -10,16 +11,17 @@ import ReactMarkdown from "react-markdown"
 import { cn } from "@/lib/utils"
 
 export default function MockAuditPage() {
+  const { isArabic } = useUiLanguage()
   return (
     <ProtectedRoute>
-      <div className="h-[calc(100dvh-120px)] lg:h-[calc(100vh-80px)] flex flex-col p-4 max-w-5xl mx-auto w-full">
-        <MockAuditChat />
+      <div className={cn("h-[calc(100dvh-120px)] lg:h-[calc(100vh-80px)] flex flex-col p-4 platform-container-default mx-auto w-full", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
+        <MockAuditChat isArabic={isArabic} />
       </div>
     </ProtectedRoute>
   )
 }
 
-function MockAuditChat() {
+function MockAuditChat({ isArabic }: { isArabic: boolean }) {
   const { user } = useAuth()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([])
@@ -38,7 +40,7 @@ function MockAuditChat() {
 
   const handleStartAudit = async () => {
     if (!user?.institutionId) {
-      toast.error("Institution not found. Cannot start audit.")
+      toast.error(isArabic ? "لم يتم العثور على المؤسسة. لا يمكن بدء التدقيق." : "Institution not found. Cannot start audit.")
       return
     }
 
@@ -47,9 +49,9 @@ function MockAuditChat() {
       const res = await api.startMockAudit(user.institutionId)
       setSessionId(res.session_id)
       setMessages([{ role: "assistant", content: res.initial_message }])
-      toast.success("Mock Audit Session Started")
+      toast.success(isArabic ? "تم بدء جلسة المحاكاة" : "Mock Audit Session Started")
     } catch (e: any) {
-      toast.error(e.message || "Failed to start mock audit")
+      toast.error(e.message || (isArabic ? "فشل بدء جلسة المحاكاة" : "Failed to start mock audit"))
     } finally {
       setIsStarting(false)
     }
@@ -83,10 +85,10 @@ function MockAuditChat() {
           <ShieldCheck className="w-12 h-12 text-primary" />
         </div>
         <h1 className="text-4xl font-black italic text-[var(--text-primary)] mb-4">
-          Virtual <span className="text-[var(--text-tertiary)] not-italic font-light">Auditor</span>
+          {isArabic ? "مدقق" : "Virtual"} <span className="text-[var(--text-tertiary)] not-italic font-light">{isArabic ? "افتراضي" : "Auditor"}</span>
         </h1>
         <p className="max-w-xl text-[var(--text-secondary)] text-lg mb-10 leading-relaxed font-medium">
-          Simulate a strict external accreditation audit. Horus will intelligently review your currently uploaded evidence and cross-examine you on compliance gaps.
+          {isArabic ? "محاكاة تدقيق اعتماد خارجي صارم. سيقوم حورس بمراجعة أدلتك المرفوعة حالياً واستجوابك حول فجوات الامتثال." : "Simulate a strict external accreditation audit. Horus will intelligently review your currently uploaded evidence and cross-examine you on compliance gaps."}
         </p>
 
         <button
@@ -100,24 +102,24 @@ function MockAuditChat() {
           ) : (
             <Play className="w-5 h-5 fill-current" />
           )}
-          <span className="relative">Begin Session</span>
+          <span className="relative">{isArabic ? "بدء الجلسة" : "Begin Session"}</span>
         </button>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl w-full">
-          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
+          <div className="glass-panel p-6 rounded-2xl text-start glass-border">
             <Target className="w-6 h-6 text-[var(--text-tertiary)] mb-4" />
-            <h3 className="font-bold text-[var(--text-primary)] mb-2">Targeted Scrutiny</h3>
-            <p className="text-xs text-[var(--text-secondary)]">Questions dynamically adapt to your actual uploaded policies and procedures.</p>
+            <h3 className="font-bold text-[var(--text-primary)] mb-2">{isArabic ? "تدقيق موجّه" : "Targeted Scrutiny"}</h3>
+            <p className="text-xs text-[var(--text-secondary)]">{isArabic ? "تتكيف الأسئلة ديناميكياً مع سياساتك وإجراءاتك المرفوعة الفعلية." : "Questions dynamically adapt to your actual uploaded policies and procedures."}</p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
+          <div className="glass-panel p-6 rounded-2xl text-start glass-border">
             <Sparkles className="w-6 h-6 text-primary mb-4" />
-            <h3 className="font-bold text-[var(--text-primary)] mb-2">Real Scenarios</h3>
-            <p className="text-xs text-[var(--text-secondary)]">Simulates the stress and detail required during a physical NAQAAE or ISO visit.</p>
+            <h3 className="font-bold text-[var(--text-primary)] mb-2">{isArabic ? "سيناريوهات حقيقية" : "Real Scenarios"}</h3>
+            <p className="text-xs text-[var(--text-secondary)]">{isArabic ? "يحاكي الضغط والتفاصيل المطلوبة أثناء زيارة فعلية من NAQAAE أو ISO." : "Simulates the stress and detail required during a physical NAQAAE or ISO visit."}</p>
           </div>
-          <div className="glass-panel p-6 rounded-2xl text-left glass-border">
+          <div className="glass-panel p-6 rounded-2xl text-start glass-border">
             <Scale className="w-6 h-6 text-green-500 mb-4" />
-            <h3 className="font-bold text-[var(--text-primary)] mb-2">Gap Discovery</h3>
-            <p className="text-xs text-[var(--text-secondary)]">Uncovers logical flaws in your arguments before the real auditors arrive.</p>
+            <h3 className="font-bold text-[var(--text-primary)] mb-2">{isArabic ? "اكتشاف الفجوات" : "Gap Discovery"}</h3>
+            <p className="text-xs text-[var(--text-secondary)]">{isArabic ? "يكشف الثغرات المنطقية في حججك قبل وصول المدققين الحقيقيين." : "Uncovers logical flaws in your arguments before the real auditors arrive."}</p>
           </div>
         </div>
       </div>
@@ -133,10 +135,10 @@ function MockAuditChat() {
             <ShieldCheck className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-sm text-[var(--text-primary)]">Horus External Auditor</h2>
+            <h2 className="font-bold text-sm text-[var(--text-primary)]">{isArabic ? "مدقق حورس الخارجي" : "Horus External Auditor"}</h2>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">Simulated Session Active</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">{isArabic ? "جلسة محاكاة نشطة" : "Simulated Session Active"}</span>
             </div>
           </div>
         </div>
@@ -150,19 +152,19 @@ function MockAuditChat() {
               {msg.role === "user" ? (
                 <div className="w-full py-4 space-y-2">
                    {/* Using a subtle background pill or text style for user */}
-                   <div className="text-[14px] text-muted-foreground whitespace-pre-wrap font-medium">
+                   <div className="text-sm text-muted-foreground whitespace-pre-wrap font-medium">
                      {msg.content}
                    </div>
                 </div>
               ) : (
                 <div className="w-full py-4">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-6 h-6 rounded flex items-center justify-center bg-primary/20 text-primary text-[10px] font-bold flex-shrink-0">
+                    <div className="w-6 h-6 rounded flex items-center justify-center bg-primary/20 text-primary text-xs font-bold flex-shrink-0">
                       <ShieldCheck className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-sm font-bold text-foreground">Horus Auditor</span>
+                    <span className="text-sm font-bold text-foreground">{isArabic ? "مدقق حورس" : "Horus Auditor"}</span>
                   </div>
-                  <div className="text-foreground text-[15px] leading-relaxed w-full prose dark:prose-invert max-w-none">
+                  <div className="text-foreground text-sm leading-relaxed w-full prose dark:prose-invert max-w-none">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
@@ -173,14 +175,14 @@ function MockAuditChat() {
           {isLoading && (
             <div className="w-full py-4 animate-in fade-in">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 rounded flex items-center justify-center bg-primary/20 text-primary text-[10px] font-bold flex-shrink-0">
+                <div className="w-6 h-6 rounded flex items-center justify-center bg-primary/20 text-primary text-xs font-bold flex-shrink-0">
                   <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
-                <span className="text-sm font-bold text-foreground">Horus Auditor</span>
+                <span className="text-sm font-bold text-foreground">{isArabic ? "مدقق حورس" : "Horus Auditor"}</span>
               </div>
-              <div className="text-muted-foreground text-[15px] leading-relaxed flex items-center gap-3">
+              <div className="text-muted-foreground text-sm leading-relaxed flex items-center gap-3">
                 <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                <span>Auditor is reviewing evidence...</span>
+                <span>{isArabic ? "يقوم المدقق بمراجعة الأدلة..." : "Auditor is reviewing evidence..."}</span>
               </div>
             </div>
           )}
@@ -201,21 +203,21 @@ function MockAuditChat() {
                 handleSendMessage()
               }
             }}
-            placeholder="Respond to the auditor..."
-            className="w-full bg-[var(--surface-modal)] text-[var(--text-primary)] border border-[var(--border-light)] rounded-2xl pl-6 pr-16 py-4 min-h-[60px] max-h-32 resize-none focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
+            placeholder={isArabic ? "الرد على المدقق..." : "Respond to the auditor..."}
+            className="w-full bg-[var(--surface-modal)] text-[var(--text-primary)] border border-[var(--border-light)] rounded-2xl ps-6 pe-16 py-4 min-h-[60px] max-h-32 resize-none focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
             rows={1}
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-3 top-3 bottom-3 aspect-square bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:hover:scale-100 shadow-md"
+            className="absolute end-3 top-3 bottom-3 aspect-square bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:hover:scale-100 shadow-md"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
           <div className="text-center mt-2">
-            <span className="text-[10px] text-[var(--text-secondary)] font-medium">Shift + Enter for new line</span>
+            <span className="text-xs text-[var(--text-secondary)] font-medium">{isArabic ? "Shift + Enter لسطر جديد" : "Shift + Enter for new line"}</span>
           </div>
         </div>
       </div>

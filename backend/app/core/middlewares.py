@@ -62,6 +62,7 @@ async def get_current_user(
     user_email = user["email"] if isinstance(user, dict) else user.email
     user_role = user["role"] if isinstance(user, dict) else user.role
     user_institution = user.get("institutionId") if isinstance(user, dict) else user.institutionId
+    user_horus_access = user.get("horusAccess", False) if isinstance(user, dict) else getattr(user, "horusAccess", False)
 
     # Derive first name from email when name is missing or generic (e.g. anwarmousa80@gmail.com -> Anwar)
     if not user_name or (isinstance(user_name, str) and user_name.strip().lower() == "user"):
@@ -79,6 +80,7 @@ async def get_current_user(
         "email": user_email,
         "role": user_role or "USER",
         "institutionId": user_institution,
+        "horusAccess": user_horus_access,
     }
 
 

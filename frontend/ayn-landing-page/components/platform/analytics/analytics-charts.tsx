@@ -44,7 +44,7 @@ function ChartCardShell({
       className={cn("glass-panel relative overflow-hidden rounded-[28px] border-[var(--border-subtle)] p-5 sm:p-6 lg:p-7", className)}
     >
       <div className="absolute inset-x-0 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
-      <div className="absolute -right-10 top-0 h-28 w-28 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ backgroundColor: accentColor }} />
+      <div className="absolute -end-10 top-0 h-28 w-28 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ backgroundColor: accentColor }} />
       <div className="relative z-10">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
@@ -91,7 +91,7 @@ export function TrendAreaChart({ data, title, subtitle }: TrendChartProps) {
           {isArabic ? "لا توجد بيانات كافية بعد" : "No data yet"}
         </div>
       ) : (
-        <div className="h-72 w-full -ml-4">
+        <div className="h-72 w-full -ms-4">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={displayed} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
@@ -153,7 +153,7 @@ export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
   const colored = data.map((d, i) => ({ ...d, fill: d.fill ?? PALETTE[i % PALETTE.length] }))
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#7c5ce0">
-      <div className="h-64 w-full -ml-4">
+      <div className="h-64 w-full -ms-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={colored} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />

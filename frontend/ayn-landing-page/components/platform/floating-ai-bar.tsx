@@ -20,11 +20,13 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { LucideIcon } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 type MiniMessage = {
   id: string
@@ -53,7 +55,49 @@ function getPageContext(pathname: string | null) {
   return "User is in platform workspace. Provide concise actionable guidance."
 }
 
-function getQuickActions(pathname: string | null): Array<{ label: string; prompt: string; icon: LucideIcon }> {
+function getQuickActions(pathname: string | null, isArabic: boolean): Array<{ label: string; prompt: string; icon: LucideIcon }> {
+  if (isArabic) {
+    if (!pathname) {
+      return [
+        { label: "المخاطر الرئيسية", prompt: "ما هي أهم مخاطر الامتثال التي يجب إصلاحها أولاً؟", icon: Target },
+        { label: "ملخص", prompt: "لخص حالة المنصة الحالية والأولويات العاجلة.", icon: FileSearch },
+        { label: "خطة العمل", prompt: "أنشئ خطة عمل مختصرة لليوم.", icon: ListChecks },
+      ]
+    }
+    if (pathname.includes("/gap-analysis")) {
+      return [
+        { label: "تحديد الأولويات", prompt: "حدد أولويات الثغرات الحرجة واقترح أول 3 إجراءات تصحيحية.", icon: Target },
+        { label: "مسودة الإصلاح", prompt: "اكتب نموذج خطة تصحيحية لأخطر ثغرة.", icon: ListChecks },
+        { label: "الأدلة", prompt: "ما الأدلة التي يجب ربطها أولاً لتقليل المخاطر بسرعة؟", icon: FileText },
+      ]
+    }
+    if (pathname.includes("/evidence")) {
+      return [
+        { label: "المفقود", prompt: "ما أنواع الأدلة المهمة المفقودة حالياً؟", icon: FileSearch },
+        { label: "الجودة", prompt: "أعطني قائمة مراجعة سريعة لجودة الأدلة المرفوعة.", icon: ListChecks },
+        { label: "الرفع التالي", prompt: "ما هو أفضل ملف لرفعه بعد ذلك؟", icon: FileText },
+      ]
+    }
+    if (pathname.includes("/standards")) {
+      return [
+        { label: "التغطية", prompt: "اعرض ثغرات تغطية المعايير والبنود ذات الأولوية للتخطيط.", icon: FileSearch },
+        { label: "التخطيط", prompt: "أنشئ خطة تخطيط خطوة بخطوة لهذا المعيار.", icon: ListChecks },
+        { label: "الجاهزية", prompt: "ما مدى جاهزيتنا لهذا المعيار ولماذا؟", icon: Target },
+      ]
+    }
+    if (pathname.includes("/analytics")) {
+      return [
+        { label: "المخاطر", prompt: "ما أهم مخاطر التحليلات والسجلات المرتبطة بها؟", icon: Target },
+        { label: "التغطية", prompt: "اشرح تغطية الأدلة والمعايير غير المغطاة.", icon: FileSearch },
+        { label: "التالي", prompt: "ما هي الإجراءات الثلاثة التالية من التحليلات؟", icon: ListChecks },
+      ]
+    }
+    return [
+      { label: "المخاطر الرئيسية", prompt: "ما هي أهم معوقات الامتثال حالياً؟", icon: Target },
+      { label: "خطة العمل", prompt: "أنشئ خطة عمل عملية مختصرة لهذه الصفحة.", icon: ListChecks },
+      { label: "ملخص", prompt: "لخص ما يجب فعله بعد ذلك في 3 نقاط.", icon: FileSearch },
+    ]
+  }
   if (!pathname) {
     return [
       { label: "Top risks", prompt: "What are the top compliance risks I should fix first?", icon: Target },
@@ -114,15 +158,20 @@ const FloatingAIBarComponent = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState<MiniMessage[]>([])
-  const [showTooltip, setShowTooltip] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const scrollAnchorRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  const { isArabic } = useUiLanguage()
   const isHorusPage = pathname?.includes("/horus-ai")
-  const quickActions = getQuickActions(pathname)
+  const quickActions = getQuickActions(pathname, isArabic)
+  const { user } = useAuth()
+
+  // Hide if user doesn't have Horus access
+  const hasAccess = user?.horusAccess || user?.role === "ADMIN"
+  if (!hasAccess) return null
 
   useEffect(() => {
     setMessages([
@@ -130,7 +179,9 @@ const FloatingAIBarComponent = () => {
         id: crypto.randomUUID(),
         role: "assistant",
         content:
-          "Bridge established. I can explain this page using current tenant-scoped evidence, mappings, gaps, and reports.",
+          isArabic
+            ? "تم إنشاء الاتصال. يمكنني شرح هذه الصفحة باستخدام الأدلة والخرائط والثغرات والتقارير الحالية."
+            : "Bridge established. I can explain this page using current tenant-scoped evidence, mappings, gaps, and reports.",
         isSystem: true,
       },
     ])
@@ -141,22 +192,11 @@ const FloatingAIBarComponent = () => {
   }, [messages, isLoading])
 
   useEffect(() => {
-    if (!isHorusPage) {
-      const timer = setTimeout(() => {
-        setShowTooltip(true)
-        setTimeout(() => setShowTooltip(false), 3200)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [isHorusPage])
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
         e.preventDefault()
         if (isHorusPage) return
         setIsOpen(true)
-        setShowTooltip(false)
         setTimeout(() => inputRef.current?.focus(), 80)
       }
       if (e.key === "Escape") {
@@ -222,7 +262,7 @@ const FloatingAIBarComponent = () => {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
-                ? { ...m, content: "No response received yet. Try again or open full Horus." }
+                ? { ...m, content: isArabic ? "لم يتم استلام رد بعد. حاول مرة أخرى أو افتح حورس كاملاً." : "No response received yet. Try again or open full Horus." }
                 : m,
             ),
           )
@@ -232,7 +272,7 @@ const FloatingAIBarComponent = () => {
           toast.error(err instanceof Error ? err.message : "Horus request failed")
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, content: "Bridge failed. Reconnecting..." } : m,
+              m.id === assistantId ? { ...m, content: isArabic ? "فشل الاتصال. إعادة الاتصال..." : "Bridge failed. Reconnecting..." } : m,
             ),
           )
         }
@@ -257,28 +297,24 @@ const FloatingAIBarComponent = () => {
 
   const handleToggle = () => {
     setIsOpen((v) => !v)
-    setShowTooltip(false)
     if (!isOpen) setTimeout(() => inputRef.current?.focus(), 80)
   }
 
   if (isHorusPage) return null
 
   return (
-    <div ref={panelRef} className="fixed right-6 bottom-6 z-40 flex flex-col items-end gap-3">
-      <AnimatePresence>
-        {showTooltip && !isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, x: 8 }}
-            animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, y: 8, x: 8 }}
-            className="glass-flyout glass-text-secondary rounded-xl px-3 py-2 text-xs"
-          >
-            <span className="font-bold text-blue-400">Horus</span> ready to sync
-            <span className="ml-2 font-mono text-[10px] opacity-60">Ctrl+I</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div
+      ref={panelRef}
+      dir={isArabic ? "rtl" : "ltr"}
+      className={cn(
+        "fixed z-40 flex flex-col items-end gap-3 transition-all duration-300",
+        // Desktop positioning
+        "lg:end-6 lg:bottom-6 lg:top-auto lg:translate-y-0",
+        // Mobile positioning: vertically centered on the screen edge
+        "end-0 top-[45%] -translate-y-1/2 bottom-auto",
+        isArabic && "font-arabic"
+      )}
+    >
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -286,23 +322,30 @@ const FloatingAIBarComponent = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 24, scale: 0.98 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="glass-surface-strong glass-text-primary relative w-[448px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-hidden rounded-[32px] shadow-[0_28px_80px_-40px_rgba(15,23,42,0.45)] will-change-transform"
+            role="dialog"
+            aria-label={isArabic ? "مساعد حورس الذكي" : "Horus AI Assistant"}
+            className={cn(
+              "glass-surface-strong glass-text-primary overflow-hidden rounded-[24px] shadow-[0_22px_64px_-38px_rgba(15,23,42,0.42)] z-50",
+              // Desktop layout (relative inside flex container)
+              "lg:relative lg:w-[448px] lg:max-h-[calc(100vh-96px)]",
+              // Mobile layout (fixed at the bottom-right/left, above nav bar)
+              "max-lg:fixed max-lg:bottom-24 max-lg:end-4 max-lg:w-[calc(100vw-32px)] max-lg:max-h-[calc(100vh-140px)]"
+            )}
           >
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(59,111,217,0.45),transparent)]" />
-            <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(59,111,217,0.14),transparent_70%)] blur-2xl" />
+            <div className="pointer-events-none absolute end-0 top-0 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(59,111,217,0.14),transparent_70%)] blur-2xl" />
 
             <div className="flex items-start justify-between p-6 pb-3">
               <div className="flex items-center gap-3">
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-[18px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,rgba(59,111,217,0.12),rgba(59,111,217,0.04))] shadow-[0_16px_34px_-22px_rgba(37,99,235,0.55)]">
                   <div className="absolute inset-[3px] rounded-[14px] bg-[linear-gradient(180deg,rgba(255,255,255,0.35),transparent_65%)] opacity-60" />
                   <Brain className="relative z-10 h-5 w-5 text-primary" strokeWidth={2.2} />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-[var(--glass-strong-bg)] bg-[var(--status-success)]" />
                 </div>
                 <div>
-                  <h3 className="glass-text-primary text-lg font-bold tracking-tight">Horus Bridge</h3>
+                  <h3 className="glass-text-primary text-lg font-bold tracking-tight">{isArabic ? "حورس" : "Horus"}</h3>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[var(--status-success)] shadow-[0_0_10px_rgba(13,150,104,0.5)]" />
-                    <p className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Neural Link Active</p>
+                    <span className="h-2 w-2 rounded-full bg-[var(--status-success)]" />
+                    <p className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.18em]">{isArabic ? "جاهز" : "Ready"}</p>
                   </div>
                 </div>
               </div>
@@ -312,7 +355,8 @@ const FloatingAIBarComponent = () => {
                   size="icon"
                   className="glass-button glass-text-secondary h-8 w-8 rounded-xl hover:text-[var(--glass-text-primary)]"
                   onClick={handleOpenFull}
-                  title="Open full Horus"
+                  title={isArabic ? "فتح حورس بالكامل" : "Open full Horus"}
+                  aria-label={isArabic ? "فتح حورس بالكامل" : "Open full Horus"}
                 >
                   <Expand className="h-4 w-4" />
                 </Button>
@@ -321,6 +365,7 @@ const FloatingAIBarComponent = () => {
                   size="icon"
                   className="glass-button glass-text-secondary h-8 w-8 rounded-xl hover:text-[var(--glass-text-primary)]"
                   onClick={() => setIsOpen(false)}
+                  aria-label={isArabic ? "إغلاق" : "Close"}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -331,11 +376,11 @@ const FloatingAIBarComponent = () => {
               <div className="glass-panel flex items-center justify-between rounded-[18px] px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-primary/80" />
-                  <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Global Sync</span>
+                  <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">{isArabic ? "المزامنة العامة" : "Global Sync"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-[var(--status-success)]/80" />
-                  <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">Audit Ready</span>
+                  <span className="glass-text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">{isArabic ? "التدقيق جاهز" : "Audit Ready"}</span>
                 </div>
               </div>
             </div>
@@ -344,11 +389,11 @@ const FloatingAIBarComponent = () => {
               <div className="space-y-5 pb-4">
                 {messages.map((msg) => (
                   <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-                    <div className={cn("max-w-[90%]", msg.role === "user" ? "text-right" : "text-left")}>
+                    <div className={cn("max-w-[90%]", msg.role === "user" ? "text-end" : "text-start")}>
                       {msg.isSystem && (
                         <div className="mb-1.5 flex items-center gap-1.5 text-primary/70">
                           <Terminal className="w-3 h-3" />
-                          <span className="text-[9px] font-bold uppercase tracking-widest">Protocol</span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest">{isArabic ? "بروتوكول" : "Protocol"}</span>
                         </div>
                       )}
                       <div
@@ -359,7 +404,7 @@ const FloatingAIBarComponent = () => {
                             : "glass-bubble glass-text-primary border border-[var(--glass-border-subtle)] shadow-[0_12px_30px_-24px_rgba(15,23,42,0.28)]",
                         )}
                       >
-                        <InlineText content={msg.content || (isLoading ? "Thinking..." : "")} />
+                        <InlineText content={msg.content || (isLoading ? (isArabic ? "جارٍ التفكير..." : "Thinking...") : "")} />
                       </div>
                     </div>
                   </div>
@@ -368,7 +413,7 @@ const FloatingAIBarComponent = () => {
                 {isLoading && (
                   <div className="glass-pill glass-text-secondary flex w-fit items-center gap-2 px-3 py-2 shadow-[0_10px_24px_-18px_rgba(37,99,235,0.35)]">
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                    <span className="text-[11px]">Synchronizing...</span>
+                    <span className="text-[11px]">{isArabic ? "جارٍ التزامن..." : "Synchronizing..."}</span>
                   </div>
                 )}
 
@@ -391,12 +436,12 @@ const FloatingAIBarComponent = () => {
                       disabled={isLoading}
                       title={item.label}
                       aria-label={item.label}
-                      className="glass-button glass-text-secondary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border-subtle)] transition-all hover:-translate-y-0.5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                      className="glass-button glass-text-secondary flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--glass-border-subtle)] transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <item.icon className="w-4 h-4" />
                     </button>
                   ))}
-                  <ChevronRight className="glass-text-secondary ml-auto h-3.5 w-3.5" />
+                  <ChevronRight className="glass-text-secondary ms-auto h-3.5 w-3.5" />
                 </div>
               </div>
             </div>
@@ -415,14 +460,15 @@ const FloatingAIBarComponent = () => {
                     }
                   }}
                   placeholder="Synchronize with Horus..."
-                  className="glass-input glass-text-primary h-14 w-full rounded-[18px] border-0 bg-transparent pl-4 pr-14 text-sm placeholder:text-[var(--glass-text-secondary)] focus:outline-none"
+                  className="glass-input glass-text-primary h-14 w-full rounded-[18px] border-0 bg-transparent ps-4 pe-14 text-sm placeholder:text-[var(--glass-text-secondary)] focus:outline-none"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={!query.trim() || isLoading}
-                  className="glass-button absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-[14px] bg-primary/90 text-primary-foreground shadow-[0_16px_30px_-18px_rgba(37,99,235,0.65)] transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:bg-[var(--glass-input-bg)] disabled:text-muted-foreground"
+                  aria-label={isArabic ? "إرسال" : "Send message"}
+                  className="glass-button absolute end-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-[14px] bg-primary/90 text-primary-foreground shadow-[0_16px_30px_-18px_rgba(37,99,235,0.65)] transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:bg-[var(--glass-input-bg)] disabled:text-muted-foreground"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpIcon className="w-4 h-4" />}
                 </button>
@@ -435,15 +481,18 @@ const FloatingAIBarComponent = () => {
       <button
         type="button"
         onClick={handleToggle}
-        className="glass-surface-strong group relative flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-[22px] border border-[var(--glass-border)] text-primary shadow-[0_24px_46px_-26px_rgba(37,99,235,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95"
+        className={cn(
+          "group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border shadow-lg transition-all duration-300 active:scale-95 cursor-pointer",
+          // Style: High-contrast premium glassmorphism
+          "bg-white/80 dark:bg-zinc-900/80 border-black/10 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:text-primary hover:bg-white/90 dark:hover:bg-zinc-800/90 backdrop-blur-lg",
+          // Mobile tucked-in positioning (50% translated off-screen, with start padding to keep the icon visible)
+          isArabic 
+            ? "max-lg:-translate-x-1/2 max-lg:hover:translate-x-0 max-lg:justify-start max-lg:ps-3" 
+            : "max-lg:translate-x-1/2 max-lg:hover:translate-x-0 max-lg:justify-start max-lg:ps-3"
+        )}
         aria-label="Toggle Horus assistant"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,111,217,0.18),transparent_55%)]" />
-        <div className="absolute inset-[3px] rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.42),transparent_68%)] opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
-        <div className="relative z-10 flex h-11 w-11 items-center justify-center rounded-[16px] border border-[var(--glass-border-subtle)] bg-[linear-gradient(180deg,rgba(59,111,217,0.14),rgba(59,111,217,0.04))]">
-          <Brain className="h-6 w-6" strokeWidth={2.2} />
-        </div>
+        <Brain className="h-6 w-6 relative z-10 transition-transform duration-300 group-hover:scale-105" strokeWidth={1.8} />
       </button>
     </div>
   )

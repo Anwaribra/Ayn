@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { SettingsPageLayout } from "@/components/platform/settings-page-layout"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 export default function AccountProfilePage() {
   return (
@@ -21,6 +21,7 @@ export default function AccountProfilePage() {
 
 function AccountProfileContent() {
   const { user, refreshUser } = useAuth()
+  const { isArabic } = useUiLanguage()
   const [name, setName] = useState(user?.name ?? "")
 
   useEffect(() => {
@@ -31,73 +32,57 @@ function AccountProfileContent() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      toast.error("Name is required")
+      toast.error(isArabic ? "الاسم مطلوب" : "Name is required")
       return
     }
     setSaving(true)
     try {
       await api.updateUser({ name: name.trim() })
       await refreshUser()
-      toast.success("Profile updated successfully")
+      toast.success(isArabic ? "تم تحديث الملف الشخصي بنجاح" : "Profile updated successfully")
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update profile")
+      toast.error(err instanceof Error ? err.message : (isArabic ? "فشل تحديث الملف الشخصي" : "Failed to update profile"))
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="animate-fade-in-up pb-20 max-w-2xl px-4">
-      <Link
-        href="/platform/settings"
-        className="inline-flex items-center gap-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-sm font-medium mb-8"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Settings
-      </Link>
-
-      <header className="mb-10">
-        <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
-          Account <span className="text-[var(--text-tertiary)] font-light">Profile</span>
-        </h1>
-        <p className="text-[var(--text-secondary)] text-sm mt-1">
-          Manage your institutional identifiers and contact details
-        </p>
-      </header>
-
+    <SettingsPageLayout
+      title="Account profile"
+      titleAr="الملف الشخصي"
+      description="Manage your name and view account identifiers."
+      descriptionAr="إدارة الاسم وعرض بيانات الحساب."
+    >
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="glass-panel p-6 rounded-2xl glass-border space-y-4">
+        <div className="glass-panel glass-border space-y-4 rounded-2xl p-6">
           <div>
-            <Label htmlFor="name" className="text-[var(--text-secondary)] text-sm font-medium">
-              Full Name
+            <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">
+              {isArabic ? "الاسم الكامل" : "Full name"}
             </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-2 glass-input text-[var(--text-primary)]"
-              placeholder="Your full name"
+              className="glass-input mt-2 text-foreground"
+              placeholder={isArabic ? "اسمك الكامل" : "Your full name"}
             />
           </div>
           <div>
-            <Label className="text-[var(--text-tertiary)] text-sm font-medium">Email</Label>
-            <p className="mt-2 text-[var(--text-secondary)] text-sm">{user?.email}</p>
-            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Email cannot be changed</p>
+            <Label className="text-sm font-medium text-muted-foreground">{isArabic ? "البريد الإلكتروني" : "Email"}</Label>
+            <p className="mt-2 text-sm text-foreground/80">{user?.email}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "لا يمكن تغيير البريد الإلكتروني هنا" : "Email cannot be changed here"}</p>
           </div>
           <div>
-            <Label className="text-[var(--text-tertiary)] text-sm font-medium">Role</Label>
-            <p className="mt-2 text-[var(--text-secondary)] text-sm">{user?.role}</p>
+            <Label className="text-sm font-medium text-muted-foreground">{isArabic ? "الدور" : "Role"}</Label>
+            <p className="mt-2 text-sm text-foreground/80">{user?.role}</p>
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={saving}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          {saving ? "Saving..." : "Save Changes"}
+        <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          {saving ? (isArabic ? "جاري الحفظ…" : "Saving…") : (isArabic ? "حفظ التغييرات" : "Save changes")}
         </Button>
       </form>
-    </div>
+    </SettingsPageLayout>
   )
 }

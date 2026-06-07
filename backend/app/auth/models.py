@@ -68,6 +68,7 @@ class UserResponse(BaseModel):
     email: str
     role: Optional[str] = None
     institutionId: Optional[str] = None
+    horusAccess: bool = False
     createdAt: datetime
 
     class Config:

@@ -1,108 +1,136 @@
 "use client"
 
+import { motion } from "framer-motion"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
 import { LandingFooter } from "@/components/landing/LandingFooter"
+import { useUiLanguage } from "@/lib/ui-language-context"
+import { cn } from "@/lib/utils"
+import { Scale, Mail, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default function TermsOfServicePage() {
+  const { isArabic } = useUiLanguage()
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className={cn("min-h-screen flex flex-col bg-background", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
       <LandingNavbar />
 
-      <main className="flex-1 max-w-3xl mx-auto px-6 py-24">
-        <div className="glass-surface glass-text-primary rounded-3xl p-8 md:p-10">
-        <h1 className="mb-2 text-4xl font-bold">Terms of Service</h1>
-        <p className="glass-text-secondary mb-10 text-sm">Last updated: March 12, 2026</p>
+      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-border bg-card p-8 md:p-10"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Scale className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                {isArabic ? "شروط الخدمة" : "Terms of Service"}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isArabic ? "آخر تحديث: 12 مارس 2026" : "Last updated: March 12, 2026"}
+              </p>
+            </div>
+          </div>
 
-        <div className="glass-text-secondary space-y-8 text-[15px] leading-relaxed">
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">1. Acceptance of Terms</h2>
-            <p>
-              By accessing or using the Ayn Platform, you agree to be bound by these Terms of Service.
-              If you do not agree to these terms, please do not use our services.
-            </p>
-          </section>
+          <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
+            <Section title={isArabic ? "1. قبول الشروط" : "1. Acceptance of Terms"}>
+              {isArabic
+                ? "باستخدام منصة عين، فإنك توافق على الالتزام بشروط الخدمة هذه. إذا كنت لا توافق، يرجى عدم استخدام خدماتنا."
+                : "By accessing or using the Ayn Platform, you agree to be bound by these Terms. If you do not agree, please do not use our services."}
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">2. Description of Service</h2>
-            <p>
-              Ayn provides an AI-powered quality assurance and compliance platform for educational
-              institutions. Our services include evidence management, standards mapping, gap analysis,
-              Horus AI virtual auditor, and compliance reporting.
-            </p>
-          </section>
+            <Section title={isArabic ? "2. وصف الخدمة" : "2. Description of Service"}>
+              {isArabic
+                ? "توفر عين منصة لضمان الجودة والامتثال مدعومة بالذكاء الاصطناعي — إدارة الأدلة، ربط المعايير، تحليل الفجوات، المدقق الافتراضي حورس، وتقارير الامتثال."
+                : "Ayn provides an AI-powered QA and compliance platform — evidence management, standards mapping, gap analysis, Horus AI virtual auditor, and reporting."}
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">3. User Accounts</h2>
-            <ul className="list-disc pl-6 space-y-1.5">
-              <li>You must provide accurate and complete registration information</li>
-              <li>You are responsible for maintaining the confidentiality of your account credentials</li>
-              <li>You are responsible for all activities that occur under your account</li>
-              <li>You must notify us immediately of any unauthorized use of your account</li>
-            </ul>
-          </section>
+            <Section title={isArabic ? "3. حسابات المستخدمين" : "3. User Accounts"}>
+              <ul className={cn("space-y-2", isArabic ? "pr-5" : "pl-5")}>
+                {[
+                  isArabic ? "تقديم معلومات تسجيل دقيقة" : "Provide accurate registration information",
+                  isArabic ? "المسؤولية عن سرية بيانات حسابك" : "Responsible for account confidentiality",
+                  isArabic ? "المسؤولية عن الأنشطة تحت حسابك" : "Responsible for account activity",
+                  isArabic ? "إبلاغنا فوراً بأي استخدام غير مصرح به" : "Notify us of unauthorized use",
+                ].map((text) => (
+                  <li key={text} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary/60" />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">4. Acceptable Use</h2>
-            <p className="mb-3">You agree not to:</p>
-            <ul className="list-disc pl-6 space-y-1.5">
-              <li>Use the platform for any unlawful purpose</li>
-              <li>Upload malicious files or content</li>
-              <li>Attempt to gain unauthorized access to other accounts or systems</li>
-              <li>Interfere with or disrupt the platform&apos;s functionality</li>
-              <li>Reverse engineer or attempt to extract source code from the platform</li>
-            </ul>
-          </section>
+            <Section title={isArabic ? "4. الاستخدام المقبول" : "4. Acceptable Use"}>
+              <ul className={cn("space-y-2", isArabic ? "pr-5" : "pl-5")}>
+                {[
+                  isArabic ? "لا تستخدم المنصة لأغراض غير قانونية" : "No unlawful use",
+                  isArabic ? "لا ترفع ملفات ضارة" : "No malicious files",
+                  isArabic ? "لا تحاول الوصول غير المصرح به" : "No unauthorized access",
+                  isArabic ? "لا تعطل وظائف المنصة" : "No disruption of services",
+                ].map((text) => (
+                  <li key={text} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-destructive/60" />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">5. Intellectual Property</h2>
-            <p>
-              The Ayn platform, including Horus AI, all software, designs, and content, is the
-              intellectual property of Ayn. You retain ownership of all content and documents
-              you upload to the platform.
-            </p>
-          </section>
+            <Section title={isArabic ? "5. الملكية الفكرية" : "5. Intellectual Property"}>
+              {isArabic
+                ? "منصة عين وحورس AI وجميع البرامج هي ملكية فكرية لشركة عين. أنت تحتفظ بملكية المحتوى الذي ترفعه."
+                : "Ayn platform and Horus AI are the intellectual property of Ayn. You retain ownership of uploaded content."}
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">6. AI-Generated Content</h2>
-            <p>
-              Horus AI provides compliance analysis, gap detection, and recommendations as decision-support
-              tools. AI-generated outputs should be reviewed by qualified professionals before being used
-              for official accreditation submissions. Ayn does not guarantee the accuracy of AI-generated
-              content.
-            </p>
-          </section>
+            <Section title={isArabic ? "6. المحتوى المولد بالذكاء الاصطناعي" : "6. AI-Generated Content"}>
+              {isArabic
+                ? "حورس AI يقدم تحليلات كأدوات دعم قرار. يجب مراجعة المخرجات من قبل متخصصين قبل استخدامها لتقديمات الاعتماد."
+                : "Horus AI provides decision-support tools. AI outputs should be reviewed by qualified professionals."}
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">7. Limitation of Liability</h2>
-            <p>
-              Ayn shall not be liable for any indirect, incidental, special, or consequential damages
-              arising from your use of the platform. Our total liability shall not exceed the amount
-              paid by you in the twelve months preceding the claim.
-            </p>
-          </section>
+            <Section title={isArabic ? "7. الحد من المسؤولية" : "7. Limitation of Liability"}>
+              {isArabic
+                ? "عين غير مسؤولة عن الأضرار غير المباشرة الناشئة عن استخدام المنصة."
+                : "Ayn shall not be liable for indirect damages arising from platform use."}
+            </Section>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">8. Termination</h2>
-            <p>
-              We may suspend or terminate your account at any time for violation of these terms.
-              Upon termination, you may request export of your data within 30 days.
-            </p>
-          </section>
+            <Section title={isArabic ? "8. الاتصال بنا" : "8. Contact"}>
+              {isArabic ? "للاستفسار، اتصل بنا:" : "For questions, contact us:"}
+            </Section>
+          </div>
 
-          <section>
-            <h2 className="glass-text-primary mb-3 text-xl font-semibold">9. Contact</h2>
-            <p>
-              For questions about these Terms of Service, contact us at{" "}
-              <a href="mailto:hello@ayn-edu.com" className="text-blue-600 hover:underline">hello@ayn-edu.com</a>.
-            </p>
-          </section>
-        </div>
+          <div className="mt-8 pt-6 border-t border-border flex items-center gap-3">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            <a href="mailto:hello@ayn-edu.com" className="text-sm text-primary hover:underline font-medium">hello@ayn-edu.com</a>
+          </div>
+        </motion.div>
+
+        <div className="mt-6 text-center">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            {isArabic ? "العودة للرئيسية" : "Back to home"}
+          </Link>
         </div>
       </main>
 
       <div className="px-4 pb-4">
-        <LandingFooter />
+        <div data-section-theme="dark" style={{ borderRadius: "1.75rem", overflow: "hidden", backgroundColor: "#050810" }}>
+          <LandingFooter />
+        </div>
       </div>
     </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-lg font-semibold text-foreground">{title}</h2>
+      <div>{children}</div>
+    </section>
   )
 }

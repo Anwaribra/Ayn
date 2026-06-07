@@ -22,15 +22,18 @@ import { ProtectedRoute } from "@/components/platform/protected-route"
 import { toast } from "sonner"
 import useSWR from "swr"
 import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
+import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 const COLOR_OPTIONS = [
-  { label: "Cobalt", value: "bg-[#1E3A8A]" },
-  { label: "Emerald", value: "bg-[#0F766E]" },
-  { label: "Amber", value: "bg-[#B45309]" },
-  { label: "Rose", value: "bg-[#BE123C]" },
+  { label: "Cobalt", labelAr: "كوبالت", value: "bg-[#1E3A8A]" },
+  { label: "Emerald", labelAr: "زمرد", value: "bg-[#0F766E]" },
+  { label: "Amber", labelAr: "عنبر", value: "bg-[#B45309]" },
+  { label: "Rose", labelAr: "وردي", value: "bg-[#BE123C]" },
 ]
 
 export function EditStandardPageClient({ standardId }: { standardId: string }) {
+  const { isArabic } = useUiLanguage()
   const { data: standard, isLoading } = useSWR(
     standardId ? `standard-${standardId}` : null,
     () => api.getStandard(standardId),
@@ -62,11 +65,11 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
   const summary = useMemo(
     () => ({
       code: code || "STD-LIB",
-      category: category || "Uncategorized",
-      region: region || "Global",
-      estimatedSetup: estimatedSetup || "Not set",
+      category: category || (isArabic ? "غير مصنف" : "Uncategorized"),
+      region: region || (isArabic ? "عالمي" : "Global"),
+      estimatedSetup: estimatedSetup || (isArabic ? "غير محدد" : "Not set"),
     }),
-    [category, code, estimatedSetup, region],
+    [category, code, estimatedSetup, region, isArabic],
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,40 +86,43 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
         color,
         estimatedSetup,
       } as any)
-      toast.success("Standard updated")
+      toast.success(isArabic ? "تم تحديث المعيار" : "Standard updated")
       router.push(`/platform/standards/${standardId}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update standard")
+      setError(err instanceof Error ? err.message : (isArabic ? "فشل تحديث المعيار" : "Failed to update standard"))
     } finally {
       setIsSaving(false)
     }
   }
 
   if (isLoading || !standard) {
-    return <DetailPageSkeleton title="Loading standard..." statBlocks={4} showSecondaryBlock />
+    return <DetailPageSkeleton title={isArabic ? "جاري تحميل المعيار..." : "Loading standard..."} statBlocks={4} showSecondaryBlock />
   }
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen">
+      <div className={cn("min-h-screen", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
         <Header
-          title="Edit Standard"
-          description={`Refine ${standard.title} without leaving the standards workflow.`}
+          title={isArabic ? "تعديل المعيار" : "Edit Standard"}
+          description={isArabic ? `قم بتحسين ${standard.title} دون مغادرة سير عمل المعايير.` : `Refine ${standard.title} without leaving the standards workflow.`}
           breadcrumbs={[
-            { label: "Dashboard", href: "/platform/dashboard" },
-            { label: "Standards", href: "/platform/standards" },
+            { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
+            { label: isArabic ? "المعايير" : "Standards", href: "/platform/standards" },
             { label: standard.title, href: `/platform/standards/${standardId}` },
-            { label: "Edit" },
+            { label: isArabic ? "تعديل" : "Edit" },
           ]}
         />
 
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+        <div className="mx-auto flex w-full platform-container-default flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
           <Link
             href={`/platform/standards/${standardId}`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+              isArabic && "flex-row-reverse",
+            )}
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to standard
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            {isArabic ? "العودة إلى المعيار" : "Back to standard"}
           </Link>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -134,12 +140,12 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
 
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="title">Standard Title *</Label>
+                    <Label htmlFor="title">{isArabic ? "عنوان المعيار *" : "Standard Title *"}</Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="ISO 21001"
+                      placeholder={isArabic ? "ISO 21001" : "ISO 21001"}
                       required
                       className="glass-input h-12 rounded-2xl"
                       aria-invalid={!!error}
@@ -148,7 +154,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="code">Framework Code</Label>
+                    <Label htmlFor="code">{isArabic ? "رمز الإطار" : "Framework Code"}</Label>
                     <Input
                       id="code"
                       value={code}
@@ -159,45 +165,45 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedSetup">Estimated Setup</Label>
+                    <Label htmlFor="estimatedSetup">{isArabic ? "وقت الإعداد التقريبي" : "Estimated Setup"}</Label>
                     <Input
                       id="estimatedSetup"
                       value={estimatedSetup}
                       onChange={(e) => setEstimatedSetup(e.target.value)}
-                      placeholder="2-4 weeks"
+                      placeholder={isArabic ? "2-4 أسابيع" : "2-4 weeks"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category">{isArabic ? "الفئة" : "Category"}</Label>
                     <Input
                       id="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      placeholder="Educational Quality"
+                      placeholder={isArabic ? "الجودة التعليمية" : "Educational Quality"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
+                    <Label htmlFor="region">{isArabic ? "المنطقة" : "Region"}</Label>
                     <Input
                       id="region"
                       value={region}
                       onChange={(e) => setRegion(e.target.value)}
-                      placeholder="Global"
+                      placeholder={isArabic ? "عالمي" : "Global"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{isArabic ? "الوصف" : "Description"}</Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Educational Organizations Management System..."
+                      placeholder={isArabic ? "نظام إدارة المؤسسات التعليمية..." : "Educational Organizations Management System..."}
                       rows={5}
                       className="glass-input rounded-[24px]"
                     />
@@ -205,7 +211,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Color Identity</Label>
+                  <Label>{isArabic ? "الهوية اللونية" : "Color Identity"}</Label>
                   <div className="flex flex-wrap gap-3">
                     {COLOR_OPTIONS.map((option) => (
                       <button
@@ -219,7 +225,7 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                         }`}
                       >
                         <span className={`h-5 w-5 rounded-full ${option.value}`} />
-                        {option.label}
+                        {isArabic ? option.labelAr : option.label}
                       </button>
                     ))}
                   </div>
@@ -233,16 +239,16 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        <Loader2 className={cn("h-4 w-4 animate-spin", isArabic ? "ml-2" : "mr-2")} />
+                        {isArabic ? "جاري الحفظ..." : "Saving..."}
                       </>
                     ) : (
-                      "Save changes"
+                      isArabic ? "حفظ التغييرات" : "Save changes"
                     )}
                   </Button>
                   <Link href={`/platform/standards/${standardId}`}>
                     <Button type="button" variant="outline" className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground">
-                      Cancel
+                      {isArabic ? "إلغاء" : "Cancel"}
                     </Button>
                   </Link>
                 </div>
@@ -256,40 +262,40 @@ export function EditStandardPageClient({ standardId }: { standardId: string }) {
                     <GraduationCap className="h-7 w-7 text-white" />
                   </div>
                   <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    <div className={cn("inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-primary", isArabic && "flex-row-reverse")}>
                       <Sparkles className="h-3.5 w-3.5" />
-                      Live Preview
+                      {isArabic ? "معاينة حية" : "Live Preview"}
                     </div>
                     <h3 className="mt-3 text-2xl font-black text-foreground">
                       {title || standard.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {description || "The updated framework summary appears here while you edit the standard profile."}
+                      {description || (isArabic ? "يظهر ملخص الإطار المحدث هنا أثناء تعديل ملف المعيار." : "The updated framework summary appears here while you edit the standard profile.")}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 space-y-3">
                   <div className="flex items-center justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Code</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "الرمز" : "Code"}</span>
                     <span className="text-sm font-semibold text-foreground">{summary.code}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
                     <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                       <Layers3 className="h-3.5 w-3.5" />
-                      Category
+                      {isArabic ? "الفئة" : "Category"}
                     </span>
                     <span className="text-sm font-semibold text-foreground">{summary.category}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
                     <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                       <Globe className="h-3.5 w-3.5" />
-                      Region
+                      {isArabic ? "المنطقة" : "Region"}
                     </span>
                     <span className="text-sm font-semibold text-foreground">{summary.region}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-2.5">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Setup</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{isArabic ? "الإعداد" : "Setup"}</span>
                     <span className="text-sm font-semibold text-foreground">{summary.estimatedSetup}</span>
                   </div>
                 </div>

@@ -45,7 +45,7 @@ export function CoverageBar({ standardId, compact = false, result, className }: 
     // No criteria at all
     if (!resolvedData || resolvedData.totalCriteria === 0) {
         return (
-            <div className={cn("text-[10px] text-muted-foreground font-medium italic", className)}>
+            <div className={cn("text-[10px] text-foreground/60 font-bold italic", className)}>
                 No criteria mapped yet
             </div>
         )
@@ -77,7 +77,7 @@ export function CoverageBar({ standardId, compact = false, result, className }: 
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 1.5, ease: "easeOut" }}
-                        className={cn("absolute top-0 left-0 h-full rounded-full", statusColor)}
+                        className={cn("absolute top-0 start-0 h-full rounded-full", statusColor)}
                     />
                 </div>
             </div>
@@ -88,11 +88,11 @@ export function CoverageBar({ standardId, compact = false, result, className }: 
     return (
         <div className={cn("space-y-1.5", className)}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     Criteria Coverage
                 </span>
-                <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
+                <span className="text-[10px] font-black tabular-nums text-foreground/80">
                     <span className={pct >= 80 ? "text-emerald-500" : pct >= 50 ? "text-amber-500" : "text-red-500"}>
                         {coveredCriteria}
                     </span>
@@ -104,7 +104,7 @@ export function CoverageBar({ standardId, compact = false, result, className }: 
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
-                    className={cn("absolute top-0 left-0 h-full rounded-full shadow-inner", statusColor)}
+                    className={cn("absolute top-0 start-0 h-full rounded-full shadow-inner", statusColor)}
                 />
             </div>
         </div>

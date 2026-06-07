@@ -29,7 +29,7 @@ export function WorkflowTimeline({ steps: customSteps, className }: WorkflowTime
         <div className={cn("w-full py-2 min-h-[100px]", className)}>
             <div className="relative flex items-center justify-between px-4">
                 {/* Connector Line */}
-                <div className="absolute left-10 right-10 top-5 h-[1px] bg-slate-200 -z-0" />
+                <div className="absolute inset-x-10 top-5 h-[1px] bg-slate-200 -z-0" />
 
                 {steps.map((step, index) => (
                     <div key={step.id} className="relative flex flex-col items-center group cursor-pointer z-10">

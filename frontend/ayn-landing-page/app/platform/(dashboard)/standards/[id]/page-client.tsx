@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Header } from "@/components/platform/header"
 import { DetailPageSkeleton } from "@/components/platform/detail-page-skeleton"
 import { CoverageBar } from "@/components/platform/coverage-bar"
@@ -16,6 +17,8 @@ import {
   Layers3,
   ArrowUpRight,
   FileCheck,
+  GitBranch,
+  List,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { GlassPanel } from "@/components/ui/glass-panel"
@@ -25,6 +28,7 @@ import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { getStandardDisplayTitle, extractLocalizedText } from "@/lib/standard-display"
 import { resolveStandardColorClass } from "@/lib/standard-color"
+import { StandardsTreeV2 } from "@/components/platform/standards/standards-tree-v2"
 
 function formatValue(value?: string | null, fallback = "Unspecified") {
   return value?.trim() || fallback
@@ -35,6 +39,7 @@ export function StandardDetailPageClient() {
   const router = useRouter()
   const { isArabic } = useUiLanguage()
   const standardId = id as string
+  const [criteriaView, setCriteriaView] = useState<"tree" | "list">("tree")
 
   const { data: standard, isLoading: loadingStandard } = useSWR(
     standardId ? `standard-${standardId}` : null,
@@ -108,7 +113,7 @@ export function StandardDetailPageClient() {
           : "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]"
 
   return (
-    <div className={cn("min-h-screen", isArabic && "font-arabic")}>
+    <div className={cn("min-h-screen", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
       <Header
         title={displayTitle}
         description={
@@ -128,14 +133,14 @@ export function StandardDetailPageClient() {
               className="rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_36px_-20px_rgba(37,99,235,0.45)]"
               onClick={() => router.push(`/platform/gap-analysis?standardId=${standardId}`)}
             >
-              <ArrowUpRight className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
+              <ArrowUpRight className={cn("h-4 w-4", isArabic && "rotate-180")} />
               {isArabic ? "تشغيل التحليل" : "Run Analysis"}
             </Button>
           </div>
         }
       />
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+      <div className="mx-auto flex w-full platform-container-wide flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
         <Link
           href="/platform/standards"
           className={cn(
@@ -143,7 +148,7 @@ export function StandardDetailPageClient() {
             isArabic && "flex-row-reverse",
           )}
         >
-          <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+          <ArrowLeft className={cn("h-4 w-4", isArabic && "rotate-180")} />
           {isArabic ? "العودة إلى المعايير" : "Back to standards"}
         </Link>
 
@@ -164,12 +169,12 @@ export function StandardDetailPageClient() {
                 </div>
                 <div className="min-w-0 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
                       {standard.code || "STD-LIB"}
                     </span>
                     <span
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                        "rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em]",
                         readinessClass,
                       )}
                     >
@@ -191,25 +196,25 @@ export function StandardDetailPageClient() {
 
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     {isArabic ? "المعايير الفرعية" : "Criteria"}
                   </p>
                   <p className="mt-2 text-2xl font-black text-foreground">{criteriaCount}</p>
                 </div>
                 <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     {isArabic ? "مغطاة" : "Covered"}
                   </p>
                   <p className="mt-2 text-2xl font-black text-[var(--status-success)]">{coveredCriteria}</p>
                 </div>
                 <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     {isArabic ? "التغطية" : "Coverage"}
                   </p>
                   <p className="mt-2 text-2xl font-black text-primary">{coveragePct}%</p>
                 </div>
                 <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     {isArabic ? "وقت الإعداد التقريبي" : "Estimated Setup"}
                   </p>
                   <p className="mt-2 text-lg font-black text-foreground">
@@ -221,7 +226,7 @@ export function StandardDetailPageClient() {
 
             <div className="space-y-4">
               <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   {isArabic ? "بيانات الإطار" : "Framework Metadata"}
                 </p>
                 <div className="mt-4 space-y-3">
@@ -282,38 +287,69 @@ export function StandardDetailPageClient() {
                   : "Review the underlying clauses extracted from the core framework."}
               </p>
             </div>
+            {/* View toggle */}
+            <div className="flex items-center gap-1 rounded-xl border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] p-1">
+              <button
+                onClick={() => setCriteriaView("tree")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                  criteriaView === "tree"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <GitBranch className="h-3.5 w-3.5" />
+                {isArabic ? "شجرة V2" : "Tree (V2)"}
+              </button>
+              <button
+                onClick={() => setCriteriaView("list")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                  criteriaView === "list"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <List className="h-3.5 w-3.5" />
+                {isArabic ? "قائمة" : "List"}
+              </button>
+            </div>
           </div>
 
-          {!criteria || criteria.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-[var(--glass-border)] py-16 text-center">
-              <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">
-                {isArabic ? "لا توجد معايير فرعية بعد" : "No criteria defined yet"}
-              </p>
-            </div>
+          {criteriaView === "tree" ? (
+            <StandardsTreeV2 standardId={standardId} />
           ) : (
-            <div className="grid gap-4">
-              {criteria.map((criterion: Criterion, index: number) => (
-                <div
-                  key={criterion.id}
-                  className="rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-4 transition-colors hover:border-[var(--glass-border)]"
-                >
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] text-sm font-bold text-foreground">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{extractLocalizedText(criterion.title, isArabic)}</h4>
-                      {criterion.description && (
-                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {extractLocalizedText(criterion.description, isArabic)}
-                        </p>
-                      )}
+            !criteria || criteria.length === 0 ? (
+              <div className="rounded-[28px] border border-dashed border-[var(--glass-border)] py-16 text-center">
+                <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">
+                  {isArabic ? "لا توجد معايير فرعية بعد" : "No criteria defined yet"}
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {criteria.map((criterion: Criterion, index: number) => (
+                  <div
+                    key={criterion.id}
+                    className="rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-4 transition-colors hover:border-[var(--glass-border)]"
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] text-sm font-bold text-foreground">
+                        {index + 1}
+                      </span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground">{extractLocalizedText(criterion.title, isArabic)}</h4>
+                        {criterion.description && (
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            {extractLocalizedText(criterion.description, isArabic)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </section>
       </div>

@@ -131,3 +131,6 @@ test_*.py
 # Test cache
 tests/__pycache__/
 !tests/test_compliance_helpers.py
+
+# Demo form submissions (local backup log)
+data/demo_requests.jsonl

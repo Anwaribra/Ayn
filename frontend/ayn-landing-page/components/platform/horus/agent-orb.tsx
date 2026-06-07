@@ -334,9 +334,14 @@ function ThreeOrb({ state, canvasSize }: { state: OrbState; canvasSize: number }
       dispose() {
         disposed = true
         cancelAnimationFrame(animId)
+        try {
+          renderer.forceContextLoss()
+        } catch (e) {
+          // ignore context loss failures
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         scene.traverse((obj: any) => {
-          obj.geometry?.dispose()
+          if (obj.geometry) obj.geometry.dispose()
           if (obj.material) {
             if (Array.isArray(obj.material)) obj.material.forEach((m: { dispose: () => void }) => m.dispose())
             else obj.material.dispose()
@@ -370,24 +375,23 @@ function AgentOrbInner({ state, size = "hero", className }: AgentOrbProps) {
 
   return (
     <div className={cn("relative flex items-center justify-center select-none", className)}>
-      <div
-        className={cn(
-          "absolute rounded-full transition-all duration-700 pointer-events-none",
-          isActive ? "opacity-35 scale-110" : "opacity-20 scale-100",
-        )}
-        style={{
-          width: canvasSize * 1.5,
-          height: canvasSize * 1.5,
-          background: state === "error"
-            ? "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(124,58,237,0.35) 0%, rgba(14,165,233,0.15) 40%, rgba(59,130,246,0.08) 60%, transparent 75%)",
-          filter: "blur(40px)",
-        }}
-      />
+      {isActive && (
+        <div
+          className={cn(
+            "absolute rounded-full transition-all duration-700 pointer-events-none",
+          )}
+          style={{
+            width: canvasSize * 0.8,
+            height: canvasSize * 0.8,
+            background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)",
+          }}
+        />
+      )}
       <ThreeOrb state={state} canvasSize={canvasSize} />
     </div>
   )
 }
+
 
 export const AgentOrb = memo(AgentOrbInner)
 
@@ -399,36 +403,30 @@ function MiniOrbInner({ state, className }: { state: OrbState; className?: strin
 
   return (
     <div className={cn("relative w-7 h-7 flex items-center justify-center flex-shrink-0", className)}>
+      <div
+        className={cn(
+          "absolute inset-0 rounded-full border-2 transition-colors duration-300",
+          isError
+            ? "border-destructive/30"
+            : isActive
+              ? "border-primary/40"
+              : "border-muted-foreground/20"
+        )}
+      />
       {isActive && (
-        <div
-          className="absolute inset-0 rounded-full"
-          style={{
-            background: "conic-gradient(from 0deg, transparent 0%, rgba(124,58,237,0.4) 25%, transparent 50%, rgba(56,189,248,0.35) 75%, transparent 100%)",
-            animation: "orbRingRotate 2.5s linear infinite",
-          }}
-        />
+        <span className="absolute inset-[3px] rounded-full border-2 border-primary border-t-transparent animate-spin" />
       )}
       <div
-        className="absolute inset-[3px] rounded-full"
-        style={{
-          background: isError
-            ? "radial-gradient(circle, rgba(239,68,68,0.15) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(124,58,237,0.12) 0%, rgba(56,189,248,0.08) 50%, transparent 70%)",
-          animation: isActive ? "orbBreathe 2s ease-in-out infinite" : "orbBreathe 4s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="w-3 h-3 rounded-full"
-        style={{
-          background: isError
-            ? "radial-gradient(circle at 35% 35%, rgba(252,165,165,0.9) 0%, rgba(239,68,68,0.6) 60%, rgba(127,29,29,0.4) 100%)"
-            : "radial-gradient(circle at 35% 35%, rgba(196,181,253,0.9) 0%, rgba(124,58,237,0.6) 60%, rgba(30,17,69,0.4) 100%)",
-          boxShadow: isError
-            ? "0 0 8px rgba(239,68,68,0.3)"
+        className={cn(
+          "w-2.5 h-2.5 rounded-full transition-colors duration-300",
+          isError
+            ? "bg-destructive"
             : isActive
-              ? "0 0 10px rgba(124,58,237,0.4), 0 0 4px rgba(56,189,248,0.2)"
-              : "0 0 6px rgba(124,58,237,0.15)",
-          animation: isActive ? "orbGlowPulse 1.5s ease-in-out infinite" : "none",
+              ? "bg-primary"
+              : "bg-muted-foreground/30"
+        )}
+        style={{
+          animation: isActive ? "pulse-subtle 1.5s ease-in-out infinite" : "none",
         }}
       />
     </div>
@@ -436,3 +434,33 @@ function MiniOrbInner({ state, className }: { state: OrbState; className?: strin
 }
 
 export const MiniOrb = memo(MiniOrbInner)
+
+// ─── SimpleOrb — ultra-light CSS-only orb for inline status indicators ──
+
+export function SimpleOrb({ 
+  state = "idle",
+  className 
+}: { 
+  state?: OrbState
+  className?: string 
+}) {
+  const isActive = state === "generating" || state === "searching"
+  const isError = state === "error"
+  
+  return (
+    <span className={cn(
+      "inline-flex items-center justify-center w-4 h-4",
+      className
+    )}>
+      {isActive ? (
+        <span className="w-3.5 h-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      ) : (
+        <span className={cn(
+          "w-2 h-2 rounded-full",
+          isError ? "bg-destructive" : "bg-muted-foreground/40"
+        )} />
+      )}
+    </span>
+  )
+}
+

@@ -161,6 +161,15 @@ export function FileUpload({
     <div className={cn("space-y-4", className)}>
       {/* Drop Zone */}
       <motion.div
+        role="button"
+        tabIndex={0}
+        aria-label="Upload files"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            inputRef.current?.click()
+          }
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -183,6 +192,7 @@ export function FileUpload({
           accept={accept}
           onChange={handleInputChange}
           className="hidden"
+          aria-label="File upload input"
         />
 
         <div className="flex flex-col items-center justify-center text-center">
@@ -298,6 +308,7 @@ export function FileUpload({
                       size="icon"
                       className="h-8 w-8 shrink-0"
                       onClick={() => removeFile(file.id)}
+                      aria-label={`Remove ${file.file.name}`}
                     >
                       <X className="h-4 w-4" />
                     </Button>

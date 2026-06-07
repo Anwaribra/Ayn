@@ -21,6 +21,8 @@ import {
 import Link from "next/link"
 import { ProtectedRoute } from "@/components/platform/protected-route"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 const COLOR_OPTIONS = [
   { label: "Cobalt", value: "bg-[#1E3A8A]" },
@@ -29,7 +31,15 @@ const COLOR_OPTIONS = [
   { label: "Rose", value: "bg-[#BE123C]" },
 ]
 
+const COLOR_LABELS_AR: Record<string, string> = {
+  "Cobalt": "كوبالت",
+  "Emerald": "زمرد",
+  "Amber": "عنبر",
+  "Rose": "وردي",
+}
+
 export default function NewStandardPage() {
+  const { isArabic } = useUiLanguage()
   const [title, setTitle] = useState("")
   const [code, setCode] = useState("")
   const [category, setCategory] = useState("")
@@ -44,11 +54,11 @@ export default function NewStandardPage() {
   const summary = useMemo(
     () => ({
       code: code || "STD-LIB",
-      category: category || "Uncategorized",
-      region: region || "Global",
-      estimatedSetup: estimatedSetup || "Not set",
+      category: category || (isArabic ? "غير مصنف" : "Uncategorized"),
+      region: region || (isArabic ? "عالمي" : "Global"),
+      estimatedSetup: estimatedSetup || (isArabic ? "غير محدد" : "Not set"),
     }),
-    [category, code, estimatedSetup, region],
+    [category, code, estimatedSetup, region, isArabic],
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,10 +76,10 @@ export default function NewStandardPage() {
         color,
         estimatedSetup,
       })
-      toast.success("Standard created")
+      toast.success(isArabic ? "تم إنشاء المعيار" : "Standard created")
       router.push(`/platform/standards/${standard.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create standard")
+      setError(err instanceof Error ? err.message : (isArabic ? "فشل إنشاء المعيار" : "Failed to create standard"))
     } finally {
       setIsLoading(false)
     }
@@ -77,24 +87,27 @@ export default function NewStandardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen">
+      <div className={cn("min-h-screen", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
         <Header
-          title="Create Standard"
-          description="Add a new framework to your standards library with the right identity from day one."
+          title={isArabic ? "إنشاء معيار" : "Create Standard"}
+          description={isArabic ? "أضف إطاراً جديداً إلى مكتبة المعايير الخاصة بك مع الهوية المناسبة من اليوم الأول." : "Add a new framework to your standards library with the right identity from day one."}
           breadcrumbs={[
-            { label: "Dashboard", href: "/platform/dashboard" },
-            { label: "Standards", href: "/platform/standards" },
-            { label: "New" },
+            { label: isArabic ? "لوحة التحكم" : "Dashboard", href: "/platform/dashboard" },
+            { label: isArabic ? "المعايير" : "Standards", href: "/platform/standards" },
+            { label: isArabic ? "جديد" : "New" },
           ]}
         />
 
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
+        <div className="mx-auto flex w-full platform-container-default flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8">
           <Link
             href="/platform/standards"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className={cn(
+              "inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground",
+              isArabic && "flex-row-reverse",
+            )}
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to standards
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            {isArabic ? "العودة إلى المعايير" : "Back to standards"}
           </Link>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -112,7 +125,7 @@ export default function NewStandardPage() {
 
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="title">Standard Title *</Label>
+                    <Label htmlFor="title">{isArabic ? "عنوان المعيار *" : "Standard Title *"}</Label>
                     <Input
                       id="title"
                       value={title}
@@ -126,7 +139,7 @@ export default function NewStandardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="code">Framework Code</Label>
+                    <Label htmlFor="code">{isArabic ? "رمز الإطار" : "Framework Code"}</Label>
                     <Input
                       id="code"
                       value={code}
@@ -137,45 +150,45 @@ export default function NewStandardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedSetup">Estimated Setup</Label>
+                    <Label htmlFor="estimatedSetup">{isArabic ? "وقت الإعداد التقريبي" : "Estimated Setup"}</Label>
                     <Input
                       id="estimatedSetup"
                       value={estimatedSetup}
                       onChange={(e) => setEstimatedSetup(e.target.value)}
-                      placeholder="2-4 weeks"
+                      placeholder={isArabic ? "2-4 أسابيع" : "2-4 weeks"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category">{isArabic ? "الفئة" : "Category"}</Label>
                     <Input
                       id="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      placeholder="Educational Quality"
+                      placeholder={isArabic ? "جودة تعليمية" : "Educational Quality"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
+                    <Label htmlFor="region">{isArabic ? "المنطقة" : "Region"}</Label>
                     <Input
                       id="region"
                       value={region}
                       onChange={(e) => setRegion(e.target.value)}
-                      placeholder="Global"
+                      placeholder={isArabic ? "عالمي" : "Global"}
                       className="glass-input h-12 rounded-2xl"
                     />
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{isArabic ? "الوصف" : "Description"}</Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Educational Organizations Management System..."
+                      placeholder={isArabic ? "نظام إدارة المؤسسات التعليمية..." : "Educational Organizations Management System..."}
                       rows={5}
                       className="glass-input rounded-[24px]"
                     />
@@ -183,7 +196,7 @@ export default function NewStandardPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Color Identity</Label>
+                  <Label>{isArabic ? "هوية اللون" : "Color Identity"}</Label>
                   <div className="flex flex-wrap gap-3">
                     {COLOR_OPTIONS.map((option) => (
                       <button
@@ -197,7 +210,7 @@ export default function NewStandardPage() {
                         }`}
                       >
                         <span className={`h-5 w-5 rounded-full ${option.value}`} />
-                        {option.label}
+                        {isArabic ? (COLOR_LABELS_AR[option.label] ?? option.label) : option.label}
                       </button>
                     ))}
                   </div>
@@ -212,15 +225,15 @@ export default function NewStandardPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
+                        {isArabic ? "جارٍ الإنشاء..." : "Creating..."}
                       </>
                     ) : (
-                      "Create Standard"
+                      isArabic ? "إنشاء المعيار" : "Create Standard"
                     )}
                   </Button>
                   <Link href="/platform/standards">
                     <Button type="button" variant="outline" className="glass-button rounded-2xl border-[var(--glass-border)] text-foreground">
-                      Cancel
+                      {isArabic ? "إلغاء" : "Cancel"}
                     </Button>
                   </Link>
                 </div>
@@ -234,15 +247,15 @@ export default function NewStandardPage() {
                     <GraduationCap className="h-7 w-7 text-white" />
                   </div>
                   <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
                       <Sparkles className="h-3.5 w-3.5" />
-                      Preview
+                      {isArabic ? "معاينة" : "Preview"}
                     </div>
                     <h3 className="mt-3 text-2xl font-black text-foreground">
-                      {title || "New Standard"}
+                      {title || (isArabic ? "معيار جديد" : "New Standard")}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {description || "Your framework summary will appear here as you build the standard profile."}
+                      {description || (isArabic ? "سيظهر ملخص الإطار هنا أثناء بناء ملف المعيار." : "Your framework summary will appear here as you build the standard profile.")}
                     </p>
                   </div>
                 </div>

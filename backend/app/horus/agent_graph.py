@@ -26,8 +26,12 @@ class ConstrainedAgentExecutionGraph:
         "generate_remediation_report",
         "generate_report_export_link",
     }
-    MUTATING_TOOLS: set[str] = set()
+    MUTATING_TOOLS = {
+        "start_gap_analysis_run",
+        "link_evidence_to_criterion",
+    }
     REQUIRED_ARGS = {
+
         "generate_report_export_link": ("report_id",),
     }
 

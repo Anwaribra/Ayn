@@ -87,9 +87,8 @@ export function WorkspaceAuthLoader({ onRetry }: RetryProps) {
       dir={isArabic ? "rtl" : "ltr"}
     >
       <div className="flex max-w-md flex-col items-center text-center">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 scale-150 rounded-full bg-primary/15 blur-3xl" aria-hidden />
-          <AynLogo size="md" withGlow />
+        <div className="mb-5">
+          <AynLogo size="nav" withGlow={false} isArabic={isArabic} variant="auto" />
         </div>
         <Loader2 className="mb-4 h-7 w-7 animate-spin text-primary" aria-hidden />
         <p className="text-base font-semibold text-foreground">
@@ -111,7 +110,7 @@ export function WorkspaceSessionLoader({ onRetry }: RetryProps) {
 
   return (
     <div className={cn("min-h-screen bg-background px-4 pb-16 pt-8 sm:px-6", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
-      <div className="mx-auto mb-8 flex max-w-6xl flex-col items-center text-center">
+      <div className="mx-auto mb-8 flex platform-container-default flex-col items-center text-center">
         <div className="mb-4 flex items-center gap-3">
           <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" aria-hidden />
           <p className="text-sm font-medium text-foreground">
@@ -125,7 +124,7 @@ export function WorkspaceSessionLoader({ onRetry }: RetryProps) {
         </p>
         {stalled && <StallActions onRetry={onRetry} isArabic={isArabic} />}
       </div>
-      <div className="mx-auto max-w-6xl opacity-90">
+      <div className="mx-auto platform-container-default opacity-90">
         <DashboardPageSkeleton />
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { LucideIcon } from "lucide-react"
+import { CircularGauge } from "@/components/ui/circular-gauge"
 
 interface StatTile {
     label: string
@@ -11,6 +12,7 @@ interface StatTile {
     /** Localized status badge (e.g. Arabic). Falls back to raw `status` if omitted. */
     statusLabel?: string
     trend?: string
+    gaugeValue?: number
 }
 
 interface StatusTilesProps {
@@ -19,53 +21,73 @@ interface StatusTilesProps {
 
 export function StatusTiles({ stats = [] }: StatusTilesProps) {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((tile, i) => {
-                const statusClass = tile.status === "critical" ? "status-critical" :
-                    tile.status === "warning" ? "status-warning" :
-                        tile.status === "success" ? "status-success" : "status-info"
+                const isCritical = tile.status === "critical"
+                const isWarning = tile.status === "warning"
+                const isSuccess = tile.status === "success"
 
-                const accentGlow = tile.status === "critical"
-                    ? "shadow-[0_24px_60px_-34px_rgba(239,68,68,0.45)]"
-                    : tile.status === "warning"
-                        ? "shadow-[0_24px_60px_-34px_rgba(245,158,11,0.38)]"
-                        : tile.status === "success"
-                            ? "shadow-[0_24px_60px_-34px_rgba(16,185,129,0.38)]"
-                            : "shadow-[0_24px_60px_-34px_rgba(59,130,246,0.38)]"
+                const iconBgClass = isCritical ? "bg-red-100/50 dark:bg-red-500/10" :
+                    isWarning ? "bg-amber-100/50 dark:bg-amber-500/10" :
+                    isSuccess ? "bg-emerald-100/50 dark:bg-emerald-500/10" : "bg-[var(--glass-bg)] dark:bg-gray-500/10"
+
+                const iconTextClass = isCritical ? "text-red-600 dark:text-red-400" :
+                    isWarning ? "text-amber-600 dark:text-amber-400" :
+                    isSuccess ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+
+                if (tile.gaugeValue !== undefined) {
+                    const gaugeColor = isCritical ? "var(--status-critical)" :
+                        isWarning ? "var(--status-warning)" :
+                        isSuccess ? "var(--status-success)" : "var(--status-info)"
+
+                    return (
+                        <div
+                            key={i}
+                            className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 flex flex-row items-center justify-between overflow-hidden"
+                        >
+                            <div className="flex flex-col justify-between h-full space-y-1">
+                                <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                                    {tile.statusLabel ?? tile.status ?? "status"}
+                                </div>
+                                <h4 className="text-sm font-bold text-foreground truncate mt-1">
+                                    {tile.label}
+                                </h4>
+                                <div className="text-2xl font-black text-foreground mt-2">
+                                    {tile.value}
+                                </div>
+                            </div>
+                            <div className="shrink-0 ml-4 relative -mr-2">
+                                <CircularGauge
+                                    value={tile.gaugeValue}
+                                    label=""
+                                    color={gaugeColor}
+                                    className="w-[72px] h-[72px]"
+                                />
+                            </div>
+                        </div>
+                    )
+                }
 
                 return (
                     <div
                         key={i}
-                        className={cn(
-                            "glass-card group relative overflow-hidden rounded-[28px] p-5 sm:p-6 min-h-[152px] transition-all duration-300 hover:-translate-y-1",
-                            accentGlow
-                        )}
+                        className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-5 flex flex-row items-start justify-between overflow-hidden"
                     >
-                        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)] opacity-80" />
-                        <div className="relative z-10 flex h-full flex-col justify-between gap-5">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className={cn("inline-flex p-3 rounded-2xl border backdrop-blur-sm", statusClass)}>
-                                    <tile.icon className="w-5 h-5" />
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.22em]">
-                                        {tile.statusLabel ?? tile.status ?? "status"}
-                                    </div>
-                                    {tile.trend && (
-                                        <div className="mt-1 text-[11px] font-medium text-muted-foreground">
-                                            {tile.trend}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="flex flex-col h-full justify-between">
                             <div>
-                                <div className="text-3xl sm:text-[2rem] font-black tracking-[-0.04em] text-foreground leading-none">
-                                    {tile.value}
+                                <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                                    {tile.statusLabel ?? tile.status ?? "status"}
                                 </div>
-                                <div className="mt-2 text-[11px] sm:text-xs text-muted-foreground font-bold uppercase tracking-[0.18em]">
+                                <h4 className="text-sm font-bold text-foreground truncate mt-1">
                                     {tile.label}
-                                </div>
+                                </h4>
                             </div>
+                            <div className="text-2xl font-black text-foreground mt-4">
+                                {tile.value}
+                            </div>
+                        </div>
+                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-[var(--glass-border)]", iconBgClass)}>
+                            <tile.icon className={cn("w-5 h-5", iconTextClass)} />
                         </div>
                     </div>
                 )

@@ -1,18 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react"
-import { Plus, Send, StopCircle, Image, FileText, Brain, Check, Mic, MicOff, ShieldCheck, BarChart2, AlertTriangle, Link, Download, Search, Sparkles, Wrench } from "lucide-react"
+import { Plus, ArrowUp, Square, Mic, MicOff, FileText, Brain, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getAIProviderFetchHeaders } from "@/lib/ai-provider-preference"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
-const DEFAULT_PLACEHOLDER = "Ask Horus…"
+const DEFAULT_PLACEHOLDER = "Ask anything…"
 const ACCEPTED_DOC_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]
 
 function isAcceptedFile(file: File): boolean {
@@ -28,14 +23,10 @@ interface AIChatInputProps {
   disabled?: boolean
   hasFiles?: boolean
   footer?: ReactNode
-
   responseMode?: "ask" | "think" | "agent"
-  /** Key for draft persistence (unused; draft persistence is disabled). */
   draftKey?: string
-  /** When input is empty and user presses Up, fill with this (last user message) */
   lastUserMessage?: string
   quickPrompts?: { label: string; prompt: string }[]
-  /** Full agent tool commands for the slash palette */
   agentCommands?: { command: string; label: string; description: string; icon: string; category?: string }[]
   header?: ReactNode
 }
@@ -56,113 +47,67 @@ export const AIChatInput = ({
   agentCommands = [],
   header,
 }: AIChatInputProps) => {
-  const [isActive, setIsActive] = useState(false)
   const [inputValue, setInputValue] = useState("")
   const [isDragging, setIsDragging] = useState(false)
-  const [plusMenuOpen, setPlusMenuOpen] = useState(false)
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [slashFilter, setSlashFilter] = useState("")
   const [slashSelectedIdx, setSlashSelectedIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaChunksRef = useRef<BlobPart[]>([])
   const mediaStreamRef = useRef<MediaStream | null>(null)
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
   const documentInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
-    if (!quickPrompts.length && !agentCommands.length && slashMenuOpen) setSlashMenuOpen(false)
-  }, [quickPrompts.length, agentCommands.length, slashMenuOpen])
+  const handleSend = useCallback(() => {
+    if ((!inputValue.trim() && !hasFiles) || isLoading) return
+    onSend(inputValue.trim())
+    setInputValue("")
+    setSlashMenuOpen(false)
+  }, [inputValue, hasFiles, isLoading, onSend])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        if (!inputValue) setIsActive(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [inputValue])
-
-  const sendRef = useRef<() => void>(() => {})
-
-  // Keyboard shortcuts: Ctrl+Enter send, Ctrl+/ open plus menu
+  // Keybinds: Ctrl+Enter or Cmd+Enter to send, Ctrl+/ to attach
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "Enter") {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault()
-        sendRef.current()
+        handleSend()
       }
       if (e.ctrlKey && e.key === "/") {
         e.preventDefault()
-        setPlusMenuOpen((o) => !o)
+        documentInputRef.current?.click()
       }
     }
     window.addEventListener("keydown", handleGlobalKeyDown)
     return () => window.removeEventListener("keydown", handleGlobalKeyDown)
-  }, [])
+  }, [handleSend])
 
-  const handleActivate = () => setIsActive(true)
-
-  const handleSend = () => {
-    if ((!inputValue.trim() && !hasFiles) || isLoading) return
-    onSend(inputValue.trim())
-    setInputValue("")
-    setIsActive(false)
-    setSlashMenuOpen(false)
-  }
-
-  // Build the combined slash items list for filtering/keyboard navigation
-  const SLASH_ICON_MAP: Record<string, React.ElementType> = {
-    "shield-check": ShieldCheck,
-    "bar-chart-2": BarChart2,
-    "alert-triangle": AlertTriangle,
-    "link": Link,
-    "download": Download,
-    "search": Search,
-    "sparkles": Sparkles,
-    "wrench": Wrench,
-    "file-text": FileText,
-    "brain": Brain,
-  }
-
-  const filteredAgentCommands = useMemo(() => agentCommands.filter((cmd) =>
-    !slashFilter ||
-    cmd.command.toLowerCase().includes(slashFilter.toLowerCase()) ||
-    cmd.label.toLowerCase().includes(slashFilter.toLowerCase())
-  ), [agentCommands, slashFilter])
-
-  const filteredQuickPrompts = useMemo(() => quickPrompts.filter((qp) =>
-    !slashFilter || qp.label.toLowerCase().includes(slashFilter.toLowerCase())
-  ), [quickPrompts, slashFilter])
-
-  const totalSlashItems = filteredAgentCommands.length + filteredQuickPrompts.length
+  const filteredCommands = useMemo(() => {
+    const cmds = agentCommands.map(c => ({ id: c.command, name: c.command, description: c.description }))
+    const prompts = quickPrompts.map(q => ({ id: q.label, name: q.label, description: q.prompt }))
+    const all = [...cmds, ...prompts]
+    if (!slashFilter) return all
+    return all.filter(c => c.name.toLowerCase().includes(slashFilter.toLowerCase()))
+  }, [agentCommands, quickPrompts, slashFilter])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      if (slashMenuOpen && totalSlashItems > 0) {
-        // Select the highlighted slash item
-        if (slashSelectedIdx < filteredAgentCommands.length) {
-          const cmd = filteredAgentCommands[slashSelectedIdx]
+      if (slashMenuOpen && filteredCommands.length > 0) {
+        const selected = filteredCommands[slashSelectedIdx]
+        if (selected) {
           setSlashMenuOpen(false)
           setSlashFilter("")
           setSlashSelectedIdx(0)
-          setInputValue(cmd.label)
-          onSend(cmd.label)
-          setInputValue("")
-          setIsActive(false)
-        } else {
-          const qpIdx = slashSelectedIdx - filteredAgentCommands.length
-          const qp = filteredQuickPrompts[qpIdx]
-          if (qp) {
-            setSlashMenuOpen(false)
-            setSlashFilter("")
-            setSlashSelectedIdx(0)
-            setInputValue(qp.prompt)
+          
+          // If it's a command, append/send it.
+          const isCommand = agentCommands.some(c => c.command === selected.name)
+          if (isCommand) {
+            onSend(selected.description)
+          } else {
+            setInputValue(selected.description)
             requestAnimationFrame(() => textareaRef.current?.focus())
           }
         }
@@ -175,17 +120,14 @@ export const AIChatInput = ({
         e.preventDefault()
         setSlashMenuOpen(false)
         setSlashSelectedIdx(0)
-        return
       }
     }
-    // Arrow key navigation in slash menu
     if (slashMenuOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault()
       setSlashSelectedIdx((prev) => {
-        if (e.key === "ArrowDown") return Math.min(prev + 1, totalSlashItems - 1)
+        if (e.key === "ArrowDown") return Math.min(prev + 1, filteredCommands.length - 1)
         return Math.max(prev - 1, 0)
       })
-      return
     }
     if (e.key === "ArrowUp" && !inputValue.trim() && lastUserMessage) {
       e.preventDefault()
@@ -193,46 +135,56 @@ export const AIChatInput = ({
     }
   }
 
-  const resizeTextarea = useCallback((value: string) => {
+  const autoResize = () => {
     const el = textareaRef.current
     if (!el) return
     el.style.height = "auto"
-    const next = Math.min(el.scrollHeight, 140)
-    el.style.height = `${Math.max(next, 44)}px`
-  }, [])
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }
 
   useEffect(() => {
-    resizeTextarea(inputValue)
-  }, [inputValue, resizeTextarea])
+    autoResize()
+  }, [inputValue])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, _type: "photo" | "document") => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && onFileAttach) onFileAttach(file)
     e.target.value = ""
   }
 
-  const processFiles = useCallback(
-    (files: FileList | File[]) => {
-      const list = Array.from(files)
-      list.filter(isAcceptedFile).forEach((f) => onFileAttach?.(f))
-    },
-    [onFileAttach]
-  )
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    if (e.dataTransfer.files?.length) processFiles(e.dataTransfer.files)
+    if (e.dataTransfer.files?.length) {
+      const file = e.dataTransfer.files[0]
+      if (isAcceptedFile(file) && onFileAttach) {
+        onFileAttach(file)
+      }
+    }
   }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = "copy"
     setIsDragging(true)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    if (!wrapperRef.current?.contains(e.relatedTarget as Node)) setIsDragging(false)
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const file = item.getAsFile()
+        if (file && onFileAttach) {
+          e.preventDefault()
+          onFileAttach(file)
+          break
+        }
+      }
+    }
   }
 
   const startVoiceInput = useCallback(async () => {
@@ -243,11 +195,7 @@ export const AIChatInput = ({
       return
     }
     if (typeof window !== "undefined" && !window.isSecureContext && location.hostname !== "localhost") {
-      toast.error("Voice input requires HTTPS. Open this page over HTTPS to enable it.")
-      return
-    }
-    if (typeof MediaRecorder === "undefined") {
-      toast.error("Voice input isn't supported in this browser.")
+      toast.error("Voice input requires HTTPS.")
       return
     }
     try {
@@ -272,9 +220,7 @@ export const AIChatInput = ({
         try {
           const formData = new FormData()
           const file = new File([blob], "voice.webm", { type: blob.type })
-          const lang = typeof document !== "undefined" ? document.documentElement.lang : ""
           formData.append("audio", file)
-          if (lang) formData.append("language", lang === "ar" ? "ar" : "en")
           const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
           const res = await fetch("/api/horus/stt", {
             method: "POST",
@@ -285,19 +231,15 @@ export const AIChatInput = ({
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           })
-          if (!res.ok) {
-            const errData = await res.json().catch(() => null)
-            const detail = errData?.detail || "Voice input failed. Please try again."
-            throw new Error(detail)
-          }
+          if (!res.ok) throw new Error("STT Request failed")
           const data = await res.json()
           const text = (data?.text || "").trim()
           if (text) {
             setInputValue((prev) => (prev ? prev + " " + text : text))
             requestAnimationFrame(() => textareaRef.current?.focus())
           }
-        } catch (err: any) {
-          toast.error(err?.message || "Voice input failed. Please try again.")
+        } catch {
+          toast.error("Voice transcription failed.")
         } finally {
           setIsTranscribing(false)
         }
@@ -305,13 +247,8 @@ export const AIChatInput = ({
 
       recorder.start()
       setIsListening(true)
-      setPlusMenuOpen(false)
-    } catch (err: any) {
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
-        toast.error("Microphone access denied. Allow microphone and try again.")
-      } else {
-        toast.error("Could not access microphone.")
-      }
+    } catch {
+      toast.error("Could not access microphone.")
       setIsListening(false)
     }
   }, [isListening, isTranscribing])
@@ -323,323 +260,167 @@ export const AIChatInput = ({
     }
   }, [])
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items
-    if (!items) return
-    for (const item of items) {
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        const file = item.getAsFile()
-        if (file && onFileAttach) {
-          e.preventDefault()
-          onFileAttach(file)
-          break
-        }
-      }
-    }
-  }
-
-  sendRef.current = handleSend
-
+  const { isArabic } = useUiLanguage()
   const hasDraft = !!inputValue.trim() || hasFiles
-  const shellTone = isActive || inputValue
-    ? "border-border bg-background/96 shadow-[0_24px_56px_-46px_rgba(0,0,0,0.25)] dark:shadow-[0_24px_56px_-46px_rgba(0,0,0,0.92)]"
-    : "border-border/80 bg-background/92 shadow-[0_20px_44px_-40px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_44px_-40px_rgba(0,0,0,0.9)]"
-  const iconButtonClass = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
 
   return (
-    <div className="relative flex w-full flex-col items-center justify-center pb-1 pt-1 sm:pb-2">
+    <div className="relative flex w-full flex-col items-stretch pb-1 pt-1 sm:pb-2">
+      {header && <div className="mb-2 px-1">{header}</div>}
+
       <div
-        ref={wrapperRef}
-        style={{ overflow: "visible" }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "horus-input-shell relative z-[1] w-full max-w-[920px] overflow-visible rounded-[32px] border backdrop-blur-2xl transition-all duration-300",
-          shellTone,
-          isDragging && "ring-2 ring-primary/40 border-primary/50 bg-primary/5",
-          isLoading && "horus-input-shimmer"
+          "relative border border-[var(--chat-input-border)] rounded-xl px-3 py-2.5 flex items-end gap-2 bg-[var(--chat-input-bg)] transition-all duration-200 shadow-[var(--chat-input-shadow)] focus-within:bg-[var(--chat-input-bg-focus)] focus-within:border-[var(--chat-input-border-focus)] focus-within:shadow-[var(--chat-input-shadow-focus)]",
+          isDragging && "border-primary/50 bg-primary/5"
         )}
-        onClick={handleActivate}
       >
-        <div className="flex h-full w-full flex-col items-stretch">
-          {header && (
-            <div className="border-b border-border/50 px-4 py-2.5 sm:px-5">
-              {header}
+        {/* Attach Button */}
+        <button
+          onClick={() => documentInputRef.current?.click()}
+          className="w-7 h-7 rounded-md border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors duration-150 flex-shrink-0 mb-[1px]"
+          title={isArabic ? "إرفاق ملف (Ctrl+/)" : "Attach File (Ctrl+/)"}
+          aria-label={isArabic ? "إرفاق ملف" : "Attach File"}
+          type="button"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+        <input
+          ref={documentInputRef}
+          type="file"
+          className="hidden"
+          accept=".pdf,.docx,.doc,.txt,image/*"
+          onChange={handleFileChange}
+          aria-label={isArabic ? "إرفاق ملف" : "File upload"}
+        />
+
+        {/* Text Area */}
+        <div className="flex-1 relative overflow-visible">
+          {slashMenuOpen && filteredCommands.length > 0 && (
+            <div id="slash-command-menu" role="listbox" className="absolute bottom-full left-0 right-0 mb-3 border border-border/60 rounded-xl bg-background overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200 z-[60] max-h-[220px] overflow-y-auto">
+              {filteredCommands.map((cmd, idx) => (
+                <button
+                  key={cmd.id}
+                  id={`slash-command-${cmd.id}`}
+                  role="option"
+                  aria-selected={idx === slashSelectedIdx}
+                  type="button"
+                  onClick={() => {
+                    setSlashMenuOpen(false)
+                    setSlashFilter("")
+                    setSlashSelectedIdx(0)
+                    const isCommand = agentCommands.some(c => c.command === cmd.name)
+                    if (isCommand) {
+                      onSend(cmd.description)
+                    } else {
+                      setInputValue(cmd.description)
+                      requestAnimationFrame(() => textareaRef.current?.focus())
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-3 w-full px-4 py-2 text-left transition-colors duration-100",
+                    idx === slashSelectedIdx ? "bg-muted" : "hover:bg-muted/50"
+                  )}
+                >
+                  <span className="text-xs font-mono text-muted-foreground w-20">/{cmd.name}</span>
+                  <span className="text-xs text-foreground truncate">{cmd.description}</span>
+                </button>
+              ))}
             </div>
           )}
-          <div className="relative w-full px-3 pb-1.5 pt-2 sm:px-4">
-            {isDragging && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[22px] bg-primary/10 text-sm font-medium text-primary">
-                Drop files here
-              </div>
+
+          <textarea
+            ref={textareaRef}
+            dir="auto"
+            value={inputValue}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            disabled={disabled}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={slashMenuOpen}
+            aria-controls={slashMenuOpen ? "slash-command-menu" : undefined}
+            aria-activedescendant={slashMenuOpen && filteredCommands.length > 0 ? `slash-command-${filteredCommands[slashSelectedIdx]?.id}` : undefined}
+            placeholder={isArabic ? "اسأل عن أي شيء..." : "Ask anything…"}
+            onChange={(e) => {
+              const val = e.target.value
+              setInputValue(val)
+              const trimmedLeft = val.trimStart()
+              if (trimmedLeft.startsWith("/")) {
+                setSlashMenuOpen(true)
+                setSlashFilter(trimmedLeft.slice(1))
+                setSlashSelectedIdx(0)
+              } else {
+                setSlashMenuOpen(false)
+                setSlashFilter("")
+              }
+              if (onChange) onChange(val)
+            }}
+            className="w-full bg-transparent text-sm resize-none outline-none text-foreground placeholder:text-muted-foreground/60 min-h-[24px] max-h-[160px] leading-relaxed border-0 p-0 focus:ring-0"
+            rows={1}
+          />
+        </div>
+
+        {/* Voice and Send Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0 mb-[1px]">
+          <button
+            onClick={startVoiceInput}
+            className={cn(
+              "w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors duration-150",
+              isListening && "bg-destructive/10 text-destructive hover:bg-destructive/20 animate-pulse"
             )}
-            {isListening && (
-              <div className="absolute right-4 top-3 z-10 flex items-center gap-1 rounded-full border border-primary/15 bg-primary/12 px-2.5 py-1 text-[11px] font-medium text-primary">
-                <span className="flex gap-0.5">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <span
-                      key={i}
-                      className="w-1 rounded-full bg-primary animate-pulse"
-                      style={{ height: "6px", animationDelay: `${i * 100}ms`, animationDuration: "0.6s" }}
-                    />
-                  ))}
-                </span>
-                Recording…
-              </div>
-            )}
-            <div className="relative overflow-hidden px-1 py-0.5">
-            <textarea
-              value={inputValue}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              disabled={disabled}
-              placeholder={DEFAULT_PLACEHOLDER}
-              onChange={(e) => {
-                const nextValue = e.target.value
-                const trimmedLeft = nextValue.trimStart()
-                const isSlashMode = trimmedLeft.startsWith("/")
-                setInputValue(nextValue)
-                resizeTextarea(nextValue)
-                if (isSlashMode) {
-                  setSlashMenuOpen(true)
-                  setSlashFilter(trimmedLeft.slice(1))
-                  setSlashSelectedIdx(0)
-                } else {
-                  setSlashMenuOpen(false)
-                  setSlashFilter("")
-                }
-                if (onChange) onChange(nextValue)
-              }}
+            title={
+              isTranscribing
+                ? (isArabic ? "جاري النسخ..." : "Transcribing...")
+                : isListening
+                ? (isArabic ? "إيقاف التسجيل" : "Stop recording")
+                : (isArabic ? "إدخال صوتي" : "Voice input")
+            }
+            aria-label={
+              isTranscribing
+                ? (isArabic ? "جاري النسخ..." : "Transcribing...")
+                : isListening
+                ? (isArabic ? "إيقاف التسجيل" : "Stop recording")
+                : (isArabic ? "إدخال صوتي" : "Voice input")
+            }
+            type="button"
+            disabled={isTranscribing}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
+          {isLoading ? (
+            <button
+              onClick={onStop}
+              className="w-7 h-7 rounded-full border border-border/60 flex items-center justify-center hover:bg-muted/50 transition-all duration-150 text-destructive"
+              type="button"
+              title={isArabic ? "إيقاف الإنشاء" : "Stop generation"}
+              aria-label={isArabic ? "إيقاف الإنشاء" : "Stop generation"}
+            >
+              <Square className="w-3 h-3 fill-current" />
+            </button>
+          ) : (
+            <button
+              disabled={!hasDraft || isLoading}
+              onClick={handleSend}
               className={cn(
-                "horus-input-field w-full min-h-[38px] resize-none border-none bg-transparent pe-4 text-[14px] font-medium tracking-[0.01em] outline-none focus:border-none focus:outline-none focus:ring-0 sm:text-[15px] md:text-[16px]",
-                "text-foreground placeholder:text-muted-foreground/55"
+                "w-7 h-7 rounded-md flex items-center justify-center transition-all duration-150",
+                hasDraft
+                  ? "bg-foreground text-background hover:opacity-90 active:scale-95"
+                  : "bg-muted/50 text-muted-foreground opacity-40"
               )}
-              style={{
-                position: "relative",
-                zIndex: 1,
-                color: "var(--foreground)",
-                WebkitTextFillColor: "var(--foreground)",
-                caretColor: "var(--foreground)",
-              }}
-              onFocus={handleActivate}
-              ref={textareaRef}
-              rows={1}
-            />
-            {slashMenuOpen && (filteredAgentCommands.length > 0 || filteredQuickPrompts.length > 0) && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-[440px] overflow-hidden rounded-2xl border border-border bg-popover/98 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 px-3.5 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/15 text-primary">
-                      <Sparkles className="h-3 w-3" />
-                    </span>
-                    <span className="text-[12px] font-semibold text-foreground">Commands</span>
-                  </div>
-                  {(slashFilter || inputValue.trimStart().startsWith("/")) && (
-                    <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-                      /{slashFilter}
-                    </span>
-                  )}
-                  <span className="text-[10px] text-muted-foreground/60">↑↓ navigate · Enter select</span>
-                </div>
-
-                <div className="max-h-[320px] overflow-y-auto p-1.5 custom-scrollbar">
-                  {filteredAgentCommands.length > 0 && (
-                    <div className="mb-1">
-                      {filteredAgentCommands.map((cmd, idx) => {
-                        const CmdIcon = SLASH_ICON_MAP[cmd.icon] ?? Wrench
-                        const isSelected = idx === slashSelectedIdx
-                        return (
-                          <button
-                            key={cmd.command}
-                            type="button"
-                            onClick={() => {
-                              setSlashMenuOpen(false)
-                              setSlashFilter("")
-                              setSlashSelectedIdx(0)
-                              setInputValue(cmd.label)
-                              onSend(cmd.label)
-                              setInputValue("")
-                              setIsActive(false)
-                            }}
-                            className={cn(
-                              "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                              isSelected
-                                ? "border border-primary/20 bg-primary/10"
-                                : "border border-transparent hover:bg-white/[0.04]"
-                            )}
-                          >
-                            <span className={cn(
-                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors",
-                              isSelected
-                                ? "border-primary/25 bg-primary/15 text-primary"
-                                : "border-white/10 bg-white/[0.04] text-muted-foreground"
-                            )}>
-                              <CmdIcon className="h-4 w-4" />
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-semibold text-foreground">{cmd.label}</span>
-                                <span className="rounded-full border border-white/8 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground/70">/{cmd.command}</span>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-1">{cmd.description}</p>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {filteredQuickPrompts.length > 0 && (
-                    <>
-                      {filteredAgentCommands.length > 0 && (
-                        <div className="mx-2 my-1 h-px bg-white/8" />
-                      )}
-                      <div className="px-2 py-1">
-                        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 mb-1">Quick prompts</p>
-                      </div>
-                      {filteredQuickPrompts.map((item, idx) => {
-                        const globalIdx = filteredAgentCommands.length + idx
-                        const isSelected = globalIdx === slashSelectedIdx
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => {
-                              setSlashMenuOpen(false)
-                              setSlashFilter("")
-                              setSlashSelectedIdx(0)
-                              setInputValue(item.prompt)
-                              requestAnimationFrame(() => textareaRef.current?.focus())
-                            }}
-                            className={cn(
-                              "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors",
-                              isSelected
-                                ? "bg-primary/10 text-foreground"
-                                : "text-foreground hover:bg-white/[0.04]"
-                            )}
-                          >
-                            <span className="text-[13px]">{item.label}</span>
-                            <span className="text-[10px] text-muted-foreground/60">/{item.label}</span>
-                          </button>
-                        )
-                      })}
-                    </>
-                  )}
-
-                  {totalSlashItems === 0 && (
-                    <div className="px-3 py-6 text-center">
-                      <p className="text-[12px] text-muted-foreground">No commands match "/{slashFilter}"</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            </div>
-          </div>
-
-            <div className="flex flex-col gap-1 px-3 py-1.5 sm:px-4 pb-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-              <DropdownMenu open={plusMenuOpen} onOpenChange={setPlusMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={iconButtonClass}
-                    title="Add attachment or switch mode (Ctrl+/)"
-                    type="button"
-                  >
-                    <Plus size={20} strokeWidth={2} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top" className="min-w-[220px] p-1.5">
-                  <DropdownMenuItem
-                    onClick={() => photoInputRef.current?.click()}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-accent"
-                  >
-                    <Image className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span>Upload image</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => documentInputRef.current?.click()}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-accent"
-                  >
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span>Upload document</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <button
-                onClick={startVoiceInput}
-                className={cn(
-                  `${iconButtonClass} disabled:cursor-not-allowed disabled:opacity-40`,
-                  isListening
-                    ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                    : ""
-                )}
-                title={
-                  isTranscribing
-                    ? "Transcribing..."
-                    : isListening
-                      ? "Stop recording"
-                      : "Voice input"
-                }
-                type="button"
-                aria-label={isListening ? "Stop voice input" : "Start voice input"}
-                disabled={isTranscribing}
-              >
-                {isListening ? <MicOff size={20} strokeWidth={2} /> : <Mic size={20} strokeWidth={2} />}
-              </button>
-              <input
-                ref={photoInputRef}
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, "photo")}
-              />
-              <input
-                ref={documentInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,.docx,.doc,.txt"
-                onChange={(e) => handleFileChange(e, "document")}
-              />
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!isLoading ? (
-                  <button
-                    className={cn(
-                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-40",
-                      hasDraft
-                        ? "bg-primary text-primary-foreground shadow-[0_12px_26px_-12px_rgba(59,130,246,0.6)] hover:bg-primary/90 hover:shadow-[0_16px_30px_-12px_rgba(59,130,246,0.65)]"
-                        : "border border-white/8 bg-white/[0.04] text-muted-foreground"
-                    )}
-                    title="Send (Ctrl+Enter)"
-                    type="button"
-                    disabled={!hasDraft}
-                    onClick={handleSend}
-                  >
-                    <Send size={16} className="rotate-[-45deg]" />
-                  </button>
-                ) : (
-                  <button
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-destructive/20 bg-destructive/15 text-destructive hover:bg-destructive/25"
-                    onClick={onStop}
-                    type="button"
-                    title="Stop"
-                  >
-                    <StopCircle size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="min-w-0 text-muted-foreground">
-              {footer}
-            </div>
-          </div>
+              type="button"
+              title={isArabic ? "إرسال" : "Send"}
+              aria-label={isArabic ? "إرسال" : "Send"}
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
+
+      {footer && <div className="mt-2">{footer}</div>}
     </div>
   )
 }

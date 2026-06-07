@@ -9,7 +9,7 @@ import {
   FileText,
   BarChart,
   MessageSquare,
-  Sparkles,
+  ListChecks,
   ChevronRight
 } from "lucide-react"
 
@@ -61,24 +61,23 @@ export function SystemLog({
   }
 
   return (
-    <div className={cn("glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-6", className)}>
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
+    <div className={cn("glass-card glass-card-no-lift relative overflow-hidden rounded-[22px] p-5 sm:p-6", className)}>
       {showHeader && (
         <div className={cn("relative z-10 flex items-center justify-between mb-5 sm:mb-6", isArabic && "flex-row-reverse")}>
           <div className={cn("flex items-center gap-3", isArabic && "flex-row-reverse text-right")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] shadow-[0_18px_40px_-28px_rgba(59,130,246,0.5)]">
-              <Sparkles className="w-4 h-4 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)]">
+              <ListChecks className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">{isArabic ? "التدفق العصبي" : "Neural Stream"}</h3>
+              <h3 className="text-sm font-bold text-foreground">{isArabic ? "نشاط المنصة" : "Platform Activity"}</h3>
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
-                {isArabic ? "نشاط المنصة المباشر" : "Live Platform Activity"}
+                {isArabic ? "آخر التحديثات" : "Latest updates"}
               </p>
             </div>
           </div>
           <div className={cn("inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1", isArabic && "flex-row-reverse")}>
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--status-success)" }} title={isArabic ? "مباشر" : "Live"} />
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--status-success)]">{isArabic ? "مباشر" : "Live"}</span>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-success)" }} title={isArabic ? "متصل" : "Online"} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--status-success)]">{isArabic ? "متصل" : "Online"}</span>
           </div>
         </div>
       )}
@@ -92,7 +91,7 @@ export function SystemLog({
           </div>
         ) : visibleLogs.length === 0 ? (
           <div className="rounded-[24px] border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] px-4 py-10 text-center">
-            <p className="text-muted-foreground italic text-sm">
+            <p className="text-muted-foreground text-sm">
               {isArabic ? "لا يوجد نشاط مسجّل." : "No activity recorded."}
             </p>
           </div>
@@ -107,7 +106,7 @@ export function SystemLog({
                 className="group flex items-start gap-3 rounded-[24px] border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] p-3.5 transition-all hover:border-[var(--glass-border)] hover:bg-[var(--glass-soft-bg)] sm:gap-4 sm:p-4"
               >
                 <div className={cn(
-                  "w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-[0_18px_36px_-28px_rgba(0,0,0,0.45)]",
+                  "w-10 h-10 rounded-[14px] flex items-center justify-center flex-shrink-0 border",
                   style
                 )}>
                   <Icon className="w-4 h-4" />
@@ -125,7 +124,7 @@ export function SystemLog({
                     {log.description || (isArabic ? "تم رصد نشاط في نواة المنصة." : "Activity detected in platform core.")}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 mt-3 text-muted-foreground/60 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+                <ChevronRight className="w-4 h-4 mt-3 text-muted-foreground/60 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
             )
           })
@@ -136,7 +135,7 @@ export function SystemLog({
         <div className={cn("flex items-center gap-2", isArabic && "flex-row-reverse")}>
           <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.18em]">
-            {isArabic ? "نواة عين العصبية" : "Ayn Neural Core"}
+            {isArabic ? "سجل المنصة" : "Platform Log"}
           </span>
         </div>
         <span className="text-[9px] text-muted-foreground font-mono">{isArabic ? "تشفير 256 بت" : "256-BIT SECURE"}</span>

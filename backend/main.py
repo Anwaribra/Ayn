@@ -25,6 +25,8 @@ from app.dashboard.router import router as dashboard_router
 from app.notifications.router import router as notifications_router
 from app.platform_state.router import router as platform_state_router
 from app.compliance.router import router as compliance_router
+from app.demo_request.router import router as demo_request_router
+from app.access_request.router import router as access_request_router
 
 from app.horus.router import router as horus_router
 from app.institutions.router import router as institutions_router
@@ -97,9 +99,14 @@ app.include_router(notifications_router, prefix="/api/notifications", tags=["Not
 
 app.include_router(platform_state_router, prefix="/api")
 app.include_router(compliance_router, prefix="/api")
+app.include_router(demo_request_router, prefix="/api", tags=["Demo Request"])
+app.include_router(access_request_router, prefix="/api", tags=["Access Requests"])
 
 app.include_router(horus_router, prefix="/api", tags=["Horus"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
+
+from v2.main import v2_router
+app.include_router(v2_router, prefix="/api")
 
 
 @app.get("/")

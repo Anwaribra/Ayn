@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
 
 interface Insight {
   id: string
@@ -39,6 +40,55 @@ const insightColors = {
 }
 
 export function AIInsightsCard({ insights = [], isLoading }: AIInsightsCardProps) {
+  const { user } = useAuth()
+  const hasAccess = user?.horusAccess || user?.role === "ADMIN"
+
+  // Show locked state if no Horus access
+  if (!hasAccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <GlassCard className="border-border shadow-sm overflow-hidden relative">
+          <div className="absolute inset-0 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-xl bg-background/60">
+            <div className="flex flex-col items-center gap-2 text-center px-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Sparkles className="h-5 w-5 text-primary/60" />
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">Request Horus AI access to unlock insights</p>
+            </div>
+          </div>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand)]/10">
+                <Sparkles className="h-4 w-4 text-[var(--brand)]" />
+              </div>
+              <div>
+                <CardTitle className="text-base">AI Insights</CardTitle>
+                <p className="text-xs text-muted-foreground">Personalized recommendations from Horus AI</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 opacity-30 blur-[1px]">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-3 p-3 rounded-lg border border-border/50">
+                  <div className="h-8 w-8 shrink-0 rounded-lg bg-muted" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-24 rounded bg-muted" />
+                    <div className="h-2.5 w-full rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </GlassCard>
+      </motion.div>
+    )
+  }
+
   if (isLoading) {
     return (
       <motion.div

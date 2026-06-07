@@ -30,7 +30,7 @@ export function KPICard({
         indigo: "status-info",
         purple: "status-info",
     }
-    const iconBoxClass = cn("w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-sm border", colorStyles[color])
+    const iconBoxClass = cn("flex h-11 w-11 items-center justify-center rounded-[14px] border", colorStyles[color])
     const trendClass = cn(
         "text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 border",
         trend === "up" ? "status-success" : trend === "down" ? "status-critical" : "bg-muted text-muted-foreground border-border"
@@ -38,12 +38,12 @@ export function KPICard({
 
     return (
         <div className={cn(
-            "glass-panel p-6 rounded-2xl flex flex-col justify-between min-h-[160px] group hover:-translate-y-1 transition-transform duration-300",
+            "glass-panel flex min-h-[120px] flex-col justify-between rounded-xl p-4",
             className
         )}>
-            <div className="flex justify-between items-start mb-4">
-                <div className={iconBoxClass}>
-                    <Icon className="w-6 h-6" />
+            <div className="mb-3 flex items-start justify-between">
+                <div className={cn(iconBoxClass, "h-9 w-9 rounded-lg")}>
+                    <Icon className="h-4 w-4" />
                 </div>
                 {trend && (
                     <div className={trendClass}>
@@ -54,7 +54,7 @@ export function KPICard({
             </div>
 
             <div>
-                <div className="text-3xl font-black tracking-tight text-foreground mb-1">
+                <div className="platform-stat-value mb-0.5 text-foreground">
                     {value}
                 </div>
                 <div className="flex items-center justify-between">

@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Lightbulb, AlertTriangle, TrendingUp, ShieldCheck, ArrowRight, Sparkles, type LucideIcon } from "lucide-react"
+import { Lightbulb, AlertTriangle, TrendingUp, ArrowRight, Sparkles, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUiLanguage } from "@/lib/ui-language-context"
 
@@ -34,7 +33,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
   return (
     <div className="glass-panel relative overflow-hidden rounded-[28px] border-[var(--border-subtle)] p-5 sm:p-6 lg:p-7">
       <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.8),transparent)] opacity-70" />
-      <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute top-0 end-0 w-40 h-40 bg-primary/5 blur-3xl pointer-events-none" />
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-2xl status-info border flex items-center justify-center shadow-[0_18px_40px_-28px_rgba(37,99,235,0.45)]">
@@ -49,16 +48,13 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
         </div>
 
         <div className="space-y-3">
-          {insights.map((insight, i) => {
+          {insights.map((insight) => {
             const config = SEVERITY_CONFIG[insight.severity]
             return (
-              <motion.div
+              <div
                 key={insight.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
                 className={cn(
-                  "glass-surface flex cursor-default items-start gap-4 rounded-[22px] border p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                  "glass-surface flex cursor-default items-start gap-4 rounded-[18px] border p-4 transition-colors",
                   config.className
                 )}
               >
@@ -90,7 +86,7 @@ export function AnalyticsInsights({ insights }: AnalyticsInsightsProps) {
                     </p>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>

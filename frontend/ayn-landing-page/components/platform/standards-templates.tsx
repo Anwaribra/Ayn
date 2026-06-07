@@ -151,13 +151,13 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
               {/* Search & Filters */}
               <div className="p-6 border-b border-border space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search standards (e.g., ISO, NCAAA, AdvancED)..."
-                    className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-12 ps-11 pe-4 rounded-xl bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -258,7 +258,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
                               onClick={() => onSelect(template)}
                               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold"
                             >
-                              <Sparkles className="w-3.5 h-3.5 mr-2" />
+                              <Sparkles className="w-3.5 h-3.5 me-2" />
                               Import {template.name}
                             </Button>
                           </motion.div>
@@ -307,7 +307,7 @@ export function StandardsTemplatesButton({ onSelect }: { onSelect: (template: Te
         variant="outline"
         className="border-border hover:bg-muted text-muted-foreground"
       >
-        <BookOpen className="w-4 h-4 mr-2" />
+        <BookOpen className="w-4 h-4 me-2" />
         Browse Templates
       </Button>
       <StandardsTemplates

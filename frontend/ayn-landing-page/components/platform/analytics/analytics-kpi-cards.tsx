@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Brain, TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -26,20 +25,17 @@ interface KpiCardsProps {
 export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      {cards.map((card, i) => {
+      {cards.map((card) => {
         const TrendIcon = card.trend === "up" ? TrendingUp : card.trend === "down" ? TrendingDown : Minus
         const trendColor = card.trend === "up" ? "text-emerald-500" : card.trend === "down" ? "text-red-400" : "text-foreground/60"
 
         return (
-          <motion.div
+          <div
             key={card.id}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="glass-panel group relative overflow-hidden rounded-[24px] border-[var(--border-subtle)] p-5 sm:p-6 transition-all hover:-translate-y-0.5 hover:shadow-md"
+            className="glass-panel group relative overflow-hidden rounded-[20px] border-[var(--border-subtle)] p-5 transition-colors sm:p-6"
           >
             <div className="absolute inset-x-0 top-0 h-px opacity-60" style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }} />
-            <div className="absolute top-0 right-0 h-24 w-24 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: card.color }} />
+            <div className="absolute top-0 end-0 h-24 w-24 rounded-full blur-3xl pointer-events-none opacity-20" style={{ backgroundColor: card.color }} />
             <div className="relative z-10">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border shadow-[0_18px_34px_-26px_rgba(0,0,0,0.45)]" style={{ backgroundColor: `${card.color}15`, borderColor: `${card.color}30`, color: card.color }}>
@@ -53,7 +49,7 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
                 )}
               </div>
               <p className="text-3xl sm:text-[2rem] font-bold text-foreground tracking-tight leading-none">
-                {card.value}{card.suffix && <span className="ml-0.5 text-lg font-medium text-foreground/55">{card.suffix}</span>}
+                {card.value}{card.suffix && <span className="ms-0.5 text-lg font-medium text-foreground/55">{card.suffix}</span>}
               </p>
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/55">{card.label}</p>
               {card.description && (
@@ -69,7 +65,7 @@ export function AnalyticsKpiCards({ cards }: KpiCardsProps) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )
       })}
     </div>

@@ -54,7 +54,7 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <button onClick={copy} className="hover:text-foreground transition-colors p-1 rounded hover:bg-black/5" title="Copy">
+    <button onClick={copy} className="hover:text-foreground transition-colors p-1 rounded hover:bg-black/5" title="Copy" aria-label="Copy message">
       {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
     </button>
   );
@@ -218,7 +218,7 @@ export function HorusChat() {
   return (
     <div className="flex flex-col h-full w-full max-w-4xl mx-auto p-4 md:p-6 lg:p-8 bg-transparent">
       {/* ─── Messages Area ─── */}
-      <div className="flex-1 overflow-y-auto pr-2 space-y-6 pb-4 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto pr-2 space-y-6 pb-4 scrollbar-thin" aria-live="polite" aria-atomic="false">
         {messages.map((message) => {
           const text = getMessageText(message.content);
           // Get attached files if they are available
@@ -280,7 +280,7 @@ export function HorusChat() {
 
         {/* ─── Loading State ─── */}
         {isLoading && (
-          <div className="flex justify-start">
+          <div className="flex justify-start" aria-live="polite" aria-atomic="true">
             <div className="flex gap-3 max-w-[85%] flex-row">
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-xs">
                 H
@@ -323,6 +323,7 @@ export function HorusChat() {
                   <button
                     onClick={() => removeFile(file.id)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+                    aria-label={`Remove ${file.file.name}`}
                   >
                     <X size={14} />
                   </button>
@@ -348,6 +349,7 @@ export function HorusChat() {
               disabled={isLoading || attachedFiles.length >= 3}
               className="absolute left-3 bottom-3 p-2 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 z-10 bg-transparent rounded-lg hover:bg-black/5"
               title="Attach File"
+              aria-label="Attach File"
             >
               <Paperclip size={20} />
             </button>
@@ -372,6 +374,7 @@ export function HorusChat() {
               type="submit"
               disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
               className="absolute right-3 bottom-3 p-2 text-white bg-primary hover:bg-primary/90 rounded-xl transition-all disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground z-10 flex items-center justify-center scale-95 hover:scale-100"
+              aria-label="Send message"
             >
               <Send size={18} />
             </button>

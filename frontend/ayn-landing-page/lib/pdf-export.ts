@@ -169,7 +169,7 @@ export const exportToPDF = async (
         height: clone.scrollHeight,
         windowWidth: clone.scrollWidth,
         windowHeight: clone.scrollHeight,
-      });
+      } as any);
 
       const imageData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
@@ -226,7 +226,7 @@ export const exportToPDF = async (
         useCORS: true,
         backgroundColor: bgColor,
         logging: false,
-      });
+      } as any);
 
       downloadFallbackSnapshot(fallbackCanvas.toDataURL("image/png"), filename);
       exportedFallbackSnapshot = true;

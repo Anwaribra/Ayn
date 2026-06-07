@@ -11,6 +11,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { cn } from "@/lib/utils"
+import { useUiLanguage } from "@/lib/ui-language-context"
 
 export interface HeaderBreadcrumbItem {
   label: string
@@ -20,23 +22,15 @@ export interface HeaderBreadcrumbItem {
 interface HeaderProps {
   title: string
   description?: string
-  /** Optional inline breadcrumbs (auto-breadcrumbs are in the shell header bar). */
   breadcrumbs?: HeaderBreadcrumbItem[]
   actions?: React.ReactNode
 }
 
-/**
- * Page-level header for titles, descriptions, and actions.
- *
- * The shell top bar already provides auto-breadcrumbs and global controls
- * (search, notifications, user menu), so this component focuses on
- * page-specific context only. Breadcrumbs here are optional and
- * displayed only when explicitly provided for sub-page navigation.
- */
 export function Header({ title, description, breadcrumbs, actions }: HeaderProps) {
+  const { isArabic } = useUiLanguage()
   return (
     <header className="px-4 pb-2 pt-6 md:px-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between" dir={isArabic ? "rtl" : "ltr"}>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <Breadcrumb className="mb-1">
             <BreadcrumbList>
@@ -53,7 +47,7 @@ export function Header({ title, description, breadcrumbs, actions }: HeaderProps
                   </BreadcrumbItem>
                   {i < breadcrumbs.length - 1 && (
                     <BreadcrumbSeparator>
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className={cn("h-4 w-4", isArabic && "rotate-180")} />
                     </BreadcrumbSeparator>
                   )}
                 </React.Fragment>
@@ -61,19 +55,11 @@ export function Header({ title, description, breadcrumbs, actions }: HeaderProps
             </BreadcrumbList>
           </Breadcrumb>
         )}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold text-foreground">
-            {title}
-          </h1>
-          {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          )}
+        <div className={cn("min-w-0 flex-1", isArabic && "font-arabic")}>
+          <h1 className="truncate text-3xl font-black tracking-tight text-foreground">{title}</h1>
+          {description && <p className="mt-1 text-base text-foreground/80">{description}</p>}
         </div>
-        {actions && (
-          <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-            {actions}
-          </div>
-        )}
+        {actions && <div className="flex flex-shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </header>
   )

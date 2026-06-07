@@ -1,36 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Noto_Sans_Arabic, Sora, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { UiLanguageProvider } from "@/lib/ui-language-context"
+import { Cairo } from "next/font/google"
 import "./globals.css"
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-cairo",
+  display: "swap",
 })
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  weight: ["400", "500", "600"],
-})
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-})
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
-  variable: "--font-arabic",
-})
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["600", "700", "800"],
-})
+
 
 const siteDescription =
   "Powered by Horus Engine for ISO 21001 & NAQAAE Standards. The comprehensive platform for educational quality assurance and compliance excellence."
@@ -62,7 +47,11 @@ export const metadata: Metadata = {
     description: siteDescription,
   },
   icons: {
-    icon: "/ayn-icon.svg",
+    icon: [
+      { url: "/ayn-icon.svg", type: "image/png", sizes: "any" },
+      { url: "/icon.svg", type: "image/png", sizes: "any" },
+    ],
+    shortcut: [{ url: "/ayn-icon.svg", type: "image/png", sizes: "any" }],
     apple: "/apple-icon.png",
   },
 }
@@ -74,9 +63,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans antialiased ${inter.variable} ${geist.variable} ${geistMono.variable} ${notoSansArabic.variable} ${sora.variable}`}>
+      <body suppressHydrationWarning className={`font-sans antialiased ${cairo.variable}`}>
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange storageKey="ayn-theme">
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange storageKey="ayn-theme">
             <UiLanguageProvider>
               {children}
               <Toaster richColors position="top-right" />

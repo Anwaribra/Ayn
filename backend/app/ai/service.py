@@ -413,6 +413,7 @@ class OpenRouterClient:
                 {"role": "system", "content": system_prompt},
                 *[{"role": m["role"], "content": m["content"]} for m in messages],
             ],
+            "max_tokens": 4096,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -484,6 +485,7 @@ class OpenRouterClient:
                 *[{"role": m["role"], "content": m["content"]} for m in messages],
             ],
             "stream": True,
+            "max_tokens": 4096,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -565,6 +567,7 @@ class OpenRouterClient:
                 {"role": "system", "content": system_instruction},
                 user_message,
             ],
+            "max_tokens": 4096,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -610,6 +613,7 @@ class OpenRouterClient:
             "model": self.model,
             "messages": [{"role": "system", "content": system_instruction}, user_message],
             "stream": True,
+            "max_tokens": 4096,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",

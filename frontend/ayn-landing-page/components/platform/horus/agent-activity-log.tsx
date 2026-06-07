@@ -59,7 +59,7 @@ export function AgentActivityLog({ messages, open, onOpenChange, trigger }: Agen
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[380px] border-l border-white/8 bg-[rgba(8,10,16,0.97)] p-0 backdrop-blur-xl sm:w-[420px]"
+        className="w-[380px] border-l border-white/8 bg-background p-0 sm:w-[420px]"
       >
         {/* Header */}
         <div className="border-b border-white/8 px-5 py-4">

@@ -32,6 +32,7 @@ import {
   Layers3,
   ShieldCheck,
   SlidersHorizontal,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react"
 import type { Standard, Evidence } from "@/types"
@@ -71,30 +72,35 @@ function getStatusBadge(status: DerivedStatus, isArabic: boolean) {
     case "strong":
       return {
         label: isArabic ? "قوي" : "Strong",
+        icon: CheckCircle2,
         className:
           "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success)]",
       }
     case "partial":
       return {
         label: isArabic ? "جزئي" : "Partial",
+        icon: AlertCircle,
         className:
           "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning)]",
       }
     case "critical":
       return {
         label: isArabic ? "حرج" : "Critical",
+        icon: XCircle,
         className:
           "border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] text-[var(--status-critical)]",
       }
     case "analyzing":
       return {
         label: isArabic ? "قيد التحليل" : "Analyzing",
+        icon: Loader2,
         className:
           "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-[var(--status-info)]",
       }
     default:
       return {
         label: isArabic ? "لم يبدأ" : "Not Started",
+        icon: Circle,
         className: "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground",
       }
   }
@@ -291,6 +297,7 @@ export default function StandardsPage() {
 
   // Evidence Selection State
   const [evidenceSelection, setEvidenceSelection] = useState<"all" | "specific">("all")
+  const [showAllFrameworks, setShowAllFrameworks] = useState(false)
   const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([])
 
   const { data: allEvidence } = useSWR<Evidence[]>(isDetailsOpen ? "evidence" : null, () => api.getEvidence())
@@ -435,6 +442,13 @@ export default function StandardsPage() {
     sortBy,
   ])
 
+  const topStandards = useMemo(() => filteredStandards.slice(0, 2), [filteredStandards])
+  const restStandards = useMemo(() => filteredStandards.slice(2), [filteredStandards])
+  const visibleStandards = useMemo(
+    () => showAllFrameworks ? filteredStandards : topStandards,
+    [filteredStandards, topStandards, showAllFrameworks],
+  )
+
   const handlePDFUpload = async () => {
     if (!selectedFile) return
     setIsImporting(true)
@@ -474,7 +488,7 @@ export default function StandardsPage() {
                   type="button"
                   onClick={() => setIsPDFModalOpen(true)}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)] transition-all hover:bg-primary/90 hover:scale-[1.02]",
+                    "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90",
                     isArabic && "flex-row-reverse",
                   )}
                 >
@@ -485,14 +499,14 @@ export default function StandardsPage() {
             }
           />
 
-          <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8", isArabic && "font-arabic")}>
-            <section className="glass-card relative overflow-hidden rounded-[32px] p-5 sm:p-7 lg:p-8">
-              <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.16),transparent_70%)] blur-3xl" />
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.45),transparent)]" />
+          <div className={cn("mx-auto flex w-full platform-container-wide flex-col gap-6 px-4 pb-12 pt-3 md:px-6 xl:px-8", isArabic && "font-arabic")} dir={isArabic ? "rtl" : "ltr"}>
+            <section className="relative overflow-hidden rounded-[32px] border border-border bg-card/50 p-5 shadow-sm backdrop-blur-md sm:p-7 lg:p-8 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="pointer-events-none absolute end-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.12),transparent_70%)] blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
               <div className="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_440px]">
                 <div className="space-y-5">
-                  <div className={cn("inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary", isArabic && "flex-row-reverse")}>
+                  <div className={cn("inline-flex items-center gap-2 rounded-full border border-[var(--status-info-border)] bg-[var(--status-info-bg)] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-primary", isArabic && "flex-row-reverse")}>
                     <ShieldCheck className="h-3.5 w-3.5" />
                     {isArabic ? "ذكاء المعايير" : "Standards Intelligence"}
                   </div>
@@ -511,26 +525,26 @@ export default function StandardsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-sm dark:bg-white/[0.02] dark:border-white/8">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-foreground/70">
                         {isArabic ? "معايير نشطة" : "Active Standards"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-foreground">{publicStandards.length}</p>
                     </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-sm dark:bg-white/[0.02] dark:border-white/8">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-foreground/70">
                         {isArabic ? "نقاط المعايير" : "Criteria Points"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-foreground">{totalCriteria}</p>
                     </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-sm dark:bg-white/[0.02] dark:border-white/8">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-foreground/70">
                         {isArabic ? "تم تحليلها" : "Analyzed"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-[var(--status-success)]">{analyzedFrameworks}</p>
                     </div>
-                    <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-soft-bg)] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-sm dark:bg-white/[0.02] dark:border-white/8">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-foreground/70">
                         {isArabic ? "متوسط التغطية" : "Avg Coverage"}
                       </p>
                       <p className="mt-2 text-2xl font-black text-primary">{averageCoverage}%</p>
@@ -539,11 +553,11 @@ export default function StandardsPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                    <div className="rounded-[28px] border border-border bg-card/80 p-5 shadow-sm backdrop-blur-sm dark:bg-white/[0.04] dark:border-white/10">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                          {isArabic ? "أضعف إطار" : "Weakest Framework"}
+                        <p className="text-xs font-bold tracking-[0.18em] text-muted-foreground">
+                          {isArabic ? "أضعف إطار" : "Weakest framework"}
                         </p>
                         <h3 className="mt-2 text-xl font-bold text-foreground">
                           {weakestStandard?.title ??
@@ -559,13 +573,13 @@ export default function StandardsPage() {
                               : "Import a framework or start analysis to surface readiness signals."}
                         </p>
                       </div>
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)]">
-                        <Activity className="h-5 w-5 text-[var(--status-critical)]" />
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)]">
+                        <Activity className="h-5 w-5 text-muted-foreground" />
                       </div>
                     </div>
                     {weakestStandard && (
                       <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-3 py-2.5">
-                        <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--status-critical-border)] bg-[var(--status-critical-bg)] px-2 py-0.5 text-xs font-bold text-[var(--status-critical)]">
                           {Math.round(insightsById.get(weakestStandard.id)?.coveragePct ?? 0)}%
                           {isArabic ? " تغطية" : " coverage"}
                         </span>
@@ -580,14 +594,14 @@ export default function StandardsPage() {
                     )}
                   </div>
 
-                  <div className="rounded-[28px] border border-[var(--glass-border)] bg-[linear-gradient(180deg,var(--glass-soft-bg),color-mix(in_srgb,var(--glass-soft-bg)_72%,transparent))] p-5">
+                  <div className="rounded-[28px] border border-border bg-card/80 p-5 shadow-sm backdrop-blur-sm dark:bg-white/[0.04] dark:border-white/10">
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)]">
                         <Layers3 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                          {isArabic ? "لمحة المكتبة" : "Library Snapshot"}
+                        <p className="text-xs font-bold tracking-[0.18em] text-muted-foreground">
+                          {isArabic ? "لمحة المكتبة" : "Library snapshot"}
                         </p>
                         <p className="mt-1 text-sm font-medium text-muted-foreground">
                           {isArabic
@@ -600,8 +614,7 @@ export default function StandardsPage() {
                       {categories.slice(0, 4).map((category) => (
                         <span
                           key={category}
-                          className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
-                        >
+                          className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {category}
                         </span>
                       ))}
@@ -617,7 +630,7 @@ export default function StandardsPage() {
                 <Search
                   className={cn(
                     "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
-                    isArabic ? "right-4" : "left-4",
+                    "end-4",
                   )}
                 />
                 <input
@@ -626,8 +639,8 @@ export default function StandardsPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={cn(
-                    "glass-input h-11 w-full rounded-xl text-sm",
-                    isArabic ? "pr-11 pl-4" : "pl-11 pr-4",
+                    "glass-input h-11 w-full rounded-2xl text-sm",
+                    "ps-11 pe-4",
                   )}
                 />
               </div>
@@ -645,24 +658,24 @@ export default function StandardsPage() {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all",
+                      "rounded-2xl border px-3 py-1.5 text-xs font-semibold transition-all",
                       activeTab === tab.id
                         ? "border-primary/40 bg-primary/10 text-primary"
-                        : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                        : "border-[var(--glass-border-subtle)] bg-[var(--glass-soft-bg)] text-muted-foreground hover:border-primary/25 hover:text-foreground",
                     )}
                   >
                     {tab.label}
                   </button>
                 ))}
 
-                <div className="mx-1 h-4 w-px bg-[var(--glass-border)]" />
+                <div className="mx-1 h-4 w-px bg-[var(--glass-border-subtle)]" />
 
                 {/* Compact filter selects */}
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className={cn(
-                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    "glass-input h-8 rounded-2xl px-2.5 text-xs font-medium",
                     selectedStatus !== "all" && "border-primary/40 bg-primary/8 text-primary",
                   )}
                 >
@@ -678,7 +691,7 @@ export default function StandardsPage() {
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className={cn(
-                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    "glass-input h-8 rounded-2xl px-2.5 text-xs font-medium",
                     selectedCategory !== "all" && "border-primary/40 bg-primary/8 text-primary",
                   )}
                 >
@@ -692,7 +705,7 @@ export default function StandardsPage() {
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value)}
                   className={cn(
-                    "glass-input h-8 rounded-lg px-2.5 text-xs font-medium",
+                    "glass-input h-8 rounded-2xl px-2.5 text-xs font-medium",
                     selectedRegion !== "all" && "border-primary/40 bg-primary/8 text-primary",
                   )}
                 >
@@ -705,7 +718,7 @@ export default function StandardsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="glass-input h-8 rounded-lg px-2.5 text-xs font-medium"
+                  className="glass-input h-8 rounded-2xl px-2.5 text-xs font-medium"
                 >
                   <option value="weakest">{copy.sortWeakest}</option>
                   <option value="strongest">{copy.sortStrongest}</option>
@@ -713,21 +726,23 @@ export default function StandardsPage() {
                   <option value="alphabetical">{copy.sortAZ}</option>
                 </select>
 
-                <span className={cn("ms-auto text-[11px] font-medium text-muted-foreground", isArabic && "ms-0 me-auto")}>
+                <span className={cn("ms-auto text-xs font-medium text-muted-foreground", isArabic && "ms-0 me-auto")}>
                   {filteredStandards.length} {copy.visible}
                 </span>
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+            <section className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-5">
               {isLoading || insightsLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="h-[320px] animate-pulse rounded-[32px] glass-panel glass-border" />
                 ))
-              ) : filteredStandards.length > 0 ? (
-                filteredStandards.map((standard) => {
+              ) : visibleStandards.length > 0 ? (
+                  visibleStandards.map((standard) => {
                   const insight = insightsById.get(standard.id)
                   const badge = getStatusBadge(insight?.derivedStatus ?? "unmapped", isArabic)
+                  const isUnmapped = insight?.derivedStatus === "unmapped" || !insight
+                  const isRecommended = weakestStandard?.id === standard.id
 
                   return (
                     <GlassCard
@@ -735,9 +750,18 @@ export default function StandardsPage() {
                       variant={2}
                       hoverEffect
                       shine
-                      className="group rounded-[32px] p-6 glass-border"
+                      className={cn(
+                        "group cursor-pointer rounded-[32px] p-6 transition-all border border-border bg-card shadow-sm hover:border-primary/30 hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-primary/40",
+                        isUnmapped && "opacity-70",
+                      )}
                     >
-                      <div className="relative z-10 flex h-full flex-col">
+                      <div
+                        className="relative z-10 flex h-full flex-col"
+                        onClick={() => openDetails(standard)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter") openDetails(standard) }}
+                      >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex min-w-0 items-start gap-4">
                             <div
@@ -750,51 +774,49 @@ export default function StandardsPage() {
                             </div>
                             <div className="min-w-0 space-y-2">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                                <span className="rounded-full border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] px-2 py-1 text-xs font-black uppercase tracking-[0.18em] text-primary">
                                   {standard.code || "STD-LIB"}
                                 </span>
                                 <span
                                   className={cn(
-                                    "rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                                    "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-black uppercase tracking-[0.18em]",
                                     badge.className,
                                   )}
                                 >
+                                  <badge.icon className="h-3 w-3" />
                                   {badge.label}
                                 </span>
+                                {isRecommended && (
+                                  <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
+                                    {isArabic ? "موصى به" : "Recommended"}
+                                  </span>
+                                )}
                               </div>
-                              <h3 className="line-clamp-2 text-[22px] font-black leading-tight text-foreground transition-colors group-hover:text-primary">
+                              <h3 className="line-clamp-2 text-2xl font-black leading-tight text-foreground transition-colors group-hover:text-primary">
                                 {getStandardDisplayTitle(standard, isArabic)}
                               </h3>
                             </div>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => openDetails(standard)}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--glass-border-subtle)] bg-[var(--glass-bg)] text-muted-foreground transition-colors hover:text-primary"
-                            aria-label={`Quick preview ${getStandardDisplayTitle(standard, isArabic)}`}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
                         </div>
 
                         {standard.description && (
-                          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                          <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-foreground/70">
                             {extractLocalizedText(standard.description, isArabic)}
                           </p>
                         )}
 
                         <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-                          <span className="font-medium">{standard.criteriaCount} {copy.criteriaLabel}</span>
+                          <span className="font-bold text-foreground/80">{standard.criteriaCount} {copy.criteriaLabel}</span>
                           {standard.category && (
                             <>
-                              <span className="opacity-30">·</span>
+                              <span className="opacity-60">·</span>
                               <span>{formatFilterLabel(standard.category)}</span>
                             </>
                           )}
                           {standard.region && (
                             <>
-                              <span className="opacity-30">·</span>
+                              <span className="opacity-60">·</span>
                               <span>{formatFilterLabel(standard.region, "Global")}</span>
                             </>
                           )}
@@ -821,14 +843,14 @@ export default function StandardsPage() {
                           {insight?.derivedStatus === "unmapped" || !insight ? (
                             <>
                               <Button
-                                onClick={() => openDetails(standard)}
+                                onClick={(e) => { e.stopPropagation(); openDetails(standard); }}
                                 className="h-9 flex-1 rounded-xl bg-primary text-xs text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)]"
                               >
                                 {copy.analyzeNow}
                               </Button>
                               <button
                                 type="button"
-                                onClick={() => router.push(`/platform/standards/${standard.id}`)}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/platform/standards/${standard.id}`); }}
                                 className="text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
                               >
                                 {copy.browse}
@@ -837,14 +859,14 @@ export default function StandardsPage() {
                           ) : (
                             <>
                               <Button
-                                onClick={() => router.push(`/platform/standards/${standard.id}`)}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/platform/standards/${standard.id}`); }}
                                 className="h-9 flex-1 rounded-xl bg-primary text-xs text-primary-foreground shadow-[0_8px_20px_-10px_rgba(37,99,235,0.45)]"
                               >
                                 {copy.openStandard}
                               </Button>
                               <button
                                 type="button"
-                                onClick={() => router.push(`/platform/gap-analysis?standardId=${standard.id}`)}
+                                onClick={(e) => { e.stopPropagation(); router.push(`/platform/gap-analysis?standardId=${standard.id}`); }}
                                 className="text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
                               >
                                 {copy.gapAnalysis}
@@ -856,7 +878,22 @@ export default function StandardsPage() {
                     </GlassCard>
                   )
                 })
-              ) : (
+              ) : null}
+              {filteredStandards.length > 2 && (
+                <div className="col-span-full flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllFrameworks(!showAllFrameworks)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-white/[0.07] transition-colors"
+                  >
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAllFrameworks && "rotate-180")} />
+                    {showAllFrameworks
+                      ? (isArabic ? "عرض أقل" : "Show fewer")
+                      : (isArabic ? `عرض الكل (${filteredStandards.length})` : `Show all (${filteredStandards.length})`)}
+                  </button>
+                </div>
+              )}
+              {visibleStandards.length === 0 && filteredStandards.length === 0 && (
                 <GlassPanel className="col-span-full rounded-[32px] border-2 border-dashed glass-border py-20 text-center" hoverEffect>
                   <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl glass-input shadow-sm">
                     <Search className="h-8 w-8 text-muted-foreground/50" />
@@ -892,7 +929,7 @@ export default function StandardsPage() {
                   isDragOver && "scale-[1.02] border-primary/50 ring-4 ring-primary/20 shadow-primary/20",
                 )}
               >
-                <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+                <div className="absolute end-0 top-0 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 
                 <div className="flex flex-col items-center space-y-6 text-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-primary/10">
@@ -938,7 +975,7 @@ export default function StandardsPage() {
                             e.preventDefault()
                             setSelectedFile(null)
                           }}
-                          className="relative z-10 mt-2 text-[10px] font-bold uppercase text-destructive underline underline-offset-4"
+                          className="relative z-10 mt-2 text-xs font-bold uppercase text-destructive underline underline-offset-4"
                         >
                           {copy.changeFile}
                         </button>
@@ -972,12 +1009,12 @@ export default function StandardsPage() {
                     >
                       {isImporting ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="me-2 h-4 w-4 animate-spin" />
                           {copy.processing}
                         </>
                       ) : (
                         <>
-                          <FileCheck className="mr-2 h-4 w-4" />
+                          <FileCheck className="me-2 h-4 w-4" />
                           {copy.uploadExtract}
                         </>
                       )}
@@ -997,12 +1034,12 @@ export default function StandardsPage() {
                   {/* Close button absolutely positioned on mobile to save space from the top */}
                   <button
                     onClick={() => setIsDetailsOpen(false)}
-                    className="absolute right-4 top-4 sm:hidden glass-button h-9 w-9 rounded-xl flex items-center justify-center p-0 transition-all z-10"
+                    className="absolute end-4 top-4 sm:hidden glass-button h-9 w-9 rounded-xl flex items-center justify-center p-0 transition-all z-10"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
 
-                  <div className="min-w-0 space-y-5 flex-1 pr-10 sm:pr-0 w-full">
+                  <div className="min-w-0 space-y-5 flex-1 pe-10 sm:pe-0 w-full">
                     <div className="flex items-start gap-4 sm:gap-5">
                       <div
                         className={cn(
@@ -1017,15 +1054,15 @@ export default function StandardsPage() {
                           {selectedStandard.title}
                         </h3>
                         <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:gap-3 opacity-90">
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                          <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">
                             {selectedStandard.code || "STD-LIB"}
                           </span>
                           <div className="hidden sm:block h-1 w-1 rounded-full bg-border" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground break-keep">
+                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground break-keep">
                             {formatFilterLabel(selectedStandard.category)}
                           </span>
                           <div className="hidden sm:block h-1 w-1 rounded-full bg-border" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground break-keep">
+                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground break-keep">
                             {formatFilterLabel(selectedStandard.region, "Global")}
                           </span>
                         </div>
@@ -1034,13 +1071,13 @@ export default function StandardsPage() {
 
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.criteriaLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">{selectedStandard.criteriaCount}</p>
                       </div>
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.coverageLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-primary">
@@ -1048,12 +1085,12 @@ export default function StandardsPage() {
                         </p>
                       </div>
                       <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3.5 py-2.5 flex-1 min-w-[90px] sm:flex-none">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
                           {copy.mappedLabel}
                         </p>
                         <p className="mt-1 text-lg font-black text-foreground">
                           {selectedInsight?.mapped ?? 0}
-                          <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                          <span className="ms-1 text-xs font-semibold text-muted-foreground">
                             / {selectedInsight?.totalMapped ?? selectedStandard.criteriaCount}
                           </span>
                         </p>
@@ -1061,7 +1098,7 @@ export default function StandardsPage() {
                       {(() => {
                         const badge = getStatusBadge(selectedInsight?.derivedStatus ?? "unmapped", isArabic)
                         return (
-                          <span className={cn("rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] mt-1 sm:mt-0", badge.className)}>
+                          <span className={cn("rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] mt-1 sm:mt-0", badge.className)}>
                             {badge.label}
                           </span>
                         )
@@ -1104,7 +1141,7 @@ export default function StandardsPage() {
                     />
                   </div>
 
-                  <h4 className="mb-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+                  <h4 className="mb-5 flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">
                     <Activity className="h-4 w-4 text-primary" />
                     {copy.evidenceMapping}
                   </h4>
@@ -1129,7 +1166,7 @@ export default function StandardsPage() {
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2">
                                     {mapping.criterion_code && mapping.criterion_code !== "N/A" && (
-                                      <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-black uppercase text-primary">
+                                      <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-black uppercase text-primary">
                                         {mapping.criterion_code}
                                       </span>
                                     )}
@@ -1144,7 +1181,7 @@ export default function StandardsPage() {
                                   </p>
                                 </div>
                               </div>
-                              <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", statusMeta.badgeClass)}>
+                              <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider", statusMeta.badgeClass)}>
                                 {isArabic ? statusMeta.labelAr : statusMeta.label}
                               </span>
                             </div>

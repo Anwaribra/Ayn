@@ -29,12 +29,12 @@ export function CircularGauge({
 
     return (
         <div 
-            className={cn("relative flex items-center justify-center", className)}
+            className={cn("relative flex items-center justify-center w-32 h-32", className)}
             role="img"
             aria-label={`${label}: ${value}${sublabel ? ' ' + sublabel : ''}`}
         >
             {/* SVG Container */}
-            <div className="relative w-32 h-32" aria-hidden="true">
+            <div className="relative w-full h-full" aria-hidden="true">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
                     {/* Background Ring */}
                     <circle

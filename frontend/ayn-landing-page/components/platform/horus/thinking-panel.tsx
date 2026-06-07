@@ -35,7 +35,7 @@ function renderLinkedText(text: string) {
               {part}
             </a>
           </HoverCardTrigger>
-          <HoverCardContent side="top" align="start" className="glass-flyout glass-text-primary z-50 w-64 p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
+          <HoverCardContent side="top" align="start" className="bg-card border-border shadow-lg z-50 w-64 p-4 data-[state=open]:animate-in data-[state=closed]:animate-out">
              <div className="flex items-start gap-3">
                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                  <FileText className="w-4 h-4 text-primary" />
@@ -45,7 +45,7 @@ function renderLinkedText(text: string) {
                   <p className="text-[10px] uppercase font-bold text-muted-foreground mt-1 tracking-wider">Known Evidence</p>
                </div>
              </div>
-             <div className="glass-border mt-3 border-t pt-3">
+             <div className="mt-3 border-t border-border pt-3">
                 <p className="text-xs text-muted-foreground">Click to open this file natively inside the platform Evidence Vault Split-View.</p>
              </div>
           </HoverCardContent>
@@ -56,7 +56,7 @@ function renderLinkedText(text: string) {
   });
 }
 
-function ThinkingOrb({ isComplete }: { isComplete: boolean }) {
+function ThinkingOrb({ isComplete, status }: { isComplete: boolean; status?: string }) {
   if (isComplete) {
     return (
       <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/10 shrink-0 border border-emerald-500/20">
@@ -67,14 +67,7 @@ function ThinkingOrb({ isComplete }: { isComplete: boolean }) {
 
   return (
     <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 shrink-0 border border-primary/20">
-      <div className="absolute inset-0 rounded-xl bg-primary/20 animate-ping opacity-40" />
-      <div className="absolute inset-[-4px] rounded-2xl opacity-50"
-        style={{
-          background: "conic-gradient(from 0deg, transparent 0%, rgba(59,130,246,0.3) 25%, transparent 50%, rgba(59,130,246,0.3) 75%, transparent 100%)",
-          animation: "spin 3s linear infinite",
-        }}
-      />
-      <Brain className="w-4.5 h-4.5 text-primary relative z-10" />
+      <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   )
 }
@@ -114,7 +107,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             "relative mt-0.5 shrink-0 w-5 h-5 flex items-center justify-center rounded-full border-2 transition-all duration-300",
             step.status === "done" ? "border-emerald-500 bg-emerald-500/10" :
             step.status === "active" ? "border-primary bg-primary/10 shadow-[0_0_8px_rgba(59,130,246,0.4)]" :
-            "border-[var(--glass-border)] bg-[var(--glass-input-bg)]"
+            "border-border bg-muted"
           )}>
             {step.status === "done" ? (
               <Check className="w-3 h-3 text-emerald-500 font-bold" />
@@ -148,11 +141,11 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="glass-flyout hidden fixed right-0 top-0 z-50 h-full w-80 flex-col border-l lg:flex"
+            className="solid-panel hidden fixed end-0 top-0 z-50 h-full w-80 flex-col border-s bg-card border-border shadow-lg lg:flex"
           >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
 
-            <div className="glass-border relative z-10 flex items-center justify-between border-b px-6 pb-5 pt-20">
+            <div className="relative z-10 flex items-center justify-between border-b border-border px-6 pb-5 pt-20">
               <div className="flex items-center gap-3">
                 <ThinkingOrb isComplete={reasoning?.isComplete ?? false} />
                 <div>
@@ -164,7 +157,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
               </div>
               <button
                 onClick={onClose}
-                className="horus-tool-button mr-[-8px] p-2"
+                className="horus-tool-button me-[-8px] p-2"
                 aria-label="Close thinking panel"
               >
                 <X className="w-4 h-4" />
@@ -178,7 +171,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
                 WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 5%, black 95%, transparent 100%)',
               }}
             >
-              <div className="absolute left-[33px] top-6 bottom-8 w-[2px] bg-[var(--border-subtle)]" />
+              <div className="absolute start-[33px] top-6 bottom-8 w-[2px] bg-[var(--border-subtle)]" />
               {stepsList}
             </div>
           </motion.div>
@@ -190,7 +183,7 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
             className={cn(
-              "glass-flyout fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[var(--radius-xl)] border-t lg:hidden",
+              "bg-card border-border shadow-lg fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-[var(--radius-xl)] border-t lg:hidden",
               mobileCollapsed ? "max-h-[72px]" : "max-h-[55vh]"
             )}
           >
@@ -233,8 +226,8 @@ export function ThinkingPanel({ reasoning, status, onClose }: ThinkingPanelProps
 
             {!mobileCollapsed && (
               <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
-                <div className="relative pl-2">
-                  <div className="absolute left-[17px] top-2 bottom-4 w-[2px] bg-[var(--border-subtle)]" />
+                <div className="relative ps-2">
+                  <div className="absolute start-[17px] top-2 bottom-4 w-[2px] bg-[var(--border-subtle)]" />
                   {stepsList}
                 </div>
               </div>

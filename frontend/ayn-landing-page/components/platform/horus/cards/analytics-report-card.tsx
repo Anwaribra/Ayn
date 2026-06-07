@@ -18,7 +18,7 @@ export function AnalyticsReportCard({ payload }: { payload: AnalyticsPayload }) 
   const hasData = (payload.totalReports ?? 0) > 0 || (payload.totalEvidence ?? 0) > 0
 
   return (
-    <div className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)]/60 p-5 space-y-4 animate-in fade-in duration-300">
+    <div className="w-full rounded-2xl border border-border bg-[var(--surface)]/60 p-5 space-y-4 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -41,19 +41,19 @@ export function AnalyticsReportCard({ payload }: { payload: AnalyticsPayload }) 
 
       {hasData && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl bg-[var(--glass-panel)]/60 px-3 py-2 border border-[var(--border-subtle)]">
+          <div className="rounded-xl bg-card/80 px-3 py-2 border border-border">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Avg Score</p>
             <p className="text-lg font-bold text-foreground">{payload.avgScore?.toFixed(1) ?? "—"}%</p>
           </div>
-          <div className="rounded-xl bg-[var(--glass-panel)]/60 px-3 py-2 border border-[var(--border-subtle)]">
+          <div className="rounded-xl bg-card/80 px-3 py-2 border border-border">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Latest</p>
             <p className="text-lg font-bold text-foreground">{payload.latestScore?.toFixed(1) ?? "—"}%</p>
           </div>
-          <div className="rounded-xl bg-[var(--glass-panel)]/60 px-3 py-2 border border-[var(--border-subtle)]">
+          <div className="rounded-xl bg-card/80 px-3 py-2 border border-border">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Evidence</p>
             <p className="text-lg font-bold text-foreground">{payload.totalEvidence ?? 0}</p>
           </div>
-          <div className="rounded-xl bg-[var(--glass-panel)]/60 px-3 py-2 border border-[var(--border-subtle)]">
+          <div className="rounded-xl bg-card/80 px-3 py-2 border border-border">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Alignment</p>
             <p className="text-lg font-bold text-foreground">{payload.alignmentPercentage?.toFixed(0) ?? "—"}%</p>
           </div>

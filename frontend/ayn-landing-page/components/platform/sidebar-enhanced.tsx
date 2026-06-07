@@ -137,30 +137,7 @@ function PlatformSidebarComponent({ open, onToggle }: SidebarProps) {
     }
   }, [localActiveHref, pathname, router])
 
-  // Non-passive wheel event listener setup — desktop only, high threshold to avoid accidental triggers
-  useEffect(() => {
-    const container = wheelContainerRef.current
-    if (!container) return
-
-    const isDesktop = window.innerWidth >= 1024
-    if (!isDesktop) return
-
-    const handleWheelEvent = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > 30) {
-        e.preventDefault()
-        if (e.deltaY > 0) {
-          rotateForward()
-        } else {
-          rotateBackward()
-        }
-      }
-    }
-
-    container.addEventListener("wheel", handleWheelEvent, { passive: false })
-    return () => {
-      container.removeEventListener("wheel", handleWheelEvent)
-    }
-  }, [rotateForward, rotateBackward])
+  // Non-passive wheel event listener setup — removed since we are returning to normal list
 
   return (
     <aside
@@ -225,61 +202,45 @@ function PlatformSidebarComponent({ open, onToggle }: SidebarProps) {
         </div>
 
         <div 
-          ref={wheelContainerRef}
           className={cn(
-            "flex-1 px-1 py-4 flex flex-col gap-2.5 justify-center select-none z-10",
-            isCollapsed 
-              ? "overflow-visible" 
-              : "overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            "flex-1 px-1 py-4 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar select-none z-10",
+            isCollapsed && "items-center overflow-hidden"
           )}
         >
-          <motion.div className="flex flex-col gap-2.5 py-4 w-full">
-            {rotatedNavItems.map((item) => {
+          <div className="flex flex-col gap-1.5 w-full">
+            {navItems.map((item) => {
               const active = isActive(item.href)
 
               const buttonElement = (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (active) return
-                    setLocalActiveHref(item.href)
-                  }}
+                <Link
+                  href={item.href}
                   className={cn(
-                    "flex items-center gap-2.5 p-2 transition-all duration-300 active:scale-95 outline-none border",
-                    isCollapsed ? "w-10 h-10 justify-center rounded-full" : "w-[150px] justify-start rounded-2xl",
+                    "flex items-center gap-3 p-2 transition-all duration-300 outline-none border",
+                    isCollapsed ? "w-10 h-10 justify-center rounded-full" : "w-full justify-start rounded-xl",
                     active 
-                      ? "bg-primary/25 border-primary/40 shadow-md shadow-primary/10 scale-105" 
-                      : "border-transparent hover:bg-foreground/[0.06] dark:hover:bg-white/10"
+                      ? "bg-primary/10 border-primary/20 shadow-sm" 
+                      : "border-transparent hover:bg-foreground/[0.04] dark:hover:bg-white/5"
                   )}>
                   <div className={cn(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-300",
-                    active ? "bg-primary text-white shadow-md shadow-primary/20 scale-110" : "bg-foreground/10 text-foreground"
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-300",
+                    active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
                   )}>
-                    <item.icon className="h-3.5 w-3.5" strokeWidth={active ? 2.25 : 1.75} />
+                    <item.icon className="h-4 w-4" strokeWidth={active ? 2.5 : 2} />
                   </div>
                   {!isCollapsed && (
                     <span className={cn(
-                      "text-[12px] font-semibold truncate",
-                      active ? "text-primary dark:text-primary-foreground" : "text-foreground",
+                      "text-[13px] font-medium truncate",
+                      active ? "text-foreground font-semibold" : "text-foreground/80",
                       isArabic ? "text-right flex-1" : "text-left flex-1"
                     )}>
                       {isArabic ? item.label.ar : item.label.en}
                     </span>
                   )}
-                </button>
+                </Link>
               )
 
               return (
-                <motion.div
-                  key={item.id}
-                  layout
-                  className="flex justify-center shrink-0 w-full"
-                  transition={{
-                    type: "tween",
-                    duration: 0.25,
-                    ease: "easeInOut"
-                  }}
-                >
+                <div key={item.id} className="flex justify-center shrink-0 w-full">
                   {isCollapsed ? (
                     <Tooltip delayDuration={150}>
                       <TooltipTrigger asChild>
@@ -295,19 +256,13 @@ function PlatformSidebarComponent({ open, onToggle }: SidebarProps) {
                   ) : (
                     buttonElement
                   )}
-                </motion.div>
+                </div>
               )
             })}
-          </motion.div>
-        </div>
-
-        {/* Bottom Toggles */}
-        <div className="shrink-0 p-3 flex flex-col gap-2 items-center z-10">
-          <div className={cn("flex items-center justify-center gap-1.5", isCollapsed && "flex-col")}>
-            <LanguageToggle />
-            <AnimatedThemeToggle />
           </div>
         </div>
+
+
       </div>
     </aside>
   )

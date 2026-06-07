@@ -37,9 +37,11 @@ export function MobileBottomNav() {
   const { isArabic } = useUiLanguage()
   const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [wheelActive, setWheelActive] = useState(false)
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const prevScrollCollapsed = useRef(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -83,6 +85,17 @@ export function MobileBottomNav() {
   }, [isArabic, user?.role])
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(`${href}/`)
+  useEffect(() => {
+    const openHandler = () => { setMenuOpen(false); setWheelActive(true) }
+    const closeHandler = () => setWheelActive(false)
+    window.addEventListener("wheel-nav-open", openHandler)
+    window.addEventListener("wheel-nav-close", closeHandler)
+    return () => {
+      window.removeEventListener("wheel-nav-open", openHandler)
+      window.removeEventListener("wheel-nav-close", closeHandler)
+    }
+  }, [])
+
   const scrollCollapsed = useScrollCollapse()
   const dockCollapsed = scrollCollapsed
   const collapsibleCount = mainTabs.length + 1 + mainTabsRight.length
@@ -94,6 +107,21 @@ export function MobileBottomNav() {
     }
     prevScrollCollapsed.current = scrollCollapsed
   }, [scrollCollapsed, menuOpen])
+
+  useEffect(() => {
+    if (menuOpen && scrollContainerRef.current) {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => {
+        const container = scrollContainerRef.current
+        if (!container) return
+        const activeEl = container.querySelector('[data-active="true"]') as HTMLElement
+        if (activeEl) {
+          const scrollLeft = activeEl.offsetLeft - container.clientWidth / 2 + activeEl.clientWidth / 2
+          container.scrollTo({ left: scrollLeft, behavior: "smooth" })
+        }
+      }, 50)
+    }
+  }, [menuOpen])
 
   return (
     <>
@@ -111,67 +139,75 @@ export function MobileBottomNav() {
         )}
       </AnimatePresence>
 
-      <motion.div
-        layout
-        transition={DOCK_SPRING}
-        className={cn(
-          "fixed bottom-6 z-[100] pointer-events-auto select-none lg:hidden",
-          dockCollapsed
-            ? menuOnStart
-              ? "left-4"
-              : "right-4"
-            : "left-1/2 -translate-x-1/2",
-        )}
-      >
-        <div className={cn("relative flex flex-col", menuOnStart ? "items-start" : "items-end")}>
-          <AnimatePresence>
-            {menuOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 480, damping: 32 }}
-                dir={isArabic ? "rtl" : "ltr"}
-                className={cn(
-                  "absolute bottom-full z-[110] mb-4 flex max-h-[min(58vh,400px)] flex-col gap-2 overflow-y-auto overscroll-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                  menuOnStart ? "left-0 items-start" : "right-0 items-end",
-                )}
-              >
-                {menuItems.map((item, i) => {
-                  const active = isActive(item.href)
-                  return (
-                    <motion.button
-                      key={item.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03, type: "spring", stiffness: 500, damping: 28 }}
-                      onClick={() => {
-                        setMenuOpen(false)
-                        router.push(item.href)
-                      }}
-                      className={cn(
-                        "flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-xl transition-all duration-200",
-                        isArabic && "flex-row-reverse",
-                        active
-                          ? "border-primary/50 bg-primary text-primary-foreground shadow-primary/30"
-                          : cn(
-                              "text-foreground hover:bg-muted/80",
-                              isDark
-                                ? "border-white/10 bg-black/70"
-                                : "border-black/10 bg-white/80",
-                            ),
-                      )}
-                    >
-                      <span className="whitespace-nowrap text-[12px] font-semibold">
-                        {item.label}
-                      </span>
-                      <item.icon className="h-4 w-4 shrink-0" />
-                    </motion.button>
-                  )
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <AnimatePresence>
+        {!wheelActive && (
+          <>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  ref={scrollContainerRef}
+                  initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 480, damping: 32 }}
+                  dir={isArabic ? "rtl" : "ltr"}
+                  className={cn(
+                    "fixed bottom-[96px] left-1/2 -translate-x-1/2 z-[110] flex w-[calc(100vw-24px)] flex-row gap-2 overflow-x-auto overscroll-x-contain pb-2 pt-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                  )}
+                >
+                  {menuItems.map((item, i) => {
+                    const active = isActive(item.href)
+                    return (
+                      <motion.button
+                        key={item.id}
+                        data-active={active}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03, type: "spring", stiffness: 500, damping: 28 }}
+                        onClick={() => {
+                          setMenuOpen(false)
+                          router.push(item.href)
+                        }}
+                        className={cn(
+                          "flex shrink-0 items-center gap-2.5 rounded-full border px-4 py-2 shadow-sm backdrop-blur-xl transition-all duration-200",
+                          isArabic && "flex-row-reverse",
+                          active
+                            ? "border-primary/50 bg-primary text-primary-foreground"
+                            : cn(
+                                "text-foreground hover:bg-muted/80",
+                                isDark
+                                  ? "border-white/10 bg-black/70"
+                                  : "border-black/10 bg-white/80",
+                              ),
+                        )}
+                      >
+                        <span className="whitespace-nowrap text-[12px] font-semibold">
+                          {item.label}
+                        </span>
+                        <item.icon className="h-4 w-4 shrink-0" />
+                      </motion.button>
+                    )
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.9, pointerEvents: "none" }}
+              transition={DOCK_SPRING}
+              className={cn(
+                "fixed bottom-6 z-[100] pointer-events-auto select-none lg:hidden transition-all duration-500 ease-out",
+                dockCollapsed
+                  ? menuOnStart
+                    ? "left-6 translate-x-0"
+                    : "right-6 translate-x-0"
+                  : "left-1/2 -translate-x-1/2",
+              )}
+            >
+              <div className="relative flex flex-col items-center">
 
           {/* Floating Dock */}
           <LayoutGroup>
@@ -267,7 +303,10 @@ export function MobileBottomNav() {
               <motion.button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setMenuOpen((open) => !open)
+                  setMenuOpen((open) => {
+                    if (!open) window.dispatchEvent(new CustomEvent("dock-nav-open"))
+                    return !open
+                  })
                 }}
                 type="button"
                 aria-expanded={menuOpen}
@@ -317,9 +356,12 @@ export function MobileBottomNav() {
               </motion.button>
             </motion.div>
             </motion.div>
-          </LayoutGroup>
-        </div>
-      </motion.div>
+              </LayoutGroup>
+            </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

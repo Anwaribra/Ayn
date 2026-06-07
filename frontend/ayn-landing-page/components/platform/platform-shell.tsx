@@ -22,7 +22,7 @@ import {
 import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
 import { MobileBottomNav } from "@/components/platform/mobile-bottom-nav";
-import { HorusMobileNav } from "@/components/platform/horus-mobile-nav";
+import { MobileNavRadial } from "@/components/platform/mobile-nav-radial";
 import { CommandPalette } from "./command-palette";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -154,7 +154,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
       )}
 
       {!focusMode && (
-        <HorusMobileNav />
+        <MobileNavRadial />
       )}
 
         <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
@@ -196,16 +196,9 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-[11.5px] font-semibold text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
                         >
-                          {(() => {
-                            if (!user.name) return "U"
-                            const parts = user.name.trim().split(/\s+/)
-                            if (parts.length >= 2) {
-                              return (parts[0][0] + parts[1][0]).toUpperCase()
-                            }
-                            return user.name.substring(0, 2).toUpperCase()
-                          })()}
+                          <User className="h-[15px] w-[15px]" strokeWidth={2.5} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -261,22 +254,36 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-[11.5px] font-semibold text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
                         >
-                          {(() => {
-                            if (!user.name) return "U"
-                            const parts = user.name.trim().split(/\s+/)
-                            if (parts.length >= 2) {
-                              return (parts[0][0] + parts[1][0]).toUpperCase()
-                            }
-                            return user.name.substring(0, 2).toUpperCase()
-                          })()}
+                          <User className="h-[15px] w-[15px]" strokeWidth={2.5} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align={isArabic ? "start" : "end"}
-                        className="w-44 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
+                        className="w-52 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
                       >
+                        <DropdownMenuItem
+                          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          {resolvedTheme === "dark" ? (
+                            <Sun size={15} className="text-muted-foreground" />
+                          ) : (
+                            <Moon size={15} className="text-muted-foreground" />
+                          )}
+                          {resolvedTheme === "dark"
+                            ? (isArabic ? "مظهر فاتح" : "Light mode")
+                            : (isArabic ? "مظهر داكن" : "Dark mode")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setLanguage(isArabic ? "en" : "ar")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          <Languages size={15} className="text-muted-foreground" />
+                          {isArabic ? "English" : "العربية"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-2 my-1 bg-border/50" />
                         <DropdownMenuItem
                           onClick={() => router.push("/platform/settings/account")}
                           className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"

@@ -155,29 +155,18 @@ export function HorusLandingAssistant() {
 
   return (
     <>
-      {/* Floating Trigger Button */}
-      <div
-        className={cn(
-          "fixed z-[100] select-none transition-all duration-300",
-          // Desktop positioning
-          "lg:bottom-6 lg:end-6 lg:top-auto lg:translate-y-0",
-          // Mobile positioning: vertically centered on the screen edge
-          "max-lg:end-0 max-lg:top-[45%] max-lg:-translate-y-1/2 max-lg:bottom-auto"
-        )}
-      >
+      {/* Floating Trigger Button — tucked partially off-screen, slides out on hover */}
+      <div className={cn(
+        "fixed top-1/2 -translate-y-1/2 right-0 z-[100] select-none transition-all duration-300 ease-out",
+        isOpen ? "translate-x-0" : "translate-x-[36px] hover:translate-x-0"
+      )}>
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
           type="button"
           whileHover={{ scale: 1.06, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
           className={cn(
-            "relative w-14 h-14 rounded-full flex items-center justify-center cursor-pointer outline-none transition-all duration-300 border shadow-lg active:scale-95",
-            // Style: High-contrast premium glassmorphism
-            "bg-white/80 dark:bg-zinc-900/80 border-black/10 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:text-primary hover:bg-white/90 dark:hover:bg-zinc-800/90 backdrop-blur-lg",
-            // Mobile tucked-in positioning (50% translated off-screen, showing only half a brain)
-            isArabic
-              ? "max-lg:-translate-x-1/2 max-lg:hover:translate-x-0 max-lg:justify-end max-lg:pe-3"
-              : "max-lg:translate-x-1/2 max-lg:hover:translate-x-0 max-lg:justify-start max-lg:ps-3"
+            "relative flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white/80 text-zinc-800 shadow-lg outline-none backdrop-blur-lg transition-all duration-300 hover:bg-white/90 hover:text-primary active:scale-95 dark:border-white/10 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:bg-zinc-800/90",
           )}
         >
           <AnimatePresence mode="wait">
@@ -212,33 +201,15 @@ export function HorusLandingAssistant() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ 
-              opacity: 0, 
-              scale: 0.85, 
-              y: 20,
-              x: isArabic ? -20 : 20
-            }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              y: 0,
-              x: 0
-            }}
-            exit={{ 
-              opacity: 0, 
-              scale: 0.85, 
-              y: 20,
-              x: isArabic ? -20 : 20
-            }}
+            initial={{ opacity: 0, scale: 0.85, x: 40 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.85, x: 40 }}
             transition={{ type: "spring", stiffness: 350, damping: 26 }}
-            dir={isArabic ? "rtl" : "ltr"}
+            dir="ltr"
             className={cn(
-              "fixed z-[99] rounded-[28px] border border-white/10 bg-black/75 shadow-[0_24px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl overflow-hidden flex flex-col font-dmsans select-none",
-              isArabic ? "font-arabic" : "",
-              // Desktop layout
-              "lg:bottom-24 lg:end-6 lg:w-[360px] lg:h-[480px]",
-              // Mobile layout
-              "max-lg:bottom-24 max-lg:end-4 max-lg:w-[calc(100vw-32px)] max-lg:max-h-[calc(100vh-140px)] max-lg:h-[480px]"
+              "fixed z-[99] flex flex-col overflow-hidden rounded-[28px] border border-white/10 bg-black/75 font-dmsans shadow-[0_24px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl select-none",
+              isArabic && "font-arabic",
+              "top-1/2 -translate-y-1/2 right-4 h-[480px] w-[calc(100vw-32px)] max-h-[calc(100vh-40px)] md:right-16 md:h-[480px] md:w-[360px]",
             )}
           >
             <div className="absolute inset-0 border border-white/5 rounded-[28px] pointer-events-none" />

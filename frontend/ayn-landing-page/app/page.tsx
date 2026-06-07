@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SessionChecker } from "@/components/landing/SessionChecker"
 import dynamic from "next/dynamic"
 import { LandingNavbar }           from "@/components/landing/LandingNavbar"
@@ -30,6 +30,14 @@ const PAGE_BG = "transparent"
 export default function Home() {
   const [demoOpen, setDemoOpen] = useState(false)
   const [demoType, setDemoType] = useState<"demo" | "pricing">("demo")
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   const triggerDemo = (type: "demo" | "pricing" = "demo") => {
     setDemoType(type)
@@ -37,7 +45,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ backgroundColor: PAGE_BG, minHeight: "100vh" }}>
+    <div dir="ltr" style={{ backgroundColor: PAGE_BG, minHeight: "100vh" }}>
       <SessionChecker />
 
       {/* Skip-nav */}
@@ -53,10 +61,11 @@ export default function Home() {
       {/* ── Hero ── */}
       <div id="main-content" className="relative scroll-mt-28 pt-24 md:pt-28 text-foreground overflow-hidden">
         <NeuralVortexBackground
-          opacity={0.35}
-          intensity={0.48}
+          opacity={0.55}
+          intensity={0.6}
           textVignette={false}
           colorScheme="default"
+          frozenPointer={isMobile ? [0.5, 0.25] : [0.85, 0.3]}
         />
         <Hero onOpenDemo={triggerDemo} />
       </div>

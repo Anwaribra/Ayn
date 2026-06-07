@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, LogOut, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, FileQuestion, CalendarDays } from "lucide-react"
+import { Menu, X, LogOut, LogIn, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -215,7 +215,6 @@ export function LandingNavbar({
     features: "Features",
     demo: "Book Demo",
     horus: "Horus AI",
-    search: "FAQ",
   }
 
   return (
@@ -439,10 +438,10 @@ export function LandingNavbar({
             onClick={() => scrollToSection("features", "features")}
           />
           <BottomTab
-            icon={FileQuestion}
-            label={labels.search}
-            active={activeSection === "faq"}
-            onClick={() => scrollToSection("landing-faq", "faq")}
+            icon={LogIn}
+            label="Log in"
+            active={false}
+            onClick={() => window.location.href = "/login"}
           />
           <div className="w-px h-8 bg-black/10 dark:bg-white/10 mx-1" aria-hidden />
           <DemoButton

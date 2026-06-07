@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { usePathname } from "next/navigation"
 
 export type UiLanguage = "en" | "ar"
 
@@ -15,10 +16,14 @@ type UiLanguageContextValue = {
 
 const UiLanguageContext = createContext<UiLanguageContextValue | null>(null)
 
-function applyLanguage(language: UiLanguage) {
-  const isArabic = language === "ar"
-  document.documentElement.lang = language
-  document.documentElement.setAttribute("data-ui-language", language)
+function applyLanguage(language: UiLanguage, pathname: string) {
+  const isPlatform = pathname.startsWith("/platform")
+  const effectiveLanguage = isPlatform ? language : "en"
+  const isArabic = effectiveLanguage === "ar"
+
+  document.documentElement.lang = effectiveLanguage
+  document.documentElement.setAttribute("data-ui-language", effectiveLanguage)
+  document.documentElement.dir = isArabic ? "rtl" : "ltr"
 }
 
 function getInitialLanguage(): UiLanguage {
@@ -34,17 +39,20 @@ function getInitialLanguage(): UiLanguage {
 }
 
 export function UiLanguageProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [language, setLanguageState] = useState<UiLanguage>("en")
 
   useEffect(() => {
     const initial = getInitialLanguage()
     setLanguageState(initial)
-    applyLanguage(initial)
   }, [])
+
+  useEffect(() => {
+    applyLanguage(language, pathname)
+  }, [language, pathname])
 
   const setLanguage = (nextLanguage: UiLanguage) => {
     setLanguageState(nextLanguage)
-    applyLanguage(nextLanguage)
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, nextLanguage)
     }
@@ -54,14 +62,17 @@ export function UiLanguageProvider({ children }: { children: React.ReactNode }) 
     setLanguage(language === "en" ? "ar" : "en")
   }
 
+  const isPlatform = pathname.startsWith("/platform")
+  const effectiveLanguage = isPlatform ? language : "en"
+
   const value = useMemo(
     () => ({
-      language,
-      isArabic: language === "ar",
+      language: effectiveLanguage,
+      isArabic: effectiveLanguage === "ar",
       setLanguage,
       toggleLanguage,
     }),
-    [language],
+    [effectiveLanguage, setLanguage, toggleLanguage],
   )
 
   return (

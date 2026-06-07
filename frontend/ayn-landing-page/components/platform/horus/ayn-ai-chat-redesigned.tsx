@@ -37,6 +37,7 @@ import {
   VolumeX,
   Sun,
   Moon,
+  PanelLeft,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -52,7 +53,6 @@ import { AttachedFile } from "./types"
 import { HorusMarkdown } from "./horus-markdown"
 import { AgentResultRenderer } from "./agent-result-renderer"
 import { MiniOrb } from "./agent-orb"
-import { AiLoader } from "@/components/ui/ai-loader"
 import { AgentExecutionTimeline, deriveAgentSteps } from "./agent-execution-timeline"
 import { ThinkStepper } from "./think-stepper"
 import { ThinkingPanel } from "./thinking-panel"
@@ -1311,25 +1311,39 @@ export default function HorusAIChat() {
   return (
       <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
       
+
+
       {/* New + History as floating top-right */}
-      <div className="absolute right-3 top-4 z-20 flex items-center gap-1.5 sm:right-3 sm:top-3 sm:gap-1">
+      <div className="absolute end-4 top-4 z-30 flex items-center gap-2">
         {currentChatId && (
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => copySessionLink(currentChatId, e as unknown as React.MouseEvent)}
-            className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-background/30 shadow-sm backdrop-blur-md hover:bg-background/60 text-foreground transition-all duration-200 p-0"
             title="Copy active chat link"
           >
             {copiedSessionId === currentChatId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         )}
-        <Button variant="ghost" size="sm" onClick={newChat} className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="New chat (⌘N)">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={newChat}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-background/30 shadow-sm backdrop-blur-md hover:bg-background/60 text-foreground transition-all duration-200 p-0"
+          title="New chat (⌘N)"
+        >
           <PlusCircle className="h-4 w-4" />
         </Button>
         <Sheet open={historySheetOpen} onOpenChange={setHistorySheetOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="horus-tool-button h-8 w-8 p-0 md:h-8 md:w-8" title="History" onClick={() => setHistorySheetOpen(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-background/30 shadow-sm backdrop-blur-md hover:bg-background/60 text-foreground transition-all duration-200 p-0"
+              title="History"
+              onClick={() => setHistorySheetOpen(true)}
+            >
               <History className="h-4 w-4" />
             </Button>
           </SheetTrigger>
@@ -1440,14 +1454,24 @@ export default function HorusAIChat() {
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center justify-center"
                   >
-                    <AiLoader size={200} text="Horus AI" />
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/5 text-primary shadow-sm shadow-primary/10">
+                      <Brain className="h-10 w-10" />
+                    </div>
                   </motion.div>
                   <div className="max-w-[560px] text-center">
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Your compliance agent</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                      {preferArabicUi ? "مساعد الامتثال الخاص بك" : "Your compliance agent"}
+                    </h1>
                     <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/70">
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Chat</span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Reason</span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">Run tasks</span>
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
+                        {preferArabicUi ? "محادثة" : "Chat"}
+                      </span>
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
+                        {preferArabicUi ? "تحليل منطقي" : "Reason"}
+                      </span>
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
+                        {preferArabicUi ? "تنفيذ المهام" : "Run tasks"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -2039,50 +2063,22 @@ export default function HorusAIChat() {
                     isArabic={preferArabicUi}
                   />
                 }
-                quickPrompts={[
-                  { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
-                  { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
-                  { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
-                  { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
-                ]}
-                agentCommands={AGENT_COMMANDS}
-                footer={
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/75">
-                    <Select value={responseMode} onValueChange={(value) => setResponseMode(value as typeof responseMode)}>
-                      <SelectTrigger
-                        size="sm"
-                        className={cn(
-                          "h-7 min-w-0 rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium shadow-none hover:bg-white/[0.05] hover:text-foreground",
-                          modeTone
-                        )}
-                        aria-label="Horus response mode"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <currentResponseMode.icon className="h-3.5 w-3.5" />
-                          <span>{currentResponseMode.label}</span>
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="w-56">
-                        {RESPONSE_MODES.map((mode) => (
-                          <SelectItem key={mode.key} value={mode.key}>
-                            <span className="flex items-center gap-2">
-                              <mode.icon className="h-4 w-4 text-muted-foreground" />
-                              <span className="flex flex-col">
-                                <span className="text-sm font-medium text-foreground">{mode.label}</span>
-                                <span className="text-[11px] text-muted-foreground">{mode.description}</span>
-                              </span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <AgentContextIndicator
-                      messages={messages}
-                      status={status}
-                      className="hidden sm:flex"
-                    />
-                  </div>
+                quickPrompts={
+                  preferArabicUi
+                    ? [
+                        { label: "نظرة عامة على الامتثال", prompt: "أعطني نظرة عامة كاملة على الامتثال لمؤسستنا" },
+                        { label: "تشغيل تحليل الفجوات", prompt: "قم بتشغيل تحليل فجوات كامل مقابل المعايير النشطة لدينا" },
+                        { label: "ما الذي ينقصنا؟", prompt: "ما هي معايير الهيئة الوطنية للتقويم والاعتماد الأكاديمي (NCAAA) غير المغطاة بأدلتنا الحالية؟" },
+                        { label: "خطة معالجة", prompt: "أنشئ خطة معالجة ذات أولويات للفجوات المفتوحة لدينا" },
+                      ]
+                    : [
+                        { label: "Compliance overview", prompt: "Give me a full compliance overview of my institution" },
+                        { label: "Run gap analysis", prompt: "Run a full gap analysis against our active standards" },
+                        { label: "What's missing?", prompt: "Which NCAAA criteria are not covered by our current evidence?" },
+                        { label: "Remediation plan", prompt: "Create a prioritized remediation plan for our open gaps" },
+                      ]
                 }
+                agentCommands={AGENT_COMMANDS}
               />
             </div>
 

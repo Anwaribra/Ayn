@@ -203,7 +203,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align={isArabic ? "start" : "end"}
-                        className="w-52 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
+                        className="w-52 rounded-xl bg-background/95 backdrop-blur-xl border border-border/50 shadow-xl p-1.5 z-50"
                       >
                         <DropdownMenuItem
                           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
@@ -261,7 +261,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align={isArabic ? "start" : "end"}
-                        className="w-52 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
+                        className="w-52 rounded-xl bg-background/95 backdrop-blur-xl border border-border/50 shadow-xl p-1.5 z-50"
                       >
                         <DropdownMenuItem
                           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}

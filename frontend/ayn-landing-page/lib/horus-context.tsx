@@ -578,7 +578,19 @@ export const HorusProvider = ({ children }: { children: React.ReactNode }) => {
 
                         if (line.startsWith("__STREAM_ERROR__:")) {
                             const errorMsg = line.slice("__STREAM_ERROR__:".length).trim()
-                            setStreamError(errorMsg || "Connection interrupted. Please try again.")
+                            const fallback = "Connection interrupted. Please try again."
+                            setStreamError(errorMsg || fallback)
+                            
+                            // Immediately set the error as the message content so the user sees it in the bubble
+                            setMessages(prev => prev.map(m => {
+                                if (m.id !== assistantMsgId) return m
+                                // If we already generated some content, append the error. Otherwise, use the error as content.
+                                const currentContent = m.content?.trim() || ""
+                                const nextContent = currentContent 
+                                    ? currentContent + `\n\n**Error:** ${errorMsg || fallback}`
+                                    : `⚠️ **Error:** ${errorMsg || fallback}`
+                                return { ...m, content: nextContent }
+                            }))
                             return true
                         }
 

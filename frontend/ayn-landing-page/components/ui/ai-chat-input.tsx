@@ -29,6 +29,7 @@ interface AIChatInputProps {
   quickPrompts?: { label: string; prompt: string }[]
   agentCommands?: { command: string; label: string; description: string; icon: string; category?: string }[]
   header?: ReactNode
+  prefixNode?: ReactNode
 }
 
 export const AIChatInput = ({
@@ -46,6 +47,7 @@ export const AIChatInput = ({
   quickPrompts = [],
   agentCommands = [],
   header,
+  prefixNode,
 }: AIChatInputProps) => {
   const [inputValue, setInputValue] = useState("")
   const [isDragging, setIsDragging] = useState(false)
@@ -276,6 +278,8 @@ export const AIChatInput = ({
           isDragging && "border-primary/50 bg-primary/5"
         )}
       >
+        {prefixNode && <div className="flex items-center flex-shrink-0 mb-[1px]">{prefixNode}</div>}
+
         {/* Attach Button */}
         <button
           onClick={() => documentInputRef.current?.click()}

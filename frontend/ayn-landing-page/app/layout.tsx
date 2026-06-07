@@ -48,10 +48,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/ayn-icon.svg", type: "image/png", sizes: "any" },
-      { url: "/icon.svg", type: "image/png", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
     ],
-    shortcut: [{ url: "/ayn-icon.svg", type: "image/png", sizes: "any" }],
+    shortcut: [{ url: "/icon.png", type: "image/png" }],
     apple: "/apple-icon.png",
   },
 }

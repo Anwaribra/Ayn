@@ -900,30 +900,26 @@ class HorusService:
         if not user_metadata:
             user_metadata = None
         client = get_gemini_client()
+        # Merge Ask and Agent: Classify the intent dynamically
         agent_intent = self._classify_agent_intent(
             message=message,
             files=files,
             request_mode=request_mode,
-        ) if request_mode == "agent" else None
-        # Text-only fast path must NOT run when files are attached — otherwise Ask mode
-        # would call stream_chat without multimodal parts and the model thinks no file exists.
+        )
+        
+        # Text-only fast path must NOT run when files are attached
         has_attachments = bool(files)
         fast_path = (
             not has_attachments
-            and (
-                request_mode == "ask"
-                or (
-                    request_mode not in ("agent", "think")
-                    and self._should_use_fast_path(message=message, files=files)
-                )
-            )
+            and agent_intent["route"] == "chat"
+            and self._should_use_fast_path(message=message, files=files)
         )
+        
         visual_only_request = self._is_visual_only(files)
         needs_analysis = self._needs_compliance_analysis(message)
         
         # Disabled automatic evidence upload in chat flow to vastly improve latency
         store_as_evidence = False
-        agent_intent = self._classify_agent_intent(message=message, files=files, request_mode=request_mode)
 
         if files:
             yield "__HORUS_UPLOAD_MODE__:ephemeral\n"

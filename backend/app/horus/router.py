@@ -189,6 +189,14 @@ async def horus_chat_stream(
         except Exception as e:
             logger.error(f"Horus stream error: {e}", exc_info=True, extra={"correlation_id": correlation_id})
             yield f"__STREAM_ERROR__:{str(e)[:200]}\n"
+            fallback_text = "The connection was interrupted due to an internal error. Please try sending your message again."
+            yield fallback_text
+            try:
+                from app.chat.service import ChatService
+                if chat_id:
+                    background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", fallback_text)
+            except Exception as db_err:
+                logger.error(f"Failed to save fallback stream error message: {db_err}")
 
     return StreamingResponse(
         event_generator(),

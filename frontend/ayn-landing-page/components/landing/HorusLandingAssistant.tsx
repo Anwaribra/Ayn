@@ -155,10 +155,15 @@ export function HorusLandingAssistant() {
 
   return (
     <>
-      {/* Floating Trigger Button — tucked partially off-screen, slides out on hover */}
+      {/* Floating Trigger Button */}
       <div className={cn(
-        "fixed top-1/2 -translate-y-1/2 right-0 z-[100] select-none transition-all duration-300 ease-out",
-        isOpen ? "translate-x-0" : "translate-x-[36px] hover:translate-x-0"
+        "fixed z-[100] select-none transition-all duration-300 ease-out",
+        // Desktop: bottom right
+        "lg:bottom-8 lg:right-8 lg:top-auto lg:translate-y-0",
+        // Mobile: vertically centered on the right edge
+        "max-lg:top-1/2 max-lg:-translate-y-1/2 max-lg:right-0",
+        // Mobile tucking behavior (half hidden)
+        isOpen ? "translate-x-0" : "max-lg:translate-x-[26px] max-lg:hover:translate-x-0 lg:translate-x-0"
       )}>
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
@@ -166,7 +171,8 @@ export function HorusLandingAssistant() {
           whileHover={{ scale: 1.06, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
           className={cn(
-            "relative flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white/80 text-zinc-800 shadow-lg outline-none backdrop-blur-lg transition-all duration-300 hover:bg-white/90 hover:text-primary active:scale-95 dark:border-white/10 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:bg-zinc-800/90",
+            "relative flex h-14 w-14 items-center rounded-full border border-black/10 bg-white/80 text-zinc-800 shadow-lg outline-none backdrop-blur-lg transition-all duration-300 hover:bg-white/90 hover:text-primary active:scale-95 dark:border-white/10 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:bg-zinc-800/90",
+            !isOpen ? "max-lg:justify-start max-lg:ps-2.5 justify-center shadow-[0_0_20px_rgba(59,130,246,0.3)] animate-pulse-glow" : "justify-center"
           )}
         >
           <AnimatePresence mode="wait">
@@ -201,15 +207,15 @@ export function HorusLandingAssistant() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.85, x: 40 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.85, x: 40 }}
+            initial={{ opacity: 0, scale: 0.85, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 40 }}
             transition={{ type: "spring", stiffness: 350, damping: 26 }}
             dir="ltr"
             className={cn(
               "fixed z-[99] flex flex-col overflow-hidden rounded-[28px] border border-white/10 bg-black/75 font-dmsans shadow-[0_24px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl select-none",
               isArabic && "font-arabic",
-              "top-1/2 -translate-y-1/2 right-4 h-[480px] w-[calc(100vw-32px)] max-h-[calc(100vh-40px)] md:right-16 md:h-[480px] md:w-[360px]",
+              "max-lg:top-1/2 max-lg:-translate-y-1/2 max-lg:right-4 h-[480px] w-[calc(100vw-32px)] max-h-[calc(100vh-40px)] lg:bottom-28 lg:right-8 lg:w-[360px]",
             )}
           >
             <div className="absolute inset-0 border border-white/5 rounded-[28px] pointer-events-none" />

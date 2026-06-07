@@ -11,6 +11,12 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import {
   Brain,
@@ -36,8 +42,8 @@ import {
   Volume2,
   VolumeX,
   Sun,
-  Moon,
   PanelLeft,
+  Cpu,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -58,6 +64,7 @@ import { ThinkStepper } from "./think-stepper"
 import { ThinkingPanel } from "./thinking-panel"
 import { useLiveStreamingText } from "@/hooks/use-streaming-text"
 import { AgentContextIndicator } from "./agent-context-indicator"
+import { type AIProviderPref, getStoredAiProviderPref, setStoredAiProviderPref } from "@/lib/ai-provider-preference"
 
 const EMPTY_STRINGS: string[] = []
 const EMPTY_TOOL_STEPS: ToolStep[] = []
@@ -385,6 +392,10 @@ function ComposerStatusStrip({
   agentRun?: AgentRunMeta | null
   isArabic: boolean
 }) {
+  if (!isProcessing && attachedCount === 0) {
+    return null
+  }
+
   const routeLabel = formatAgentRoute(agentRun, isArabic)
   const intentLabel = formatAgentIntent(agentRun, isArabic)
   const summaryLabel = isProcessing
@@ -652,6 +663,11 @@ export default function HorusAIChat() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const [responseMode, setResponseMode] = useState<"ask" | "think" | "agent">("ask")
   const [activeResponseMode, setActiveResponseMode] = useState<"ask" | "think" | "agent">("ask")
+  const [aiProviderPref, setAiProviderPref] = useState<AIProviderPref>("auto")
+
+  useEffect(() => {
+    setAiProviderPref(getStoredAiProviderPref())
+  }, [])
   const [reasoning, setReasoning] = useState<ReasoningState | null>(null)
   // M2: per-message feedback — tracks both optimistic state and server-persisted state
   const [feedback, setFeedback] = useState<Record<string, "up" | "down" | null>>({})
@@ -1984,42 +2000,7 @@ export default function HorusAIChat() {
 
         <div className="sticky bottom-0 z-20 flex w-full flex-shrink-0 flex-col items-center px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-2">
           <div className="relative mx-auto w-full max-w-[760px] space-y-1.5 sm:space-y-2">
-            {(isProcessing || activeAssistantMsg?.pendingConfirmation) && (
-              <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-[rgba(255,255,255,0.035)] px-4 py-2.5 shadow-[0_16px_44px_-34px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="flex min-w-0 items-center gap-3">
-                  <MiniOrb state="generating" className="scale-[0.82]" />
-                  <div className="min-w-0">
-                    <p className="truncate text-[12px] font-medium text-foreground/92">
-                      {activeAssistantMsg?.agentRun?.goal || getAgentActivityText({
-                        mode: activeResponseMode,
-                        status,
-                        hasAttachments: lastUserHasAttachments,
-                        isArabic: preferArabicUi,
-                      })}
-                    </p>
-                    <p className="truncate text-[11px] text-muted-foreground/72">
-                      {activeAssistantMsg?.agentRun?.reason || getAgentActivityText({
-                        mode: activeResponseMode,
-                        status,
-                        hasAttachments: lastUserHasAttachments,
-                        isArabic: preferArabicUi,
-                        phase: activeAssistantMsg?.pendingConfirmation ? "waiting_confirmation" : undefined,
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {activeAssistantMsg?.agentRun?.step_count ? (
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                      {preferArabicUi
-                        ? `${activeAssistantMsg.agentRun.step_count} خطوة`
-                        : `${activeAssistantMsg.agentRun.step_count} step${activeAssistantMsg.agentRun.step_count > 1 ? "s" : ""}`}
-                    </span>
-                  ) : null}
-                  {isProcessing && <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
-                </div>
-              </div>
-            )}
+
 
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -2055,6 +2036,35 @@ export default function HorusAIChat() {
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
+                prefixNode={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex h-7 items-center justify-center gap-1.5 rounded-md border border-border/50 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/50 mr-1.5"
+                        title="Select AI Provider"
+                      >
+                        <Cpu className="h-3.5 w-3.5" />
+                        <span className="max-w-[60px] truncate">
+                          {aiProviderPref === "auto" ? "Auto" : aiProviderPref === "gemini" ? "Gemini" : aiProviderPref === "openrouter" ? "OpenRouter" : "Alt LLM"}
+                        </span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 border-[var(--glass-border)] bg-background/95 backdrop-blur-xl">
+                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("auto"); setAiProviderPref("auto") }} className="text-xs">
+                        <span className={cn(aiProviderPref === "auto" ? "font-semibold" : "")}>Auto</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("gemini"); setAiProviderPref("gemini") }} className="text-xs">
+                        <span className={cn(aiProviderPref === "gemini" ? "font-semibold" : "")}>Gemini</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("openrouter"); setAiProviderPref("openrouter") }} className="text-xs">
+                        <span className={cn(aiProviderPref === "openrouter" ? "font-semibold" : "")}>OpenRouter</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("alt_llm"); setAiProviderPref("alt_llm") }} className="text-xs">
+                        <span className={cn(aiProviderPref === "alt_llm" ? "font-semibold" : "")}>Alt LLM</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
                 header={
                   <ComposerStatusStrip
                     attachedCount={attachedFiles.length}

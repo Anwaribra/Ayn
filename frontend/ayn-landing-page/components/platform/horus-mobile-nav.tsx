@@ -99,7 +99,7 @@ export function HorusMobileNav() {
               variants={{
                 hidden: { 
                   opacity: 0, 
-                  scale: 0.92, 
+                  scale: 0.94, 
                   x: isArabic ? "100%" : "-100%" 
                 },
                 show: { 
@@ -108,19 +108,19 @@ export function HorusMobileNav() {
                   x: 0,
                   transition: {
                     type: "spring",
-                    damping: 30,
-                    stiffness: 380, // Snappy & fast
-                    staggerChildren: 0.035, // Fast cascade scroll effect
-                    delayChildren: 0.05
+                    damping: 28,
+                    stiffness: 480,
+                    staggerChildren: 0.02,
+                    delayChildren: 0.02,
                   }
                 },
                 exit: { 
                   opacity: 0, 
-                  scale: 0.92, 
+                  scale: 0.94, 
                   x: isArabic ? "100%" : "-100%",
                   transition: {
-                    duration: 0.18,
-                    ease: "easeInOut"
+                    duration: 0.14,
+                    ease: [0.4, 0, 0.2, 1],
                   }
                 }
               }}
@@ -128,14 +128,20 @@ export function HorusMobileNav() {
               animate="show"
               exit="exit"
               className={cn(
-                "absolute top-[22%] bottom-[22%] w-[195px] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden pointer-events-auto flex flex-col",
-                isArabic ? "right-0 border-s" : "left-0 border-e",
-                isDark 
-                  ? "bg-black/15 border-white/5 shadow-black/60" 
-                  : "bg-white/80 border-black/5 shadow-black/5"
+                "absolute top-[16%] bottom-[16%] w-[200px] overflow-hidden pointer-events-auto flex flex-col isolate",
+                isArabic ? "right-0" : "left-0",
+                isDark
+                  ? "bg-zinc-900/92 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+                  : "bg-white/94 shadow-[0_12px_40px_rgba(0,0,0,0.12)]",
               )}
               style={{
                 borderRadius: isArabic ? "9999px 0 0 9999px" : "0 9999px 9999px 0",
+                clipPath: isArabic
+                  ? "inset(0 0 0 0 round 9999px 0 0 9999px)"
+                  : "inset(0 0 0 0 round 0 9999px 9999px 0)",
+                WebkitClipPath: isArabic
+                  ? "inset(0 0 0 0 round 9999px 0 0 9999px)"
+                  : "inset(0 0 0 0 round 0 9999px 9999px 0)",
               }}
             >
               {/* Close button inside the menu (always on the straight edge to avoid curve clipping) */}
@@ -149,10 +155,10 @@ export function HorusMobileNav() {
               </div>
 
               <div 
-                className="flex-1 overflow-y-auto px-2 pb-6 custom-scrollbar scroll-smooth"
+                className="flex-1 overflow-y-auto overscroll-contain px-2 pb-6 custom-scrollbar scroll-smooth snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 dir={isArabic ? "rtl" : "ltr"}
               >
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 py-1">
                   {rotatedNavItems.map((item, index) => {
                     const active = isActive(item.href)
                     
@@ -170,17 +176,18 @@ export function HorusMobileNav() {
                             opacity: 0, 
                             x: isArabic ? 30 : -30 
                           },
-                          show: (i: number) => ({
+                          show: () => ({
                             opacity: 1,
                             x: xOffset,
                             transition: {
                               type: "spring",
-                              stiffness: 500,
-                              damping: 24
+                              stiffness: 560,
+                              damping: 26,
+                              mass: 0.7,
                             }
                           })
                         }}
-                        className="flex justify-center shrink-0"
+                        className="flex justify-center shrink-0 snap-center"
                       >
                         <button
                           type="button"
@@ -237,15 +244,17 @@ export function HorusMobileNav() {
         )}
       </AnimatePresence>
 
-      {/* Backdrop */}
+      {/* Backdrop — blur page behind sidebar */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: [0.4, 0, 0.2, 1] }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[80] lg:hidden"
+            className="fixed inset-0 z-[80] lg:hidden bg-black/30 backdrop-blur-lg backdrop-saturate-150"
+            style={{ WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
           />
         )}
       </AnimatePresence>

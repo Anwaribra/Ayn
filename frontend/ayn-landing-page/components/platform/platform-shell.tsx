@@ -13,15 +13,17 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import {
   Search,
-  Bell,
-  X,
+  User,
+  LogOut,
+  Sun,
+  Moon,
+  Languages,
   PanelLeft,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
-import FloatingAIBar from "@/components/platform/floating-ai-bar";
-import { AnimatedThemeToggle } from "@/components/platform/animated-theme-toggle";
-import { LanguageToggle } from "@/components/platform/language-toggle";
+import { MobileBottomNav } from "@/components/platform/mobile-bottom-nav";
+import { HorusMobileNav } from "@/components/platform/horus-mobile-nav";
 import { CommandPalette } from "./command-palette";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -33,47 +35,36 @@ import type { Notification } from "@/types";
 import { cn } from "@/lib/utils";
 import { OPEN_AI_PROVIDER_PICKER_EVENT } from "@/lib/ai-provider-preference";
 import { AiProviderPickerDialog } from "./ai-provider-picker-dialog";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 export default function PlatformShell({ children }: { children: ReactNode }) {
-  // Start closed so mobile never shows sidebar taking space on first paint
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isWindowVisible, setIsWindowVisible] = useState(true);
   const [aiProviderPickerOpen, setAiProviderPickerOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { setOpen: setCommandPaletteOpen } = useCommandPaletteContext();
   const { focusMode } = useFocusMode();
-  const { isArabic } = useUiLanguage();
-  const { resolvedTheme } = useTheme();
-  // Enable global keyboard shortcuts (⌘K to open command palette)
+  const { isArabic, setLanguage } = useUiLanguage();
+  const { resolvedTheme, setTheme } = useTheme();
+
   useCommandPalette();
 
   const platformTheme = resolvedTheme ?? "dark";
-  const shellText = useMemo(
-    () => ({
-      openSidebar: isArabic ? "فتح الشريط الجانبي" : "Open sidebar",
-      search: isArabic ? "ابحث..." : "Search…",
-      activity: isArabic ? "النشاط" : "Activity",
-      markAllRead: isArabic ? "تعيين الكل كمقروء" : "Mark all read",
-      quiet: isArabic ? "لا جديد الآن." : "Quiet for now.",
-      viewAllActivity: isArabic ? "عرض كل النشاط" : "View All Activity",
-      view: isArabic ? "عرض" : "View",
-      failedMarkRead: isArabic ? "تعذر تعيين الكل كمقروء" : "Failed to mark all as read",
-      failedSingleRead: isArabic ? "تعذر تعيين الإشعار كمقروء" : "Failed to mark as read",
-    }),
-    [isArabic],
-  );
+  const isDark = mounted ? resolvedTheme === "dark" : true;
 
   useEffect(() => {
-    const onOpenPicker = () => setAiProviderPickerOpen(true);
-    window.addEventListener(OPEN_AI_PROVIDER_PICKER_EVENT, onOpenPicker);
-    return () => window.removeEventListener(OPEN_AI_PROVIDER_PICKER_EVENT, onOpenPicker);
-  }, []);
+    setMounted(true)
+  }, [])
 
-  // Auto-close sidebar when viewport is below lg (sidebar becomes overlay, no reserved width)
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -85,180 +76,80 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const handleToggle = () => setSidebarOpen(prev => !prev);
+    window.addEventListener("toggle-platform-sidebar", handleToggle);
+    return () => window.removeEventListener("toggle-platform-sidebar", handleToggle);
+  }, []);
+
+  const contentScrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = contentScrollAreaRef.current;
+    if (!container) return;
     const onScroll = () => {
-      const next = window.scrollY > 8;
-      setHeaderScrolled(next);
+      setHeaderScrolled(container.scrollTop > 10);
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    const updateVisibility = () => {
-      setIsWindowVisible(document.visibilityState === "visible");
-    };
+    const container = contentScrollAreaRef.current;
+    if (container) {
+      container.scrollTop = 0;
+      setHeaderScrolled(false);
+    }
+  }, [pathname]);
 
-    updateVisibility();
+  useEffect(() => {
+    const updateVisibility = () => setIsWindowVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", updateVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", updateVisibility);
+    return () => document.removeEventListener("visibilitychange", updateVisibility);
   }, []);
 
-  // Close dropdowns when clicking outside or pressing ESC
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        showNotifications &&
-        !target.closest(".notification-dropdown-container")
-      ) {
-        setShowNotifications(false);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (showNotifications) setShowNotifications(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [showNotifications]);
-
-  // Notification data via SWR
-  const { data: notifications, mutate: mutateNotifications } = useSWR<
-    Notification[]
-  >(
+  const { data: notifications, mutate: mutateNotifications } = useSWR<Notification[]>(
     isAuthenticated && user ? [`notifications`, user.id] : null,
     () => api.getNotifications(),
     {
-      refreshInterval: isWindowVisible ? (showNotifications ? 15_000 : 30_000) : 0,
+      refreshInterval: isWindowVisible ? 30_000 : 0,
       revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 15_000,
     },
   );
+
   const notificationCount = useMemo(
     () => notifications?.filter((n: Notification) => !n.isRead).length ?? 0,
     [notifications],
   );
 
-  // Live Toast for New Notifications
-  const lastShownAt = useRef<number>(Date.now());
-  useEffect(() => {
-    const unread = notifications?.filter((n: Notification) => !n.isRead) || [];
-    if (unread.length > 0) {
-      const latest = unread[0];
-      const latestTime = new Date(latest.createdAt).getTime();
-
-      if (latestTime > lastShownAt.current) {
-        lastShownAt.current = latestTime;
-        toast(latest.title, {
-          description: latest.message,
-          action: {
-            label: shellText.view,
-            onClick: () => {
-              if (latest.relatedEntityType === "evidence")
-                router.push("/platform/evidence");
-              else if (latest.relatedEntityType === "gap")
-                router.push("/platform/gap-analysis");
-              else router.push("/platform/notifications");
-            },
-          },
-        });
-      }
-    }
-  }, [notifications, router, shellText.view]);
-
-  const handleClearNotifications = useCallback(async () => {
-    try {
-      await api.markAllNotificationsRead();
-      mutateNotifications(
-        notifications?.map((n: Notification) => ({ ...n, isRead: true })) ?? [],
-        { revalidate: false },
-      );
-    } catch {
-      toast.error(shellText.failedMarkRead);
-    }
-  }, [mutateNotifications, notifications, shellText.failedMarkRead]);
-
-  useEffect(() => {
-    if (
-      showNotifications &&
-      notifications?.some((n: Notification) => !n.isRead)
-    ) {
-      handleClearNotifications();
-    }
-  }, [showNotifications, notifications, handleClearNotifications]);
-
-  const handleDismissNotification = async (id: string) => {
-    try {
-      await api.markNotificationRead(id);
-      mutateNotifications(
-        notifications?.map((n: Notification) =>
-          n.id === id ? { ...n, isRead: true } : n,
-        ) ?? [],
-        { revalidate: false },
-      );
-      const notification = notifications?.find(
-        (n: Notification) => n.id === id,
-      );
-      if (
-        notification?.relatedEntityId &&
-        notification.relatedEntityType === "evidence"
-      ) {
-        router.push("/platform/evidence");
-      } else if (
-        notification?.relatedEntityId &&
-        notification.relatedEntityType === "report"
-      ) {
-        router.push(
-          `/platform/gap-analysis?report=${notification.relatedEntityId}`,
-        );
-      }
-    } catch {
-      toast.error(shellText.failedSingleRead);
-    }
-  };
-
   const platformVisualMode = useMemo(() => {
     if (!pathname) return "default";
-    if (pathname.includes("/horus-ai")) return "horus";
-    if (pathname.includes("/analytics")) return "analytics";
-    if (pathname.includes("/evidence")) return "evidence";
-    if (pathname.includes("/standards")) return "standards";
-    if (pathname.includes("/dashboard")) return "dashboard";
+    const modes = ["horus-ai", "analytics", "evidence", "standards", "dashboard"];
+    for (const mode of modes) if (pathname.includes(`/${mode}`)) return mode;
     return "default";
   }, [pathname]);
 
+  const isHorusAi = pathname?.includes("/horus-ai");
+
   return (
     <div
+      dir={isArabic ? "rtl" : "ltr"}
       className={cn(
-        "flex h-screen overflow-hidden selection:bg-primary/30 relative transition-colors duration-300",
+        "flex h-screen overflow-hidden selection:bg-primary/20 relative transition-colors duration-500 bg-background",
       )}
       data-section="platform"
       data-platform-theme={platformTheme}
       data-platform-page={platformVisualMode}
     >
-      {/* 🌌 Shared Platform Background Layer */}
-      <div className="cinematic-bg" />
+      <div className="cinematic-bg" aria-hidden />
 
-      {/* Backdrop when sidebar is overlay (below lg) */}
+      {/* Mobile Sidebar Backdrop */}
       <div
         className={cn(
-          "glass-overlay-backdrop fixed inset-0 z-40 lg:hidden transition-opacity duration-300",
+          "fixed inset-0 z-40 lg:hidden transition-opacity duration-500 bg-black/40 backdrop-blur-sm",
           sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
       />
-      {/* Body scroll lock when mobile sidebar is open */}
-      {sidebarOpen && (
-        <style>{`@media (max-width: 1023px) { body { overflow: hidden; } }`}</style>
-      )}
 
       {!focusMode && (
         <PlatformSidebar
@@ -268,199 +159,203 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      <main
-        id="main-content"
-        className="flex-1 flex flex-col relative transition-all duration-300 ease-in-out w-full max-w-[100vw] overflow-x-hidden min-w-0 lg:ml-0"
-      >
-        <div
-          className={cn(
-            "flex-1 overflow-y-auto scroll-smooth transition-colors duration-300",
-            pathname?.includes("/horus-ai")
-              ? "content-scroll-area min-h-0"
-              : "px-4 sm:px-6 md:px-10 pt-3 sm:pt-4 pb-24 content-scroll-area",
-          )}
-        >
-          <div
-            className={
-              pathname?.includes("/horus-ai")
-                ? "h-full w-full"
-                : "max-w-[1280px] w-full mx-auto"
-            }
-          >
-            {!pathname?.includes("/horus-ai") ? (
-              <div
-                className={cn(
-                  "sticky top-0 z-20 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3 glass-flyout rounded-[var(--radius-xl)] px-2.5 sm:px-3 py-2",
-                  headerScrolled && "shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
-                )}
-              >
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="glass-button glass-text-secondary lg:hidden min-h-[44px] min-w-[44px] rounded-xl p-2 transition-colors hover:text-[var(--glass-text-primary)]"
-                  aria-label={shellText.openSidebar}
-                >
-                  <PanelLeft className="w-4 h-4" />
-                </button>
+      {!focusMode && !isHorusAi && (
+        <MobileBottomNav />
+      )}
 
-                <button
-                  onClick={() => setCommandPaletteOpen(true)}
-                  className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl glass-button text-muted-foreground text-sm transition-all group min-h-[44px] min-w-0 shadow-sm"
-                >
-                  <Search className="w-4 h-4 group-hover:text-foreground transition-colors" />
-                  <span className={cn("hidden sm:inline font-medium", isArabic && "font-arabic")}>{shellText.search}</span>
-                  <kbd className="glass-pill glass-text-secondary ml-auto hidden items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold sm:flex">
-                    <span className="text-xs">⌘</span>K
-                  </kbd>
-                </button>
+      {!focusMode && (
+        <HorusMobileNav />
+      )}
 
-                <div className="flex items-center gap-1 rounded-[22px] border border-[var(--glass-border)] bg-[var(--glass-bg)] p-1 shadow-[0_12px_32px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl">
-                <AnimatedThemeToggle />
-                <LanguageToggle />
-
-                <div className="relative notification-dropdown-container">
-                  <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className={cn(
-                      "relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[16px] border border-transparent text-[var(--glass-text-secondary)] transition-all duration-200 hover:-translate-y-0.5 hover:text-[var(--glass-text-primary)]",
-                      showNotifications || notificationCount > 0
-                        ? "border-[var(--status-warning-border)] bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04))] text-[var(--status-warning)] shadow-[0_10px_24px_-16px_rgba(245,158,11,0.4)]"
-                        : "hover:bg-[var(--glass-soft-bg)]"
-                    )}
-                    aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
-                    aria-haspopup="true"
-                    aria-expanded={showNotifications}
-                  >
-                    <Bell className="h-[17px] w-[17px]" strokeWidth={2.05} />
-                    {notificationCount > 0 && (
-                      <span className="absolute right-[9px] top-[9px] h-2 w-2 rounded-full bg-primary ring-2 ring-[var(--layer-1)]" />
-                    )}
-                  </button>
-
-                  {showNotifications && (
-                    <div className="glass-flyout absolute top-full right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-w-[320px] rounded-3xl p-4 shadow-2xl animate-in slide-in-from-top-2 duration-300 sm:p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                          {shellText.activity}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleClearNotifications}
-                            className="text-[10px] text-primary font-bold hover:underline min-h-[32px] px-1"
-                          >
-                            {shellText.markAllRead}
-                          </button>
-                          <button
-                            onClick={() => setShowNotifications(false)}
-                            className="glass-button glass-text-secondary min-h-[32px] min-w-[32px] rounded-lg p-1 transition-colors hover:text-[var(--glass-text-primary)]"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                        {!notifications || notifications.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-10 opacity-60">
-                            <Bell className="w-8 h-8 text-muted-foreground mb-3" />
-                            <p className="text-center text-muted-foreground italic text-sm">
-                              {shellText.quiet}
-                            </p>
-                          </div>
-                        ) : (
-                          notifications.slice(0, 8).map((n: Notification) => (
-                            <div
-                              key={n.id}
-                              className={cn(
-                                "glass-button flex gap-3 group cursor-pointer p-3 rounded-xl transition-all",
-                                !n.isRead
-                                  ? "glass-panel"
-                                  : "opacity-70",
-                              )}
-                              onClick={() => handleDismissNotification(n.id)}
-                            >
-                              <div
-                                className={cn(
-                                  "w-1 h-full min-h-[2rem] rounded-full flex-shrink-0",
-                                  !n.isRead
-                                    ? n.type === "error"
-                                      ? "bg-destructive"
-                                      : n.type === "success"
-                                        ? "bg-emerald-500"
-                                        : "bg-primary"
-                                    : "bg-muted-foreground/30",
-                                )}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h4
-                                  className={cn(
-                                    "text-xs font-bold",
-                                    !n.isRead
-                                      ? "text-foreground"
-                                      : "text-muted-foreground",
-                                  )}
-                                >
-                                  {n.title}
-                                </h4>
-                                <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                                  {n.message}
-                                </p>
-                                <span className="text-[9px] text-muted-foreground/70 mt-1.5 block font-bold uppercase tracking-wider">
-                                  {new Date(n.createdAt).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </div>
-                              {!n.isRead && (
-                                <div
-                                  className={cn(
-                                    "w-2 h-2 rounded-full mt-1.5",
-                                    n.type === "error"
-                                      ? "bg-destructive"
-                                      : n.type === "success"
-                                        ? "bg-emerald-500"
-                                        : "bg-primary",
-                                  )}
-                                />
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {notifications && notifications.length > 0 && (
-                        <button
-                          onClick={() => {
-                            setShowNotifications(false);
-                            router.push("/platform/notifications");
-                          }}
-                          className="glass-button glass-text-secondary mt-4 w-full rounded-2xl py-3 text-center text-[10px] font-bold uppercase tracking-widest transition-colors hover:text-[var(--glass-text-primary)]"
-                        >
-                          {shellText.viewAllActivity}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-2xl glass-panel glass-border text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={shellText.openSidebar}
-              >
-                <PanelLeft className="w-5 h-5" />
-              </button>
+        <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
+          {/* Header — sidebar-inspired glass */}
+        {!isHorusAi && (
+          <header
+            className={cn(
+              "absolute top-0 inset-x-0 z-30 grid grid-cols-3 items-center gap-3 px-4 py-2.5 transition-all duration-300 sm:px-5",
+              headerScrolled
+                ? "border-b backdrop-blur-lg border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-sm shadow-black/5"
+                : "bg-transparent border-b border-transparent",
             )}
+          >
+            {/* Left section: Sidebar toggle for mobile/tablet */}
+            <div className="flex items-center justify-start">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="glass-button shrink-0 rounded-lg p-2 lg:hidden"
+                aria-label={isArabic ? "فتح الشريط الجانبي" : "Open sidebar"}
+              >
+                <PanelLeft className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Center section: Search Bar centered perfectly */}
+            <div className="flex items-center justify-center min-w-0">
+              <button
+                type="button"
+                onClick={() => setCommandPaletteOpen(true)}
+                className="command-center-trigger group flex w-full max-w-sm items-center gap-2.5 px-3 py-2 text-[13px] sm:max-w-md"
+              >
+                <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                <span className="truncate text-muted-foreground">{isArabic ? "ابحث عن أي شيء..." : "Search for anything..."}</span>
+                <div className="ms-auto hidden items-center gap-0.5 opacity-50 sm:flex">
+                  <kbd className="rounded bg-foreground/8 px-1 py-0.5 font-mono text-[9px] font-semibold">⌘</kbd>
+                  <kbd className="rounded bg-foreground/8 px-1 py-0.5 font-mono text-[9px] font-semibold">K</kbd>
+                </div>
+              </button>
+            </div>
+
+            {/* Right section: Profile dropdown */}
+            <div className="flex items-center justify-end">
+              {user && (
+                <>
+                  {/* Mobile Profile Dropdown */}
+                  <div className="lg:hidden shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-[11.5px] font-semibold text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
+                        >
+                          {(() => {
+                            if (!user.name) return "U"
+                            const parts = user.name.trim().split(/\s+/)
+                            if (parts.length >= 2) {
+                              return (parts[0][0] + parts[1][0]).toUpperCase()
+                            }
+                            return user.name.substring(0, 2).toUpperCase()
+                          })()}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align={isArabic ? "start" : "end"}
+                        className="w-52 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          {resolvedTheme === "dark" ? (
+                            <Sun size={15} className="text-muted-foreground" />
+                          ) : (
+                            <Moon size={15} className="text-muted-foreground" />
+                          )}
+                          {resolvedTheme === "dark"
+                            ? (isArabic ? "مظهر فاتح" : "Light mode")
+                            : (isArabic ? "مظهر داكن" : "Dark mode")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setLanguage(isArabic ? "en" : "ar")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          <Languages size={15} className="text-muted-foreground" />
+                          {isArabic ? "English" : "العربية"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-2 my-1 bg-border/50" />
+                        <DropdownMenuItem
+                          onClick={() => router.push("/platform/settings/account")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          <User size={15} className="text-muted-foreground" />
+                          {isArabic ? "الملف الشخصي" : "Profile"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-2 my-1 bg-border/50" />
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            await logout()
+                            window.location.href = "/"
+                          }}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-destructive cursor-pointer"
+                        >
+                          <LogOut size={15} />
+                          {isArabic ? "تسجيل الخروج" : "Sign out"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Desktop Profile Dropdown */}
+                  <div className="hidden lg:block shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-[11.5px] font-semibold text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
+                        >
+                          {(() => {
+                            if (!user.name) return "U"
+                            const parts = user.name.trim().split(/\s+/)
+                            if (parts.length >= 2) {
+                              return (parts[0][0] + parts[1][0]).toUpperCase()
+                            }
+                            return user.name.substring(0, 2).toUpperCase()
+                          })()}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align={isArabic ? "start" : "end"}
+                        className="w-44 rounded-xl border-border/60 bg-popover shadow-lg p-1.5"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => router.push("/platform/settings/account")}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer"
+                        >
+                          <User size={15} className="text-muted-foreground" />
+                          {isArabic ? "الملف الشخصي" : "Profile"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-2 my-1 bg-border/50" />
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            await logout()
+                            window.location.href = "/"
+                          }}
+                          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-destructive cursor-pointer"
+                        >
+                          <LogOut size={15} />
+                          {isArabic ? "تسجيل الخروج" : "Sign out"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </>
+              )}
+            </div>
+          </header>
+        )}
+
+          {/* Content Area */}
+          <div 
+            ref={contentScrollAreaRef}
+            className={cn(
+              "flex-1 custom-scrollbar",
+              isHorusAi ? "h-full overflow-hidden" : "overflow-y-auto px-4 pb-28 lg:pb-8 pt-[60px] sm:px-5 content-scroll-area"
+            )}
+          >
+          <div
+          className={cn(
+              "mx-auto w-full animate-fade-in platform-page",
+              isHorusAi && "h-full platform-container-full",
+            )}
+          >
             {children}
           </div>
         </div>
       </main>
 
-      <FloatingAIBar />
       <AiProviderPickerDialog open={aiProviderPickerOpen} onOpenChange={setAiProviderPickerOpen} />
       <CommandPalette />
+
+      {/* Global CSS for some effects */}
+      <style jsx global>{`
+        .command-center-trigger {
+          box-shadow: 0 2px 10px -2px rgba(0,0,0,0.05);
+        }
+        .command-center-trigger:hover {
+          box-shadow: 0 8px 20px -4px rgba(0,0,0,0.1);
+          transform: translateY(-1px);
+        }
+      `}</style>
     </div>
   );
 }

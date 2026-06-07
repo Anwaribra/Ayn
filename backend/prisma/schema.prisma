@@ -19,6 +19,7 @@ model User {
   password      String
   role          Role?
   institutionId String?
+  horusAccess   Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -29,6 +30,7 @@ model User {
   activities    Activity[]
   eventOutbox   EventOutbox[]
   horusMemories HorusMemory[]
+  accessRequests AccessRequest[]
 
   // Platform State Relations
   platformFiles    PlatformFile[]
@@ -53,6 +55,36 @@ enum Role {
   UNIVERSITY
   INSTITUTION
   OTHER
+}
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Access Request Model
+model AccessRequest {
+  id          String    @id @default(uuid())
+  name        String
+  email       String
+  institution String
+  role        String
+  type        String
+  message     String?   @db.Text
+  status      AccessRequestStatus @default(PENDING)
+  userId      String?
+  reviewedBy  String?
+  reviewNote  String?   @db.Text
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@index([userId])
 }
 
 // Institution Model

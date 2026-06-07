@@ -128,14 +128,14 @@ export function HorusMobileNav() {
               animate="show"
               exit="exit"
               className={cn(
-                "absolute top-[22%] bottom-[22%] w-[195px] backdrop-blur-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden pointer-events-auto flex flex-col",
-                isArabic ? "right-0 border-l" : "left-0 border-r",
+                "absolute top-[22%] bottom-[22%] w-[195px] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden pointer-events-auto flex flex-col",
+                isArabic ? "right-0 border-s" : "left-0 border-e",
                 isDark 
                   ? "bg-black/15 border-white/5 shadow-black/60" 
-                  : "bg-white/12 border-black/5 shadow-black/5"
+                  : "bg-white/80 border-black/5 shadow-black/5"
               )}
               style={{
-                borderRadius: isArabic ? "150px 0 0 150px" : "0 150px 150px 0",
+                borderRadius: isArabic ? "9999px 0 0 9999px" : "0 9999px 9999px 0",
               }}
             >
               {/* Close button inside the menu (always on the straight edge to avoid curve clipping) */}
@@ -202,7 +202,10 @@ export function HorusMobileNav() {
                           className={cn(
                             "flex items-center gap-2.5 p-2 w-[135px] rounded-2xl transition-all duration-300 active:scale-95 outline-none",
                             active 
-                              ? "bg-primary/25 border border-primary/40 text-primary dark:text-primary-foreground shadow-sm shadow-primary/5" 
+                              ? cn(
+                                  "bg-primary/25 border border-primary/40 shadow-sm shadow-primary/5",
+                                  isDark ? "text-primary-foreground" : "text-foreground",
+                                )
                               : isDark
                                 ? "bg-white/5 border border-transparent hover:bg-white/10 text-foreground"
                                 : "bg-black/5 border border-transparent hover:bg-black/10 text-foreground"
@@ -216,7 +219,9 @@ export function HorusMobileNav() {
                           </div>
                           <span className={cn(
                             "text-[11px] font-semibold line-clamp-1",
-                            active ? "text-primary dark:text-primary-foreground" : "text-foreground",
+                            active
+                              ? isDark ? "text-primary-foreground" : "text-foreground"
+                              : "text-foreground",
                             isArabic ? "text-right flex-1" : "text-left flex-1"
                           )}>
                             {item.label}

@@ -18,7 +18,6 @@ import {
   Sun,
   Moon,
   Languages,
-  PanelLeft,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import PlatformSidebar from "@/components/platform/sidebar-enhanced";
@@ -142,15 +141,6 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
     >
       <div className="cinematic-bg" aria-hidden />
 
-      {/* Mobile Sidebar Backdrop */}
-      <div
-        className={cn(
-          "fixed inset-0 z-40 lg:hidden transition-opacity duration-500 bg-black/40 backdrop-blur-sm",
-          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
-        onClick={() => setSidebarOpen(false)}
-      />
-
       {!focusMode && (
         <PlatformSidebar
           open={sidebarOpen}
@@ -172,23 +162,13 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
         {!isHorusAi && (
           <header
             className={cn(
-              "absolute top-0 inset-x-0 z-30 grid grid-cols-3 items-center gap-3 px-4 py-2.5 transition-all duration-300 sm:px-5",
+              "absolute top-0 inset-x-0 z-30 grid grid-cols-[1fr_auto] lg:grid-cols-3 items-center gap-3 px-4 py-2.5 transition-all duration-300 sm:px-5",
               headerScrolled
                 ? "border-b backdrop-blur-lg border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-sm shadow-black/5"
                 : "bg-transparent border-b border-transparent",
             )}
           >
-            {/* Left section: Sidebar toggle for mobile/tablet */}
-            <div className="flex items-center justify-start">
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="glass-button shrink-0 rounded-lg p-2 lg:hidden"
-                aria-label={isArabic ? "فتح الشريط الجانبي" : "Open sidebar"}
-              >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
+            <div className="hidden lg:block" aria-hidden />
 
             {/* Center section: Search Bar centered perfectly */}
             <div className="flex items-center justify-center min-w-0">

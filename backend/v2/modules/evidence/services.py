@@ -63,7 +63,28 @@ class EvidenceService:
             # If actual PDF data is provided, parse it
             if file_data and evidence.content_type == "application/pdf":
                 pdf_reader = PdfReader(io.BytesIO(file_data))
-                extracted_text = "\n".join([page.extract_text() for page in pdf_reader.pages])
+                extracted_text = "\n".join([page.extract_text() or "" for page in pdf_reader.pages])
+                
+                # Scanned PDF check: if the extracted text is extremely sparse, try OCR
+                if len(extracted_text.strip()) < 50:
+                    logger.info("PDF text is empty or very sparse. Attempting scanned PDF OCR fallback...")
+                    try:
+                        import pytesseract
+                        from pdf2image import convert_from_bytes
+                        # Convert PDF bytes to PIL images (limit to first 5 pages for performance)
+                        images = convert_from_bytes(file_data, first_page=1, last_page=5)
+                        ocr_pages = []
+                        for img in images:
+                            txt = pytesseract.image_to_string(img, lang="ara+eng")
+                            ocr_pages.append(txt)
+                        ocr_text = "\n".join(ocr_pages).strip()
+                        if ocr_text:
+                            extracted_text = ocr_text
+                            logger.info("Successfully extracted text from scanned PDF via OCR.")
+                    except ImportError:
+                        logger.warning("Scanned PDF detected but pytesseract or pdf2image is not installed. Skipping OCR.")
+                    except Exception as ocr_err:
+                        logger.error(f"OCR processing failed: {ocr_err}")
             else:
                 # Mock text fallback for dev/testing
                 extracted_text = (
@@ -76,7 +97,10 @@ class EvidenceService:
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
             chunks = text_splitter.split_text(extracted_text)
             
-            # Store Chunks and mock embeddings (since Gemini embedding API calls are mocked or generated later)
+            # Store Chunks and generate real embeddings
+            from v2.modules.ai_signals.client import AISignalsClient
+            ai_client = AISignalsClient()
+            
             for idx, chunk_content in enumerate(chunks):
                 chunk = EvidenceChunk(
                     evidence_id=evidence_id,
@@ -86,11 +110,11 @@ class EvidenceService:
                 db.add(chunk)
                 await db.flush() # Flush to generate chunk.id
                 
-                # Mocking a 768-dimension float vector for testing
-                mock_vector = [0.1] * 768
+                # Generate real embedding vector
+                vector = ai_client.generate_embedding(chunk_content)
                 embedding = EvidenceEmbedding(
                     chunk_id=chunk.id,
-                    embedding=mock_vector
+                    embedding=vector
                 )
                 db.add(embedding)
                 

@@ -6,6 +6,7 @@ from v2.modules.standards.router import router as standards_router
 from v2.modules.tasks.router import router as tasks_router
 from v2.modules.validation.router import router as validation_router
 from v2.modules.horus_operations.router import router as horus_operations_router
+from v2.modules.admin.router import router as admin_router
 
 v2_router = APIRouter(prefix="/v2")
 v2_router.include_router(evidence_router)
@@ -14,6 +15,7 @@ v2_router.include_router(standards_router)
 v2_router.include_router(tasks_router)
 v2_router.include_router(validation_router)
 v2_router.include_router(horus_operations_router)
+v2_router.include_router(admin_router)
 
 @v2_router.get("/health")
 async def health_check():

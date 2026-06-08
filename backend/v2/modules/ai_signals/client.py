@@ -31,6 +31,24 @@ class AISignalsClient:
         # Instantiate circuit breaker
         self.circuit_breaker = AICircuitBreaker(failure_threshold=3, cooldown_window=30.0)
 
+    def generate_embedding(self, text: str) -> list[float]:
+        """
+        Generate a vector embedding for a text chunk using Gemini text-embedding-004.
+        """
+        if not self.client:
+            return [0.1] * 768
+        try:
+            response = self.client.models.embed_content(
+                model="text-embedding-004",
+                contents=text
+            )
+            if response.embeddings:
+                return response.embeddings[0].values
+            return [0.1] * 768
+        except Exception as e:
+            logger.error(f"[AISignalsClient] Error calling embed_content: {e}")
+            return [0.1] * 768
+
     async def analyze_document_relevance(
         self, 
         text_content: str, 

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef } from "react"
 import useSWR from "swr"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Search,
@@ -231,6 +232,7 @@ function UploadModal({ onClose, onDone, isArabic }: UploadModalProps) {
   const [isDragActive, setIsDragActive] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const modalRef = useFocusTrap(true, onClose)
 
   const addFiles = useCallback((files: FileList | File[]) => {
     const arr = Array.from(files)
@@ -302,6 +304,7 @@ function UploadModal({ onClose, onDone, isArabic }: UploadModalProps) {
         aria-hidden="true"
       />
       <motion.div
+        ref={modalRef as React.RefObject<HTMLDivElement>}
         initial={{ scale: 0.95, y: 12 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 12 }}
@@ -460,6 +463,7 @@ interface DeleteConfirmProps {
 }
 
 function DeleteConfirm({ count, onConfirm, onCancel, isArabic }: DeleteConfirmProps) {
+  const modalRef = useFocusTrap(true, onCancel)
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -469,6 +473,7 @@ function DeleteConfirm({ count, onConfirm, onCancel, isArabic }: DeleteConfirmPr
     >
       <div className="absolute inset-0 bg-black/75 backdrop-blur-xl" onClick={onCancel} />
       <motion.div
+        ref={modalRef as React.RefObject<HTMLDivElement>}
         initial={{ scale: 0.95, y: 8 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 8 }}

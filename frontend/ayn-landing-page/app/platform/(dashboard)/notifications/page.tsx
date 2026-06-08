@@ -157,8 +157,17 @@ export default function NotificationsPage() {
           filteredNotifications.map((n: Notification) => (
             <div
               key={n.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  navigateToRelated(n)
+                }
+              }}
               className={cn(
                 "group relative flex cursor-pointer gap-4 overflow-hidden rounded-[18px] border p-4 transition-colors",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900",
                 !n.isRead
                   ? "border-primary/25 bg-primary/5"
                   : "border-[var(--glass-border)] bg-[var(--glass-soft-bg)] hover:bg-[var(--glass-strong-bg)]",

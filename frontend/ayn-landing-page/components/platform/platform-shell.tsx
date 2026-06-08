@@ -196,6 +196,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
+                          aria-label={isArabic ? "قائمة الملف الشخصي" : "Profile Menu"}
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
                         >
                           <User className="h-[15px] w-[15px]" strokeWidth={2.5} />
@@ -254,6 +255,7 @@ export default function PlatformShell({ children }: { children: ReactNode }) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
+                          aria-label={isArabic ? "قائمة الملف الشخصي" : "Profile Menu"}
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary shadow-sm transition-all duration-200 hover:bg-primary/15 hover:shadow hover:scale-[1.03] active:scale-[0.97]"
                         >
                           <User className="h-[15px] w-[15px]" strokeWidth={2.5} />

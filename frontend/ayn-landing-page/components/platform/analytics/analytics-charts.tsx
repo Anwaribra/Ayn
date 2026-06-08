@@ -153,18 +153,20 @@ export function DistributionBarChart({ data, title, subtitle }: DistBarProps) {
   const colored = data.map((d, i) => ({ ...d, fill: d.fill ?? PALETTE[i % PALETTE.length] }))
   return (
     <ChartCardShell title={title} subtitle={subtitle} accentColor="#7c5ce0">
-      <div className="h-64 w-full -ms-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={colored} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--text-secondary)", fontWeight: 700 }} dy={8} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} domain={[0, 100]} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]} />
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
-              {colored.map((entry, i) => (<Cell key={i} fill={entry.fill} />))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="h-64 w-full -ms-4 overflow-x-auto custom-scrollbar">
+        <div className="h-64 min-w-[500px] md:min-w-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={colored} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--text-secondary)", fontWeight: 700 }} dy={8} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--text-secondary)", fontWeight: 700 }} domain={[0, 100]} />
+              <Tooltip contentStyle={tooltipStyle} itemStyle={itemStyle} labelStyle={labelStyle} formatter={(v) => [`${v}%`, isArabic ? "النتيجة" : "Score"]} />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                {colored.map((entry, i) => (<Cell key={i} fill={entry.fill} />))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </ChartCardShell>
   )

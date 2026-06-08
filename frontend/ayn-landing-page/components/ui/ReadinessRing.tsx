@@ -60,7 +60,15 @@ export function ReadinessRing({
   const gradientId = compact ? "ringGradientCompact" : "ringGradient"
 
   return (
-    <div ref={ref} className={cn("flex flex-col items-center", className)}>
+    <div
+      ref={ref}
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={isArabic ? "مؤشر الجاهزية" : "Readiness Score Gauge"}
+      className={cn("flex flex-col items-center", className)}
+    >
       <div className="relative flex items-center justify-center">
         <svg width={size} height={size} className="-rotate-90" viewBox={`0 0 ${size} ${size}`}>
           <defs>

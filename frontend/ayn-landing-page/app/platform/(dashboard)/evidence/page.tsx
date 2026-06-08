@@ -590,7 +590,7 @@ function EvidenceContent() {
             </label>
           </div>
 
-          <div className="relative z-10 mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="relative z-10 mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{copy.total}</p>
               <p className="mt-1.5 text-xl font-black text-foreground">{vaultSummary.total}</p>

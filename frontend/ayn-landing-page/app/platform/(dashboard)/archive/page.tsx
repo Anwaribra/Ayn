@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ProtectedRoute } from "@/components/platform/protected-route"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 import { useAuth } from "@/lib/auth-context"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { api } from "@/lib/api"
@@ -47,6 +48,8 @@ function ArchiveContent() {
   const [filterType, setFilterType] = useState<string>("all")
   const [isPurging, setIsPurging] = useState(false)
   const [itemToPurge, setItemToPurge] = useState<string | null>(null)
+
+  const modalRef = useFocusTrap(isPurging, () => setIsPurging(false))
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(isArabic ? "ar-EG" : "en-US", {
@@ -277,6 +280,7 @@ function ArchiveContent() {
       {isPurging && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setIsPurging(false)}>
           <div
+            ref={modalRef as React.RefObject<HTMLDivElement>}
             role="dialog"
             aria-modal="true"
             className="glass-panel rounded-3xl p-8 max-w-md w-full border border-destructive/20 shadow-2xl relative"

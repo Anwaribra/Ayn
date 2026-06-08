@@ -293,11 +293,11 @@ function DashboardContent() {
       </div>
 
       {/* Row of 4 KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Evidence Items */}
         <Link
           href="/platform/evidence"
-          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:outline-none"
         >
           <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
             <div className={isArabic ? "text-right" : ""}>
@@ -314,7 +314,7 @@ function DashboardContent() {
         {/* Card 2: Open Alerts */}
         <Link
           href="/platform/gap-analysis"
-          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:outline-none"
         >
           <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
             <div className={isArabic ? "text-right" : ""}>
@@ -331,7 +331,7 @@ function DashboardContent() {
         {/* Card 3: Compliance Score */}
         <Link
           href="/platform/standards"
-          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:outline-none"
         >
           <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
             <div className={isArabic ? "text-right" : ""}>
@@ -348,7 +348,7 @@ function DashboardContent() {
         {/* Card 4: Gap Analyses */}
         <Link
           href="/platform/gap-analysis"
-          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01]"
+          className="rounded-2xl border border-border bg-[var(--layer-3)] p-5 flex flex-col justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:outline-none"
         >
           <div className={cn("flex items-start justify-between", isArabic && "flex-row-reverse")}>
             <div className={isArabic ? "text-right" : ""}>

@@ -20,7 +20,7 @@ export function Skeleton({ className }: SkeletonProps) {
 export function DashboardCardSkeleton() {
   return (
     <div className="group">
-      <div className="glass-panel p-8 rounded-[24px] aspect-square flex flex-col justify-between border-white/5">
+      <div className="glass-panel p-8 rounded-[24px] aspect-auto sm:aspect-square min-h-[140px] flex flex-col justify-between border-white/5">
         <div className="flex justify-between items-start">
           <Skeleton className="w-14 h-14 rounded-[18px]" />
           <Skeleton className="w-5 h-5 rounded" />
@@ -98,7 +98,7 @@ export function EvidenceGridSkeleton({ viewMode = "grid", count = 8 }: { viewMod
 
 export function StandardsCardSkeleton() {
   return (
-    <div className="glass-panel rounded-[24px] p-6 border-white/5 aspect-square flex flex-col justify-between">
+    <div className="glass-panel rounded-[24px] p-6 border-white/5 aspect-auto sm:aspect-square min-h-[140px] flex flex-col justify-between">
       <div className="flex justify-between items-start">
         <Skeleton className="w-12 h-12 rounded-[18px]" />
         <Skeleton className="w-4 h-4 rounded" />

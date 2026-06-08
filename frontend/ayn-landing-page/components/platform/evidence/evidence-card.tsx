@@ -88,7 +88,15 @@ export function EvidenceCard({ evidence, onClick, onDelete }: EvidenceCardProps)
     return (
         <div
             onClick={onClick}
-            className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-white dark:bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5"
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    onClick?.()
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            className="group relative flex h-full flex-col rounded-[22px] border border-[var(--glass-border)] bg-white dark:bg-[var(--glass-soft-bg)] p-5 transition-all duration-200 cursor-pointer hover:border-primary/30 hover:bg-[var(--surface)] hover:shadow-lg hover:shadow-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900"
         >
             {/* Top accent line on hover */}
             <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(37,99,235,0.5),transparent)] opacity-0 transition-opacity group-hover:opacity-100 rounded-t-[22px]" />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 import { cn } from "@/lib/utils"
 import {
   BookOpen,
@@ -61,15 +62,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-    }
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  const modalRef = useFocusTrap(isOpen, onClose)
 
   const { data: rawStandards, isLoading } = useSWR(
     isOpen ? "standards" : null,
@@ -115,11 +108,12 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
           onClick={onClose}
         >
           <motion.div
+            ref={modalRef as React.RefObject<HTMLDivElement>}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-5xl max-h-[85vh] overflow-hidden"
+            className="w-full max-w-5xl max-h-[85dvh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -190,7 +184,7 @@ export function StandardsTemplates({ isOpen, onClose, onSelect }: StandardsTempl
               </div>
 
               {/* Templates Grid */}
-              <div className="p-6 overflow-y-auto max-h-[50vh] custom-scrollbar">
+              <div className="p-6 overflow-y-auto max-h-[50dvh] custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredTemplates.map((template) => {
                     const Icon = template.icon

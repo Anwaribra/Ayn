@@ -954,6 +954,32 @@ class HorusService:
 
         # ── TIER 1: FAST PATH (no platform context build) ────────────────────
         if fast_path:
+            if redis_client.enabled and message:
+                try:
+                    user_identity = await self._resolve_user_identity(user_id, current_user)
+                    inst_id = user_identity.get("institution_id") or "global"
+                    cached_response = await self._check_semantic_cache(client, message, inst_id)
+                    if cached_response:
+                        logger.info("Horus: Semantic cache HIT")
+                        if message:
+                            if background_tasks:
+                                background_tasks.add_task(ChatService.save_message, chat_id, user_id, "user", message, user_metadata)
+                            else:
+                                asyncio.create_task(ChatService.save_message(chat_id, user_id, "user", message, user_metadata))
+                        
+                        async for piece in _yield_text_chunks(cached_response):
+                            yield piece
+                        
+                        if background_tasks:
+                            background_tasks.add_task(ChatService.save_message, chat_id, user_id, "assistant", cached_response, None)
+                            background_tasks.add_task(self._remember_exchange_async, user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=cached_response)
+                        else:
+                            await ChatService.save_message(chat_id, user_id, "assistant", cached_response, None)
+                            asyncio.create_task(self._remember_exchange_async(user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=cached_response))
+                        return
+                except Exception as cache_err:
+                    logger.warning(f"Semantic cache lookup failed: {cache_err}")
+
             full_response = ""
             rag_sources: list[dict[str, Any]] = []
             try:
@@ -1162,6 +1188,16 @@ class HorusService:
                 asyncio.create_task(self._remember_exchange_async(user_id=user_id, chat_id=chat_id, user_message=message, assistant_response=full_response))
                 if message:
                     asyncio.create_task(self._generate_chat_title(message, full_response, None, chat_id))
+            if full_response and redis_client.enabled and message:
+                try:
+                    user_identity = await self._resolve_user_identity(user_id, current_user)
+                    inst_id = user_identity.get("institution_id") or "global"
+                    if background_tasks:
+                        background_tasks.add_task(self._save_semantic_cache, client, message, full_response, inst_id)
+                    else:
+                        asyncio.create_task(self._save_semantic_cache(client, message, full_response, inst_id))
+                except Exception as cache_save_err:
+                    logger.warning(f"Failed to save to semantic cache: {cache_save_err}")
             return
 
         # First visible stream event for non-fast paths must not wait for DB/context work.
@@ -2684,6 +2720,134 @@ Behavioral rules:
             return json.loads(cleaned[start : end + 1])
         except Exception:
             return None
+
+    async def _check_semantic_cache(self, client: Any, message: str, institution_id: str) -> str | None:
+        if not message:
+            return None
+        
+        # 1. Exact match fallback (0ms, extremely fast, no embedding cost)
+        import hashlib
+        msg_hash = hashlib.sha256(message.strip().lower().encode("utf-8")).hexdigest()
+        exact_key = f"horus:exact_cache:{institution_id}:{msg_hash}"
+        try:
+            exact_match = redis_client.get(exact_key)
+            if exact_match:
+                return exact_match
+        except Exception as e:
+            logger.warning(f"Exact cache read failed: {e}")
+
+        # 2. Semantic lookup
+        index_key = f"horus:semantic_cache_index:{institution_id}"
+        try:
+            raw_index = redis_client.get(index_key)
+        except Exception as e:
+            logger.warning(f"Semantic cache index read failed: {e}")
+            raw_index = None
+            
+        if not raw_index:
+            return None
+        
+        try:
+            cached_items = json.loads(raw_index)
+        except Exception:
+            return None
+            
+        if not cached_items:
+            return None
+
+        # Retrieve embedding of the incoming query
+        try:
+            query_vector = await client.create_embedding(message)
+        except Exception as e:
+            logger.warning(f"Could not generate embedding for cache search: {e}")
+            return None
+            
+        if not query_vector:
+            return None
+
+        # Compare with cached queries using cosine similarity
+        import math
+        best_sim = 0.0
+        best_response = None
+        
+        for item in cached_items:
+            cached_vector = item.get("vector")
+            if not cached_vector or len(cached_vector) != len(query_vector):
+                continue
+            
+            # Cosine similarity in pure Python
+            dot_product = sum(a * b for a, b in zip(query_vector, cached_vector))
+            mag_a = math.sqrt(sum(a * a for a in query_vector))
+            mag_b = math.sqrt(sum(b * b for b in cached_vector))
+            sim = dot_product / (mag_a * mag_b) if mag_a > 0 and mag_b > 0 else 0.0
+            
+            if sim > best_sim:
+                best_sim = sim
+                best_response = item.get("response")
+
+        if best_sim >= 0.95 and best_response:
+            # Populate exact cache for faster future hits
+            try:
+                redis_client.set(exact_key, best_response, ex=3600 * 24)
+            except Exception:
+                pass
+            return best_response
+            
+        return None
+
+    async def _save_semantic_cache(self, client: Any, message: str, response: str, institution_id: str) -> None:
+        if not message or not response:
+            return
+            
+        import hashlib
+        msg_hash = hashlib.sha256(message.strip().lower().encode("utf-8")).hexdigest()
+        exact_key = f"horus:exact_cache:{institution_id}:{msg_hash}"
+        try:
+            redis_client.set(exact_key, response, ex=3600 * 24)
+        except Exception as e:
+            logger.warning(f"Exact cache write failed: {e}")
+
+        # Retrieve embedding
+        try:
+            query_vector = await client.create_embedding(message)
+        except Exception as e:
+            logger.warning(f"Could not generate embedding for cache write: {e}")
+            return
+            
+        if not query_vector:
+            return
+
+        index_key = f"horus:semantic_cache_index:{institution_id}"
+        try:
+            raw_index = redis_client.get(index_key)
+        except Exception:
+            raw_index = None
+            
+        cached_items = []
+        if raw_index:
+            try:
+                cached_items = json.loads(raw_index)
+            except Exception:
+                pass
+
+        # Check for duplicates
+        for item in cached_items:
+            if item.get("query").strip().lower() == message.strip().lower():
+                return
+
+        new_item = {
+            "query": message,
+            "vector": query_vector,
+            "response": response
+        }
+        cached_items.append(new_item)
+        if len(cached_items) > 100:
+            cached_items.pop(0)
+
+        try:
+            redis_client.set(index_key, json.dumps(cached_items), ex=3600 * 24)
+        except Exception as e:
+            logger.warning(f"Semantic cache index write failed: {e}")
 
     async def _plan_agent_action(
         self,

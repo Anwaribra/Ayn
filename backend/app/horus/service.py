@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, AsyncGenerator, Callable
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.ai.service import get_gemini_client, CONTEXT_LIMIT_SENTINEL
 from app.evidence.service import EvidenceService, ALLOWED_FILE_TYPES
@@ -124,6 +124,21 @@ def _pending_cleanup_stale() -> None:
             expired_ids.append(cid)
     for cid in expired_ids:
         _PENDING_ACTION_CONFIRMATIONS_FALLBACK.pop(cid, None)
+
+
+class PlannerStep(BaseModel):
+    tool: str
+    arguments: Dict[str, Any] = Field(default_factory=dict)
+    reason: str
+
+
+class PlannerDecision(BaseModel):
+    mode: str = Field(description="Must be one of: 'tool', 'plan', 'chat'")
+    tool: Optional[str] = Field(default=None, description="Name of the tool to execute, or null")
+    arguments: Dict[str, Any] = Field(default_factory=dict, description="Arguments for the selected tool, or empty dict")
+    steps: List[PlannerStep] = Field(default_factory=list, description="List of steps for a plan, or empty list")
+    reason: str = Field(description="One concise sentence explaining the decision")
+    response: Optional[str] = Field(default=None, description="Brief user-facing message when mode is chat, or null")
 
 
 class Observation(BaseModel):
@@ -2745,7 +2760,11 @@ or
   "reason": "one concise sentence"
 }}
 """
-        raw = await client.generate_text(prompt=planner_prompt)
+        raw = await client.generate_text(
+            prompt=planner_prompt,
+            response_mime_type="application/json",
+            response_schema=PlannerDecision,
+        )
         parsed = self._extract_json_block(raw)
         if not isinstance(parsed, dict):
             return None
@@ -2800,7 +2819,11 @@ Rules:
 - If no alternative helps, use mode "chat" and explain the failure to the user.
 - Plan can contain up to 3 steps. All tools are read-only.
 """
-        raw = await client.generate_text(prompt=planner_prompt)
+        raw = await client.generate_text(
+            prompt=planner_prompt,
+            response_mime_type="application/json",
+            response_schema=PlannerDecision,
+        )
         parsed = self._extract_json_block(raw)
         if not isinstance(parsed, dict):
             return None

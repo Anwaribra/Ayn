@@ -112,6 +112,78 @@ async def ensure_standard_synced_v2(db: AsyncSession, standard_id: str) -> uuid.
 
         await db.commit()
         logger.info(f"Successfully synced standard {standard_v1.title} from V1 to V2.")
+    else:
+        # Update existing Standard in V2 if needed to prevent data drift
+        std_changed = False
+        if v2_std.title != standard_v1.title:
+            v2_std.title = standard_v1.title
+            std_changed = True
+        if v2_std.description != (standard_v1.description or ""):
+            v2_std.description = standard_v1.description or ""
+            std_changed = True
+        if v2_std.code != standard_v1.code:
+            v2_std.code = standard_v1.code
+            std_changed = True
+        if std_changed:
+            db.add(v2_std)
+            await db.flush()
+
+        # Sync/update criteria to prevent criteria drift
+        if standard_v1.criteria:
+            for c_v1 in standard_v1.criteria:
+                v2_crit_id = uuid.UUID(c_v1.id) if is_valid_uuid(c_v1.id) else None
+                stmt_crit = None
+                if v2_crit_id:
+                    stmt_crit = select(Criterion).where(Criterion.id == v2_crit_id)
+                else:
+                    stmt_crit = select(Criterion).where(
+                        (Criterion.standard_id == v2_std.id) & 
+                        (Criterion.title.ilike(c_v1.title))
+                    )
+                v2_crit = (await db.execute(stmt_crit)).scalars().first()
+
+                if not v2_crit:
+                    # Create criterion
+                    v2_crit_id = v2_crit_id or uuid.uuid4()
+                    v2_crit = Criterion(
+                        id=v2_crit_id,
+                        standard_id=v2_std.id,
+                        title=c_v1.title,
+                        description=c_v1.description or "",
+                        weight=1.0
+                    )
+                    db.add(v2_crit)
+                    await db.flush()
+
+                    # Add default requirement
+                    v2_req = Requirement(
+                        id=uuid.uuid4(),
+                        criterion_id=v2_crit.id,
+                        title=f"Compliance check for {c_v1.title}",
+                        description=f"Automatic compliance verification requirement for {c_v1.title}.",
+                        weight=1.0,
+                        rule_definition={
+                            "operator": "AND",
+                            "conditions": [
+                                {"type": "confidence", "min": 0.6}
+                            ]
+                        }
+                    )
+                    db.add(v2_req)
+                    await db.flush()
+                else:
+                    crit_changed = False
+                    if v2_crit.title != c_v1.title:
+                        v2_crit.title = c_v1.title
+                        crit_changed = True
+                    if v2_crit.description != (c_v1.description or ""):
+                        v2_crit.description = c_v1.description or ""
+                        crit_changed = True
+                    if crit_changed:
+                        db.add(v2_crit)
+                        await db.flush()
+        
+        await db.commit()
     
     return v2_std.id
 

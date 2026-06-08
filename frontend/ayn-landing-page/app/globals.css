@@ -253,6 +253,7 @@ html {
   --font-serif: var(--font-instrument), "Instrument Serif", serif;
   --font-dmsans: var(--font-dmsans), "DM Sans", sans-serif;
   --font-arabic: "Noto Sans Arabic", "Arial", sans-serif;
+  --font-cairo: "Cairo", var(--font-arabic);
   --font-display:
     var(--font-display), "Sora", var(--font-inter), "Inter", "Segoe UI", sans-serif;
 

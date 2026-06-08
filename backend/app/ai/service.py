@@ -405,7 +405,7 @@ class OpenRouterClient:
         self.base_url = u if u else self.DEFAULT_BASE_URL
         logger.info(f"OpenRouter client initialized model={model} base_url={self.base_url[:48]}...")
     
-    async def _call(self, messages: List[Dict[str, str]], system_prompt: str) -> str:
+    async def _call(self, messages: List[Dict[str, str]], system_prompt: str, json_mode: bool = False) -> str:
         """Make a request to OpenRouter API."""
         payload = {
             "model": self.model,
@@ -415,6 +415,8 @@ class OpenRouterClient:
             ],
             "max_tokens": 4096,
         }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -452,11 +454,22 @@ class OpenRouterClient:
             system_instruction += context_hints.get(context, f"\n\nAdditional context: {context}")
         return await self._call(messages, system_instruction)
     
-    async def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
+    async def generate_text(
+        self,
+        prompt: str,
+        context: Optional[str] = None,
+        response_mime_type: Optional[str] = None,
+        response_schema: Optional[Any] = None,
+    ) -> str:
         full_prompt = prompt
         if context:
             full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
-        return await self._call([{"role": "user", "content": full_prompt}], SYSTEM_PROMPT)
+        json_mode = response_mime_type == "application/json"
+        return await self._call(
+            [{"role": "user", "content": full_prompt}],
+            SYSTEM_PROMPT,
+            json_mode=json_mode
+        )
     
     async def summarize(self, content: str, max_length: int = 100) -> str:
         prompt = f"Summarize the following content in approximately {max_length} words:\n\n{content}"
@@ -905,7 +918,13 @@ class GeminiClient:
         
         logger.info(f"Gemini client initialized with model: {self.model_name}")
     
-    async def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
+    async def generate_text(
+        self,
+        prompt: str,
+        context: Optional[str] = None,
+        response_mime_type: Optional[str] = None,
+        response_schema: Optional[Any] = None,
+    ) -> str:
         full_prompt = prompt
         if context:
             full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
@@ -916,14 +935,25 @@ class GeminiClient:
                 config=genai_types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
                     max_output_tokens=4096,
-                    temperature=0.7
+                    temperature=0.7,
+                    response_mime_type=response_mime_type,
+                    response_schema=response_schema,
                 ),
                 contents=full_prompt,
             )
             return response.text
         else:
             full_prompt_with_system = f"{SYSTEM_PROMPT}\n\n---\n\n{full_prompt}"
-            response = await asyncio.to_thread(self.model.generate_content, full_prompt_with_system)
+            generation_config = {}
+            if response_mime_type:
+                generation_config["response_mime_type"] = response_mime_type
+            if response_schema:
+                generation_config["response_schema"] = response_schema
+            response = await asyncio.to_thread(
+                self.model.generate_content,
+                full_prompt_with_system,
+                generation_config=old_genai.GenerationConfig(**generation_config) if generation_config else None
+            )
             return response.text
     
     async def chat(self, messages: List[Dict[str, str]], context: Optional[str] = None) -> str:
@@ -1345,8 +1375,20 @@ class HorusAIClient:
         async for chunk in self._stream_with_fallback("stream_chat", messages=messages, context=context):
             yield chunk
 
-    async def generate_text(self, prompt: str, context: Optional[str] = None) -> str:
-        return await self._call_with_fallback("generate_text", prompt=prompt, context=context)
+    async def generate_text(
+        self,
+        prompt: str,
+        context: Optional[str] = None,
+        response_mime_type: Optional[str] = None,
+        response_schema: Optional[Any] = None,
+    ) -> str:
+        return await self._call_with_fallback(
+            "generate_text",
+            prompt=prompt,
+            context=context,
+            response_mime_type=response_mime_type,
+            response_schema=response_schema,
+        )
     
     async def summarize(self, content: str, max_length: int = 100) -> str:
         return await self._call_with_fallback("summarize", content=content, max_length=max_length)

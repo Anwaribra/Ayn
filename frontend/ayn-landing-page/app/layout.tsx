@@ -6,15 +6,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { UiLanguageProvider } from "@/lib/ui-language-context"
-import { Cairo } from "next/font/google"
 import "./globals.css"
-
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-cairo",
-  display: "swap",
-})
 
 
 const siteDescription =
@@ -62,7 +54,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className={`font-sans antialiased ${cairo.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&display=swap" rel="stylesheet" />
+      </head>
+      <body suppressHydrationWarning className="font-sans antialiased">
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange storageKey="ayn-theme">
             <UiLanguageProvider>

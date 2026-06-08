@@ -113,8 +113,8 @@ async def handle_evidence_uploaded(event: dict):
                 },
                 correlation_id=correlation_id
             )
-    except Exception as e:
-        await log_failed_event("handle_evidence_uploaded", payload, e, correlation_id)
+    except Exception:
+        raise
 
 
 # 2. AI Signal Generation Worker
@@ -182,8 +182,8 @@ async def handle_text_extracted(event: dict):
                 },
                 correlation_id=correlation_id
             )
-    except Exception as e:
-        await log_failed_event("handle_text_extracted", payload, e, correlation_id)
+    except Exception:
+        raise
 
 
 # 3. Validation & Rules Engine Worker
@@ -280,8 +280,8 @@ async def handle_ai_signal_generated(event: dict):
                     },
                     correlation_id=correlation_id
                 )
-    except Exception as e:
-        await log_failed_event("handle_ai_signal_generated", payload, e, correlation_id)
+    except Exception:
+        raise
 
 
 # 4. Incremental Readiness Recalculation Worker
@@ -319,8 +319,8 @@ async def handle_validation_completed(event: dict):
                 campus_id=evidence.campus_id,
                 requirement_id=requirement_id
             )
-    except Exception as e:
-        await log_failed_event("handle_validation_completed", payload, e, correlation_id)
+    except Exception:
+        raise
 
 
 # 5. Task & Notification Dispatch Worker
@@ -371,8 +371,8 @@ async def handle_task_created(event: dict):
                     payload={"notification_id": str(notification.id)},
                     correlation_id=correlation_id
                 )
-    except Exception as e:
-        await log_failed_event("handle_task_created", payload, e, correlation_id)
+    except Exception:
+        raise
 
 
 # 6. Passive Horus Event Observer
@@ -521,10 +521,43 @@ async def handle_horus_event(event: dict):
                     workflow_id=workflow.id
                 )
 
+def wrap_with_retry(handler: Callable, worker_name: str) -> Callable:
+    async def wrapped_handler(event: dict):
+        payload = event.get("payload", {})
+        correlation_id = event.get("correlation_id", "no-correlation-id")
+        max_retries = 3
+        base_delay = 2.0
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                await handler(event)
+                return
+            except Exception as e:
+                classification = classify_exception(e)
+                is_transient = classification in ("TIMEOUT", "RATE_LIMIT", "TRANSIENT")
+                
+                if not is_transient or attempt == max_retries:
+                    logger.error(
+                        f"Worker {worker_name} failed permanently or exhausted retries (classification: {classification}). "
+                        f"Logging to DLQ. Error: {e}"
+                    )
+                    await log_failed_event(worker_name, payload, e, correlation_id)
+                    return
+                else:
+                    delay = base_delay * (2 ** (attempt - 1))
+                    logger.warning(
+                        f"Worker {worker_name} failed with transient error: {e}. "
+                        f"Attempt {attempt}/{max_retries}. Retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+    return wrapped_handler
+
+
 # Setup subscriber loops
 async def run_subscriber_loop(stream: str, group_name: str, consumer_name: str, handler: Callable):
     subscriber = EventSubscriber(redis_client, group_name, consumer_name)
-    await subscriber.listen(stream, handler)
+    wrapped = wrap_with_retry(handler, handler.__name__)
+    await subscriber.listen(stream, wrapped)
 
 async def main():
     logger.info("Initializing V2 Background Worker Daemon...")

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ArrowRight, Sparkles, Building2, Shield, TrendingUp, Users, CheckCircle } from "lucide-react"
+import Link from "next/link"
 
 const BULLETS = [
   { icon: Building2, text: "Plans shaped around education institutions and growing teams" },
@@ -90,13 +91,12 @@ export function PricingSection({ onOpenDemo }: { onOpenDemo?: (type: "demo" | "p
                 Book a Demo
                 <ArrowRight className="h-4 w-4" />
               </button>
-              <button
-                type="button"
-                onClick={() => onOpenDemo?.("pricing")}
+              <Link
+                href="/pricing"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border/50 bg-card/50 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:scale-[1.02] hover:border-foreground/30 hover:bg-card/80 active:scale-[0.98]"
               >
-                Request Pricing
-              </button>
+                View Pricing Plans
+              </Link>
             </div>
 
             <p className="mt-6 text-xs text-muted-foreground/60">

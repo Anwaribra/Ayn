@@ -143,7 +143,7 @@ export function LandingNavbar({
     { label: "Horus", href: "/#horus-intelligence" },
     { label: "Features", href: "/#features" },
     { label: "How", href: "/#how-it-works" },
-    { label: "Pricing", href: "/#pricing" },
+    { label: "Pricing", href: "/pricing" },
     { label: "About", href: "/#about" },
     { label: "FAQ", href: faqNavHref },
   ]

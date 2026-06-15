@@ -215,6 +215,7 @@ export function LandingNavbar({
     features: "Features",
     demo: "Book Demo",
     horus: "Horus AI",
+    how: "How",
   }
 
   return (

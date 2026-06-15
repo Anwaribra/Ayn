@@ -30,7 +30,7 @@ const REQUEST_TYPES = [
 ]
 
 const fieldClass =
-  "h-12 w-full rounded-[14px] border border-white/[0.12] bg-white/[0.055] px-4 text-sm text-white shadow-none outline-none [color-scheme:dark] transition-[background-color,border-color,box-shadow] placeholder:text-white/30 hover:bg-white/[0.075] focus:border-primary/55 focus:bg-white/[0.08] focus:ring-4 focus:ring-primary/15"
+  "h-11 w-full rounded-xl border border-zinc-800 bg-transparent px-4 text-sm text-zinc-100 shadow-sm outline-none [color-scheme:dark] transition-all duration-200 placeholder:text-zinc-600 hover:border-zinc-700 hover:bg-zinc-900/50 focus:border-zinc-500 focus:bg-transparent focus:ring-1 focus:ring-zinc-500"
 
 function FieldSelect<T extends string>({
   id,
@@ -83,7 +83,7 @@ function FieldSelect<T extends string>({
       {open && (
         <ul
           role="listbox"
-          className="absolute top-full right-0 left-0 z-30 mt-1.5 max-h-52 overflow-y-auto rounded-[14px] border border-white/12 bg-[#0f131b] p-1 shadow-[0_18px_52px_rgba(0,0,0,0.5)]"
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-xl border border-zinc-800 bg-[#111] p-1 shadow-2xl"
         >
           {options.map((opt) => (
             <li key={opt.value} role="option" aria-selected={value === opt.value}>
@@ -92,8 +92,8 @@ function FieldSelect<T extends string>({
                 className={cn(
                   "flex w-full items-center justify-between gap-2 rounded-[10px] px-3.5 py-2.5 text-left text-sm transition-colors",
                   value === opt.value
-                    ? "bg-primary/15 text-white"
-                    : "text-white/80 hover:bg-white/5 hover:text-white",
+                    ? "bg-zinc-800/80 text-white"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white",
                 )}
                 onClick={() => {
                   onChange(opt.value)
@@ -275,12 +275,12 @@ export function DemoModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-[201] grid max-h-[calc(100dvh-1rem)] w-full overflow-hidden rounded-t-[24px] border border-white/[0.1] bg-[#090c12] shadow-[0_30px_120px_rgba(0,0,0,0.68)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-[760px] sm:grid-cols-[280px_minmax(0,1fr)] sm:rounded-[28px]"
+            className="relative z-[201] flex flex-col max-h-[90dvh] w-full overflow-hidden rounded-t-[20px] border border-zinc-800 bg-[#0A0A0A] shadow-2xl sm:grid sm:max-h-[calc(100dvh-2rem)] sm:max-w-[760px] sm:grid-cols-[280px_minmax(0,1fr)] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" aria-hidden />
 
-            <aside className="relative hidden overflow-hidden border-r border-white/[0.08] bg-[#060910] p-7 text-white sm:block">
+            <aside className="relative hidden overflow-hidden border-r border-zinc-800 bg-[#111] p-7 text-zinc-100 sm:block">
               <div
                 className="absolute inset-0 opacity-90"
                 style={{
@@ -300,29 +300,29 @@ export function DemoModal({
                   <h3 className="text-3xl font-bold leading-[1.05] tracking-tight text-white">
                     See the audit room before you join.
                   </h3>
-                  <p className="mt-4 text-sm leading-6 text-white/56">
+                  <p className="mt-4 text-sm leading-6 text-zinc-400">
                     A short walkthrough tailored to your institution, standards, and evidence workflow.
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-3">
-                    <Clock3 className="h-4 w-4 text-primary" />
-                    <span className="text-sm text-white/78">15-minute product tour</span>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3 rounded-xl border border-zinc-800/50 bg-[#1A1A1A]/50 px-4 py-2.5">
+                    <Clock3 className="h-4 w-4 text-zinc-400" />
+                    <span className="text-sm text-zinc-300">15-minute product tour</span>
                   </div>
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.045] px-4 py-3">
-                    <ShieldCheck className="h-4 w-4 text-emerald-300" />
-                    <span className="text-sm text-white/78">Human-approved AI actions</span>
+                  <div className="flex items-center gap-3 rounded-xl border border-zinc-800/50 bg-[#1A1A1A]/50 px-4 py-2.5">
+                    <ShieldCheck className="h-4 w-4 text-zinc-400" />
+                    <span className="text-sm text-zinc-300">Human-approved AI actions</span>
                   </div>
                 </div>
               </div>
             </aside>
 
-            <div className="relative overflow-y-auto overscroll-contain px-5 py-6 sm:px-7 sm:py-7">
+            <div className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-6 pb-12 sm:px-7 sm:py-7" style={{ WebkitOverflowScrolling: 'touch' }}>
               <button
                 type="button"
                 onClick={handleClose}
-                className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-white/55 transition-colors hover:bg-white/[0.08] hover:text-white"
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
                 aria-label="Close modal"
               >
                 <X className="h-4 w-4" />
@@ -337,17 +337,17 @@ export function DemoModal({
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
                   >
-                    <div className="mb-6 pr-10 sm:mb-7">
+                    <div className="mb-6 pr-10 sm:mb-8 flex-shrink-0">
                       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/25 bg-primary/12 sm:hidden">
                         <Sparkles className="h-5 w-5 text-primary" />
                       </div>
                       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary/75">
                         {formData.type === "pricing" ? "Institution plan" : "Guided walkthrough"}
                       </p>
-                      <h3 id="demo-title" className="text-2xl font-bold tracking-tight text-white">
+                      <h3 id="demo-title" className="text-2xl font-semibold tracking-tight text-white">
                         {formData.type === "pricing" ? "Request pricing" : "Request a demo"}
                       </h3>
-                      <p className="mt-2 max-w-md text-sm leading-6 text-white/54">
+                      <p className="mt-2 max-w-md text-sm leading-6 text-zinc-400">
                         {formData.type === "pricing"
                           ? "Tell us about your institution — we'll send tailored plan options."
                           : "See how Horus AI maps evidence to quality standards in minutes."}
@@ -356,13 +356,13 @@ export function DemoModal({
 
                     <form
                       onSubmit={handleSubmit}
-                      className="grid gap-4 text-left sm:grid-cols-2"
+                      className="grid gap-4 sm:gap-5 text-left sm:grid-cols-2"
                       autoComplete="off"
                       data-lpignore="true"
                       data-1p-ignore
                     >
-                      <div className="space-y-2">
-                        <Label htmlFor="demo-name" className="text-[13px] font-semibold text-white/80">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-name" className="text-[13px] font-semibold text-zinc-300">
                           Full name
                         </Label>
                         <Input
@@ -378,8 +378,8 @@ export function DemoModal({
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="demo-email" className="text-[13px] font-semibold text-white/80">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="demo-email" className="text-[13px] font-semibold text-zinc-300">
                           Work email
                         </Label>
                         <Input
@@ -395,8 +395,8 @@ export function DemoModal({
                         />
                       </div>
 
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="demo-institution" className="text-[13px] font-semibold text-white/80">
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label htmlFor="demo-institution" className="text-[13px] font-semibold text-zinc-300">
                           Institution name
                         </Label>
                         <Input
@@ -430,11 +430,11 @@ export function DemoModal({
                         onChange={(type) => setFormData({ ...formData, type })}
                       />
 
-                      <div className="pt-1 sm:col-span-2">
+                      <div className="pt-3 sm:col-span-2">
                         <Button
                           type="submit"
                           disabled={isSubmitting}
-                          className="group flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-white text-sm font-bold text-black shadow-[0_16px_36px_rgba(255,255,255,0.14)] transition-all hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-45"
+                          className="group flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white text-sm font-semibold text-black shadow-sm transition-all hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isSubmitting ? (
                             <>
@@ -448,8 +448,7 @@ export function DemoModal({
                             </>
                           )}
                         </Button>
-
-                        <p className="mt-3 text-center text-[12px] leading-relaxed text-white/38">
+                        <p className="mt-3 text-center text-[12px] leading-relaxed text-zinc-500">
                           We&apos;ll reply within 1–2 business days.
                         </p>
                       </div>

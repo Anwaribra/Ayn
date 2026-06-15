@@ -128,7 +128,7 @@ export function AnalysisEngineFeatures() {
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               className={cn(
-                "group relative rounded-3xl border border-border/60 bg-card/50 p-8 overflow-hidden hover:bg-card/80 hover:-translate-y-0.5 transition-all duration-500 will-change-accel",
+                "group relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-md p-8 overflow-hidden hover:bg-card/60 hover:-translate-y-1 transition-all duration-500 will-change-accel shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1),_0_8px_30px_rgba(0,0,0,0.1)]",
                 feature.className
               )}
             >

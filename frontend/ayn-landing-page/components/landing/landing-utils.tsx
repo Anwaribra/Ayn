@@ -91,7 +91,7 @@ export function ShinyButton({
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-shimmer"
           style={{ animationDuration: "2.5s", animationIterationCount: "infinite" }}
         />
-        <span className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </span>
       <span className="relative z-10 flex items-center transition-transform duration-300 group-hover:translate-x-0.5">{children}</span>
     </>
@@ -100,12 +100,12 @@ export function ShinyButton({
     <div className="relative inline-block group">
       {href ? (
         <Link href={href}>
-          <Button size={size} className={`relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_rgba(59,111,217,0.35)] hover:border-primary/50 ${className}`} {...props}>
+          <Button size={size} className={`relative overflow-hidden transition-transform duration-300 hover:bg-[#0A0A0A] hover:text-white text-white ${className}`} {...props}>
             {buttonContent}
           </Button>
         </Link>
       ) : (
-        <Button size={size} className={`relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_25px_rgba(59,111,217,0.35)] hover:border-primary/50 ${className}`} {...props}>
+        <Button size={size} className={`relative overflow-hidden transition-transform duration-300 hover:bg-[#0A0A0A] hover:text-white text-white ${className}`} {...props}>
           {buttonContent}
         </Button>
       )}

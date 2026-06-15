@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, LogOut, LogIn, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, CalendarDays } from "lucide-react"
+import { Menu, X, LogOut, LogIn, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, CalendarDays, CreditCard, Workflow } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -149,7 +149,7 @@ export function LandingNavbar({
   ]
 
   const rightSide = !user ? (
-    <div className={cn("flex items-center gap-1.5", isCompact && "hidden")}>
+    <div className="flex items-center gap-1.5">
       <Link
         href="/login"
         className={cn(
@@ -223,202 +223,76 @@ export function LandingNavbar({
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed top-0 left-0 right-0 z-50 px-5 pt-4 pb-4 bg-transparent pointer-events-none"
+        className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none"
       >
         <motion.div
           layout
           className={cn(
-            "max-w-6xl mx-auto flex items-center gap-4 pointer-events-auto",
-            isCompact ? "justify-center" : "justify-between",
+            "pointer-events-auto relative flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            isCompact 
+              ? "max-w-[900px] w-full p-1.5 pl-6 pr-1.5 rounded-full" 
+              : "max-w-5xl w-full p-2.5 pl-8 pr-2.5 rounded-[1.5rem]",
+            isOverDark
+              ? "bg-white/[0.04] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+              : "bg-black/[0.03] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl"
           )}
         >
-          {/* ── Logo ── */}
-          <AnimatePresence initial={false} mode="popLayout">
-            {!isCompact ? (
-              <motion.div
-                key="landing-logo"
-                initial={{ opacity: 0, x: -14, scale: 0.96 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -18, scale: 0.96, filter: "blur(6px)" }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="shrink-0 z-50"
-              >
-                <Link href="/" aria-label="Ayn home" className="group block">
-                  <motion.div
-                    whileHover={{ scale: 1.04 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                    className="flex items-center select-none"
-                  >
-                    <span
-                      className={cn(
-                        "text-[1.6rem] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r",
-                        isOverDark
-                          ? "from-white via-white/90 to-primary"
-                          : "from-black via-black/90 to-primary drop-shadow-sm",
-                      )}
-                    >
-                      Ayn
-                    </span>
-                  </motion.div>
-                </Link>
-              </motion.div>
-            ) : (
-              <div key="landing-logo-mobile" className="md:hidden shrink-0 z-50">
-                <Link href="/" aria-label="Ayn home" className="group block">
-                  <div className="flex items-center select-none">
-                    <span
-                      className={cn(
-                        "text-[1.6rem] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r",
-                        isOverDark
-                          ? "from-white via-white/90 to-primary"
-                          : "from-black via-black/90 to-primary drop-shadow-sm",
-                      )}
-                    >
-                      Ayn
-                    </span>
-                  </div>
-                </Link>
+          {/* ── Logo (Left) ── */}
+          <div className="flex shrink-0 z-50">
+            <Link href="/" aria-label="Ayn home" className="group block">
+              <div className="flex items-center select-none">
+                <span
+                  className={cn(
+                    "text-[1.45rem] font-bold tracking-tight",
+                    isOverDark
+                      ? "text-white"
+                      : "text-black"
+                  )}
+                >
+                  Ayn
+                </span>
               </div>
-            )}
-          </AnimatePresence>
+            </Link>
+          </div>
 
-          {/* ── Desktop Nav Pill ── */}
-          <nav
-            className={cn(
-              "hidden md:flex items-center justify-center gap-0.5 rounded-full border py-1.5 backdrop-blur-xl transition-all duration-500",
-              isCompact ? "px-3" : "px-2",
-              isOverDark
-                ? "border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
-                : "border-black/[0.04] bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
-            )}
-          >
-            {navItems.map(({ label, href }) => (
-              <Link
-                key={label}
-                href={href}
-                className={cn(
-                  "whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
-                  isOverDark
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-black/60 hover:text-black hover:bg-black/5"
-                )}
-              >
-                {label}
-              </Link>
-            ))}
-
-            {/* Compact items appear inside nav when scrolled */}
-            <AnimatePresence initial={false}>
-              {isCompact && !user && (
-                <motion.div
-                  key="compact-logged-out"
-                  initial={{ opacity: 0, x: 18, scale: 0.94 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 18, scale: 0.94 }}
-                  transition={{ type: "spring", stiffness: 360, damping: 32 }}
-                  className="ml-1.5 flex items-center gap-1.5 pl-1.5"
-                >
-                  <span
-                    className={cn("h-5 w-px", isOverDark ? "bg-white/10" : "bg-black/8")}
-                    aria-hidden
-                  />
-                  <Link
-                    href="/login"
-                    className={cn(
-                      "px-2.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
-                      isOverDark
-                        ? "text-white/70 hover:text-white hover:bg-white/10"
-                        : "text-black/60 hover:text-black hover:bg-black/5"
-                    )}
-                  >
-                    Log in
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => (onOpenDemo ? onOpenDemo("demo") : (window.location.href = "/"))}
-                    className={cn(demoBtnClass(isOverDark), "px-4 py-1.5 text-sm")}
-                  >
-                    Book Demo
-                  </button>
-                </motion.div>
+          {/* ── Desktop Nav Links (flex center between logo and buttons) ── */}
+          <div className="hidden lg:flex flex-1 justify-center min-w-0">
+            <nav
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-full px-2 py-1 transition-all duration-500",
+                isOverDark
+                  ? "bg-white/[0.06] border border-white/[0.08]"
+                  : "bg-black/[0.04] border border-black/[0.06]"
               )}
-
-              {isCompact && user && (
-                <motion.div
-                  key="compact-logged-in"
-                  initial={{ opacity: 0, x: 18, scale: 0.94 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 18, scale: 0.94 }}
-                  transition={{ type: "spring", stiffness: 360, damping: 32 }}
-                  className="ml-1.5 flex items-center gap-1.5 pl-1.5"
+            >
+              {navItems.map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className={cn(
+                    "whitespace-nowrap px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors duration-300",
+                    isOverDark
+                      ? "text-white/80 hover:text-white"
+                      : "text-black/80 hover:text-black"
+                  )}
                 >
-                  <span
-                    className={cn("h-5 w-px", isOverDark ? "bg-white/10" : "bg-black/8")}
-                    aria-hidden
-                  />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className={cn("h-8 px-2 rounded-full gap-1.5 transition-colors duration-300 cursor-pointer", isOverDark ? "hover:bg-white/10" : "hover:bg-black/5")}>
-                        <span className={cn("h-5 w-5 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors duration-300", isOverDark ? "bg-white/10 text-white" : "bg-primary/10 text-primary")}>
-                          {getInitials(user.name)}
-                        </span>
-                        <ChevronDown className={cn("h-3.5 w-3.5 transition-colors duration-300", isOverDark ? "text-white/60" : "text-black/50")} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52" sideOffset={10}>
-                      <DropdownMenuLabel className="font-normal">
-                        <p className="font-medium truncate">{user.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/platform/dashboard" className="flex items-center gap-2 cursor-pointer">
-                          <LayoutDashboard className="h-4 w-4" /> Go to Platform
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onClick={handleLogout} className="cursor-pointer">
-                        <LogOut className="h-4 w-4" /> Log out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Link
-                    href="/platform/dashboard"
-                    className={cn(
-                      "inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02]",
-                      isOverDark
-                        ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-                        : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
-                    )}
-                  >
-                    Platform
-                  </Link>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </nav>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
 
-          {/* ── Right Side (outside nav, hidden when compact) ── */}
-          <AnimatePresence initial={false} mode="popLayout">
-            {!isCompact && (
-              <motion.div
-                key="right-side"
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 18, scale: 0.96, filter: "blur(6px)" }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="shrink-0"
-              >
-                {rightSide}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* ── Right Side (Buttons) ── */}
+          <div className="flex shrink-0 z-50 ml-4">
+            {rightSide}
+          </div>
         </motion.div>
       </motion.header>
 
       {/* Floating bottom navigation dock for mobile */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] md:hidden flex items-center pointer-events-auto select-none">
-        <div className="px-3 py-2 flex items-center gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-black/8 dark:border-white/10 bg-white/60 dark:bg-black/60 backdrop-blur-xl rounded-full">
+        <div className="px-3 py-2 flex items-center gap-2 shadow-[0_16px_32px_rgba(0,0,0,0.5)] border border-white/[0.08] bg-[#050505]/75 backdrop-blur-2xl rounded-full relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent pointer-events-none rounded-full" />
           <BottomTab
             icon={Home}
             label={labels.home}
@@ -438,12 +312,12 @@ export function LandingNavbar({
             onClick={() => scrollToSection("features", "features")}
           />
           <BottomTab
-            icon={LogIn}
-            label="Log in"
-            active={false}
-            onClick={() => window.location.href = "/login"}
+            icon={Workflow}
+            label={labels.how || "How"}
+            active={activeSection === "how"}
+            onClick={() => scrollToSection("how-it-works", "how")}
           />
-          <div className="w-px h-8 bg-black/10 dark:bg-white/10 mx-1" aria-hidden />
+          <div className="w-px h-8 bg-white/[0.08] mx-1 z-10" aria-hidden />
           <DemoButton
             label={labels.demo}
             onClick={() => openDemo()}
@@ -479,10 +353,10 @@ const BottomTab = ({
         onClick={onClick}
         type="button"
         className={cn(
-          "transition-all duration-300 flex items-center justify-center relative cursor-pointer outline-none select-none shrink-0",
+          "transition-all duration-300 flex items-center justify-center relative cursor-pointer outline-none select-none shrink-0 z-10 rounded-full",
           active
-            ? "w-10 h-10 text-primary bg-primary/10 dark:bg-primary/20 scale-110"
-            : "w-10 h-10 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 active:scale-90"
+            ? "w-10 h-10 text-primary scale-110 drop-shadow-[0_0_8px_rgba(0,122,255,0.4)]"
+            : "w-10 h-10 text-white/50 hover:text-white active:scale-90"
         )}
         style={{ WebkitTapHighlightColor: "transparent", borderRadius: "9999px" }}
       >
@@ -526,10 +400,10 @@ const DemoButton = ({ label, onClick }: { label: string; onClick: () => void }) 
       <button
         onClick={onClick}
         type="button"
-        className="w-10 h-10 flex items-center justify-center bg-primary text-white shadow-[0_4px_12px_rgba(59,111,217,0.35)] active:scale-95 transition-all cursor-pointer outline-none select-none shrink-0"
+        className="w-10 h-10 flex items-center justify-center bg-primary/10 text-primary shadow-[inset_0_1px_4px_rgba(255,255,255,0.05)] border border-primary/20 active:scale-95 hover:bg-primary/20 transition-all duration-300 cursor-pointer outline-none select-none shrink-0"
         style={{ WebkitTapHighlightColor: "transparent", borderRadius: "9999px" }}
       >
-        <CalendarDays className="w-5 h-5" />
+        <CalendarDays className="w-5 h-5 drop-shadow-[0_0_8px_rgba(0,122,255,0.4)]" />
       </button>
       <AnimatePresence>
         {hovered && (

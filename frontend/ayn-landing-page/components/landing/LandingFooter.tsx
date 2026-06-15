@@ -79,22 +79,22 @@ export function LandingFooter({
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-32 md:pb-12 pt-24 md:px-8">
-        <div className="mb-20 grid grid-cols-1 gap-16 md:grid-cols-2 lg:grid-cols-6">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-20 md:pb-10 pt-16 md:px-8">
+        <div className="mb-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-3">
             <Link href="/" className="group mb-6 inline-block transition-opacity hover:opacity-90">
-              <span className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-primary/80">
-                Ayn.
+              <span className="text-4xl font-bold tracking-tight text-white">
+                Ayn
               </span>
             </Link>
 
-            <p className="mb-8 max-w-md text-[15px] font-light leading-relaxed text-white/50">
+            <p className="mb-6 max-w-md text-[14px] font-light leading-relaxed text-white/50">
               AI-powered quality assurance and compliance platform for educational institutions.
               Map evidence, identify gaps, and execute actions with minimal effort.
             </p>
 
-            <div className="mb-10 max-w-sm">
-              <h4 className="mb-1 text-sm font-medium text-white/90">Stay in the loop</h4>
+            <div className="mb-8 max-w-sm">
+              <h4 className="mb-1 text-[13px] font-medium text-white/90">Stay in the loop</h4>
               <p className="mb-3 text-xs font-light text-white/40">Product updates and pilot announcements.</p>
               <form
                 onSubmit={handleNewsletter}
@@ -124,20 +124,12 @@ export function LandingFooter({
                 Prefer a walkthrough? Book a demo →
               </button>
             </div>
-
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              aria-label="Email Ayn"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/5 text-white/40 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
-            >
-              <Mail className="h-4 w-4" />
-            </a>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-3">
             {Object.entries(links).map(([category, items]) => (
               <div key={category} className="flex flex-col">
-                <h4 className="mb-6 text-[13px] font-semibold tracking-wide text-white/90">{category}</h4>
+                <h4 className="mb-5 text-[13px] font-semibold tracking-wide text-white/90">{category}</h4>
                 <ul className="flex-1 space-y-4">
                   {items.map(({ label, href }) => (
                     <li key={label}>

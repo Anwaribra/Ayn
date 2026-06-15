@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion"
 import { LandingNavbar } from "@/components/landing/LandingNavbar"
-import { LandingFooter } from "@/components/landing/LandingFooter"
 import { useUiLanguage } from "@/lib/ui-language-context"
 import { cn } from "@/lib/utils"
 import { Shield, Lock, Eye, Server, Key, RefreshCw, Mail, CheckCircle } from "lucide-react"
@@ -146,11 +145,6 @@ export default function SecurityPage() {
         </motion.div>
       </main>
 
-      <div className="px-4 pb-4">
-        <div data-section-theme="dark" style={{ borderRadius: "1.75rem", overflow: "hidden", backgroundColor: "#050810" }}>
-          <LandingFooter />
-        </div>
-      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react"
-import { Plus, ArrowUp, Square, Mic, MicOff, FileText, Brain, Sparkles } from "lucide-react"
+import { Plus, ArrowUp, Square, Mic, MicOff, FileText, Brain, Sparkles, Globe } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getAIProviderFetchHeaders } from "@/lib/ai-provider-preference"
@@ -19,6 +19,7 @@ interface AIChatInputProps {
   onStop?: () => void
   onFileAttach?: (file: File) => void
   onChange?: (value: string) => void
+  initialValue?: string
   isLoading?: boolean
   disabled?: boolean
   hasFiles?: boolean
@@ -48,14 +49,16 @@ export const AIChatInput = ({
   agentCommands = [],
   header,
   prefixNode,
+  initialValue,
 }: AIChatInputProps) => {
-  const [inputValue, setInputValue] = useState("")
+  const [inputValue, setInputValue] = useState(initialValue || "")
   const [isDragging, setIsDragging] = useState(false)
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [slashFilter, setSlashFilter] = useState("")
   const [slashSelectedIdx, setSlashSelectedIdx] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const mediaChunksRef = useRef<BlobPart[]>([])
@@ -63,12 +66,35 @@ export const AIChatInput = ({
   const documentInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  useEffect(() => {
+    if (initialValue) {
+      setInputValue(initialValue)
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          textareaRef.current.setSelectionRange(initialValue.length, initialValue.length)
+        }
+      })
+    }
+  }, [initialValue])
+
   const handleSend = useCallback(() => {
     if ((!inputValue.trim() && !hasFiles) || isLoading) return
-    onSend(inputValue.trim())
+    let finalValue = inputValue.trim()
+    if (webSearchEnabled) {
+       finalValue = finalValue + "\n[Instruction: Please use web search to find the latest information on this.]"
+    }
+    onSend(finalValue)
     setInputValue("")
     setSlashMenuOpen(false)
-  }, [inputValue, hasFiles, isLoading, onSend])
+    setSlashFilter("")
+    setSlashSelectedIdx(0)
+    setWebSearchEnabled(false) // Optionally reset it
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+    }
+    localStorage.removeItem(`draft_${draftKey || "new"}`)
+  }, [inputValue, hasFiles, isLoading, onSend, draftKey, webSearchEnabled])
 
   // Keybinds: Ctrl+Enter or Cmd+Enter to send, Ctrl+/ to attach
   useEffect(() => {
@@ -274,7 +300,7 @@ export const AIChatInput = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "relative border border-[var(--chat-input-border)] rounded-xl px-3 py-2.5 flex items-end gap-2 bg-[var(--chat-input-bg)] transition-all duration-200 shadow-[var(--chat-input-shadow)] focus-within:bg-[var(--chat-input-bg-focus)] focus-within:border-[var(--chat-input-border-focus)] focus-within:shadow-[var(--chat-input-shadow-focus)]",
+          "relative border border-[var(--chat-input-border)] rounded-xl px-3 py-2.5 flex items-end gap-2 bg-[var(--chat-input-bg)] transition-all duration-200 shadow-[var(--chat-input-shadow)]",
           isDragging && "border-primary/50 bg-primary/5"
         )}
       >
@@ -392,6 +418,19 @@ export const AIChatInput = ({
             disabled={isTranscribing}
           >
             {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+            className={cn(
+              "w-7 h-7 rounded-md flex items-center justify-center transition-colors duration-150",
+              webSearchEnabled ? "text-primary bg-primary/10 hover:bg-primary/20" : "text-muted-foreground hover:bg-muted/50"
+            )}
+            title={isArabic ? "البحث في الويب" : "Search Web"}
+            aria-label={isArabic ? "البحث في الويب" : "Search Web"}
+            type="button"
+          >
+            <Globe className="w-4 h-4" />
           </button>
 
           {isLoading ? (

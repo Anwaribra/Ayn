@@ -44,6 +44,9 @@ import {
   Sun,
   PanelLeft,
   Cpu,
+  Lock,
+  Pencil,
+  Pin,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -399,7 +402,7 @@ function ComposerStatusStrip({
   const routeLabel = formatAgentRoute(agentRun, isArabic)
   const intentLabel = formatAgentIntent(agentRun, isArabic)
   const summaryLabel = isProcessing
-    ? (agentRun?.goal || (isArabic ? "الوكيل يعمل الآن" : "Agent is working"))
+    ? (agentRun?.goal || (isArabic ? "جارٍ تحضير الرد..." : "Preparing response..."))
     : attachedCount > 0
       ? (isArabic
         ? `${attachedCount} ${attachedCount > 1 ? "مرفقات جاهزة" : "مرفق جاهز"}`
@@ -599,14 +602,26 @@ function formatFileSize(bytes: number) {
 function FilePreview({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) {
   const isImage = file.type === "image" && !!file.preview
 
+  if (isImage) {
+    return (
+      <div className="group relative flex h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-background shadow-sm transition-all hover:border-primary/40 sm:h-24 sm:w-24">
+        <img src={file.preview} alt={file.file.name} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
+        <button
+          onClick={onRemove}
+          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-all hover:bg-destructive hover:text-white group-hover:opacity-100"
+          aria-label={`Remove ${file.file.name}`}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-background/92 p-2.5 pr-10 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/40">
+    <div className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-background/92 p-2.5 pr-10 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/40 w-fit max-w-[280px]">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/8 bg-primary/10 text-primary">
-        {isImage ? (
-          <img src={file.preview} alt={file.file.name} className="h-full w-full object-cover" />
-        ) : (
-          <FileText className="h-4 w-4" />
-        )}
+        <FileText className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[12px] font-medium text-foreground">{file.file.name}</p>
@@ -679,6 +694,44 @@ export default function HorusAIChat() {
   // M1: copy state tracking
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   
+  // TTS & Editing & Pinned Chats
+  const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null)
+  const [pinnedChats, setPinnedChats] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("ayn_pinned_chats")
+      if (stored) setPinnedChats(new Set(JSON.parse(stored)))
+    } catch {}
+  }, [])
+
+  const togglePinChat = (chatId: string) => {
+    setPinnedChats(prev => {
+      const next = new Set(prev)
+      if (next.has(chatId)) next.delete(chatId)
+      else next.add(chatId)
+      localStorage.setItem("ayn_pinned_chats", JSON.stringify(Array.from(next)))
+      return next
+    })
+  }
+
+  const toggleTTS = (msgId: string, content: string) => {
+    if (playingMsgId === msgId) {
+      window.speechSynthesis.cancel()
+      setPlayingMsgId(null)
+      return
+    }
+    window.speechSynthesis.cancel()
+    const plainText = content.replace(/[#*`~]/g, '')
+    const utterance = new SpeechSynthesisUtterance(plainText)
+    utterance.lang = containsArabic(content) ? 'ar-SA' : 'en-US'
+    utterance.onend = () => setPlayingMsgId(null)
+    utterance.onerror = () => setPlayingMsgId(null)
+    setPlayingMsgId(msgId)
+    window.speechSynthesis.speak(utterance)
+  }
+  
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -720,6 +773,23 @@ export default function HorusAIChat() {
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")
   const lastUserHasAttachments = !!lastUserMessage?.attachments?.length
   const preferArabicUi = containsArabic(lastUserMessage?.content) || messages.some((message) => containsArabic(message.content))
+
+  const currentHour = new Date().getHours()
+  const greeting = preferArabicUi 
+    ? (currentHour < 12 ? "صباح الخير" : "مساء الخير")
+    : (currentHour < 12 ? "Good morning" : "Good evening")
+
+  const suggestedPrompts = preferArabicUi ? [
+    { title: "نظرة عامة على الامتثال", prompt: "أعطني نظرة عامة كاملة على الامتثال لمؤسستنا" },
+    { title: "تدقيق داخلي", prompt: "كيف أقوم بتدقيق داخلي للشركة؟" },
+    { title: "تحديثات الأيزو", prompt: "ما هي أهم التحديثات في سياسة الامتثال؟" },
+    { title: "تحليل المخاطر", prompt: "ساعدني في تقييم وتحليل المخاطر" }
+  ] : [
+    { title: "Compliance Overview", prompt: "Give me a full compliance overview of our organization." },
+    { title: "Internal Audit", prompt: "How to conduct an internal audit?" },
+    { title: "ISO Updates", prompt: "What are the latest compliance policy updates?" },
+    { title: "Risk Analysis", prompt: "Help me evaluate and analyze risks." }
+  ]
 
   // Handoff support: /platform/horus-ai?chat=<id>
   useEffect(() => {
@@ -1309,6 +1379,17 @@ export default function HorusAIChat() {
     )
   }, [history, historyQuery])
 
+  const sortedAndFilteredHistory = useMemo(() => {
+    const list = filteredHistory || []
+    return [...list].sort((a, b) => {
+      const aPinned = pinnedChats.has(a.id)
+      const bPinned = pinnedChats.has(b.id)
+      if (aPinned && !bPinned) return -1
+      if (!aPinned && bPinned) return 1
+      return 0
+    })
+  }, [filteredHistory, pinnedChats])
+
   const copySessionLink = useCallback(async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
@@ -1386,13 +1467,13 @@ export default function HorusAIChat() {
                     <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/25" />
                     <p className="text-xs font-medium text-muted-foreground/75">No chat history</p>
                   </div>
-                ) : filteredHistory.length === 0 ? (
+                ) : sortedAndFilteredHistory.length === 0 ? (
                   <div className="rounded-xl border border-white/8 bg-white/[0.02] px-5 py-10 text-center sm:py-12">
                     <Search className="mx-auto mb-2 h-7 w-7 text-muted-foreground/25" />
                     <p className="text-xs font-medium text-muted-foreground/75">No chats match your search</p>
                   </div>
                 ) : (
-                  filteredHistory.map((session: any) => (
+                  sortedAndFilteredHistory.map((session: any) => (
                     <div
                       key={session.id}
                       onClick={() => handleHistorySessionSelect(session.id)}
@@ -1407,10 +1488,24 @@ export default function HorusAIChat() {
                         <span className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full bg-primary/80" />
                       )}
                       <div className="flex items-start justify-between gap-2">
-                        <p className={cn("pr-6 text-[13px] font-medium leading-snug", currentChatId === session.id ? "text-primary" : "text-foreground/92")}>
-                          {session.title || "Untitled Conversation"}
+                        <p className={cn("pr-6 text-[13px] font-medium leading-snug flex items-center gap-1.5", currentChatId === session.id ? "text-primary" : "text-foreground/92")}>
+                          {pinnedChats.has(session.id) && <Pin className="w-3 h-3 fill-primary text-primary" />}
+                          {session.title?.replace(/\n?\[Instruction:.*?\]/g, "").trim() || "Untitled Conversation"}
                         </p>
                         <div className="flex items-center gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              togglePinChat(session.id)
+                            }}
+                            className={cn(
+                              "rounded-md p-1.5 transition-all hover:bg-white/[0.04]",
+                              pinnedChats.has(session.id) ? "text-primary hover:text-primary/80" : "text-muted-foreground/45 hover:text-foreground"
+                            )}
+                            title={pinnedChats.has(session.id) ? "Unpin chat" : "Pin chat"}
+                          >
+                            <Pin className="h-3.5 w-3.5" />
+                          </button>
                           <button
                             onClick={(e) => copySessionLink(session.id, e)}
                             className="rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-white/[0.04] hover:text-foreground"
@@ -1462,33 +1557,38 @@ export default function HorusAIChat() {
         >
           <div className={cn("flex-1 w-full max-w-[760px] flex flex-col", isEmpty ? "min-h-0" : "gap-6 pb-4")}>
             {isEmpty ? (
-              <div className="flex min-h-0 w-full flex-1 items-center justify-center pb-40 md:pb-36">
-                <div className="flex max-h-full min-h-0 w-full flex-col items-center justify-center gap-5 py-2 md:gap-7">
+              <div className="flex min-h-0 w-full flex-1 items-center justify-center pb-40 md:pb-36 animate-in fade-in duration-500">
+                <div className="flex max-h-full min-h-0 w-full flex-col items-center justify-center gap-6 py-2 md:gap-8">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center justify-center"
                   >
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/5 text-primary shadow-sm shadow-primary/10">
-                      <Brain className="h-10 w-10" />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/5 text-primary shadow-sm shadow-primary/10">
+                      <Sparkles className="h-8 w-8" />
                     </div>
                   </motion.div>
-                  <div className="max-w-[560px] text-center">
+                  <div className="max-w-[560px] text-center space-y-2">
                     <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                      {preferArabicUi ? "مساعد الامتثال الخاص بك" : "Your compliance agent"}
+                      {greeting}، {user?.name?.split(' ')[0] || (preferArabicUi ? "يا صديقي" : "there")}
                     </h1>
-                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/70">
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
-                        {preferArabicUi ? "محادثة" : "Chat"}
-                      </span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
-                        {preferArabicUi ? "تحليل منطقي" : "Reason"}
-                      </span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1">
-                        {preferArabicUi ? "تنفيذ المهام" : "Run tasks"}
-                      </span>
-                    </div>
+                    <p className="text-sm text-muted-foreground/80">
+                      {preferArabicUi ? "كيف يمكنني مساعدتك اليوم في الامتثال؟" : "How can I help you with compliance today?"}
+                    </p>
+                  </div>
+                  
+                  <div className="grid w-full max-w-[600px] grid-cols-1 gap-3 sm:grid-cols-2 mt-4 px-4">
+                    {suggestedPrompts.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSendMessage(item.prompt)}
+                        className="flex flex-col items-start gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left transition-all hover:bg-white/[0.04] hover:border-primary/30 active:scale-[0.98]"
+                      >
+                        <span className="text-sm font-medium text-foreground/90">{item.title}</span>
+                        <span className="text-xs text-muted-foreground/70 line-clamp-1">{item.prompt}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1549,9 +1649,9 @@ export default function HorusAIChat() {
                       className="w-full"
                     >
                       {msg.role === "user" ? (
-                        <div className="flex w-full flex-col items-end py-2 sm:py-4">
+                        <div className="flex w-full flex-col items-end py-2 sm:py-4 group">
                            <div className="horus-user-bubble max-w-[90%] whitespace-pre-wrap rounded-[22px] rounded-tr-md px-4 py-3 text-[14px] font-medium leading-6 sm:max-w-[82%]">
-                             {msg.content}
+                             {msg.content.replace(/\n?\[Instruction:.*?\]/g, "").trim()}
                            </div>
                            {msg.attachments && msg.attachments.length > 0 && (
                            <div className="mt-2 flex max-w-[85%] flex-wrap justify-end gap-2">
@@ -1573,6 +1673,14 @@ export default function HorusAIChat() {
                             </div>
                            )}
                            <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground/60 sm:mt-2">
+                             <button
+                               onClick={() => setEditingMsgId(msg.id)}
+                               className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground flex items-center gap-1"
+                               title={isArabicMessage ? "تعديل الرسالة" : "Edit message"}
+                             >
+                               <Pencil className="w-3 h-3" />
+                               <span>{isArabicMessage ? "تعديل" : "Edit"}</span>
+                             </button>
                              {msg.responseMode && (
                                <span className="rounded-full border border-white/8 bg-white/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
                                  {msg.responseMode}
@@ -1807,7 +1915,23 @@ export default function HorusAIChat() {
                               )}
                               {/* M1: Copy */}
                               {msg.content && (
-                                <button
+                                <>
+                                  <button
+                                    onClick={() => toggleTTS(msg.id, msg.content)}
+                                    className={cn(
+                                      "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
+                                      playingMsgId === msg.id ? "text-primary bg-primary/10" : ""
+                                    )}
+                                    title={playingMsgId === msg.id ? (isArabicMessage ? "إيقاف الصوت" : "Stop speaking") : (isArabicMessage ? "قراءة بصوت عالٍ" : "Read aloud")}
+                                  >
+                                    {playingMsgId === msg.id ? (
+                                      <VolumeX className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                    ) : (
+                                      <Volume2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                    )}
+                                  </button>
+                                  <div className="mx-0.5 h-3 w-px bg-white/10" />
+                                  <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
                                   className={cn(
                                     "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
@@ -1819,6 +1943,7 @@ export default function HorusAIChat() {
                                 >
                                   {copiedMsgId === msg.id ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                                 </button>
+                              </>
                               )}
                               {/* Divider */}
                               <div className="mx-0.5 h-3 w-px bg-white/10" />
@@ -2032,7 +2157,8 @@ export default function HorusAIChat() {
 
                 responseMode={responseMode}
                 draftKey={currentChatId ?? undefined}
-                lastUserMessage={[...messages].reverse().find((m) => m.role === "user")?.content ?? undefined}
+                lastUserMessage={[...messages].reverse().find((m) => m.role === "user")?.content?.replace(/\n?\[Instruction:.*?\]/g, "").trim() ?? undefined}
+                initialValue={editingMsgId ? messages.find(m => m.id === editingMsgId)?.content?.replace(/\n?\[Instruction:.*?\]/g, "").trim() : undefined}
                 isLoading={isProcessing}
                 disabled={isProcessing}
                 hasFiles={attachedFiles.length > 0}
@@ -2053,14 +2179,17 @@ export default function HorusAIChat() {
                       <DropdownMenuItem onClick={() => { setStoredAiProviderPref("auto"); setAiProviderPref("auto") }} className="text-xs">
                         <span className={cn(aiProviderPref === "auto" ? "font-semibold" : "")}>Auto</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("gemini"); setAiProviderPref("gemini") }} className="text-xs">
-                        <span className={cn(aiProviderPref === "gemini" ? "font-semibold" : "")}>Gemini</span>
+                      <DropdownMenuItem disabled className="text-xs flex justify-between items-center opacity-50">
+                        <span>Gemini</span>
+                        <Lock className="h-3 w-3 text-muted-foreground" />
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("openrouter"); setAiProviderPref("openrouter") }} className="text-xs">
-                        <span className={cn(aiProviderPref === "openrouter" ? "font-semibold" : "")}>OpenRouter</span>
+                      <DropdownMenuItem disabled className="text-xs flex justify-between items-center opacity-50">
+                        <span>OpenRouter</span>
+                        <Lock className="h-3 w-3 text-muted-foreground" />
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setStoredAiProviderPref("alt_llm"); setAiProviderPref("alt_llm") }} className="text-xs">
-                        <span className={cn(aiProviderPref === "alt_llm" ? "font-semibold" : "")}>Alt LLM</span>
+                      <DropdownMenuItem disabled className="text-xs flex justify-between items-center opacity-50">
+                        <span>Alt LLM</span>
+                        <Lock className="h-3 w-3 text-muted-foreground" />
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

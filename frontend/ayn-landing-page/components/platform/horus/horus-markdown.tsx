@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { FileText } from "lucide-react"
+import { FileText, Check, Copy } from "lucide-react"
+import { useState } from "react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 type ComplianceJsonPayload = {
@@ -143,6 +144,50 @@ function normalizeHorusContent(content: string): string {
   return [preface, formatted].filter(Boolean).join("\n\n").trim()
 }
 
+function CodeBlock({ className, children, ...props }: any) {
+  const [copied, setCopied] = useState(false)
+  const language = className ? className.replace(/language-/, "") : "code"
+  const content = String(children).replace(/\n$/, "")
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="relative group my-4 rounded-2xl border border-[var(--border-subtle)] bg-muted/30 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-[var(--border-subtle)]">
+        <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground/80">
+          {language}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95"
+          title="Copy code"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />
+              <span className="text-[10px] font-semibold text-[var(--status-success)]">Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-semibold">Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <div className="overflow-x-auto p-4">
+        <code className="block min-w-full font-mono text-[13px] leading-relaxed text-foreground/90" {...props}>
+          {children}
+        </code>
+      </div>
+    </div>
+  )
+}
+
 export function HorusMarkdown({
     content,
     onAction
@@ -168,11 +213,11 @@ export function HorusMarkdown({
                     ol: ({ children }: any) => <ol className="mb-3 space-y-2 text-foreground/82">{children}</ol>,
                     li: ({ children }: any) => <li className="ps-1 leading-relaxed py-0.5">{children}</li>,
                     code: ({ className, children, ...props }: any) => {
-                        const isBlock = /language-/.test(className || "")
+                        const isBlock = /language-/.test(className || "") || String(children).includes('\n')
                         return isBlock ? (
-                            <code className="block w-full overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-muted/40 p-4 font-mono text-[12px] text-foreground/88" {...props}>
+                            <CodeBlock className={className} {...props}>
                                 {children}
-                            </code>
+                            </CodeBlock>
                         ) : (
                             <code className="rounded-md border border-border bg-muted/60 px-1.5 py-0.5 font-mono text-[12px] text-foreground" {...props}>
                                 {children}

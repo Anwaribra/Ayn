@@ -60,14 +60,14 @@ _PENDING_ACTION_CONFIRMATIONS_FALLBACK: dict[str, dict[str, Any]] = {}  # Used w
 PENDING_CONFIRM_KEY_PREFIX = "horus:confirm:"
 STRUCTURED_RESULT_TYPES = {"audit_report", "gap_table", "remediation_plan", "report_export", "action_error"}
 CONTEXT_BUDGETS_SECONDS = {
-    "identity": 0.15,
-    "goal": 0.15,
-    "state_summary": 0.30,
-    "recent_activities": 0.25,
-    "mappings": 0.30,
-    "history": 0.25,
-    "memory": 0.25,
-    "rag": 0.70,
+    "identity": 0.5,
+    "goal": 0.5,
+    "state_summary": 1.0,
+    "recent_activities": 0.5,
+    "mappings": 0.5,
+    "history": 1.5,
+    "memory": 0.5,
+    "rag": 1.5,
 }
 
 
@@ -996,7 +996,7 @@ class HorusService:
                 try:
                     history = await asyncio.wait_for(
                         ChatService.get_chat(chat_id, user_id, message_limit=6),
-                        timeout=0.2,
+                        timeout=1.5,
                     )
                     if history and getattr(history, "messages", None):
                         _fast_history_messages = history.messages

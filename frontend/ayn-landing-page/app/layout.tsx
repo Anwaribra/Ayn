@@ -6,7 +6,13 @@ import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { UiLanguageProvider } from "@/lib/ui-language-context"
+import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
+
+const jakarta = Plus_Jakarta_Sans({ 
+  subsets: ["latin"],
+  variable: "--font-sans",
+})
 
 
 const siteDescription =
@@ -54,12 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&display=swap" rel="stylesheet" />
-      </head>
-      <body suppressHydrationWarning className="font-sans antialiased">
+      <body suppressHydrationWarning className={`font-sans antialiased ${jakarta.variable} ${jakarta.className}`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange storageKey="ayn-theme">
             <UiLanguageProvider>

@@ -3,8 +3,11 @@
 import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Plus_Jakarta_Sans } from "next/font/google"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, LogOut, LogIn, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, CalendarDays, CreditCard, Workflow } from "lucide-react"
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] })
+import { Menu, X, LogOut, LogIn, LayoutDashboard, ChevronDown, ArrowRight, Home, Sparkles, Calendar, Brain, HelpCircle, Layers, CalendarDays, CreditCard, Workflow, FileCheck, Microscope, Scale, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -80,6 +83,8 @@ export function LandingNavbar({
         { id: "main-content", key: "home" },
         { id: "horus-intelligence", key: "horus" },
         { id: "features", key: "features" },
+        { id: "how-it-works", key: "how" },
+        { id: "about", key: "about" },
         { id: "landing-faq", key: "faq" },
       ]
 
@@ -120,7 +125,9 @@ export function LandingNavbar({
 
     const el = document.getElementById(id)
     if (el) {
-      el.scrollIntoView({ behavior: "smooth" })
+      const yOffset = -100 // Adjust this value to offset the sticky header
+      const y = el.getBoundingClientRect().top + window.scrollY + yOffset
+      window.scrollTo({ top: y, behavior: "smooth" })
     }
 
     setTimeout(() => {
@@ -138,15 +145,77 @@ export function LandingNavbar({
 
   const faqNavHref = pathname === "/" ? "/#landing-faq" : "/faq/"
 
-  const navItems = [
-    { label: "Platform", href: "/#main-content" },
-    { label: "Horus", href: "/#horus-intelligence" },
-    { label: "Features", href: "/#features" },
-    { label: "How", href: "/#how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "About", href: "/#about" },
-    { label: "FAQ", href: faqNavHref },
+  type NavLinkItem = {
+    label: string
+    href: string
+    key: string
+  }
+
+  const mainNavItems: NavLinkItem[] = [
+    { label: "Home", href: "/#main-content", key: "home" },
+    { label: "Horus", href: "/#horus-intelligence", key: "horus" },
+    { label: "Pricing", href: "/pricing", key: "pricing" },
+    { label: "About", href: "/#about", key: "about" },
+    { label: "FAQ", href: faqNavHref, key: "faq" },
   ]
+
+  const productNavItems: NavLinkItem[] = [
+    { label: "Features", href: "/#features", key: "features" },
+    { label: "How it works", href: "/#how-it-works", key: "how" },
+    { label: "Evidence Vault", href: "/#evidence-vault", key: "vault" },
+    { label: "Gap Analysis", href: "/#gap-analysis", key: "analysis" },
+    { label: "Standards Hub", href: "/#standards", key: "standards" },
+    { label: "Security", href: "/#security", key: "security" },
+  ]
+
+  const productNavIcons: Record<string, typeof Layers> = {
+    features: Layers,
+    how: Workflow,
+    vault: FileCheck,
+    analysis: Microscope,
+    standards: Scale,
+    security: Shield,
+  }
+
+  const isNavItemActive = (key: string) => {
+    if (key === "pricing") return pathname === "/pricing" || pathname.startsWith("/pricing/")
+    if (key === "faq") return pathname === "/faq" || pathname.startsWith("/faq/") || (pathname === "/" && activeSection === "faq")
+    if (pathname !== "/") return false
+    return activeSection === key
+  }
+
+  const isProductGroupActive = productNavItems.some((item) => isNavItemActive(item.key))
+
+  const productDropdownPanelClass = cn(
+    "min-w-[11.5rem] rounded-2xl p-1.5 z-[60] !border shadow-none !backdrop-blur-2xl",
+    isOverDark
+      ? "!border-white/12 !bg-zinc-950/95 !text-white shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+      : "!border-black/[0.08] !bg-white/96 !text-foreground shadow-[0_16px_40px_rgba(0,0,0,0.14)]",
+  )
+
+  const productDropdownItemClass = (active: boolean) =>
+    cn(
+      "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors outline-none",
+      isOverDark
+        ? active
+          ? "!bg-white/15 text-white"
+          : "text-white/85 hover:!bg-white/10 hover:text-white focus:!bg-white/10 focus:text-white"
+        : active
+          ? "!bg-primary/10 text-primary"
+          : "text-foreground/85 hover:!bg-black/5 focus:!bg-black/5",
+    )
+
+  const navLinkClass = (active: boolean) =>
+    cn(
+      "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[12px] md:text-[13px] font-medium transition-colors duration-300 xl:px-3",
+      active
+        ? isOverDark
+          ? "bg-white/15 text-white shadow-sm ring-1 ring-white/10"
+          : "bg-primary/10 text-primary ring-1 ring-primary/20"
+        : isOverDark
+          ? "text-white/75 hover:bg-white/10 hover:text-white"
+          : "text-black/75 hover:bg-black/5 hover:text-black",
+    )
 
   const rightSide = !user ? (
     <div className="flex items-center gap-1.5">
@@ -199,13 +268,13 @@ export function LandingNavbar({
       <Link
         href="/platform/dashboard"
         className={cn(
-          "hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 hover:scale-[1.02]",
+          "hidden md:inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02]",
           isOverDark
             ? "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
             : "bg-[#0A0A0A] text-white hover:bg-black shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
         )}
       >
-        Platform
+        Dashboard
       </Link>
     </div>
   )
@@ -229,62 +298,135 @@ export function LandingNavbar({
         <motion.div
           layout
           className={cn(
-            "pointer-events-auto relative flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isCompact 
-              ? "max-w-[900px] w-full p-1.5 pl-6 pr-1.5 rounded-full" 
-              : "max-w-5xl w-full p-2.5 pl-8 pr-2.5 rounded-[1.5rem]",
+            "pointer-events-auto relative grid w-full items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            "grid-cols-[auto_minmax(0,1fr)_auto] gap-3 lg:gap-5",
+            isCompact
+              ? "max-w-[900px] p-1.5 pl-5 pr-1.5 rounded-full"
+              : "max-w-5xl p-2 pl-6 pr-2 rounded-[2rem]",
             isOverDark
               ? "bg-white/[0.04] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-xl"
               : "bg-black/[0.03] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl"
           )}
         >
           {/* ── Logo (Left) ── */}
-          <div className="flex shrink-0 z-50">
-            <Link href="/" aria-label="Ayn home" className="group block">
-              <div className="flex items-center select-none">
-                <span
-                  className={cn(
-                    "text-[1.45rem] font-bold tracking-tight",
-                    isOverDark
-                      ? "text-white"
-                      : "text-black"
-                  )}
-                >
-                  Ayn
-                </span>
-              </div>
+          <div className="flex shrink-0 min-w-[3.25rem]">
+            <Link href="/" aria-label="Ayn home" className="group block py-0.5">
+              <span
+                className={cn(
+                  "text-[1.5rem] font-bold tracking-tighter leading-none flex items-center",
+                  jakarta.className,
+                  isOverDark ? "text-white" : "text-black",
+                )}
+              >
+                Ayn<span className="text-primary">.</span>
+              </span>
             </Link>
           </div>
 
-          {/* ── Desktop Nav Links (flex center between logo and buttons) ── */}
-          <div className="hidden lg:flex flex-1 justify-center min-w-0">
+          {/* ── Desktop Nav Links ── */}
+          <div className="hidden lg:flex min-w-0 justify-center px-1">
             <nav
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-full px-2 py-1 transition-all duration-500",
+                "flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full px-1.5 py-1 transition-all duration-500 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
                 isOverDark
                   ? "bg-white/[0.06] border border-white/[0.08]"
                   : "bg-black/[0.04] border border-black/[0.06]"
               )}
             >
-              {navItems.map(({ label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
+              {mainNavItems.slice(0, 2).map(({ label, href, key }) => {
+                const active = isNavItemActive(key)
+                const isHash = href.startsWith("/#")
+                return (
+                  <Link 
+                    key={key} 
+                    href={href} 
+                    className={navLinkClass(active)}
+                    onClick={(e) => {
+                      if (isHash && pathname === "/") {
+                        e.preventDefault()
+                        scrollToSection(href.substring(2), key)
+                      }
+                    }}
+                  >
+                    {label}
+                  </Link>
+                )
+              })}
+
+              {/* Product dropdown — always on desktop to keep nav compact */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
                   className={cn(
-                    "whitespace-nowrap px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors duration-300",
-                    isOverDark
-                      ? "text-white/80 hover:text-white"
-                      : "text-black/80 hover:text-black"
+                    navLinkClass(isProductGroupActive),
+                    "group inline-flex items-center gap-0.5 outline-none cursor-pointer data-[state=open]:bg-black/5 dark:data-[state=open]:bg-white/10",
                   )}
                 >
-                  {label}
-                </Link>
-              ))}
+                  Product
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="center"
+                  sideOffset={12}
+                  className={productDropdownPanelClass}
+                >
+                  <DropdownMenuLabel
+                    className={cn(
+                      "px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
+                      isOverDark ? "text-white/40" : "text-muted-foreground",
+                    )}
+                  >
+                    Explore
+                  </DropdownMenuLabel>
+                  {productNavItems.map(({ label, href, key }) => {
+                    const Icon = productNavIcons[key]
+                    const active = isNavItemActive(key)
+                    return (
+                      <DropdownMenuItem key={key} asChild className="p-0 focus:bg-transparent">
+                        <Link href={href} className={productDropdownItemClass(active)}>
+                          <Icon
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              active
+                                ? isOverDark
+                                  ? "text-white"
+                                  : "text-primary"
+                                : isOverDark
+                                  ? "text-white/55"
+                                  : "text-muted-foreground",
+                            )}
+                          />
+                          {label}
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {mainNavItems.slice(2).map(({ label, href, key }) => {
+                const active = isNavItemActive(key)
+                const isHash = href.startsWith("/#")
+                return (
+                  <Link 
+                    key={key} 
+                    href={href} 
+                    className={navLinkClass(active)}
+                    onClick={(e) => {
+                      if (isHash && pathname === "/") {
+                        e.preventDefault()
+                        scrollToSection(href.substring(2), key)
+                      }
+                    }}
+                  >
+                    {label}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
 
           {/* ── Right Side (Buttons) ── */}
-          <div className="flex shrink-0 z-50 ml-4">
+          <div className="flex shrink-0 justify-end">
             {rightSide}
           </div>
         </motion.div>

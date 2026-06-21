@@ -31,14 +31,15 @@ export async function POST(req: NextRequest) {
 
   // Pass through the Authorization header from the original request
   const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization") ?? ""
+  const cookie = req.headers.get("cookie") ?? ""
 
   let backendResponse: Response
   try {
     backendResponse = await fetch(`${BACKEND_URL}/api/horus/chat/stream`, {
       method: "POST",
       headers: {
-        // Do NOT set Content-Type — fetch sets multipart/form-data boundary automatically
         ...(authHeader ? { Authorization: authHeader } : {}),
+        ...(cookie ? { Cookie: cookie } : {}),
         ...forwardAiProviderFromNextRequest(req),
       },
       body: formData,

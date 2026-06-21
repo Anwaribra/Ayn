@@ -50,8 +50,12 @@ function Wordmark({
   }
 
   return (
-    <span className={cn("font-bold tracking-tight", colorClass)}>
-      {isArabic ? "عين" : "Ayn"}
+    <span className={cn("font-bold tracking-tighter leading-none flex items-center", colorClass)}>
+      {isArabic ? "عين" : (
+        <>
+          Ayn<span className="text-primary">.</span>
+        </>
+      )}
     </span>
   )
 }

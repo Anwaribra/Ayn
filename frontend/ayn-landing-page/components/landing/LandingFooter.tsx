@@ -83,8 +83,8 @@ export function LandingFooter({
         <div className="mb-12 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-3">
             <Link href="/" className="group mb-6 inline-block transition-opacity hover:opacity-90">
-              <span className="text-4xl font-bold tracking-tight text-white">
-                Ayn
+              <span className="text-4xl font-bold tracking-tighter text-white flex items-center leading-none">
+                Ayn<span className="text-primary">.</span>
               </span>
             </Link>
 

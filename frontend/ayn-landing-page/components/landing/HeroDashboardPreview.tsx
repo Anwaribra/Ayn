@@ -68,8 +68,9 @@ function HeroDashboardPreviewMobile() {
       className="pointer-events-none mx-auto w-full max-w-[1080px] select-none overflow-hidden rounded-xl border border-border/70 bg-background p-3.5 shadow-[0_16px_48px_rgba(15,23,42,0.08)] md:hidden"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="text-[15px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-black via-black/90 to-primary">
-          Ayn
+        <span className="text-[15px] font-bold tracking-tighter flex items-center leading-none">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-black via-black/90 to-primary">Ayn</span>
+          <span className="text-primary">.</span>
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -132,8 +133,9 @@ export function HeroDashboardPreview() {
         {/* Sidebar */}
         <aside className="hidden w-[200px] shrink-0 flex-col border-r border-border/60 bg-muted/30 p-4 md:flex">
           <div className="mb-4 px-2">
-            <span className="text-[15px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-black via-black/90 to-primary">
-              Ayn
+            <span className="text-[15px] font-bold tracking-tighter flex items-center leading-none">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-black via-black/90 to-primary">Ayn</span>
+              <span className="text-primary">.</span>
             </span>
           </div>
 

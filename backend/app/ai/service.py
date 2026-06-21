@@ -7,9 +7,11 @@ from typing import Optional, List, Dict, Any
 import os
 import asyncio
 import time
+import re
 from fastapi import HTTPException, status
 from app.ai.model_router import MultiModelAIRouter
 from app.core.metrics import estimate_tokens, record_ai_usage
+from app.ai.search import perform_web_search
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +245,9 @@ Communication Guidelines
 • You can respond in both **English and Arabic**.
 • Do not assume Saudi context, NCAAA, or Saudi institutions unless the user or source material explicitly points there.
 • If the user asks about Ayn itself without country context, describe it as an Egyptian/Egypt-first educational quality platform, not a Saudi platform.
+• If you use web search, provide a direct, concise, and highly relevant answer. Do NOT output internal search tool tags like `[search]` or search metadata.
 """
+
 
 def _detect_standards(text: str) -> dict:
     """Detect which specific standards are mentioned in the text."""
@@ -962,6 +966,13 @@ class GeminiClient:
         context_text = (context or "").lower()
         needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
         
+        wants_web_search = "[instruction: please use web search" in query_text
+        if wants_web_search:
+            clean_query = re.sub(r'\[instruction:.*?\]', '', query_text, flags=re.IGNORECASE).strip()
+            search_results = await perform_web_search(clean_query)
+            if search_results:
+                context = (context or "") + f"\n\n{search_results}"
+        
         system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge, query_text=query_text + " " + context_text)
         
         if context:
@@ -969,6 +980,7 @@ class GeminiClient:
         
         if USE_NEW_API:
             contents = []
+            
             for msg in messages:
                 role = "user" if msg["role"] == "user" else "model"
                 contents.append(genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg["content"])]))
@@ -1000,6 +1012,13 @@ class GeminiClient:
         context_text = (context or "").lower()
         needs_deep_knowledge = any(k in query_text or k in context_text for k in ["iso", "naqaae", "standard", "clause", "audit", "compliance"])
         
+        wants_web_search = "[instruction: please use web search" in query_text
+        if wants_web_search:
+            clean_query = re.sub(r'\[instruction:.*?\]', '', query_text, flags=re.IGNORECASE).strip()
+            search_results = await perform_web_search(clean_query)
+            if search_results:
+                context = (context or "") + f"\n\n{search_results}"
+                
         system_instruction = get_system_prompt(include_all_knowledge=needs_deep_knowledge, query_text=query_text + " " + context_text)
         
         if context:
@@ -1007,6 +1026,7 @@ class GeminiClient:
         
         if USE_NEW_API:
             contents = []
+            
             for msg in messages:
                 role = "user" if msg["role"] == "user" else "model"
                 contents.append(genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg["content"])]))

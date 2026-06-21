@@ -1578,15 +1578,15 @@ export default function HorusAIChat() {
                     </p>
                   </div>
                   
-                  <div className="grid w-full max-w-[600px] grid-cols-1 gap-3 sm:grid-cols-2 mt-4 px-4">
+                  <div className="grid w-full max-w-[540px] grid-cols-1 gap-2 sm:grid-cols-2 mt-2 px-4">
                     {suggestedPrompts.map((item, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSendMessage(item.prompt)}
-                        className="flex flex-col items-start gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left transition-all hover:bg-white/[0.04] hover:border-primary/30 active:scale-[0.98]"
+                        className="flex flex-col items-start gap-0.5 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-left transition-all hover:bg-white/[0.04] hover:border-primary/30 active:scale-[0.98]"
                       >
-                        <span className="text-sm font-medium text-foreground/90">{item.title}</span>
-                        <span className="text-xs text-muted-foreground/70 line-clamp-1">{item.prompt}</span>
+                        <span className="text-xs font-medium text-foreground/90">{item.title}</span>
+                        <span className="text-[10px] text-muted-foreground/60 line-clamp-1">{item.prompt}</span>
                       </button>
                     ))}
                   </div>

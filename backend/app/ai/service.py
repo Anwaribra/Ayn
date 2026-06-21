@@ -528,9 +528,22 @@ class OpenRouterClient:
                             return
                         try:
                             obj = json.loads(data)
-                            content = (obj.get("choices") or [{}])[0].get("delta", {}).get("content")
-                            if content:
-                                yield content
+                            delta = (obj.get("choices") or [{}])[0].get("delta", {})
+                            content = delta.get("content")
+                            reasoning = delta.get("reasoning")
+                            
+                            if reasoning:
+                                if not getattr(self, "_started_reasoning", False):
+                                    self._started_reasoning = True
+                                    yield "<think>\n" + reasoning
+                                else:
+                                    yield reasoning
+                            elif content is not None:
+                                if getattr(self, "_started_reasoning", False):
+                                    self._started_reasoning = False
+                                    yield "\n</think>\n\n" + content
+                                else:
+                                    yield content
                         except json.JSONDecodeError:
                             pass
 
@@ -916,8 +929,8 @@ class GeminiClient:
             self.embedding_model = "gemini-embedding-001"
         else:
             old_genai.configure(api_key=api_key)
-            self.model = old_genai.GenerativeModel('gemini-1.5-flash')
-            self.model_name = "gemini-1.5-flash"
+            self.model = old_genai.GenerativeModel('gemini-1.5-flash-latest')
+            self.model_name = "gemini-1.5-flash-latest"
             self.client = None
         
         logger.info(f"Gemini client initialized with model: {self.model_name}")

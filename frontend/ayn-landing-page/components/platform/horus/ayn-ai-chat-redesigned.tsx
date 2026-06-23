@@ -650,6 +650,85 @@ function formatTimestamp(timestamp: number, isArabic = false) {
   }).format(timestamp)
 }
 
+function parseMessageContent(content: string) {
+  if (!content) return { thought: null, cleanContent: "", isThinking: false }
+  
+  const thinkStart = content.indexOf("<think>")
+  if (thinkStart === -1) {
+    return { thought: null, cleanContent: content, isThinking: false }
+  }
+
+  const thinkEnd = content.indexOf("</think>", thinkStart + 7)
+  if (thinkEnd === -1) {
+    // Still thinking (no closing tag yet)
+    return {
+      thought: content.slice(thinkStart + 7),
+      cleanContent: "",
+      isThinking: true,
+    }
+  }
+
+  // Done thinking
+  return {
+    thought: content.slice(thinkStart + 7, thinkEnd),
+    cleanContent: content.slice(thinkEnd + 8), // skip </think>
+    isThinking: false,
+  }
+}
+
+function ThoughtBlock({ thought, isThinking, isArabic }: { thought: string; isThinking: boolean; isArabic: boolean }) {
+  const [isOpen, setIsOpen] = useState(isThinking)
+
+  // Keep it open while thinking
+  useEffect(() => {
+    if (isThinking) {
+      setIsOpen(true)
+    }
+  }, [isThinking])
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-xl border border-white/5 bg-white/[0.015] dark:bg-black/[0.05] transition-all duration-300">
+      <button
+        onClick={() => !isThinking && setIsOpen(!isOpen)}
+        disabled={isThinking}
+        className={cn(
+          "flex w-full items-center justify-between px-3.5 py-2.5 text-start transition-colors",
+          isThinking ? "cursor-default" : "cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04]"
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Brain className={cn("h-3.5 w-3.5 text-primary", isThinking && "animate-pulse")} />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+            {isArabic ? "مسار التفكير" : "Thought process"}
+          </span>
+          {isThinking && (
+            <span className="flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+          )}
+        </div>
+        {!isThinking && (
+          <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/45 transition-transform duration-300", isOpen && "rotate-180")} />
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <div className="border-t border-white/5 px-3.5 py-2.5 bg-black/[0.05] dark:bg-black/[0.1] border-l-2 border-primary/20">
+              <p className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-muted-foreground/70">
+                {thought.trim()}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function HorusAIChat() {
   const router = useRouter()
@@ -1613,18 +1692,20 @@ export default function HorusAIChat() {
                   }
 
                   const isStreamingThis = status === "generating" && msg.role === "assistant" && msg.id === lastAssistantMsgId
+                  const parsed = parseMessageContent(msg.content)
                   const relatedUserMessage =
                     msg.role === "assistant"
                       ? [...visibleMessages.slice(0, idx)].reverse().find((entry) => entry.role === "user")
                       : null
-                  const isArabicMessage = containsArabic(msg.content)
+                  const isArabicMessage = containsArabic(parsed.cleanContent || parsed.thought || msg.content)
                   const assistantSourceLabel = msg.role === "assistant" ? getAttachmentContextLabel(relatedUserMessage, isArabicMessage) : null
                   const isAgentMessage = msg.role === "assistant" && msg.responseMode === "agent"
                   const hasToolState = (msg.toolSteps?.length ?? 0) > 0 || !!msg.pendingConfirmation
                   const hasRenderableAssistantBody =
                     msg.role === "assistant" &&
                     (
-                      !!msg.content?.trim() ||
+                      !!parsed.cleanContent?.trim() ||
+                      !!parsed.thought?.trim() ||
                       !!(msg as any).structuredResult ||
                       !!msg.pendingConfirmation ||
                       ((msg as any).citations?.length ?? 0) > 0
@@ -1632,7 +1713,8 @@ export default function HorusAIChat() {
                   const shouldHideAssistantPlaceholder =
                     msg.role === "assistant" &&
                     isStreamingThis &&
-                    !msg.content?.trim() &&
+                    !parsed.cleanContent?.trim() &&
+                    !parsed.thought?.trim() &&
                     !(msg as any).structuredResult &&
                     !msg.pendingConfirmation
 
@@ -1757,57 +1839,66 @@ export default function HorusAIChat() {
 
                           {msg.content ? (
                             <>
-                              <div
-                                dir="auto"
-                                aria-live={isStreamingThis ? "polite" : undefined}
-                                aria-atomic={isStreamingThis ? false : undefined}
-                                aria-busy={isStreamingThis}
-                                className={cn(
-                                  "horus-markdown-wrapper w-full max-w-none text-[15px] leading-7 text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert",
-                                  isStreamingThis && "horus-streaming-active"
-                                )}
-                              >
-                                {(() => {
-                                  const isLong = msg.content.length > COLLAPSE_THRESHOLD && !isStreamingThis
-                                  const isExpanded = expandedMsgIds.has(msg.id)
-                                  const showContent = !isLong || isExpanded
-                                  return (
-                                    <>
-                                      <StreamingAssistantContent
-                                        content={showContent ? msg.content : msg.content.slice(0, COLLAPSE_THRESHOLD) + "…"}
-                                        isStreaming={isStreamingThis}
-                                        speedMs={isStreamingThis && activeResponseMode === "ask" ? 600 : 400}
-                                        onAction={handleAction}
-                                      />
-                                      {isStreamingThis && (
-                                        <span className="ml-1 inline-flex items-center gap-0.5 align-middle">
-                                          <span
-                                            className="horus-stream-cursor inline-block h-[1em] w-[3px] rounded-sm bg-primary align-middle"
-                                            style={{ marginLeft: "2px" }}
-                                          />
-                                        </span>
-                                      )}
-                                      {isLong && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setExpandedMsgIds((s) => {
-                                            const next = new Set(s)
-                                            if (isExpanded) next.delete(msg.id)
-                                            else next.add(msg.id)
-                                            return next
-                                          })}
-                                          className="mt-3 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-primary transition-colors hover:border-primary/25 hover:text-primary/80"
-                                        >
-                                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                                          {isExpanded
-                                            ? (isArabicMessage ? "عرض أقل" : "Show less")
-                                            : (isArabicMessage ? "عرض المزيد" : "Show more")}
-                                        </button>
-                                      )}
-                                    </>
-                                  )
-                                })()}
-                              </div>
+                              {parsed.thought && (
+                                <ThoughtBlock
+                                  thought={parsed.thought}
+                                  isThinking={parsed.isThinking}
+                                  isArabic={isArabicMessage}
+                                />
+                              )}
+                              {(parsed.cleanContent || isStreamingThis) && (
+                                <div
+                                  dir="auto"
+                                  aria-live={isStreamingThis ? "polite" : undefined}
+                                  aria-atomic={isStreamingThis ? false : undefined}
+                                  aria-busy={isStreamingThis}
+                                  className={cn(
+                                    "horus-markdown-wrapper w-full max-w-none text-[15px] leading-7 text-foreground prose text-start [unicode-bidi:plaintext] dark:prose-invert",
+                                    isStreamingThis && "horus-streaming-active"
+                                  )}
+                                >
+                                  {(() => {
+                                    const isLong = parsed.cleanContent.length > COLLAPSE_THRESHOLD && !isStreamingThis
+                                    const isExpanded = expandedMsgIds.has(msg.id)
+                                    const showContent = !isLong || isExpanded
+                                    return (
+                                      <>
+                                        <StreamingAssistantContent
+                                          content={showContent ? parsed.cleanContent : parsed.cleanContent.slice(0, COLLAPSE_THRESHOLD) + "…"}
+                                          isStreaming={isStreamingThis}
+                                          speedMs={isStreamingThis && activeResponseMode === "ask" ? 600 : 400}
+                                          onAction={handleAction}
+                                        />
+                                        {isStreamingThis && (
+                                          <span className="ml-1 inline-flex items-center gap-0.5 align-middle">
+                                            <span
+                                              className="horus-stream-cursor inline-block h-[1em] w-[3px] rounded-sm bg-primary align-middle"
+                                              style={{ marginLeft: "2px" }}
+                                            />
+                                          </span>
+                                        )}
+                                        {isLong && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setExpandedMsgIds((s) => {
+                                              const next = new Set(s)
+                                              if (isExpanded) next.delete(msg.id)
+                                              else next.add(msg.id)
+                                              return next
+                                            })}
+                                            className="mt-3 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-primary transition-colors hover:border-primary/25 hover:text-primary/80"
+                                          >
+                                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {isExpanded
+                                              ? (isArabicMessage ? "عرض أقل" : "Show less")
+                                              : (isArabicMessage ? "عرض المزيد" : "Show more")}
+                                          </button>
+                                        )}
+                                      </>
+                                    )
+                                  })()}
+                                </div>
+                              )}
                             </>
                           ) : msg.role === "assistant" &&
                             msg.id === lastAssistantMsgId &&
@@ -1917,7 +2008,7 @@ export default function HorusAIChat() {
                               {msg.content && (
                                 <>
                                   <button
-                                    onClick={() => toggleTTS(msg.id, msg.content)}
+                                    onClick={() => toggleTTS(msg.id, parsed.cleanContent || msg.content)}
                                     className={cn(
                                       "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
                                       playingMsgId === msg.id ? "text-primary bg-primary/10" : ""
@@ -1932,7 +2023,7 @@ export default function HorusAIChat() {
                                   </button>
                                   <div className="mx-0.5 h-3 w-px bg-white/10" />
                                   <button
-                                  onClick={() => handleCopy(msg.id, msg.content)}
+                                  onClick={() => handleCopy(msg.id, parsed.cleanContent || msg.content)}
                                   className={cn(
                                     "horus-tool-button inline-flex h-8 w-8 items-center justify-center rounded-md md:h-8 md:w-8",
                                     copiedMsgId === msg.id

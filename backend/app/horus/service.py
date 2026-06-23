@@ -1078,7 +1078,7 @@ class HorusService:
                         f"You are Horus, the AI compliance advisor built into the Ayn platform. "
                         f"{AYN_PLATFORM_DESCRIPTION} "
                         f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
-                        f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                        f"Address them naturally by name when appropriate in the final response (never in internal reasoning/thoughts). Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                         f"Answer conversational and general questions immediately and clearly. Stream your response token-by-token; do not buffer. "
                         f"Prefer the shortest complete useful answer. "
                         f"Do not claim you accessed platform state unless explicitly requested. "
@@ -1100,7 +1100,7 @@ class HorusService:
                                 f"You are Horus, the AI compliance advisor built into the Ayn platform. "
                                 f"{AYN_PLATFORM_DESCRIPTION} "
                                 f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
-                                f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                                f"Address them naturally by name when appropriate in the final response (never in internal reasoning/thoughts). Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                                 f"Answer conversational and general questions immediately and clearly. "
                                 f"Prefer the shortest complete useful answer. "
                                 f"Do not claim you accessed platform state unless explicitly requested. "
@@ -1145,7 +1145,7 @@ class HorusService:
                                     f"You are Horus, the AI compliance advisor built into the Ayn platform. "
                                     f"{AYN_PLATFORM_DESCRIPTION} "
                                     f"The user's name is {user_name} (email: {user_email}, role: {user_role}).{institution_line} "
-                                    f"Address them by name when appropriate. Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
+                                    f"Address them naturally by name when appropriate in the final response (never in internal reasoning/thoughts). Never say 'Hello User' — use their actual name or a neutral 'Hello'/'Hi'. "
                                     f"Answer conversational and general questions immediately and clearly. "
                                     f"Prefer the shortest complete useful answer. "
                                     f"Do not claim you accessed platform state unless explicitly requested."
@@ -2148,7 +2148,7 @@ class HorusService:
             inst_part = f" at {inst}" if inst else ""
             user_line = (
                 f"You are speaking with {name} ({email}, {role}{inst_part}). "
-                f"Address them by name. Never say \'Hello User\'."
+                f"Address them naturally by name when appropriate in the final response (never in internal reasoning/thoughts). Never say \'Hello User\'."
             )
 
         goal_line = f"Active session goal: {goal}" if goal else ""
@@ -2326,7 +2326,7 @@ Behavioral rules:
         user_line = ""
         if user_identity:
             inst = f", institution: {user_identity['institution']}" if user_identity.get("institution") else ""
-            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them by name when appropriate. Never say 'Hello User' — use their actual name or 'Hello'/'Hi'."
+            user_line = f"- The current user is {user_identity['name']} (email: {user_identity['email']}, role: {user_identity['role']}{inst}). Address them naturally by name when appropriate in the final response (never in internal reasoning/thoughts). Never say 'Hello User' — use their actual name or 'Hello'/'Hi'."
 
         goal_line = f"- Active goal: {goal}" if goal else ""
         context_parts.append(f"""

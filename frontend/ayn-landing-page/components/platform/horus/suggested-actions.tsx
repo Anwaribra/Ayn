@@ -55,13 +55,13 @@ function SuggestionChip({
       transition={{ duration: 0.25, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
       onClick={() => onSelect(suggestion.prompt)}
       className={cn(
-        "group inline-flex min-w-max items-center gap-2 rounded-xl border border-white/10 bg-[#0d1420]/90",
+        "group inline-flex min-w-max items-center gap-2 rounded-xl border border-border/80 dark:border-white/10 bg-muted/45 dark:bg-[#0d1420]/90",
         "px-3 py-2 text-left transition-all duration-150",
-        "hover:border-primary/35 hover:bg-[#121b2b] hover:shadow-[0_10px_30px_-22px_rgba(37,99,235,0.65)]",
+        "hover:border-primary/35 hover:bg-muted/80 dark:hover:bg-[#121b2b] hover:shadow-[0_10px_30px_-22px_rgba(37,99,235,0.65)]",
         "active:scale-[0.98]",
       )}
     >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-border/60 dark:border-white/8 bg-muted/30 dark:bg-white/[0.03] transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
         <Icon className="h-3.5 w-3.5 text-primary/80 transition-colors group-hover:text-primary" />
       </span>
       <span className="whitespace-nowrap text-[11px] font-medium leading-none text-foreground/78 transition-colors group-hover:text-foreground sm:text-[11.5px]">

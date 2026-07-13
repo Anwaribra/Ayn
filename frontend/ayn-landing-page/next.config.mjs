@@ -51,7 +51,7 @@ const nextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' http://localhost:3000 https://thinkerlab.tech;",
+            value: "frame-ancestors 'self' http://localhost:3000 https://thinkerlab.tech https://www.thinkerlab.tech;",
           },
           {
             key: "X-XSS-Protection",
